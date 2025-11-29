@@ -1,0 +1,177 @@
+# A URL to the Supabase REST API
+[api]
+enabled = true
+# Port to use for the API URL
+port = 54321
+# Schemas to expose in your API
+schemas = ["public", "graphql_public"]
+# Extra schemas to add to the search_path of every request
+extra_search_path = ["public", "extensions"]
+# Maximum rows a user can return in a single request
+max_rows = 1000
+
+[db]
+# Port to use for the local database URL
+port = 54322
+# Port to use for the local database direct connection
+shadow_port = 54320
+# The database major version to use
+major_version = 15
+
+[db.pooler]
+enabled = false
+# Port to use for the local connection pooler
+port = 54329
+# How many server connections to allow per user
+max_client_conn = 100
+
+[studio]
+enabled = true
+# Port to use for Supabase Studio
+port = 54323
+# External URL of the API server that frontend connects to
+api_url = "http://127.0.0.1"
+
+# Email testing server. Emails sent with the local dev setup are not actually sent - rather, they are captured, and you can view the emails that were sent by the Studio.
+[inbucket]
+enabled = true
+# Port to use for the email testing server
+port = 54324
+# Uncomment to expose additional ports for testing the email server
+# smtp_port = 54325
+# pop3_port = 54326
+
+[storage]
+enabled = true
+# The maximum file size allowed (e.g. "5MB", "500KB")
+file_size_limit = "50MiB"
+
+[auth]
+enabled = true
+# The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
+# in emails.
+site_url = "http://localhost:3000"
+# A list of *exact* URLs that auth providers are permitted to redirect to post authentication
+additional_redirect_urls = ["https://localhost:3000"]
+# How long tokens are valid for, in seconds. Default is 3600 (1 hour), maximum 604,800 seconds (one week)
+jwt_expiry = 3600
+# Allow/disallow new user signups to your project
+enable_signup = true
+
+[auth.email]
+# Allow/disallow new user signups via email to your project
+enable_signup = true
+# If enabled, a user will be sent a confirmation link to their email address upon signing up
+double_confirm_changes = true
+# If enabled, users will need to reconfirm their email address when changing it
+enable_confirmations = true
+
+# Uncomment to customize email template
+# [auth.email.template.invite]
+# subject = "You have been invited"
+# content_path = "./supabase/templates/invite.html"
+
+[auth.sms]
+# Allow/disallow new user signups via SMS to your project
+enable_signup = false
+# If enabled, users will need to reconfirm their phone number when changing it
+enable_confirmations = false
+
+# Use an external OAuth provider
+[auth.external.apple]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.external.azure]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.external.bitbucket]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.external.discord]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.external.facebook]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.external.github]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.external.gitlab]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.external.google]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.external.keycloak]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.external.linkedin]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.external.notion]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.external.slack]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.external.spotify]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.external.twitch]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.external.twitter]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.external.workos]
+enabled = false
+client_id = ""
+secret = ""
+
+[edge_functions]
+enabled = false
+# Port to use for the Edge Functions runtime
+port = 54321
+# Directory to find your Edge Functions in
+# By default, this is the 'supabase/functions' folder in your project
+# You can also set a different directory, but then you must also set the import_map_path in the [experimental] section
+# functions_folder = "./supabase/functions"
+
+# [experimental]
+# import_map_path = "./supabase/functions/deno.json"
+
+[analytics]
+enabled = false
+port = 54327
+# Configure one of the supported backends: bigquery, logflare, or segment
+backend = "logflare"

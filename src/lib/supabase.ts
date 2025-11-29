@@ -1,0 +1,262 @@
+import { createClient } from '@supabase/supabase-js'
+import { Database } from '@/types/database'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 10,
+    },
+  },
+})
+
+// Service role client for server-side operations
+export const supabaseAdmin = createClient<Database>(
+  supabaseUrl,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  }
+)
+
+// Helper functions for common operations
+export const supabaseHelpers = {
+  // User profile operations
+  async getUserProfile(userId: string) {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async updateUserProfile(userId: string, updates: Partial<Database['public']['Tables']['user_profiles']['Update']>) {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .update(updates)
+      .eq('user_id', userId)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async createUserProfile(profile: Database['public']['Tables']['user_profiles']['Insert']) {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .insert(profile)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  // Emergency event operations
+  async getEmergencyEvents(options?: {
+    limit?: number
+    status?: Database['public']['Enums']['emergency_events_status']
+    type_id?: number
+  }) {
+    let query = supabase
+      .from('emergency_events')
+      .select(`
+        *,
+        emergency_types (*),
+        reporter: user_profiles (
+          user_id,
+          trust_score
+        )
+      `)
+      .order('created_at', { ascending: false })
+
+    if (options?.status) {
+      query = query.eq('status', options.status)
+    }
+    if (options?.type_id) {
+      query = query.eq('type_id', options.type_id)
+    }
+    if (options?.limit) {
+      query = query.limit(options.limit)
+    }
+
+    const { data, error } = await query
+    if (error) throw error
+    return data
+  },
+
+  async createEmergencyEvent(event: Database['public']['Tables']['emergency_events']['Insert']) {
+    const { data, error } = await supabase
+      .from('emergency_events')
+      .insert(event)
+      .select(`
+        *,
+        emergency_types (*),
+        reporter: user_profiles (
+          user_id,
+          trust_score
+        )
+      `)
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async updateEmergencyEvent(
+    eventId: string,
+    updates: Database['public']['Tables']['emergency_events']['Update']
+  ) {
+    const { data, error } = await supabase
+      .from('emergency_events')
+      .update(updates)
+      .eq('id', eventId)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  // Event confirmation operations
+  async confirmEvent(
+    eventId: string,
+    userId: string,
+    confirmationType: 'confirm' | 'dispute',
+    location?: { lat: number; lng: number }
+  ) {
+    const { data, error } = await supabase
+      .from('event_confirmations')
+      .upsert({
+        event_id: eventId,
+        user_id: userId,
+        confirmation_type: confirmationType,
+        location: location ? `POINT(${location.lng} ${location.lat})` : null,
+        trust_weight: 0.1, // Will be updated by trigger
+      })
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async getEventConfirmations(eventId: string) {
+    const { data, error } = await supabase
+      .from('event_confirmations')
+      .select(`
+        *,
+        user: user_profiles (
+          user_id,
+          trust_score
+        )
+      `)
+      .eq('event_id', eventId)
+    
+    if (error) throw error
+    return data
+  },
+
+  // Subscription operations
+  async getUserSubscriptions(userId: string) {
+    const { data, error } = await supabase
+      .from('user_subscriptions')
+      .select(`
+        *,
+        emergency_types (*)
+      `)
+      .eq('user_id', userId)
+      .eq('is_active', true)
+    
+    if (error) throw error
+    return data
+  },
+
+  async subscribeToTopic(userId: string, topicId: number) {
+    const { data, error } = await supabase
+      .from('user_subscriptions')
+      .upsert({
+        user_id: userId,
+        topic_id: topicId,
+        is_active: true,
+      })
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async unsubscribeFromTopic(userId: string, topicId: number) {
+    const { data, error } = await supabase
+      .from('user_subscriptions')
+      .update({ is_active: false })
+      .eq('user_id', userId)
+      .eq('topic_id', topicId)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  // Emergency types
+  async getEmergencyTypes() {
+    const { data, error } = await supabase
+      .from('emergency_types')
+      .select('*')
+      .eq('is_active', true)
+      .order('name')
+    
+    if (error) throw error
+    return data
+  },
+
+  // Real-time subscriptions
+  subscribeToEmergencyEvents(callback: (payload: any) => void) {
+    return supabase
+      .channel('emergency_events')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'emergency_events',
+        },
+        callback
+      )
+      .subscribe()
+  },
+
+  subscribeToUserLocation(callback: (payload: any) => void) {
+    return supabase
+      .channel('user_profiles')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'user_profiles',
+          filter: 'last_known_location=not.null',
+        },
+        callback
+      )
+      .subscribe()
+  },
+}
+
+export default supabase
