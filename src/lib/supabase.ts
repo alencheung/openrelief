@@ -4,7 +4,7 @@ import { Database } from '@/types/database'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
@@ -18,7 +18,7 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
 })
 
 // Service role client for server-side operations
-export const supabaseAdmin = createClient<Database>(
+export const supabaseAdmin = createClient(
   supabaseUrl,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
   {
@@ -38,30 +38,30 @@ export const supabaseHelpers = {
       .select('*')
       .eq('user_id', userId)
       .single()
-    
+
     if (error) throw error
     return data
   },
 
-  async updateUserProfile(userId: string, updates: Partial<Database['public']['Tables']['user_profiles']['Update']>) {
+  async updateUserProfile(userId: string, updates: any) {
     const { data, error } = await supabase
       .from('user_profiles')
       .update(updates)
       .eq('user_id', userId)
       .select()
       .single()
-    
+
     if (error) throw error
     return data
   },
 
-  async createUserProfile(profile: Database['public']['Tables']['user_profiles']['Insert']) {
+  async createUserProfile(profile: any) {
     const { data, error } = await supabase
       .from('user_profiles')
       .insert(profile)
       .select()
       .single()
-    
+
     if (error) throw error
     return data
   },
@@ -99,7 +99,7 @@ export const supabaseHelpers = {
     return data
   },
 
-  async createEmergencyEvent(event: Database['public']['Tables']['emergency_events']['Insert']) {
+  async createEmergencyEvent(event: any) {
     const { data, error } = await supabase
       .from('emergency_events')
       .insert(event)
@@ -112,14 +112,14 @@ export const supabaseHelpers = {
         )
       `)
       .single()
-    
+
     if (error) throw error
     return data
   },
 
   async updateEmergencyEvent(
     eventId: string,
-    updates: Database['public']['Tables']['emergency_events']['Update']
+    updates: any
   ) {
     const { data, error } = await supabase
       .from('emergency_events')
@@ -127,7 +127,7 @@ export const supabaseHelpers = {
       .eq('id', eventId)
       .select()
       .single()
-    
+
     if (error) throw error
     return data
   },
@@ -150,7 +150,7 @@ export const supabaseHelpers = {
       })
       .select()
       .single()
-    
+
     if (error) throw error
     return data
   },
@@ -166,7 +166,7 @@ export const supabaseHelpers = {
         )
       `)
       .eq('event_id', eventId)
-    
+
     if (error) throw error
     return data
   },
@@ -181,7 +181,7 @@ export const supabaseHelpers = {
       `)
       .eq('user_id', userId)
       .eq('is_active', true)
-    
+
     if (error) throw error
     return data
   },
@@ -196,7 +196,7 @@ export const supabaseHelpers = {
       })
       .select()
       .single()
-    
+
     if (error) throw error
     return data
   },
@@ -209,7 +209,7 @@ export const supabaseHelpers = {
       .eq('topic_id', topicId)
       .select()
       .single()
-    
+
     if (error) throw error
     return data
   },
@@ -221,7 +221,7 @@ export const supabaseHelpers = {
       .select('*')
       .eq('is_active', true)
       .order('name')
-    
+
     if (error) throw error
     return data
   },

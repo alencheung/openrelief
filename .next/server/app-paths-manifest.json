@@ -1,7 +1,4 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/pwa-status/page": "app/pwa-status/page.js",
-  "/offline/emergency/page": "app/offline/emergency/page.js",
-  "/offline/page": "app/offline/page.js",
   "/page": "app/page.js"
 }

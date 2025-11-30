@@ -356,10 +356,10 @@ export const useLocationStore = create<LocationStore>()(
                   lat: position.coords.latitude,
                   lng: position.coords.longitude,
                   accuracy: position.coords.accuracy,
-                  altitude: position.coords.altitude || undefined,
-                  altitudeAccuracy: position.coords.altitudeAccuracy || undefined,
-                  heading: position.coords.heading || undefined,
-                  speed: position.coords.speed || undefined,
+                  ...(position.coords.altitude !== null && { altitude: position.coords.altitude }),
+                  ...(position.coords.altitudeAccuracy !== null && { altitudeAccuracy: position.coords.altitudeAccuracy }),
+                  ...(position.coords.heading !== null && { heading: position.coords.heading }),
+                  ...(position.coords.speed !== null && { speed: position.coords.speed }),
                   timestamp: position.timestamp,
                 }
 
@@ -416,8 +416,9 @@ export const useLocationStore = create<LocationStore>()(
         },
 
         resumeTracking: () => {
-          if (get().trackingSession) {
-            get().startTracking(get().trackingSession.purpose, get().trackingSession.metadata)
+          const trackingSession = get().trackingSession
+          if (trackingSession) {
+            get().startTracking(trackingSession.purpose, trackingSession.metadata)
           }
         },
 
@@ -602,7 +603,7 @@ export const useLocationStore = create<LocationStore>()(
             targetLocation.lng
           )
 
-          const threshold = proximityThresholds[targetType] || 1000
+          const threshold = proximityThresholds[targetType as keyof typeof proximityThresholds] || 1000
 
           if (distance <= threshold) {
             get().addProximityAlert({
@@ -632,7 +633,7 @@ export const useLocationStore = create<LocationStore>()(
 
           if (sessionId) {
             const session = trackingHistory.find(s => s.id === sessionId) || trackingSession
-            return session ? session.points.slice(-limit || Infinity) : []
+            return session ? session.points.slice(-(limit || Infinity)) : []
           }
 
           // Return all points from all sessions
@@ -641,7 +642,7 @@ export const useLocationStore = create<LocationStore>()(
             allPoints.push(...trackingSession.points)
           }
 
-          return allPoints.slice(-limit || Infinity)
+          return allPoints.slice(-(limit || Infinity))
         },
 
         // Error handling

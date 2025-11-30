@@ -40,7 +40,7 @@ export interface EmergencyMapState {
   showEvents: boolean
   showHeatmap: boolean
   showClusters: boolean
-  selectedEventId?: string
+  selectedEventId?: string | undefined
 }
 
 export interface OfflineEmergencyAction {
@@ -205,14 +205,17 @@ const filterEvents = (
 
     // Radius filter (requires center and user location)
     if (filters.radius && filters.center) {
-      const distance = calculateDistance(
-        filters.center.lat,
-        filters.center.lng,
-        parseFloat(event.location.split(' ')[1]),
-        parseFloat(event.location.split(' ')[0])
-      )
-      if (distance > filters.radius) {
-        return false
+      const locationParts = event.location.split(' ')
+      if (locationParts.length >= 2 && locationParts[0] && locationParts[1]) {
+        const distance = calculateDistance(
+          filters.center.lat,
+          filters.center.lng,
+          parseFloat(locationParts[1]),
+          parseFloat(locationParts[0])
+        )
+        if (distance > filters.radius) {
+          return false
+        }
       }
     }
 
@@ -407,7 +410,7 @@ export const useEmergencyStore = create<EmergencyStore>()(
 
         // Location
         setUserLocation: (location, accuracy) => {
-          set({ userLocation: location, locationAccuracy: accuracy })
+          set({ userLocation: location, locationAccuracy: accuracy ?? null })
           get().applyFilters() // Reapply filters with new location
         },
 

@@ -97,12 +97,12 @@ export function debounce<T extends (...args: any[]) => any>(
   wait: number
 ): (...args: Parameters<T>) => void {
   let timeout: NodeJS.Timeout | null = null
-  
+
   return (...args: Parameters<T>) => {
     if (timeout) {
       clearTimeout(timeout)
     }
-    
+
     timeout = setTimeout(() => {
       func(...args)
     }, wait)
@@ -114,7 +114,7 @@ export function throttle<T extends (...args: any[]) => any>(
   limit: number
 ): (...args: Parameters<T>) => void {
   let inThrottle: boolean
-  
+
   return (...args: Parameters<T>) => {
     if (!inThrottle) {
       func(...args)
@@ -184,7 +184,7 @@ export function copyToClipboard(text: string): Promise<void> {
     document.body.appendChild(textArea)
     textArea.focus()
     textArea.select()
-    
+
     return new Promise((resolve, reject) => {
       document.execCommand('copy') ? resolve() : reject()
       textArea.remove()
@@ -207,7 +207,7 @@ export function downloadFile(data: string, filename: string, type: string = 'tex
 export function parseGeoLocation(location: string): { lat: number; lng: number } | null {
   try {
     const match = location.match(/POINT\(([-\d.]+)\s+([-\d.]+)\)/)
-    if (match) {
+    if (match && match[1] && match[2]) {
       return {
         lng: parseFloat(match[1]),
         lat: parseFloat(match[2]),
@@ -262,7 +262,7 @@ export function getBrowserInfo(): {
   const userAgent = navigator.userAgent
   let browserName = 'Unknown'
   let browserVersion = 'Unknown'
-  
+
   if (userAgent.indexOf('Firefox') > -1) {
     browserName = 'Firefox'
     browserVersion = userAgent.match(/Firefox\/(\d+)/)?.[1] || 'Unknown'

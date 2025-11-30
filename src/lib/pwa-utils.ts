@@ -1,5 +1,15 @@
 // PWA utility functions for OpenRelief emergency coordination platform
 
+// Type definition for BeforeInstallPromptEvent (not in standard TypeScript definitions)
+interface BeforeInstallPromptEvent extends Event {
+  readonly platforms: string[]
+  readonly userChoice: Promise<{
+    outcome: 'accepted' | 'dismissed'
+    platform: string
+  }>
+  prompt(): Promise<void>
+}
+
 export interface CacheInfo {
   name: string
   size: number
@@ -86,7 +96,7 @@ export class PWACacheManager {
     ]
 
     const cache = await caches.open(this.cacheNames.static)
-    
+
     try {
       await cache.addAll(criticalAssets.map(asset => new Request(asset, { cache: 'no-cache' })))
       console.log('[PWA] Critical assets preloaded successfully')
@@ -104,7 +114,7 @@ export class PWACacheManager {
         percentage: ((Number(estimate.usage) || 0) / (Number(estimate.quota) || 1)) * 100
       }
     }
-    
+
     return { used: 0, quota: 0, percentage: 0 }
   }
 }
@@ -158,7 +168,7 @@ export class OfflineStorage {
 
   async saveAction(action: OfflineAction): Promise<void> {
     await this.initDB()
-    
+
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(['actions'], 'readwrite')
       const store = transaction.objectStore('actions')
@@ -171,7 +181,7 @@ export class OfflineStorage {
 
   async getActions(type?: string, synced: boolean = false): Promise<OfflineAction[]> {
     await this.initDB()
-    
+
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(['actions'], 'readonly')
       const store = transaction.objectStore('actions')
@@ -180,13 +190,13 @@ export class OfflineStorage {
       request.onerror = () => reject(request.error)
       request.onsuccess = () => {
         let actions = request.result
-        
+
         if (type) {
           actions = actions.filter((action: OfflineAction) => action.type === type)
         }
-        
+
         actions = actions.filter((action: OfflineAction) => action.synced === synced)
-        
+
         resolve(actions)
       }
     })
@@ -194,7 +204,7 @@ export class OfflineStorage {
 
   async markActionSynced(actionId: string): Promise<void> {
     await this.initDB()
-    
+
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(['actions'], 'readwrite')
       const store = transaction.objectStore('actions')
@@ -215,7 +225,7 @@ export class OfflineStorage {
 
   async saveEmergencyData(data: any): Promise<void> {
     await this.initDB()
-    
+
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(['emergencyData'], 'readwrite')
       const store = transaction.objectStore('emergencyData')
@@ -232,7 +242,7 @@ export class OfflineStorage {
 
   async getEmergencyData(type?: string): Promise<any[]> {
     await this.initDB()
-    
+
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(['emergencyData'], 'readonly')
       const store = transaction.objectStore('emergencyData')
@@ -241,11 +251,11 @@ export class OfflineStorage {
       request.onerror = () => reject(request.error)
       request.onsuccess = () => {
         let data = request.result
-        
+
         if (type) {
           data = data.filter((item: any) => item.type === type)
         }
-        
+
         resolve(data)
       }
     })
@@ -293,7 +303,7 @@ export class NetworkUtils {
         saveData: connection.saveData || false
       }
     }
-    
+
     return {
       effectiveType: 'unknown',
       downlink: 0,
@@ -326,7 +336,7 @@ export class PWAInstallUtils {
       }
 
       window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-      
+
       // Timeout if no prompt received
       setTimeout(() => {
         window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
@@ -346,8 +356,13 @@ export class PWAPerformance {
   }> {
     return new Promise((resolve) => {
       const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming
-      
-      const metrics = {
+
+      const metrics: {
+        domContentLoaded: number
+        loadComplete: number
+        firstContentfulPaint?: number
+        largestContentfulPaint?: number
+      } = {
         domContentLoaded: navigation.domContentLoadedEventEnd - navigation.domContentLoadedEventStart,
         loadComplete: navigation.loadEventEnd - navigation.loadEventStart
       }
@@ -357,7 +372,7 @@ export class PWAPerformance {
         try {
           const observer = new PerformanceObserver((list) => {
             const entries = list.getEntries()
-            
+
             for (const entry of entries) {
               if (entry.name === 'first-contentful-paint') {
                 metrics.firstContentfulPaint = entry.startTime
@@ -365,12 +380,12 @@ export class PWAPerformance {
                 metrics.largestContentfulPaint = entry.startTime
               }
             }
-            
+
             resolve(metrics)
           })
 
           observer.observe({ entryTypes: ['paint', 'largest-contentful-paint'] })
-          
+
           // Fallback timeout
           setTimeout(() => resolve(metrics), 5000)
         } catch {
@@ -387,10 +402,10 @@ export class PWAPerformance {
       const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming
       const transferSize = navigation.transferSize || 0
       const encodedBodySize = navigation.encodedBodySize || 0
-      
+
       if (transferSize === 0 && encodedBodySize === 0) return 100
       if (encodedBodySize === 0) return 0
-      
+
       return Math.max(0, 100 - (transferSize / encodedBodySize) * 100)
     } catch {
       return 0
@@ -405,11 +420,11 @@ export function generateId(): string {
 
 export function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 Bytes'
-  
+
   const k = 1024
   const sizes = ['Bytes', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
-  
+
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
@@ -417,7 +432,7 @@ export function formatDuration(ms: number): string {
   const seconds = Math.floor(ms / 1000)
   const minutes = Math.floor(seconds / 60)
   const hours = Math.floor(minutes / 60)
-  
+
   if (hours > 0) {
     return `${hours}h ${minutes % 60}m`
   } else if (minutes > 0) {

@@ -367,12 +367,11 @@ export const useOfflineStore = create<OfflineStore>()(
         },
 
         retryAction: (actionId) => {
-          get().updateAction(actionId, {
+          const updates: Partial<OfflineAction> = {
             synced: false,
             retryCount: 0,
-            error: undefined,
-            lastAttempt: undefined,
-          })
+          }
+          get().updateAction(actionId, updates)
         },
 
         clearSyncedActions: () => {
@@ -427,6 +426,7 @@ export const useOfflineStore = create<OfflineStore>()(
 
             for (let i = 0; i < sortedActions.length; i++) {
               const action = sortedActions[i]
+              if (!action) continue
 
               set((state) => ({
                 syncProgress: {
@@ -538,11 +538,11 @@ export const useOfflineStore = create<OfflineStore>()(
 
             if (tags && tags.length > 0) {
               // Clear only entries with specified tags
-              for (const [key, entry] of newCache) {
-                if (entry.tags.some(tag => tags.includes(tag))) {
+              newCache.forEach((entry, key) => {
+                if (entry.tags.some((tag: string) => tags.includes(tag))) {
                   newCache.delete(key)
                 }
-              }
+              })
             } else {
               // Clear all cache
               newCache.clear()
@@ -556,11 +556,11 @@ export const useOfflineStore = create<OfflineStore>()(
           const now = Date.now()
           set((state) => {
             const newCache = new Map(state.cache)
-            for (const [key, entry] of newCache) {
+            newCache.forEach((entry, key) => {
               if (entry.expiresAt < now) {
                 newCache.delete(key)
               }
-            }
+            })
             return { cache: newCache }
           })
         },
@@ -674,10 +674,10 @@ export const useOfflineStore = create<OfflineStore>()(
           const entries: Array<{ key: string; size: number; timestamp: number }> = []
 
           // Calculate total size and collect entries
-          for (const [key, entry] of cache) {
+          cache.forEach((entry, key) => {
             totalSize += entry.size
             entries.push({ key, size: entry.size, timestamp: entry.timestamp })
-          }
+          })
 
           // If under limit, no need to optimize
           const maxSizeBytes = settings.cacheMaxSize * 1024 * 1024
@@ -702,8 +702,14 @@ export const useOfflineStore = create<OfflineStore>()(
           if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
             try {
               const registration = await navigator.serviceWorker.ready
-              await registration.sync.register('emergency-offline-sync')
-              set({ bgSyncSupported: true, bgSyncRegistered: true })
+              // Type assertion for background sync API
+              const syncReg = registration as any
+              if (syncReg.sync) {
+                await syncReg.sync.register('emergency-offline-sync')
+                set({ bgSyncSupported: true, bgSyncRegistered: true })
+              } else {
+                set({ bgSyncSupported: false, bgSyncRegistered: false })
+              }
             } catch (error) {
               console.error('Failed to register background sync:', error)
               set({ bgSyncSupported: false, bgSyncRegistered: false })
@@ -766,13 +772,23 @@ export const useOfflineStore = create<OfflineStore>()(
 
         // Error handling
         setError: (error, actionId) => {
+          if (!error) return
+          const lastError: {
+            message: string
+            timestamp: number
+            actionId?: string
+          } = {
+            message: error,
+            timestamp: Date.now(),
+          }
+
+          if (actionId) {
+            lastError.actionId = actionId
+          }
+
           set({
             error,
-            lastError: {
-              message: error,
-              timestamp: Date.now(),
-              actionId,
-            },
+            lastError,
           })
         },
 

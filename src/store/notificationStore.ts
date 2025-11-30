@@ -159,6 +159,7 @@ interface NotificationActions {
   // Queue management
   addToQueue: (notification: Omit<NotificationQueue, 'id' | 'scheduledFor' | 'retryCount' | 'status'>) => string
   removeFromQueue: (id: string) => void
+  updateQueueItem: (id: string, updates: Partial<NotificationQueue>) => void
   processQueue: () => Promise<void>
   retryFailed: () => Promise<void>
 
@@ -244,6 +245,7 @@ const defaultSettings: NotificationSettings = {
     geofence: true,
     system: true,
     reminder: true,
+    acknowledgment: true,
   },
   severity: {
     info: true,
@@ -276,6 +278,10 @@ const isInQuietHours = (quietHours: NotificationSettings['quietHours']): boolean
 
   const [startHour, startMin] = quietHours.start.split(':').map(Number)
   const [endHour, endMin] = quietHours.end.split(':').map(Number)
+
+  if (startHour === undefined || startMin === undefined || endHour === undefined || endMin === undefined) {
+    return false
+  }
 
   const startTime = startHour * 60 + startMin
   const endTime = endHour * 60 + endMin
@@ -436,6 +442,14 @@ export const useNotificationStore = create<NotificationStore>()(
           }))
         },
 
+        updateQueueItem: (id: string, updates: Partial<NotificationQueue>) => {
+          set((state) => ({
+            queue: state.queue.map(item =>
+              item.id === id ? { ...item, ...updates } : item
+            ),
+          }))
+        },
+
         processQueue: async () => {
           const { queue, settings } = get()
           const pendingItems = queue.filter(item => item.status === 'pending')
@@ -480,13 +494,6 @@ export const useNotificationStore = create<NotificationStore>()(
           get().processQueue()
         },
 
-        updateQueueItem: (id: string, updates: Partial<NotificationQueue>) => {
-          set((state) => ({
-            queue: state.queue.map(item =>
-              item.id === id ? { ...item, ...updates } : item
-            ),
-          }))
-        },
 
         // Settings management
         updateSettings: (settings) => {
@@ -544,9 +551,14 @@ export const useNotificationStore = create<NotificationStore>()(
 
           try {
             const registration = await navigator.serviceWorker.ready
+            const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+            if (!vapidKey) {
+              throw new Error('VAPID public key is not configured')
+            }
+
             const subscription = await registration.pushManager.subscribe({
               userVisibleOnly: true,
-              applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+              applicationServerKey: vapidKey,
             })
 
             set({ pushSubscription: subscription })

@@ -9,8 +9,6 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
-      [_ in never]: never
-    } & {
       emergency_types: {
         Row: {
           id: number

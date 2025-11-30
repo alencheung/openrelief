@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-interface User {
+export interface User {
   id: string
   email: string
   trust_score: number
@@ -25,7 +25,7 @@ interface User {
   }
 }
 
-interface AuthState {
+export interface AuthState {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
@@ -37,7 +37,7 @@ interface AuthState {
   } | null
 }
 
-interface AuthActions {
+export interface AuthActions {
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string) => Promise<void>
   signOut: () => void
@@ -61,11 +61,11 @@ export const useAuthStore = create<AuthStore>()(
       // Actions
       signIn: async (email: string, password: string) => {
         set({ isLoading: true, error: null })
-        
+
         try {
           // This is a placeholder - will be implemented with Supabase auth
           await new Promise(resolve => setTimeout(resolve, 1000))
-          
+
           const mockUser: User = {
             id: 'mock-user-id',
             email,
@@ -108,11 +108,11 @@ export const useAuthStore = create<AuthStore>()(
 
       signUp: async (email: string, password: string) => {
         set({ isLoading: true, error: null })
-        
+
         try {
           // Placeholder implementation
           await new Promise(resolve => setTimeout(resolve, 1000))
-          
+
           // After successful signup, automatically sign in
           get().signIn(email, password)
         } catch (error) {

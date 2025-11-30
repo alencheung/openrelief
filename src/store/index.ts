@@ -1,18 +1,18 @@
 // Export all stores for easy importing
-export { useAuthStore, useAuth, useAuthActions } from './authStore'
-export { 
-  useEmergencyStore, 
-  useEmergencyEvents, 
-  useEmergencyFilters, 
-  useEmergencyMap, 
+import { useAuthStore, useAuth, useAuthActions } from './authStore'
+import {
+  useEmergencyStore,
+  useEmergencyEvents,
+  useEmergencyFilters,
+  useEmergencyMap,
   useOfflineActions as useEmergencyOfflineActions,
-  useEmergencyActions 
+  useEmergencyActions
 } from './emergencyStore'
-export { 
-  useTrustStore, 
-  useTrustScore, 
-  useTrustThresholds, 
-  useTrustHistory, 
+import {
+  useTrustStore,
+  useTrustScore,
+  useTrustThresholds,
+  useTrustHistory,
   useTrustActions,
   canUserReport,
   canUserConfirm,
@@ -20,27 +20,27 @@ export {
   isHighTrustUser,
   isLowTrustUser
 } from './trustStore'
-export { 
-  useLocationStore, 
-  useCurrentLocation, 
-  useLocationTracking, 
-  useGeofences, 
+import {
+  useLocationStore,
+  useCurrentLocation,
+  useLocationTracking,
+  useGeofences,
   useProximityAlerts,
   useLocationActions,
   calculateDistance,
   isPointInGeofence
 } from './locationStore'
-export { 
-  useNotificationStore, 
-  useNotifications, 
-  useNotificationSettings, 
+import {
+  useNotificationStore,
+  useNotifications,
+  useNotificationSettings,
   useNotificationUI,
   useNotificationActions,
   useUnreadCount,
   isInQuietHours
 } from './notificationStore'
-export { 
-  useOfflineStore, 
+import {
+  useOfflineStore,
   useOfflineActions,
   useOfflineCache,
   useOfflineMetrics,
@@ -50,6 +50,58 @@ export {
   compressData,
   decompressData
 } from './offlineStore'
+
+export { useAuthStore, useAuth, useAuthActions }
+export {
+  useEmergencyStore,
+  useEmergencyEvents,
+  useEmergencyFilters,
+  useEmergencyMap,
+  useOfflineActions as useEmergencyOfflineActions,
+  useEmergencyActions
+}
+export {
+  useTrustStore,
+  useTrustScore,
+  useTrustThresholds,
+  useTrustHistory,
+  useTrustActions,
+  canUserReport,
+  canUserConfirm,
+  canUserDispute,
+  isHighTrustUser,
+  isLowTrustUser
+}
+export {
+  useLocationStore,
+  useCurrentLocation,
+  useLocationTracking,
+  useGeofences,
+  useProximityAlerts,
+  useLocationActions,
+  calculateDistance,
+  isPointInGeofence
+}
+export {
+  useNotificationStore,
+  useNotifications,
+  useNotificationSettings,
+  useNotificationUI,
+  useNotificationActions,
+  useUnreadCount,
+  isInQuietHours
+}
+export {
+  useOfflineStore,
+  useOfflineActions,
+  useOfflineCache,
+  useOfflineMetrics,
+  useOfflineSettings,
+  generateOfflineId,
+  estimateDataSize,
+  compressData,
+  decompressData
+}
 
 // Re-export types for convenience
 export type {
@@ -102,16 +154,16 @@ export type {
 // Utility functions for store initialization
 export const initializeStores = async () => {
   // Initialize any stores that need async setup
-  const { requestLocationPermission } = useLocationStore.getState()
-  const { requestPushPermission } = useNotificationStore.getState()
-  const { registerBackgroundSync } = useOfflineStore.getState()
+  const locationStore = useLocationStore.getState()
+  const notificationStore = useNotificationStore.getState()
+  const offlineStore = useOfflineStore.getState()
 
   // Request permissions if needed
   try {
     await Promise.allSettled([
-      requestLocationPermission(),
-      requestPushPermission(),
-      registerBackgroundSync(),
+      locationStore.requestLocationPermission(),
+      notificationStore.requestPushPermission(),
+      offlineStore.registerBackgroundSync(),
     ])
   } catch (error) {
     console.error('Failed to initialize some stores:', error)
@@ -132,7 +184,7 @@ export const checkStoreHealth = () => {
   const health = stores.map(({ name, store }) => ({
     name,
     healthy: store !== null && typeof store === 'object',
-    error: store?.error || null,
+    error: (store as any)?.error || null,
   }))
 
   return {
@@ -143,7 +195,7 @@ export const checkStoreHealth = () => {
 
 // Store reset utility
 export const resetAllStores = () => {
-  useAuthStore.getState().reset()
+  (useAuthStore.getState() as any).reset()
   useEmergencyStore.getState().reset()
   useTrustStore.getState().reset()
   useLocationStore.getState().reset()
