@@ -30,7 +30,7 @@ const toastVariants = cva(
 const Toast = React.forwardRef<
   React.ElementRef<typeof RadixToast.Root>,
   React.ComponentPropsWithoutRef<typeof RadixToast.Root> &
-    VariantProps<typeof toastVariants>
+  VariantProps<typeof toastVariants>
 >(({ className, variant, ...props }, ref) => {
   return (
     <RadixToast.Root
@@ -105,6 +105,7 @@ type ToastActionElement = React.ReactElement<typeof ToastAction>
 
 export {
   type ToastProps,
+  type ToastActionElement,
   ToastProvider,
   ToastViewport,
   Toast,

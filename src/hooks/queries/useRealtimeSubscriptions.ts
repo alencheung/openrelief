@@ -46,14 +46,14 @@ export const useRealtimeSubscription = (config: SubscriptionConfig) => {
     const channel = supabase
       .channel(channelName)
       .on(
-        'postgres_changes',
+        'postgres_changes' as any,
         {
           event: config.event || '*',
           schema: 'public',
           table: config.table as string,
           filter: config.filter,
         },
-        (payload) => {
+        (payload: any) => {
           const enhancedPayload = {
             eventType: payload.eventType,
             old: payload.old,
@@ -357,14 +357,14 @@ export const useMultipleRealtimeSubscriptions = (configs: SubscriptionConfig[]) 
       const channel = supabase
         .channel(channelName)
         .on(
-          'postgres_changes',
+          'postgres_changes' as any,
           {
             event: config.event || '*',
             schema: 'public',
             table: config.table as string,
             filter: config.filter,
           },
-          (payload) => {
+          (payload: any) => {
             const enhancedPayload = {
               eventType: payload.eventType,
               old: payload.old,
@@ -462,13 +462,13 @@ export const usePresenceTracking = (userId: string, userLocation?: { lat: number
     if (!userId || !userLocation) return
 
     const channel = supabase.channel(`presence-${userId}`)
-      .on('presence', { event: 'sync' }, (state) => {
+      .on('presence' as any, { event: 'sync' }, (state: any) => {
         console.log('[Realtime] Presence sync:', state)
       })
-      .on('presence', { event: 'join' }, (newState) => {
+      .on('presence' as any, { event: 'join' }, (newState: any) => {
         console.log('[Realtime] User joined:', newState)
       })
-      .on('presence', { event: 'leave' }, (leftState) => {
+      .on('presence' as any, { event: 'leave' }, (leftState: any) => {
         console.log('[Realtime] User left:', leftState)
       })
       .subscribe(async (status) => {

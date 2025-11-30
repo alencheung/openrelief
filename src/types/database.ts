@@ -446,6 +446,71 @@ export interface Database {
           relevance_score: number
         }[]
       }
+      get_nearby_emergency_events: {
+        Args: {
+          p_lat: number
+          p_lng: number
+          p_radius_meters: number
+          p_status?: Database['public']['Enums']['emergency_events_status'][] | null
+          p_min_severity?: number | null
+        }
+        Returns: {
+          id: string
+          type_id: number
+          reporter_id: string
+          title: string
+          description: string | null
+          location: string
+          radius_meters: number
+          severity: number
+          status: Database['public']['Enums']['emergency_events_status']
+          trust_weight: number
+          confirmation_count: number
+          dispute_count: number
+          created_at: string
+          updated_at: string
+          distance: number
+        }[]
+      }
+      get_user_stats: {
+        Args: {
+          p_user_id: string
+        }
+        Returns: {
+          total_reports: number
+          confirmed_reports: number
+          disputed_reports: number
+          confirmations_given: number
+          disputes_given: number
+          trust_score: number
+        }
+      }
+      get_nearby_users: {
+        Args: {
+          p_lat: number
+          p_lng: number
+          p_radius_meters: number
+          p_limit: number
+        }
+        Returns: {
+          user_id: string
+          trust_score: number
+          distance: number
+          last_known_location: string
+        }[]
+      }
+      get_user_expertise: {
+        Args: {
+          p_user_id: string
+        }
+        Returns: {
+          emergency_type_id: number
+          emergency_type_name: string
+          reports_count: number
+          confirmed_count: number
+          accuracy_rate: number
+        }[]
+      }
     }
     Enums: {
       emergency_events_status: 'pending' | 'active' | 'resolved' | 'expired'

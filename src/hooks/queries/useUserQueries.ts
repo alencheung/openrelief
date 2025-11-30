@@ -17,7 +17,7 @@ export const useUserProfile = (userId: string) => {
     queryKey: ['user-profile', userId],
     queryFn: async () => {
       try {
-        const data = await supabaseHelpers.getUserProfile(userId)
+        const data: any = await supabaseHelpers.getUserProfile(userId)
 
         // Update trust store
         useTrustStore.getState().setUserScore(userId, {
@@ -182,10 +182,9 @@ export const useTrustScore = (userId: string) => {
     queryKey: ['trust-score', userId],
     queryFn: async () => {
       try {
-        const { data, error } = await supabase
-          .rpc('calculate_trust_score', {
-            p_user_id: userId,
-          })
+        const { data, error } = await (supabase.rpc as any)('calculate_trust_score', {
+          p_user_id: userId,
+        })
 
         if (error) throw error
 
@@ -298,7 +297,7 @@ export const useUpdateTrustScore = () => {
             previous_score: 0, // Will be filled by trigger
             new_score: 0, // Will be filled by trigger
             reason: `${actionType} ${outcome}`,
-          })
+          } as any)
           .select()
           .single()
 
@@ -476,7 +475,7 @@ export const useUpdateNotificationSettings = () => {
             user_id: userId,
             topic_id: topicId,
             ...settings,
-          })
+          } as any)
           .select()
           .single()
 
@@ -508,10 +507,9 @@ export const useUserStats = (userId: string) => {
   return useQuery({
     queryKey: ['user-stats', userId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .rpc('get_user_stats', {
-          p_user_id: userId,
-        })
+      const { data, error } = await (supabase.rpc as any)('get_user_stats', {
+        p_user_id: userId,
+      })
 
       if (error) throw error
       return data
@@ -529,7 +527,7 @@ export const useNearbyUsers = (
   return useQuery({
     queryKey: ['nearby-users', center, radius, limit],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_nearby_users', {
+      const { data, error } = await (supabase.rpc as any)('get_nearby_users', {
         p_lat: center.lat,
         p_lng: center.lng,
         p_radius_meters: radius,
@@ -549,10 +547,9 @@ export const useUserExpertise = (userId: string) => {
   return useQuery({
     queryKey: ['user-expertise', userId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .rpc('get_user_expertise', {
-          p_user_id: userId,
-        })
+      const { data, error } = await (supabase.rpc as any)('get_user_expertise', {
+        p_user_id: userId,
+      })
 
       if (error) throw error
       return data

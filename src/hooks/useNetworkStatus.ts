@@ -25,10 +25,10 @@ export function useNetworkStatus(): NetworkStatus {
 
   const updateNetworkStatus = useCallback((online: boolean) => {
     const now = new Date()
-    
+
     setNetworkStatus(prev => {
       const wasOffline = prev.isOffline
-      
+
       return {
         ...prev,
         isOnline: online,
@@ -40,7 +40,7 @@ export function useNetworkStatus(): NetworkStatus {
         effectiveType: getEffectiveType(),
         downlink: getDownlink(),
         rtt: getRtt(),
-      }
+      } as NetworkStatus
     })
 
     // Store in localStorage for persistence across page reloads
@@ -107,10 +107,10 @@ export function useNetworkStatus(): NetworkStatus {
     const handleOnline = () => {
       console.log('[Network] Connection restored')
       updateNetworkStatus(true)
-      
+
       // Trigger service worker sync if available
       if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
-        navigator.serviceWorker.ready.then((registration) => {
+        navigator.serviceWorker.ready.then((registration: any) => {
           registration.sync.register('emergency-offline-sync')
         })
       }
@@ -128,7 +128,7 @@ export function useNetworkStatus(): NetworkStatus {
 
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
-    
+
     // Listen for connection changes if Network Information API is available
     if (typeof navigator !== 'undefined' && 'connection' in navigator) {
       const connection = (navigator as any).connection
@@ -143,28 +143,28 @@ export function useNetworkStatus(): NetworkStatus {
           cache: 'no-cache',
           signal: AbortSignal.timeout(3000)
         })
-        .then(() => {
-          if (!networkStatus.isOnline) {
-            updateNetworkStatus(true)
-          }
-        })
-        .catch(() => {
-          if (networkStatus.isOnline) {
-            updateNetworkStatus(false)
-          }
-        })
+          .then(() => {
+            if (!networkStatus.isOnline) {
+              updateNetworkStatus(true)
+            }
+          })
+          .catch(() => {
+            if (networkStatus.isOnline) {
+              updateNetworkStatus(false)
+            }
+          })
       }
     }, 30000)
 
     return () => {
       window.removeEventListener('online', handleOnline)
       window.removeEventListener('offline', handleOffline)
-      
+
       if (typeof navigator !== 'undefined' && 'connection' in navigator) {
         const connection = (navigator as any).connection
         connection.removeEventListener('change', handleConnectionChange)
       }
-      
+
       clearInterval(connectionCheckInterval)
     }
   }, [updateNetworkStatus, networkStatus.isOnline])
@@ -187,7 +187,7 @@ export function useOfflineActions() {
       const db = await openOfflineDB()
       const transaction = db.transaction(['actions'], 'readwrite')
       const store = transaction.objectStore('actions')
-      
+
       await store.add({
         ...action,
         id: generateId(),
@@ -197,11 +197,11 @@ export function useOfflineActions() {
 
       // Register for background sync
       if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
-        const registration = await navigator.serviceWorker.ready
+        const registration: any = await navigator.serviceWorker.ready
         await registration.sync.register('emergency-offline-sync')
       }
 
-      return { success: true, id: action.id }
+      return { success: true, id: generateId() }
     } catch (error) {
       console.error('Failed to queue offline action:', error)
       return { success: false, error }
@@ -213,9 +213,13 @@ export function useOfflineActions() {
       const db = await openOfflineDB()
       const transaction = db.transaction(['actions'], 'readonly')
       const store = transaction.objectStore('actions')
-      const actions = await store.getAll()
-      
-      return actions.filter(action => !action.synced)
+      const request = store.getAll()
+      const actions = await new Promise<any[]>((resolve, reject) => {
+        request.onsuccess = () => resolve(request.result)
+        request.onerror = () => reject(request.error)
+      })
+
+      return actions.filter((action: any) => !action.synced)
     } catch (error) {
       console.error('Failed to get queued actions:', error)
       return []
@@ -233,13 +237,13 @@ export function useOfflineActions() {
 function openOfflineDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open('OpenReliefOffline', 1)
-    
+
     request.onerror = () => reject(request.error)
     request.onsuccess = () => resolve(request.result)
-    
+
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result
-      
+
       if (!db.objectStoreNames.contains('actions')) {
         const store = db.createObjectStore('actions', { keyPath: 'id' })
         store.createIndex('timestamp', 'timestamp', { unique: false })

@@ -14,6 +14,7 @@ export interface TrustScore {
 
 export interface TrustHistoryEntry {
   id: string
+  userId: string
   eventId: string
   actionType: 'report' | 'confirm' | 'dispute'
   change: number
@@ -58,14 +59,14 @@ interface TrustState {
   // User trust scores
   userScores: Map<string, TrustScore>
   currentUserScore: TrustScore | null
-  
+
   // Trust calculations
   calculations: Map<string, TrustCalculation>
-  
+
   // History
   history: TrustHistoryEntry[]
   loadingHistory: boolean
-  
+
   // Configuration
   thresholds: TrustThresholds
   weights: {
@@ -78,11 +79,11 @@ interface TrustState {
     communityEndorsement: number
     penaltyScore: number
   }
-  
+
   // Real-time updates
   isRealtimeEnabled: boolean
   lastUpdateTime: Date | null
-  
+
   // Performance
   cacheExpiry: number // milliseconds
   lastCacheUpdate: Date | null
@@ -95,17 +96,17 @@ interface TrustActions {
   updateUserScore: (updates: Partial<TrustScore>) => void
   getUserScore: (userId: string) => TrustScore | undefined
   clearUserScore: (userId: string) => void
-  
+
   // Trust calculation
   calculateTrustScore: (userId: string, factors: TrustFactors) => Promise<TrustCalculation>
   updateTrustFactors: (userId: string, factors: Partial<TrustFactors>) => void
   recalculateScore: (userId: string) => Promise<void>
-  
+
   // History management
   addToHistory: (entry: TrustHistoryEntry) => void
   loadHistory: (userId?: string) => Promise<void>
   clearHistory: (userId?: string) => void
-  
+
   // Trust actions
   updateTrustForAction: (
     userId: string,
@@ -114,19 +115,19 @@ interface TrustActions {
     outcome: 'success' | 'failure' | 'pending',
     metadata?: any
   ) => Promise<void>
-  
+
   // Configuration
   updateThresholds: (thresholds: Partial<TrustThresholds>) => void
   updateWeights: (weights: Partial<TrustState['weights']>) => void
-  
+
   // Real-time
   setRealtimeEnabled: (enabled: boolean) => void
   updateLastUpdateTime: () => void
-  
+
   // Cache management
   clearCache: () => void
   isCacheExpired: () => boolean
-  
+
   // Utility
   setLoadingHistory: (loading: boolean) => void
   reset: () => void
@@ -172,7 +173,7 @@ const calculateTrustScore = (
   }
 
   // Calculate weighted score
-  const weightedSum = 
+  const weightedSum =
     normalizedFactors.reportingAccuracy * weights.reportingAccuracy +
     normalizedFactors.confirmationAccuracy * weights.confirmationAccuracy +
     normalizedFactors.disputeAccuracy * weights.disputeAccuracy +
@@ -206,13 +207,13 @@ const calculateTrustChange = (
   }
 
   const baseChange = baseChanges[actionType][outcome]
-  
+
   // Adjust based on current score (harder to gain at high scores, easier to lose)
   const scoreMultiplier = currentScore > 0.7 ? 0.8 : currentScore < 0.3 ? 1.2 : 1.0
-  
+
   // Adjust based on user's expertise in this area
   const expertiseMultiplier = actionType === 'report' && factors.expertiseAreas.length > 0 ? 1.1 : 1.0
-  
+
   return baseChange * scoreMultiplier * expertiseMultiplier
 }
 
@@ -249,11 +250,11 @@ export const useTrustStore = create<TrustStore>()(
         updateUserScore: (updates) => {
           set((state) => {
             if (!state.currentUserScore) return state
-            
+
             const updatedScore = { ...state.currentUserScore, ...updates }
             const newScores = new Map(state.userScores)
             newScores.set(state.currentUserScore.userId, updatedScore)
-            
+
             return {
               userScores: newScores,
               currentUserScore: updatedScore,
@@ -279,7 +280,7 @@ export const useTrustStore = create<TrustStore>()(
         // Trust calculation
         calculateTrustScore: async (userId, factors) => {
           const { score, confidence } = calculateTrustScore(factors, get().weights)
-          
+
           const calculation: TrustCalculation = {
             userId,
             baseScore: score,
@@ -321,7 +322,7 @@ export const useTrustStore = create<TrustStore>()(
           if (!currentScore) return
 
           const calculation = await get().calculateTrustScore(userId, currentScore.factors)
-          
+
           const updatedScore: TrustScore = {
             ...currentScore,
             previousScore: currentScore.score,
@@ -354,7 +355,7 @@ export const useTrustStore = create<TrustStore>()(
 
         clearHistory: (userId) => {
           set((state) => ({
-            history: userId 
+            history: userId
               ? state.history.filter(entry => entry.userId !== userId)
               : [],
           }))
@@ -405,7 +406,7 @@ export const useTrustStore = create<TrustStore>()(
 
           // Update factors based on action
           const updatedFactors = { ...currentScore.factors }
-          
+
           if (actionType === 'report' && outcome === 'success') {
             updatedFactors.reportingAccuracy = Math.min(1, updatedFactors.reportingAccuracy + 0.02)
             updatedFactors.contributionFrequency = Math.min(10, updatedFactors.contributionFrequency + 0.1)
@@ -501,8 +502,8 @@ export const useTrustScore = (userId?: string) => useTrustStore(state => {
 
 export const useTrustThresholds = () => useTrustStore(state => state.thresholds)
 
-export const useTrustHistory = (userId?: string) => useTrustStore(state => 
-  userId 
+export const useTrustHistory = (userId?: string) => useTrustStore(state =>
+  userId
     ? state.history.filter(entry => entry.userId === userId)
     : state.history
 )

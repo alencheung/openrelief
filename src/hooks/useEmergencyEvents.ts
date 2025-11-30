@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabaseHelpers } from '@/lib/supabase'
+import { supabaseHelpers, supabase } from '@/lib/supabase'
 import { Database } from '@/types/database'
 
 type EmergencyEvent = Database['public']['Tables']['emergency_events']['Row']
@@ -34,7 +34,7 @@ export const useEmergencyEvent = (id: string) => {
         `)
         .eq('id', id)
         .single()
-      
+
       if (error) throw error
       return data
     },
@@ -45,12 +45,12 @@ export const useEmergencyEvent = (id: string) => {
 
 export const useCreateEmergencyEvent = () => {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
     mutationFn: async (event: EmergencyEventInsert) => {
       return await supabaseHelpers.createEmergencyEvent(event)
     },
-    onSuccess: (newEvent) => {
+    onSuccess: (newEvent: any) => {
       queryClient.invalidateQueries({ queryKey: ['emergency-events'] })
       queryClient.setQueryData(['emergency-event', newEvent.id], newEvent)
     },
@@ -62,12 +62,12 @@ export const useCreateEmergencyEvent = () => {
 
 export const useUpdateEmergencyEvent = () => {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<EmergencyEvent> }) => {
       return await supabaseHelpers.updateEmergencyEvent(id, updates)
     },
-    onSuccess: (updatedEvent) => {
+    onSuccess: (updatedEvent: any) => {
       queryClient.invalidateQueries({ queryKey: ['emergency-events'] })
       queryClient.setQueryData(['emergency-event', updatedEvent.id], updatedEvent)
     },
@@ -79,7 +79,7 @@ export const useUpdateEmergencyEvent = () => {
 
 export const useConfirmEvent = () => {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
     mutationFn: async ({
       eventId,
@@ -127,7 +127,7 @@ export const useEmergencyEventsSubscription = (callback: (payload: any) => void)
     queryKey: ['emergency-events-subscription'],
     queryFn: () => {
       const subscription = supabaseHelpers.subscribeToEmergencyEvents(callback)
-      
+
       return {
         subscription,
         unsubscribe: () => subscription.unsubscribe(),

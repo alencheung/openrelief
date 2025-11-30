@@ -2,15 +2,16 @@
 
 import { useState, useEffect, useCallback } from 'react'
 
-interface PushNotification {
+export interface PushNotification {
   id: string
   title: string
   body: string
   icon?: string
+  image?: string
   badge?: string
   tag?: string
   data?: any
-  actions?: NotificationAction[]
+  actions?: any[]
   timestamp: number
   read: boolean
 }
@@ -32,11 +33,11 @@ export function usePushNotifications() {
   useEffect(() => {
     // Check if push notifications are supported
     const checkSupport = () => {
-      const supported = 'serviceWorker' in navigator && 
-                     'PushManager' in window && 
-                     'Notification' in window
+      const supported = 'serviceWorker' in navigator &&
+        'PushManager' in window &&
+        'Notification' in window
       setIsSupported(supported)
-      
+
       if (supported) {
         setPermission(Notification.permission)
         loadNotifications()
@@ -75,9 +76,9 @@ export function usePushNotifications() {
         timestamp: Date.now(),
         read: false
       }
-      
+
       setNotifications(prev => [notification, ...prev])
-      
+
       // Store in localStorage for persistence
       storeNotifications([notification, ...notifications])
     }
@@ -91,12 +92,12 @@ export function usePushNotifications() {
     try {
       const permission = await Notification.requestPermission()
       setPermission(permission)
-      
+
       if (permission === 'granted') {
         // Subscribe to push notifications
         await subscribeToPush()
       }
-      
+
       return permission
     } catch (error) {
       console.error('[Push] Failed to request permission:', error)
@@ -113,14 +114,14 @@ export function usePushNotifications() {
       const registration = await navigator.serviceWorker.ready
       const pushSubscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!)
+        applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!) as any
       })
 
       setSubscription(pushSubscription)
-      
+
       // Send subscription to server
       await sendSubscriptionToServer(pushSubscription)
-      
+
       return pushSubscription
     } catch (error) {
       console.error('[Push] Failed to subscribe:', error)
@@ -134,7 +135,7 @@ export function usePushNotifications() {
     try {
       await subscription.unsubscribe()
       setSubscription(null)
-      
+
       // Remove subscription from server
       await removeSubscriptionFromServer(subscription)
     } catch (error) {
@@ -149,7 +150,7 @@ export function usePushNotifications() {
 
     try {
       const registration = await navigator.serviceWorker.ready
-      
+
       // Send message to service worker to show notification
       registration.active?.postMessage({
         type: 'SHOW_NOTIFICATION',
@@ -179,12 +180,12 @@ export function usePushNotifications() {
   }, [isSupported, permission])
 
   const markAsRead = useCallback((notificationId: string) => {
-    setNotifications(prev => 
+    setNotifications(prev =>
       prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
     )
-    
+
     // Update localStorage
-    const updated = notifications.map(n => 
+    const updated = notifications.map(n =>
       n.id === notificationId ? { ...n, read: true } : n
     )
     storeNotifications(updated)
@@ -228,7 +229,7 @@ export function usePushNotifications() {
 
     try {
       const registration = await navigator.serviceWorker.ready
-      
+
       const notification = {
         title: `🚨 ${emergencyData.severity.toUpperCase()} Emergency Alert`,
         body: emergencyData.description,
@@ -258,7 +259,7 @@ export function usePushNotifications() {
           }
         ],
         requireInteraction: emergencyData.severity === 'critical',
-        vibrate: emergencyData.severity === 'critical' 
+        vibrate: emergencyData.severity === 'critical'
           ? [500, 200, 500, 200, 500, 200, 500]
           : [200, 100, 200]
       }

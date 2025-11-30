@@ -165,7 +165,7 @@ export const useCreateEmergencyEvent = () => {
 
         // Optimistic update
         const optimisticId = `temp-${Date.now()}`
-        const optimisticEvent = {
+        const optimisticEvent: any = {
           ...event,
           id: optimisticId,
           created_at: new Date().toISOString(),
@@ -175,6 +175,9 @@ export const useCreateEmergencyEvent = () => {
           dispute_count: 0,
           trust_weight: userScore?.score || 0.5,
           description: event.description || null,
+          radius_meters: event.radius_meters || 1000,
+          severity: event.severity || 3,
+          expires_at: event.expires_at || null,
           resolved_at: null,
           resolved_by: null,
         }
@@ -205,7 +208,7 @@ export const useCreateEmergencyEvent = () => {
         }
 
         // Create on server
-        const data = await supabaseHelpers.createEmergencyEvent(event)
+        const data: any = await supabaseHelpers.createEmergencyEvent(event)
 
         // Update trust score
         await updateTrustForAction(userId, data.id, 'report', 'pending', {
@@ -466,7 +469,7 @@ export const useNearbyEmergencyEvents = (
   return useQuery({
     queryKey: ['nearby-emergency-events', center, radius, filters],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_nearby_emergency_events', {
+      const { data, error } = await (supabase.rpc as any)('get_nearby_emergency_events', {
         p_lat: center.lat,
         p_lng: center.lng,
         p_radius_meters: radius,
@@ -477,7 +480,7 @@ export const useNearbyEmergencyEvents = (
       if (error) throw error
 
       // Calculate distance for each event
-      const eventsWithDistance = data.map(event => ({
+      const eventsWithDistance = (data as any[]).map((event: any) => ({
         ...event,
         distance: calculateDistance(
           center.lat,
