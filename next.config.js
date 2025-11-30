@@ -1,7 +1,48 @@
 /** @type {import('next').NextConfig} */
+const withPWA = require('next-pwa')({
+  dest: 'public',
+  disable: process.env.NODE_ENV === 'development',
+  register: true,
+  skipWaiting: true,
+  runtimeCaching: [
+    {
+      urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'google-fonts',
+        expiration: {
+          maxEntries: 4,
+          maxAgeSeconds: 365 * 24 * 60 * 60 // 365 days
+        }
+      }
+    },
+    {
+      urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'google-fonts-static',
+        expiration: {
+          maxEntries: 4,
+          maxAgeSeconds: 365 * 24 * 60 * 60
+        }
+      }
+    },
+    {
+      urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'images',
+        expiration: {
+          maxEntries: 60,
+          maxAgeSeconds: 30 * 24 * 60 * 60 // 30 days
+        }
+      }
+    },
+  ],
+})
+
 const nextConfig = {
   experimental: {
-    appDir: true,
     optimizeCss: true,
     optimizePackageImports: ['lucide-react', '@heroicons/react'],
   },
@@ -108,13 +149,14 @@ const nextConfig = {
       },
     ]
   },
+  // Bundle analyzer
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
     // Custom webpack config for PWA
     config.resolve.alias = {
       ...config.resolve.alias,
       apexcharts: 'apexcharts.esm.js',
     }
-    
+
     // Optimize for PWA
     if (!isServer) {
       config.optimization.splitChunks = {
@@ -130,57 +172,12 @@ const nextConfig = {
             minChunks: 2,
             chunks: 'all',
             enforce: true,
+            priority: 10,
           },
         },
       }
     }
-    
-    return config
-  },
-  // PWA configuration
-  pwa: {
-    dest: 'public',
-    disable: process.env.NODE_ENV === 'development',
-    register: true,
-    skipWaiting: true,
-    runtimeCaching: [
-      {
-        urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-        handler: 'CacheFirst',
-        options: {
-          cacheName: 'google-fonts',
-          expiration: {
-            maxEntries: 4,
-            maxAgeSeconds: 365 * 24 * 60 * 60 // 365 days
-          }
-        }
-      },
-      {
-        urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-        handler: 'CacheFirst',
-        options: {
-          cacheName: 'google-fonts-static',
-          expiration: {
-            maxEntries: 4,
-            maxAgeSeconds: 365 * 24 * 60 * 60
-          }
-        }
-      },
-      {
-        urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
-        handler: 'CacheFirst',
-        options: {
-          cacheName: 'images',
-          expiration: {
-            maxEntries: 60,
-            maxAgeSeconds: 30 * 24 * 60 * 60 // 30 days
-          }
-        }
-      },
-    ],
-  },
-  // Bundle analyzer
-  webpack: (config, { isServer }) => {
+
     if (process.env.ANALYZE === 'true') {
       const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
       config.plugins.push(
@@ -197,13 +194,12 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   generateEtags: false,
-  swcMinify: true,
-  
+
   // Output configuration for PWA
   output: 'standalone',
-  
+
   // Enable static optimization
   trailingSlash: false,
 }
 
-module.exports = nextConfig
+module.exports = withPWA(nextConfig)

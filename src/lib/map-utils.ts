@@ -6,7 +6,8 @@
 import maplibregl, { Map, LngLat, LngLatBounds, Feature, GeoJSONFeature } from 'maplibre-gl'
 import Supercluster from 'supercluster'
 import { distance, buffer, bbox, point, centerOfMass } from '@turf/turf'
-import { EmergencyEvent, Geofence, LocationPoint } from '@/types'
+import { EmergencyEvent } from '@/store/emergencyStore'
+import { Geofence, LocationPoint } from '@/store/locationStore'
 
 // Clustering configuration
 export interface ClusterOptions {
@@ -43,16 +44,16 @@ export function clusterEmergencyEvents(
   bounds: LngLatBounds,
   zoom: number,
   cluster: Supercluster
-): Feature[] {
+): GeoJSON.Feature[] {
   // Convert events to GeoJSON features
   const features = events.map(event => ({
     type: 'Feature' as const,
     properties: {
       id: event.id,
-      type: event.type,
+      type: event.emergency_types?.slug || 'unknown',
       severity: event.severity,
       status: event.status,
-      trust_score: event.trust_score,
+      trust_score: event.trust_weight,
       title: event.title,
       description: event.description,
       created_at: event.created_at,
@@ -60,36 +61,56 @@ export function clusterEmergencyEvents(
     geometry: {
       type: 'Point' as const,
       coordinates: [
-        parseFloat(event.location.split(' ')[1]), // longitude
-        parseFloat(event.location.split(' ')[0]), // latitude
+        parseFloat(event.location.split(' ')[1] || '0'), // longitude
+        parseFloat(event.location.split(' ')[0] || '0'), // latitude
       ],
     },
   }))
 
   // Load features into cluster
-  cluster.load(features)
+  cluster.load(features as any)
 
   // Get clusters within bounds
-  const bboxArray = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]
-  return cluster.getClusters(bboxArray, zoom)
+  const bboxArray = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()] as [number, number, number, number]
+  return cluster.getClusters(bboxArray, zoom) as GeoJSON.Feature[]
 }
 
 // Calculate distance between two points in meters
 export function calculateDistance(
-  point1: { lat: number; lng: number },
-  point2: { lat: number; lng: number }
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
 ): number {
-  const from = point([point1.lng, point1.lat])
-  const to = point([point2.lng, point2.lat])
-  return distance(from, to, { units: 'meters' })
+  if (lat1 === undefined || lon1 === undefined || lat2 === undefined || lon2 === undefined) {
+    return 0
+  }
+
+  const R = 6371e3 // Earth's radius in meters
+  const φ1 = (lat1 * Math.PI) / 180
+  const φ2 = (lat2 * Math.PI) / 180
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180
+  const Δλ = ((lon2 - lon1) * Math.PI) / 180
+
+  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) *
+    Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+
+  return R * c // Distance in meters
 }
 
 // Check if a point is within a geofence
 export function isPointInGeofence(
   point: { lat: number; lng: number },
-  geofence: Geofence
+  geofence: { center: { lat: number; lng: number }; radius: number }
 ): boolean {
-  const distance = calculateDistance(point, geofence.center)
+  const distance = calculateDistance(
+    point.lat,
+    point.lng,
+    geofence.center.lat,
+    geofence.center.lng
+  )
   return distance <= geofence.radius
 }
 
@@ -105,7 +126,7 @@ export function getContainingGeofences(
 export function createGeofenceBuffer(geofence: Geofence): GeoJSON.Feature {
   const center = point([geofence.center.lng, geofence.center.lat])
   const buffered = buffer(center, geofence.radius / 1000, { units: 'kilometers' })
-  
+
   return {
     ...buffered,
     properties: {
@@ -115,18 +136,18 @@ export function createGeofenceBuffer(geofence: Geofence): GeoJSON.Feature {
       isActive: geofence.isActive,
       severity: geofence.metadata?.severity || 'medium',
     },
-  }
+  } as GeoJSON.Feature
 }
 
-// Map performance utilities
+// Map performance manager
 export class MapPerformanceManager {
-  private map: Map
+  private map: maplibregl.Map
   private frameCount = 0
   private lastFrameTime = 0
   private fps = 0
   private isLowEndDevice = false
 
-  constructor(map: Map) {
+  constructor(map: maplibregl.Map) {
     this.map = map
     this.detectDevicePerformance()
     this.setupPerformanceMonitoring()
@@ -138,49 +159,57 @@ export class MapPerformanceManager {
     const hardwareConcurrency = navigator.hardwareConcurrency || 4
     const deviceMemory = navigator.deviceMemory || 4
     const connection = (navigator as any).connection
-    
-    this.isLowEndDevice = 
-      hardwareConcurrency <= 2 || 
-      deviceMemory <= 2 || 
-      (connection && connection.effectiveType && 
-       ['slow-2g', '2g', '3g'].includes(connection.effectiveType))
+
+    this.isLowEndDevice =
+      hardwareConcurrency <= 2 ||
+      deviceMemory <= 2 ||
+      (connection && connection.effectiveType &&
+        ['slow-2g', '2g', '3g'].includes(connection.effectiveType))
   }
 
   private setupPerformanceMonitoring() {
     const measureFPS = () => {
       const now = performance.now()
       const delta = now - this.lastFrameTime
-      
+
       if (delta >= 1000) {
         this.fps = Math.round((this.frameCount * 1000) / delta)
         this.frameCount = 0
         this.lastFrameTime = now
-        
+
         // Adjust performance based on FPS
         this.adjustPerformanceSettings()
       }
-      
+
       this.frameCount++
       requestAnimationFrame(measureFPS)
     }
-    
+
     requestAnimationFrame(measureFPS)
   }
 
   private adjustPerformanceSettings() {
     if (this.fps < 30) {
       // Reduce complexity for better performance
-      this.map.setPaintProperty('buildings', 'fill-opacity', 0.3)
-      this.map.setPaintProperty('roads-minor', 'line-opacity', 0.5)
-      
+      if (this.map.getLayer('buildings')) {
+        this.map.setPaintProperty('buildings', 'fill-opacity', 0.3)
+      }
+      if (this.map.getLayer('roads-minor')) {
+        this.map.setPaintProperty('roads-minor', 'line-opacity', 0.5)
+      }
+
       // Reduce clustering radius for fewer calculations
       if (this.isLowEndDevice) {
         this.map.setMinZoom(10)
       }
     } else if (this.fps > 50) {
       // Restore full quality
-      this.map.setPaintProperty('buildings', 'fill-opacity', 0.6)
-      this.map.setPaintProperty('roads-minor', 'line-opacity', 0.7)
+      if (this.map.getLayer('buildings')) {
+        this.map.setPaintProperty('buildings', 'fill-opacity', 0.6)
+      }
+      if (this.map.getLayer('roads-minor')) {
+        this.map.setPaintProperty('roads-minor', 'line-opacity', 0.7)
+      }
       this.map.setMinZoom(2)
     }
   }
@@ -207,15 +236,15 @@ export class OfflineTileCache {
   async cacheTilesForArea(bounds: LngLatBounds, zoomLevels: number[] = [10, 11, 12, 13, 14]) {
     const cache = await caches.open(this.cacheName)
     const tileSize = 512
-    
+
     for (const zoom of zoomLevels) {
       const minTile = this.lngLatToTile(bounds.getSouth(), bounds.getWest(), zoom)
       const maxTile = this.lngLatToTile(bounds.getNorth(), bounds.getEast(), zoom)
-      
+
       for (let x = minTile.x; x <= maxTile.x; x++) {
         for (let y = minTile.y; y <= maxTile.y; y++) {
           const tileUrl = `https://api.maptiler.com/tiles/v3/${zoom}/${x}/${y}.pbf?key=get_your_own_OpMapTiles_API_key`
-          
+
           try {
             const response = await fetch(tileUrl)
             if (response.ok) {
@@ -245,7 +274,7 @@ export class OfflineTileCache {
     const cache = await caches.open(this.cacheName)
     const requests = await cache.keys()
     let totalSize = 0
-    
+
     for (const request of requests) {
       const response = await cache.match(request)
       if (response) {
@@ -253,7 +282,7 @@ export class OfflineTileCache {
         totalSize += blob.size
       }
     }
-    
+
     return totalSize
   }
 }
@@ -283,8 +312,10 @@ export class EmergencyRouter {
         type: 'Feature' as const,
         properties: {
           distance: calculateDistance(
-            { lat: start.lat, lng: start.lng },
-            { lat: end.lat, lng: end.lng }
+            start.lat,
+            start.lng,
+            end.lat,
+            end.lng
           ),
           duration: 0, // Would be calculated by routing service
           emergency: preferences.emergencyVehicle || false,
@@ -321,7 +352,8 @@ export class EmergencyRouter {
       let minDistance = Infinity
 
       for (const feature of features) {
-        const coords = feature.geometry.coordinates as [number, number]
+        const geometry = feature.geometry as GeoJSON.Point
+        const coords = geometry.coordinates
         const featureLocation = new LngLat(coords[0], coords[1])
         const dist = location.distanceTo(featureLocation)
 
@@ -404,7 +436,7 @@ export class MapAccessibilityManager {
   }
 
   announceEmergency(emergency: EmergencyEvent) {
-    const message = `Emergency: ${emergency.title}. Severity: ${emergency.severity} out of 5. Type: ${emergency.type}. Status: ${emergency.status}.`
+    const message = `Emergency: ${emergency.title}. Severity: ${emergency.severity} out of 5. Type: ${emergency.emergency_types?.slug || 'unknown'}. Status: ${emergency.status}.`
     this.announce(message)
   }
 
@@ -433,14 +465,14 @@ export function generateEmergencyHeatmap(
   const features = events.map(event => ({
     type: 'Feature' as const,
     properties: {
-      intensity: event.severity * event.trust_score,
+      intensity: event.severity * event.trust_weight,
       weight: event.severity,
     },
     geometry: {
       type: 'Point' as const,
       coordinates: [
-        parseFloat(event.location.split(' ')[1]),
-        parseFloat(event.location.split(' ')[0]),
+        parseFloat(event.location.split(' ')[1] || '0'),
+        parseFloat(event.location.split(' ')[0] || '0'),
       ],
     },
   }))
@@ -449,12 +481,4 @@ export function generateEmergencyHeatmap(
     type: 'FeatureCollection',
     features,
   }
-}
-
-// Export utility classes
-export {
-  MapPerformanceManager,
-  OfflineTileCache,
-  EmergencyRouter,
-  MapAccessibilityManager,
 }

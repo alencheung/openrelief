@@ -3,7 +3,8 @@ import { persist, subscribeWithSelector } from 'zustand/middleware'
 import { Database } from '@/types/database'
 
 // Types
-export interface EmergencyEvent extends Database['public']['Tables']['emergency_events']['Row'] {
+// Types
+export type EmergencyEvent = Database['public']['Tables']['emergency_events']['Row'] & {
   emergency_types?: Database['public']['Tables']['emergency_types']['Row']
   reporter?: {
     user_id: string
@@ -60,24 +61,24 @@ interface EmergencyState {
   filteredEvents: EmergencyEvent[]
   loading: boolean
   error: string | null
-  
+
   // Filters
   filters: EmergencyFilter
   searchQuery: string
-  
+
   // Map State
   mapState: EmergencyMapState
-  
+
   // Offline Actions
   offlineActions: OfflineEmergencyAction[]
-  
+
   // Emergency Types
   emergencyTypes: Database['public']['Tables']['emergency_types']['Row'][]
-  
+
   // Real-time
   isRealtimeEnabled: boolean
   lastSyncTime: Date | null
-  
+
   // Location
   userLocation: { lat: number; lng: number } | null
   locationAccuracy: number | null
@@ -92,38 +93,38 @@ interface EmergencyActions {
   updateEvent: (eventId: string, updates: Partial<EmergencyEvent>) => void
   removeEvent: (eventId: string) => void
   setSelectedEvent: (event: EmergencyEvent | null) => void
-  
+
   // Filter Actions
   setFilters: (filters: Partial<EmergencyFilter>) => void
   clearFilters: () => void
   setSearchQuery: (query: string) => void
   applyFilters: () => void
-  
+
   // Map Actions
   setMapState: (state: Partial<EmergencyMapState>) => void
   setMapCenter: (center: { lat: number; lng: number }) => void
   setMapZoom: (zoom: number) => void
   setSelectedEventOnMap: (eventId: string | undefined) => void
-  
+
   // Offline Actions
   addOfflineAction: (action: Omit<OfflineEmergencyAction, 'id' | 'timestamp' | 'synced' | 'retryCount'>) => void
   removeOfflineAction: (actionId: string) => void
   markActionSynced: (actionId: string) => void
   incrementRetryCount: (actionId: string) => void
   clearSyncedActions: () => void
-  
+
   // Emergency Types
   setEmergencyTypes: (types: Database['public']['Tables']['emergency_types']['Row'][]) => void
-  
+
   // Real-time
   setRealtimeEnabled: (enabled: boolean) => void
   updateLastSyncTime: () => void
-  
+
   // Location
   setUserLocation: (location: { lat: number; lng: number }, accuracy?: number) => void
   setLocationTracking: (enabled: boolean) => void
   clearUserLocation: () => void
-  
+
   // Utility Actions
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void
@@ -140,13 +141,13 @@ const initialState: EmergencyState = {
   filteredEvents: [],
   loading: false,
   error: null,
-  
+
   filters: {
     status: ['pending', 'active'],
     severity: [3, 4, 5], // High severity events
   },
   searchQuery: '',
-  
+
   mapState: {
     center: { lat: 0, lng: 0 },
     zoom: 10,
@@ -155,12 +156,12 @@ const initialState: EmergencyState = {
     showHeatmap: false,
     showClusters: true,
   },
-  
+
   offlineActions: [],
   emergencyTypes: [],
   isRealtimeEnabled: true,
   lastSyncTime: null,
-  
+
   userLocation: null,
   locationAccuracy: null,
   isLocationTracking: false,
@@ -178,22 +179,22 @@ const filterEvents = (
     if (filters.status && !filters.status.includes(event.status)) {
       return false
     }
-    
+
     // Type filter
     if (filters.type_ids && !filters.type_ids.includes(event.type_id)) {
       return false
     }
-    
+
     // Severity filter
     if (filters.severity && !filters.severity.includes(event.severity)) {
       return false
     }
-    
+
     // Trust weight filter
     if (filters.trustWeight && event.trust_weight < filters.trustWeight) {
       return false
     }
-    
+
     // Time range filter
     if (filters.timeRange) {
       const eventTime = new Date(event.created_at)
@@ -201,7 +202,7 @@ const filterEvents = (
         return false
       }
     }
-    
+
     // Radius filter (requires center and user location)
     if (filters.radius && filters.center) {
       const distance = calculateDistance(
@@ -214,19 +215,19 @@ const filterEvents = (
         return false
       }
     }
-    
+
     // Search query filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
       const matchesTitle = event.title.toLowerCase().includes(query)
       const matchesDescription = event.description?.toLowerCase().includes(query)
       const matchesType = event.emergency_types?.name.toLowerCase().includes(query)
-      
+
       if (!matchesTitle && !matchesDescription && !matchesType) {
         return false
       }
     }
-    
+
     return true
   })
 }
@@ -281,7 +282,7 @@ export const useEmergencyStore = create<EmergencyStore>()(
             )
             return {
               events: newEvents,
-              selectedEvent: state.selectedEvent?.id === eventId 
+              selectedEvent: state.selectedEvent?.id === eventId
                 ? { ...state.selectedEvent, ...updates, updated_at: new Date().toISOString() }
                 : state.selectedEvent,
               filteredEvents: filterEvents(
@@ -363,7 +364,7 @@ export const useEmergencyStore = create<EmergencyStore>()(
             synced: false,
             retryCount: 0,
           }
-          
+
           set((state) => ({
             offlineActions: [...state.offlineActions, newAction],
           }))

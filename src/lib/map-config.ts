@@ -17,7 +17,7 @@ export interface MapConfig {
 
 export interface EmergencyLayerConfig {
   id: string
-  type: 'circle' | 'symbol' | 'fill' | 'line'
+  type: 'circle' | 'symbol' | 'fill' | 'line' | 'heatmap'
   source: string
   filter?: any[]
   paint?: any
@@ -31,7 +31,7 @@ export const OPENMAPTILES_URL = 'https://api.maptiler.com/maps/streets-v2/style.
 
 // Emergency-optimized map style configuration
 export const emergencyMapStyle = {
-  version: 8,
+  version: 8 as 8,
   name: 'OpenRelief Emergency Style',
   sources: {
     'openmaptiles': {
@@ -88,7 +88,7 @@ export const emergencyMapStyle = {
         'fill-opacity': 0.8,
       },
     },
-    
+
     // Administrative boundaries
     {
       id: 'admin-boundaries',
@@ -102,7 +102,7 @@ export const emergencyMapStyle = {
         'line-opacity': 0.7,
       },
     },
-    
+
     // Roads (simplified for performance)
     {
       id: 'roads-major',
@@ -128,7 +128,7 @@ export const emergencyMapStyle = {
         'line-opacity': 0.7,
       },
     },
-    
+
     // Buildings (simplified)
     {
       id: 'buildings',
@@ -142,7 +142,7 @@ export const emergencyMapStyle = {
       },
       minzoom: 14,
     },
-    
+
     // Points of interest (emergency relevant)
     {
       id: 'poi-emergency',
@@ -173,7 +173,7 @@ export const emergencyMapStyle = {
       },
       minzoom: 12,
     },
-    
+
     // Emergency event layers
     {
       id: 'geofences-fill',
@@ -204,7 +204,7 @@ export const emergencyMapStyle = {
         'line-opacity': 0.8,
       },
     },
-    
+
     // Emergency events clustered
     {
       id: 'emergency-clusters',
@@ -252,7 +252,7 @@ export const emergencyMapStyle = {
         'text-color': '#ffffff',
       },
     },
-    
+
     // Individual emergency events
     {
       id: 'emergency-events',
@@ -283,7 +283,7 @@ export const emergencyMapStyle = {
         'circle-opacity': 0.8,
       },
     },
-    
+
     // User location
     {
       id: 'user-location',
@@ -351,21 +351,21 @@ export const emergencyLayers: EmergencyLayerConfig[] = [
 export const performanceConfig = {
   // Enable collision detection for better performance
   enableCollisionDetection: true,
-  
+
   // Reduce complexity on low-end devices
   simplifyGeometry: true,
-  
+
   // Optimize for mobile
   optimizeForMobile: true,
-  
+
   // Tile caching settings
   cacheSize: 100, // Number of tiles to cache
   maxCacheSize: 500,
-  
+
   // Rendering optimizations
   fadeDuration: 300,
   crossSourceCollisions: true,
-  
+
   // Emergency-specific optimizations
   emergencyLayerUpdateThrottle: 100, // ms
   clusteringMaxZoom: 14,
@@ -381,20 +381,20 @@ export const accessibilityConfig = {
     emergency: '#ff0000',
     safe: '#00ff00',
   },
-  
+
   // Large text mode
   largeText: {
     fontSize: 16,
     iconSize: 1.5,
   },
-  
+
   // Screen reader support
   screenReader: {
     enabled: true,
     announceEmergencies: true,
     announceLocationChanges: true,
   },
-  
+
   // Keyboard navigation
   keyboardNavigation: {
     enabled: true,
@@ -406,16 +406,16 @@ export const accessibilityConfig = {
 export const offlineConfig = {
   // Cache essential map tiles for emergency scenarios
   cacheEssentialTiles: true,
-  
+
   // Cache radius around user location (in degrees)
   cacheRadius: 0.1, // ~11km
-  
+
   // Cache zoom levels
   cacheZoomLevels: [10, 11, 12, 13, 14, 15],
-  
+
   // Maximum cache size (in MB)
   maxCacheSize: 100,
-  
+
   // Preload critical areas
   preloadCriticalAreas: [
     // Add known high-risk areas or emergency response centers

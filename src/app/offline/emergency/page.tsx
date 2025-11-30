@@ -7,6 +7,6 @@ export const metadata: Metadata = {
   robots: 'noindex, nofollow',
 }
 
-export default function OfflineEmergencyPage() {
+export default function Page() {
   return <OfflineEmergencyPage />
 }

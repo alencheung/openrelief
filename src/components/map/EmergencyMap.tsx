@@ -15,8 +15,10 @@ import {
   generateEmergencyHeatmap,
   createGeofenceBuffer,
 } from '@/lib/map-utils'
-import { useEmergencyStore, useLocationStore } from '@/store'
-import { EmergencyEvent, Geofence } from '@/types'
+import { useEmergencyStore } from '@/store/emergencyStore'
+import { useLocationStore } from '@/store/locationStore'
+import { EmergencyEvent } from '@/store/emergencyStore'
+import { Geofence } from '@/store/locationStore'
 
 interface EmergencyMapProps {
   className?: string
@@ -82,10 +84,11 @@ export default function EmergencyMap({
 
     const map = new maplibregl.Map({
       container: mapRef.current,
-      style: mapStyle,
+      style: mapStyle as any,
       center: initialCenter,
       zoom: initialZoom,
       pitch: mapConfiguration.default.pitch,
+
       bearing: mapConfiguration.default.bearing,
       minZoom: mapConfiguration.default.minZoom,
       maxZoom: mapConfiguration.default.maxZoom,
@@ -106,10 +109,10 @@ export default function EmergencyMap({
 
     // Setup performance monitoring
     performanceManagerRef.current = new MapPerformanceManager(map)
-    
+
     // Setup accessibility features
     accessibilityManagerRef.current = new MapAccessibilityManager(map)
-    
+
     // Setup emergency routing
     emergencyRouterRef.current = new EmergencyRouter(map)
 
@@ -121,10 +124,10 @@ export default function EmergencyMap({
     map.on('load', () => {
       setIsMapLoaded(true)
       onMapLoad?.(map)
-      
+
       // Initialize emergency layers
       initializeEmergencyLayers(map)
-      
+
       // Start location tracking if enabled
       if (isTracking) {
         initializeLocationTracking(map)
@@ -206,7 +209,7 @@ export default function EmergencyMap({
         const clusterId = feature.properties.cluster_id
         const source = e.target.getSource('emergency-events') as any
         const clusterLeaves = source.getClusterLeaves(clusterId, Infinity, 0)
-        
+
         if (clusterLeaves.length > 0) {
           const bounds = new LngLatBounds()
           clusterLeaves.forEach((leaf: any) => {
@@ -231,10 +234,10 @@ export default function EmergencyMap({
   // Handle map movement
   const handleMapMove = useCallback(() => {
     if (!mapInstanceRef.current) return
-    
+
     const center = mapInstanceRef.current.getCenter()
     const zoom = mapInstanceRef.current.getZoom()
-    
+
     setMapState({
       center: { lat: center.lat, lng: center.lng },
       zoom,
@@ -244,10 +247,10 @@ export default function EmergencyMap({
   // Handle map zoom
   const handleMapZoom = useCallback(() => {
     if (!mapInstanceRef.current) return
-    
+
     const zoom = mapInstanceRef.current.getZoom()
     setMapState({ zoom })
-    
+
     accessibilityManagerRef.current?.announceLocation(mapInstanceRef.current.getCenter())
   }, [setMapState])
 
@@ -256,7 +259,7 @@ export default function EmergencyMap({
     if (!currentLocation) return
 
     // Add user location marker
-    const userLocationFeature = {
+    const userLocationFeature: any = {
       type: 'Feature' as const,
       properties: {
         accuracy: currentLocation.accuracy || 50,
@@ -265,9 +268,9 @@ export default function EmergencyMap({
         type: 'Point' as const,
         coordinates: [currentLocation.lng, currentLocation.lat],
       },
-    }
+    };
 
-    map.getSource('user-location')?.setData({
+    (map.getSource('user-location') as any)?.setData({
       type: 'FeatureCollection',
       features: [userLocationFeature],
     })
@@ -289,19 +292,19 @@ export default function EmergencyMap({
     const bounds = map.getBounds()
     const zoom = map.getZoom()
 
-    let features: GeoJSONFeature[]
+    let features: any[]
 
     if (enableClustering) {
       features = clusterEmergencyEvents(filteredEvents, bounds, zoom, clusterRef.current)
     } else {
-      features = filteredEvents.map(event => ({
-        type: 'Feature' as const,
+      features = events.map(event => ({
+        type: 'Feature',
         properties: {
           id: event.id,
-          type: event.type,
+          type: event.emergency_types?.slug || 'unknown',
           severity: event.severity,
           status: event.status,
-          trust_score: event.trust_score,
+          trust_score: event.trust_weight,
           title: event.title,
           description: event.description,
           created_at: event.created_at,
@@ -309,8 +312,8 @@ export default function EmergencyMap({
         geometry: {
           type: 'Point' as const,
           coordinates: [
-            parseFloat(event.location.split(' ')[1]),
-            parseFloat(event.location.split(' ')[0]),
+            parseFloat(event.location.split(' ')[1] || '0'),
+            parseFloat(event.location.split(' ')[0] || '0'),
           ],
         },
       }))
@@ -498,7 +501,7 @@ export default function EmergencyMap({
                   Status: {selectedEmergency.status}
                 </span>
                 <span className="text-xs text-gray-500">
-                  Trust: {Math.round(selectedEmergency.trust_score * 100)}%
+                  Trust: {Math.round(selectedEmergency.trust_weight * 100)}%
                 </span>
               </div>
             </div>
@@ -552,7 +555,7 @@ export default function EmergencyMap({
                 <span className={cn(
                   'inline-block w-2 h-2 rounded-full mr-1',
                   alert.severity === 'critical' ? 'bg-red-500' :
-                  alert.severity === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
+                    alert.severity === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
                 )} />
                 {alert.message}
               </div>

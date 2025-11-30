@@ -90,18 +90,19 @@ export default function EmergencyReportInterface({
   const audioRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
 
-  const { userLocation } = useLocationStore()
+  const { currentLocation } = useLocationStore()
   const { addOfflineAction } = useEmergencyStore()
 
   // Initialize with user location if no initial location provided
+  // Initialize with user location if no initial location provided
   useEffect(() => {
-    if (!initialLocation && userLocation) {
+    if (!initialLocation && currentLocation) {
       setLocation({
-        lat: userLocation.lat,
-        lng: userLocation.lng,
+        lat: currentLocation.lat,
+        lng: currentLocation.lng,
       })
     }
-  }, [initialLocation, userLocation])
+  }, [initialLocation, currentLocation])
 
   // Update radius when emergency type changes
   useEffect(() => {
@@ -217,13 +218,13 @@ export default function EmergencyReportInterface({
     try {
       // Try to submit immediately
       onReportSubmitted(emergencyReport)
-      
+
       // Also add to offline actions for sync
       addOfflineAction({
         type: 'create',
         data: emergencyReport,
       })
-      
+
       // Reset form
       setSelectedType(null)
       setTitle('')
@@ -235,13 +236,13 @@ export default function EmergencyReportInterface({
       onClose()
     } catch (error) {
       console.error('Failed to submit emergency report:', error)
-      
+
       // Still add to offline actions even if submission fails
       addOfflineAction({
         type: 'create',
         data: emergencyReport,
       })
-      
+
       alert('Report saved offline. Will sync when connection is available.')
       onClose()
     } finally {
@@ -296,7 +297,7 @@ export default function EmergencyReportInterface({
         {/* Emergency Details */}
         <div className="p-6 border-b">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Emergency Details</h3>
-          
+
           <div className="space-y-4">
             {/* Title */}
             <div>
@@ -359,7 +360,7 @@ export default function EmergencyReportInterface({
         {/* Location */}
         <div className="p-6 border-b">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Location</h3>
-          
+
           <div className="space-y-4">
             {/* Current Location Display */}
             <div className="flex items-center space-x-3">
@@ -428,7 +429,7 @@ export default function EmergencyReportInterface({
         {/* Media Attachments */}
         <div className="p-6 border-b">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Evidence & Media</h3>
-          
+
           <div className="space-y-4">
             {/* Images */}
             <div>
@@ -450,7 +451,7 @@ export default function EmergencyReportInterface({
                 <Camera className="h-4 w-4" />
                 <span>Add Photos</span>
               </button>
-              
+
               {images.length > 0 && (
                 <div className="grid grid-cols-3 gap-2 mt-3">
                   {images.map((image, index) => (
@@ -487,7 +488,7 @@ export default function EmergencyReportInterface({
                     <span>Start Recording</span>
                   </button>
                 )}
-                
+
                 {isRecording && (
                   <button
                     onClick={stopAudioRecording}
@@ -497,7 +498,7 @@ export default function EmergencyReportInterface({
                     <span>Stop Recording</span>
                   </button>
                 )}
-                
+
                 {audioBlob && (
                   <div className="flex items-center space-x-2">
                     <audio src={URL.createObjectURL(audioBlob)} controls className="h-8" />
