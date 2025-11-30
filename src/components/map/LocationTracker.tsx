@@ -52,7 +52,7 @@ export default function LocationTracker({
     stopTracking,
     requestLocationPermission,
     locationPermission,
-    isLocationTracking,
+    isTracking: isLocationTracking,
     geofences,
     proximityAlerts,
     addGeofence,
@@ -105,8 +105,8 @@ export default function LocationTracker({
 
     filteredEvents.forEach(event => {
       const eventLocation = {
-        lat: parseFloat(event.location.split(' ')[0]),
-        lng: parseFloat(event.location.split(' ')[1]),
+        lat: parseFloat((event.location || '0 0').split(' ')[0] || '0'),
+        lng: parseFloat((event.location || '0 0').split(' ')[1] || '0'),
       }
 
       const distance = calculateDistance(location, {
@@ -123,8 +123,8 @@ export default function LocationTracker({
           distance,
           threshold: proximityThreshold,
           message: `Near emergency: ${event.title} (${Math.round(distance)}m away)`,
-          severity: event.severity >= 4 ? 'critical' : 
-                   event.severity >= 3 ? 'warning' : 'info',
+          severity: event.severity >= 4 ? 'critical' :
+            event.severity >= 3 ? 'warning' : 'info',
         })
 
         onProximityAlert?.({
@@ -142,11 +142,11 @@ export default function LocationTracker({
       lat: position.coords.latitude,
       lng: position.coords.longitude,
       accuracy: position.coords.accuracy,
-      altitude: position.coords.altitude || undefined,
-      altitudeAccuracy: position.coords.altitudeAccuracy || undefined,
-      heading: position.coords.heading || undefined,
-      speed: position.coords.speed || undefined,
       timestamp: position.timestamp,
+      ...(position.coords.altitude ? { altitude: position.coords.altitude } : {}),
+      ...(position.coords.altitudeAccuracy ? { altitudeAccuracy: position.coords.altitudeAccuracy } : {}),
+      ...(position.coords.heading ? { heading: position.coords.heading } : {}),
+      ...(position.coords.speed ? { speed: position.coords.speed } : {}),
     }
 
     // Update trail if enabled
@@ -426,7 +426,7 @@ export default function LocationTracker({
                   <div className={cn(
                     'w-2 h-2 rounded-full',
                     alert.severity === 'critical' ? 'bg-red-500' :
-                    alert.severity === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
+                      alert.severity === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
                   )} />
                   <span className="text-gray-600">{alert.message}</span>
                 </div>
@@ -450,8 +450,8 @@ export default function LocationTracker({
                   <div className={cn(
                     'w-2 h-2 rounded-full',
                     geofence.type === 'emergency' ? 'bg-red-500' :
-                    geofence.type === 'safe_zone' ? 'bg-green-500' :
-                    geofence.type === 'restricted' ? 'bg-orange-500' : 'bg-gray-500'
+                      geofence.type === 'safe_zone' ? 'bg-green-500' :
+                        geofence.type === 'restricted' ? 'bg-orange-500' : 'bg-gray-500'
                   )} />
                   <span className="text-gray-600">{geofence.name}</span>
                 </div>

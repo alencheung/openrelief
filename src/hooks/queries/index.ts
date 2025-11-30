@@ -110,12 +110,12 @@ export const prefetchCriticalData = async (queryClient: any, userId?: string) =>
 export const checkQueryHealth = (queryClient: any) => {
   const cache = queryClient.getQueryCache()
   const queries = cache.getAll()
-  
+
   const health = {
     totalQueries: queries.length,
-    activeQueries: queries.filter(q => q.state.fetchStatus === 'fetching').length,
-    staleQueries: queries.filter(q => q.isStale()).length,
-    errorQueries: queries.filter(q => q.state.status === 'error').length,
+    activeQueries: queries.filter((q: any) => q.state.fetchStatus === 'fetching').length,
+    staleQueries: queries.filter((q: any) => q.isStale()).length,
+    errorQueries: queries.filter((q: any) => q.state.status === 'error').length,
     cacheSize: cache.size,
   }
 
@@ -128,13 +128,13 @@ export const checkQueryHealth = (queryClient: any) => {
 // Query optimization utilities
 export const optimizeQueryCache = (queryClient: any) => {
   const cache = queryClient.getQueryCache()
-  
+
   // Remove old and unused queries
-  cache.getAll().forEach(query => {
+  cache.getAll().forEach((query: any) => {
     const age = Date.now() - new Date(query.state.dataUpdatedAt).getTime()
     const isOld = age > 10 * 60 * 1000 // 10 minutes
     const isInactive = query.getObserversCount() === 0
-    
+
     if (isOld && isInactive) {
       cache.remove(query)
     }
@@ -144,8 +144,8 @@ export const optimizeQueryCache = (queryClient: any) => {
 // Query performance monitoring
 export const trackQueryPerformance = (queryClient: any) => {
   const cache = queryClient.getQueryCache()
-  
-  cache.subscribe((event) => {
+
+  cache.subscribe((event: any) => {
     if (event.type === 'observerAdded') {
       console.log(`[Query] Observer added to ${event.query.queryKey[0]}`)
     } else if (event.type === 'observerRemoved') {

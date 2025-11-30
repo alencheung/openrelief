@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
-import { XMarkIcon, DownloadIcon, DevicePhoneMobileIcon } from 'lucide-react'
+import { X, DownloadIcon, Smartphone } from 'lucide-react'
+
+declare const gtag: any
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[]
@@ -26,21 +28,21 @@ export function PWAInstallPrompt() {
     const checkInstalled = () => {
       // Check if running as standalone PWA
       const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches ||
-                              (window.navigator as any).standalone ||
-                              document.referrer.includes('android-app://')
-      
+        (window.navigator as any).standalone ||
+        document.referrer.includes('android-app://')
+
       setIsStandalone(isStandaloneMode)
-      
+
       // Check if already installed (for iOS)
-      const isInStandaloneMode = 
+      const isInStandaloneMode =
         ('standalone' in window.navigator && (window.navigator as any).standalone) ||
         window.matchMedia('(display-mode: standalone)').matches
-      
+
       setIsInstalled(isInStandaloneMode)
-      
+
       // Check if iOS device
-      const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                         (/Macintosh/.test(navigator.userAgent) && 'ontouchend' in document)
+      const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (/Macintosh/.test(navigator.userAgent) && 'ontouchend' in document)
       setIsIOS(isIOSDevice)
     }
 
@@ -50,7 +52,7 @@ export function PWAInstallPrompt() {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault()
       setDeferredPrompt(e as BeforeInstallPromptEvent)
-      
+
       // Show install banner after a delay
       setTimeout(() => {
         setShowInstallBanner(true)
@@ -63,7 +65,7 @@ export function PWAInstallPrompt() {
       setDeferredPrompt(null)
       setShowInstallBanner(false)
       setIsInstalled(true)
-      
+
       // Track installation
       if (typeof gtag !== 'undefined') {
         gtag('event', 'pwa_installed', {
@@ -88,20 +90,20 @@ export function PWAInstallPrompt() {
     try {
       // Show the install prompt
       await deferredPrompt.prompt()
-      
+
       // Wait for the user to respond to the prompt
       const { outcome } = await deferredPrompt.userChoice
-      
+
       if (outcome === 'accepted') {
         console.log('[PWA] User accepted the install prompt')
       } else {
         console.log('[PWA] User dismissed the install prompt')
       }
-      
+
       // Clear the deferred prompt
       setDeferredPrompt(null)
       setShowInstallBanner(false)
-      
+
       // Track user choice
       if (typeof gtag !== 'undefined') {
         gtag('event', 'pwa_install_prompt', {
@@ -116,10 +118,10 @@ export function PWAInstallPrompt() {
 
   const handleDismiss = () => {
     setShowInstallBanner(false)
-    
+
     // Don't show again for this session
     sessionStorage.setItem('pwa-install-dismissed', 'true')
-    
+
     // Track dismissal
     if (typeof gtag !== 'undefined') {
       gtag('event', 'pwa_install_dismissed', {
@@ -131,7 +133,7 @@ export function PWAInstallPrompt() {
 
   const handleIOSInstallInstructions = () => {
     setShowInstallBanner(false)
-    
+
     // Show iOS install instructions
     const modal = document.createElement('div')
     modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'
@@ -153,7 +155,7 @@ export function PWAInstallPrompt() {
       </div>
     `
     document.body.appendChild(modal)
-    
+
     // Track iOS instructions shown
     if (typeof gtag !== 'undefined') {
       gtag('event', 'pwa_ios_instructions', {
@@ -183,9 +185,9 @@ export function PWAInstallPrompt() {
       <Card className="p-4 shadow-lg border-blue-200 bg-blue-50">
         <div className="flex items-start space-x-3">
           <div className="flex-shrink-0">
-            <DevicePhoneMobileIcon className="h-6 w-6 text-blue-600" />
+            <Smartphone className="h-6 w-6 text-blue-600" />
           </div>
-          
+
           <div className="flex-1 min-w-0">
             <h3 className="text-sm font-medium text-gray-900">
               Install OpenRelief
@@ -193,7 +195,7 @@ export function PWAInstallPrompt() {
             <p className="text-xs text-gray-600 mt-1">
               Get instant access to emergency coordination features, even offline
             </p>
-            
+
             <div className="mt-3 flex space-x-2">
               {deferredPrompt ? (
                 <Button
@@ -214,15 +216,13 @@ export function PWAInstallPrompt() {
                   Install
                 </Button>
               ) : null}
-              
-              <Button
-                onClick={handleDismiss}
-                size="sm"
-                variant="ghost"
-                className="px-2"
+
+              <button
+                onClick={() => setShowInstallBanner(false)}
+                className="p-2 text-gray-400 hover:text-gray-500 rounded-full hover:bg-gray-100"
               >
-                <XMarkIcon className="h-3 w-3" />
-              </Button>
+                <X className="h-5 w-5" />
+              </button>
             </div>
           </div>
         </div>
@@ -240,8 +240,8 @@ export function usePWAInstall() {
   useEffect(() => {
     const checkInstallStatus = () => {
       const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches ||
-                              (window.navigator as any).standalone ||
-                              document.referrer.includes('android-app://')
+        (window.navigator as any).standalone ||
+        document.referrer.includes('android-app://')
       setIsInstalled(isStandaloneMode)
     }
 

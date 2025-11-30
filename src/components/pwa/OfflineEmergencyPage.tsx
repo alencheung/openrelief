@@ -4,10 +4,10 @@ import { useState } from 'react'
 import { useOfflineActions } from '@/hooks/useNetworkStatus'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
-import { 
-  AlertTriangleIcon, 
-  MapPinIcon, 
-  PhoneIcon, 
+import {
+  AlertTriangleIcon,
+  MapPinIcon,
+  PhoneIcon,
   ClockIcon,
   CheckCircleIcon,
   WifiOffIcon
@@ -55,7 +55,7 @@ export function OfflineEmergencyPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!formData.type || !formData.description) {
       alert('Please fill in all required fields')
       return
@@ -85,7 +85,7 @@ export function OfflineEmergencyPage() {
 
       // Update local state
       setQueuedReports(prev => [report, ...prev])
-      
+
       // Reset form
       setFormData({
         type: '',
@@ -108,8 +108,8 @@ export function OfflineEmergencyPage() {
     try {
       const actions = await getQueuedActions()
       const reports = actions
-        .filter(action => action.type === 'emergency_report')
-        .map(action => action.data as EmergencyReport)
+        .filter((action: any) => action.table === 'emergency_events' && action.type === 'create')
+        .map((action: any) => action.data as EmergencyReport)
       setQueuedReports(reports)
     } catch (error) {
       console.error('Failed to load queued reports:', error)
@@ -169,11 +169,10 @@ export function OfflineEmergencyPage() {
                     key={type.value}
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, type: type.value }))}
-                    className={`p-3 text-center rounded-lg border-2 transition-colors ${
-                      formData.type === type.value
+                    className={`p-3 text-center rounded-lg border-2 transition-colors ${formData.type === type.value
                         ? 'border-red-500 bg-red-50'
                         : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                      }`}
                   >
                     <div className="text-2xl mb-1">{type.icon}</div>
                     <div className="text-xs font-medium">{type.label}</div>
@@ -193,11 +192,10 @@ export function OfflineEmergencyPage() {
                     key={level.value}
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, severity: level.value as any }))}
-                    className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                      formData.severity === level.value
+                    className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${formData.severity === level.value
                         ? level.color
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
+                      }`}
                   >
                     {level.label}
                   </button>

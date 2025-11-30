@@ -285,14 +285,18 @@ export default function GeofenceManager({
                           {typeInfo?.label || 'Unknown'}
                         </span>
                         <span>Radius: {formatRadius(geofence.radius)}</span>
-                        {geofence.metadata?.severity && (
-                          <span className={cn(
-                            'font-medium',
-                            getSeverityInfo(geofence.metadata.severity || 'medium').color.replace('#', 'text-')
-                          )}>
-                            {geofence.metadata.severity}
-                          </span>
-                        )}
+                        {geofence.metadata?.severity && (() => {
+                          const severity = geofence.metadata.severity || 'medium'
+                          const info = getSeverityInfo(severity) || { color: '#000000', label: 'Unknown' }
+                          return (
+                            <span className={cn(
+                              'font-medium',
+                              info.color.replace('#', 'text-')
+                            )}>
+                              {severity}
+                            </span>
+                          )
+                        })()}
                         {geofence.expiresAt && (
                           <span>
                             Expires: {new Date(geofence.expiresAt).toLocaleDateString()}

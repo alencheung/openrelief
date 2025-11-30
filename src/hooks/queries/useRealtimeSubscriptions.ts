@@ -2,23 +2,23 @@ import { useEffect, useRef, useCallback } from 'react'
 import { RealtimeChannel } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { Database } from '@/types/database'
-import { 
-  useEmergencyStore, 
-  useTrustStore, 
-  useNotificationStore, 
+import {
+  useEmergencyStore,
+  useTrustStore,
+  useNotificationStore,
   useLocationStore,
-  useOfflineStore 
+  useOfflineStore
 } from '@/store'
 
 // Types
-type SubscriptionCallback<T = any> = (payload: {
+export type SubscriptionCallback<T = any> = (payload: {
   eventType: 'INSERT' | 'UPDATE' | 'DELETE'
   old: T | null
   new: T | null
   timestamp: string
 }) => void
 
-type SubscriptionConfig = {
+export type SubscriptionConfig = {
   table: keyof Database['public']['Tables']
   filter?: string
   event?: '*' | 'INSERT' | 'UPDATE' | 'DELETE'
@@ -60,7 +60,7 @@ export const useRealtimeSubscription = (config: SubscriptionConfig) => {
             new: payload.new,
             timestamp: new Date().toISOString(),
           }
-          
+
           callbackRef.current(enhancedPayload)
         }
       )
@@ -112,7 +112,7 @@ export const useEmergencyEventsSubscription = () => {
         case 'INSERT':
           if (payload.new) {
             addEvent(payload.new)
-            
+
             // Create notification for new high-priority events
             if (payload.new.severity >= 4) {
               createEmergencyNotification({
@@ -130,7 +130,7 @@ export const useEmergencyEventsSubscription = () => {
         case 'UPDATE':
           if (payload.new && payload.old) {
             updateEvent(payload.new.id, payload.new)
-            
+
             // Notification for status changes
             if (payload.old.status !== payload.new.status) {
               if (payload.new.status === 'resolved') {
@@ -333,7 +333,7 @@ export const useSystemMetricsSubscription = () => {
     callback: (payload) => {
       if (payload.new) {
         console.log('[Realtime] System metric:', payload.new)
-        
+
         // Handle critical system metrics
         if (payload.new.metric_name.includes('error') || payload.new.metric_name.includes('critical')) {
           // Could trigger alerts or UI updates
@@ -351,7 +351,7 @@ export const useMultipleRealtimeSubscriptions = (configs: SubscriptionConfig[]) 
   useEffect(() => {
     // Subscribe to all configs
     const channels: RealtimeChannel[] = []
-    
+
     configs.forEach((config, index) => {
       const channelName = `realtime-multi-${config.table}-${index}-${Date.now()}`
       const channel = supabase
@@ -371,7 +371,7 @@ export const useMultipleRealtimeSubscriptions = (configs: SubscriptionConfig[]) 
               new: payload.new,
               timestamp: new Date().toISOString(),
             }
-            
+
             config.callback(enhancedPayload)
           }
         )
@@ -494,7 +494,7 @@ export const useEmergencyBroadcast = (eventId?: string) => {
   const broadcast = useCallback(async (event: string, payload: any) => {
     const channelName = eventId ? `emergency-${eventId}` : 'emergency-global'
     const channel = supabase.channel(channelName)
-    
+
     await channel.send({
       type: 'broadcast',
       event,

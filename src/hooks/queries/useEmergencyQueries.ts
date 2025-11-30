@@ -4,12 +4,12 @@ import { Database } from '@/types/database'
 import { useEmergencyStore, useOfflineStore, useTrustStore, useNotificationStore } from '@/store'
 
 // Types
-type EmergencyEvent = Database['public']['Tables']['emergency_events']['Row']
-type EmergencyEventInsert = Database['public']['Tables']['emergency_events']['Insert']
-type EmergencyEventUpdate = Database['public']['Tables']['emergency_events']['Update']
-type EmergencyType = Database['public']['Tables']['emergency_types']['Row']
-type EventConfirmation = Database['public']['Tables']['event_confirmations']['Row']
-type EventConfirmationInsert = Database['public']['Tables']['event_confirmations']['Insert']
+export type EmergencyEvent = Database['public']['Tables']['emergency_events']['Row']
+export type EmergencyEventInsert = Database['public']['Tables']['emergency_events']['Insert']
+export type EmergencyEventUpdate = Database['public']['Tables']['emergency_events']['Update']
+export type EmergencyType = Database['public']['Tables']['emergency_types']['Row']
+export type EventConfirmation = Database['public']['Tables']['event_confirmations']['Row']
+export type EventConfirmationInsert = Database['public']['Tables']['event_confirmations']['Insert']
 
 // Enhanced hooks with offline support and optimistic updates
 export const useEmergencyEvents = (filters?: {
@@ -26,15 +26,16 @@ export const useEmergencyEvents = (filters?: {
     queryFn: async () => {
       try {
         // Try online first
-        const data = await supabaseHelpers.getEmergencyEvents({
-          limit: filters?.limit,
-          status: filters?.status?.[0], // Simplified for now
-          type_id: filters?.type_ids?.[0], // Simplified for now
-        })
+        const params: any = {}
+        if (filters?.limit !== undefined) params.limit = filters.limit
+        if (filters?.status?.[0] !== undefined) params.status = filters.status[0]
+        if (filters?.type_ids?.[0] !== undefined) params.type_id = filters.type_ids[0]
+
+        const data = await supabaseHelpers.getEmergencyEvents(params)
 
         // Update local store
         useEmergencyStore.getState().setEvents(data)
-        
+
         // Cache for offline use
         useOfflineStore.getState().setCache('emergency-events', data, {
           tags: ['emergency', 'events'],
@@ -44,13 +45,13 @@ export const useEmergencyEvents = (filters?: {
         return data
       } catch (error) {
         console.error('Failed to fetch emergency events:', error)
-        
+
         // Fallback to cache
         const cachedData = useOfflineStore.getState().getCache('emergency-events')
         if (cachedData) {
           return cachedData
         }
-        
+
         throw error
       }
     },
@@ -76,13 +77,15 @@ export const useInfiniteEmergencyEvents = (filters?: {
   return useInfiniteQuery({
     queryKey: ['emergency-events-infinite', filters],
     queryFn: async ({ pageParam = 0 }) => {
-      const data = await supabaseHelpers.getEmergencyEvents({
+      const params: any = {
         limit: filters?.limit || 20,
-        offset: pageParam,
-        status: filters?.status?.[0],
-        type_id: filters?.type_ids?.[0],
-      })
-      
+      }
+      if (pageParam !== undefined) params.offset = pageParam
+      if (filters?.status?.[0] !== undefined) params.status = filters.status[0]
+      if (filters?.type_ids?.[0] !== undefined) params.type_id = filters.type_ids[0]
+
+      const data = await supabaseHelpers.getEmergencyEvents(params)
+
       return {
         data,
         nextPage: pageParam + (filters?.limit || 20),
@@ -97,7 +100,7 @@ export const useInfiniteEmergencyEvents = (filters?: {
 
 export const useEmergencyEvent = (id: string) => {
   const queryClient = useQueryClient()
-  
+
   return useQuery({
     queryKey: ['emergency-event', id],
     queryFn: async () => {
@@ -123,10 +126,10 @@ export const useEmergencyEvent = (id: string) => {
           .single()
 
         if (error) throw error
-        
+
         // Update local store
         useEmergencyStore.getState().addEvent(data)
-        
+
         return data
       } catch (error) {
         // Try cache first
@@ -134,7 +137,7 @@ export const useEmergencyEvent = (id: string) => {
         if (cachedEvent) {
           return cachedEvent
         }
-        
+
         throw error
       }
     },
@@ -148,11 +151,11 @@ export const useCreateEmergencyEvent = () => {
   const queryClient = useQueryClient()
   const { addNotification } = useNotificationStore.getState()
   const { updateTrustForAction } = useTrustStore.getState()
-  
+
   return useMutation({
     mutationFn: async (event: EmergencyEventInsert) => {
       const userId = event.reporter_id
-      
+
       try {
         // Check trust score first
         const userScore = useTrustStore.getState().getUserScore(userId)
@@ -171,11 +174,14 @@ export const useCreateEmergencyEvent = () => {
           confirmation_count: 0,
           dispute_count: 0,
           trust_weight: userScore?.score || 0.5,
+          description: event.description || null,
+          resolved_at: null,
+          resolved_by: null,
         }
 
         // Add to local store immediately
         useEmergencyStore.getState().addEvent(optimisticEvent)
-        
+
         // Add to offline queue if needed
         if (!navigator.onLine) {
           const actionId = useOfflineStore.getState().addAction({
@@ -185,7 +191,7 @@ export const useCreateEmergencyEvent = () => {
             priority: 'high',
             maxRetries: 5,
           })
-          
+
           addNotification({
             type: 'system',
             title: 'Emergency Report Queued',
@@ -194,13 +200,13 @@ export const useCreateEmergencyEvent = () => {
             priority: 'medium',
             channels: { inApp: true, push: false, email: false, sms: false },
           })
-          
+
           return optimisticEvent
         }
 
         // Create on server
         const data = await supabaseHelpers.createEmergencyEvent(event)
-        
+
         // Update trust score
         await updateTrustForAction(userId, data.id, 'report', 'pending', {
           severity: event.severity,
@@ -221,7 +227,7 @@ export const useCreateEmergencyEvent = () => {
         return data
       } catch (error) {
         console.error('Failed to create emergency event:', error)
-        
+
         addNotification({
           type: 'system',
           title: 'Report Failed',
@@ -230,7 +236,7 @@ export const useCreateEmergencyEvent = () => {
           priority: 'high',
           channels: { inApp: true, push: true, email: false, sms: false },
         })
-        
+
         throw error
       }
     },
@@ -238,7 +244,7 @@ export const useCreateEmergencyEvent = () => {
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: ['emergency-events'] })
       queryClient.setQueryData(['emergency-event', data.id], data)
-      
+
       // Update local store with real data
       if (data.id.startsWith('temp-')) {
         useEmergencyStore.getState().removeEvent(data.id)
@@ -250,7 +256,7 @@ export const useCreateEmergencyEvent = () => {
       if (variables.id && variables.id.startsWith('temp-')) {
         useEmergencyStore.getState().removeEvent(variables.id)
       }
-      
+
       console.error('Create emergency event mutation error:', error)
     },
   })
@@ -259,22 +265,22 @@ export const useCreateEmergencyEvent = () => {
 export const useUpdateEmergencyEvent = () => {
   const queryClient = useQueryClient()
   const { addNotification } = useNotificationStore.getState()
-  
+
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: EmergencyEventUpdate }) => {
       try {
         // Optimistic update
         const currentEvent = useEmergencyStore.getState().events.find(e => e.id === id)
         if (!currentEvent) throw new Error('Event not found')
-        
+
         const optimisticEvent = {
           ...currentEvent,
           ...updates,
           updated_at: new Date().toISOString(),
         }
-        
+
         useEmergencyStore.getState().updateEvent(id, updates)
-        
+
         // Add to offline queue if needed
         if (!navigator.onLine) {
           useOfflineStore.getState().addAction({
@@ -284,13 +290,13 @@ export const useUpdateEmergencyEvent = () => {
             priority: 'medium',
             maxRetries: 3,
           })
-          
+
           return optimisticEvent
         }
 
         // Update on server
         const data = await supabaseHelpers.updateEmergencyEvent(id, updates)
-        
+
         addNotification({
           type: 'system',
           title: 'Event Updated',
@@ -321,7 +327,7 @@ export const useConfirmEvent = () => {
   const queryClient = useQueryClient()
   const { addNotification } = useNotificationStore.getState()
   const { updateTrustForAction } = useTrustStore.getState()
-  
+
   return useMutation({
     mutationFn: async ({
       eventId,
@@ -338,7 +344,7 @@ export const useConfirmEvent = () => {
         // Check trust score
         const userScore = useTrustStore.getState().getUserScore(userId)
         const requiredScore = confirmationType === 'dispute' ? 0.5 : 0.4
-        
+
         if (userScore && userScore.score < requiredScore) {
           throw new Error(`Insufficient trust score to ${confirmationType} this event`)
         }
@@ -370,13 +376,13 @@ export const useConfirmEvent = () => {
             priority: 'medium',
             maxRetries: 3,
           })
-          
+
           return optimisticConfirmation
         }
 
         // Confirm on server
         const data = await supabaseHelpers.confirmEvent(eventId, userId, confirmationType, location)
-        
+
         // Update trust score
         await updateTrustForAction(userId, eventId, confirmationType, 'pending', {
           location,
@@ -422,10 +428,10 @@ export const useEmergencyTypes = () => {
     queryFn: async () => {
       try {
         const data = await supabaseHelpers.getEmergencyTypes()
-        
+
         // Update local store
         useEmergencyStore.getState().setEmergencyTypes(data)
-        
+
         // Cache for offline use
         useOfflineStore.getState().setCache('emergency-types', data, {
           tags: ['emergency', 'types'],
@@ -439,7 +445,7 @@ export const useEmergencyTypes = () => {
         if (cachedData) {
           return cachedData
         }
-        
+
         throw error
       }
     },
@@ -469,7 +475,7 @@ export const useNearbyEmergencyEvents = (
       })
 
       if (error) throw error
-      
+
       // Calculate distance for each event
       const eventsWithDistance = data.map(event => ({
         ...event,

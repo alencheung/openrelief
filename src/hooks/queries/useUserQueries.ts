@@ -4,12 +4,12 @@ import { Database } from '@/types/database'
 import { useTrustStore, useNotificationStore, useOfflineStore } from '@/store'
 
 // Types
-type UserProfile = Database['public']['Tables']['user_profiles']['Row']
-type UserProfileInsert = Database['public']['Tables']['user_profiles']['Insert']
-type UserProfileUpdate = Database['public']['Tables']['user_profiles']['Update']
-type UserTrustHistory = Database['public']['Tables']['user_trust_history']['Row']
-type UserSubscription = Database['public']['Tables']['user_subscriptions']['Row']
-type UserNotificationSettings = Database['public']['Tables']['user_notification_settings']['Row']
+export type UserProfile = Database['public']['Tables']['user_profiles']['Row']
+export type UserProfileInsert = Database['public']['Tables']['user_profiles']['Insert']
+export type UserProfileUpdate = Database['public']['Tables']['user_profiles']['Update']
+export type UserTrustHistory = Database['public']['Tables']['user_trust_history']['Row']
+export type UserSubscription = Database['public']['Tables']['user_subscriptions']['Row']
+export type UserNotificationSettings = Database['public']['Tables']['user_notification_settings']['Row']
 
 // User profile queries
 export const useUserProfile = (userId: string) => {
@@ -18,7 +18,7 @@ export const useUserProfile = (userId: string) => {
     queryFn: async () => {
       try {
         const data = await supabaseHelpers.getUserProfile(userId)
-        
+
         // Update trust store
         useTrustStore.getState().setUserScore(userId, {
           userId,
@@ -52,7 +52,7 @@ export const useUserProfile = (userId: string) => {
         if (cachedData) {
           return cachedData
         }
-        
+
         throw error
       }
     },
@@ -65,7 +65,7 @@ export const useUserProfile = (userId: string) => {
 export const useCreateUserProfile = () => {
   const queryClient = useQueryClient()
   const { addNotification } = useNotificationStore.getState()
-  
+
   return useMutation({
     mutationFn: async (profile: UserProfileInsert) => {
       try {
@@ -78,7 +78,7 @@ export const useCreateUserProfile = () => {
             priority: 'high',
             maxRetries: 5,
           })
-          
+
           addNotification({
             type: 'system',
             title: 'Profile Queued',
@@ -87,12 +87,12 @@ export const useCreateUserProfile = () => {
             priority: 'medium',
             channels: { inApp: true, push: false, email: false, sms: false },
           })
-          
+
           return profile
         }
 
         const data = await supabaseHelpers.createUserProfile(profile)
-        
+
         addNotification({
           type: 'system',
           title: 'Profile Created',
@@ -118,12 +118,12 @@ export const useCreateUserProfile = () => {
 export const useUpdateUserProfile = () => {
   const queryClient = useQueryClient()
   const { addNotification } = useNotificationStore.getState()
-  
+
   return useMutation({
     mutationFn: async ({ userId, updates }: { userId: string; updates: UserProfileUpdate }) => {
       try {
         // Optimistic update
-        queryClient.setQueryData(['user-profile', userId], (old: any) => 
+        queryClient.setQueryData(['user-profile', userId], (old: any) =>
           old ? { ...old, ...updates, updated_at: new Date().toISOString() } : old
         )
 
@@ -136,7 +136,7 @@ export const useUpdateUserProfile = () => {
             priority: 'medium',
             maxRetries: 3,
           })
-          
+
           addNotification({
             type: 'system',
             title: 'Profile Update Queued',
@@ -145,12 +145,12 @@ export const useUpdateUserProfile = () => {
             priority: 'medium',
             channels: { inApp: true, push: false, email: false, sms: false },
           })
-          
+
           return { userId, updates }
         }
 
         const data = await supabaseHelpers.updateUserProfile(userId, updates)
-        
+
         addNotification({
           type: 'system',
           title: 'Profile Updated',
@@ -163,10 +163,10 @@ export const useUpdateUserProfile = () => {
         return data
       } catch (error) {
         console.error('Failed to update user profile:', error)
-        
+
         // Rollback optimistic update
         queryClient.invalidateQueries({ queryKey: ['user-profile', userId] })
-        
+
         throw error
       }
     },
@@ -188,7 +188,7 @@ export const useTrustScore = (userId: string) => {
           })
 
         if (error) throw error
-        
+
         // Update trust store
         const currentScore = useTrustStore.getState().getUserScore(userId)
         if (currentScore) {
@@ -206,7 +206,7 @@ export const useTrustScore = (userId: string) => {
         if (localScore) {
           return localScore.score
         }
-        
+
         throw error
       }
     },
@@ -247,7 +247,7 @@ export const useTrustHistory = (userId?: string, limit: number = 50) => {
 export const useUpdateTrustScore = () => {
   const queryClient = useQueryClient()
   const { updateTrustForAction } = useTrustStore.getState()
-  
+
   return useMutation({
     mutationFn: async ({
       userId,
@@ -283,7 +283,7 @@ export const useUpdateTrustScore = () => {
             priority: 'medium',
             maxRetries: 3,
           })
-          
+
           return { userId, eventId, actionType, outcome }
         }
 
@@ -324,7 +324,7 @@ export const useUserSubscriptions = (userId: string) => {
     queryFn: async () => {
       try {
         const data = await supabaseHelpers.getUserSubscriptions(userId)
-        
+
         // Cache for offline use
         useOfflineStore.getState().setCache(`user-subscriptions-${userId}`, data, {
           tags: ['user', 'subscriptions'],
@@ -338,7 +338,7 @@ export const useUserSubscriptions = (userId: string) => {
         if (cachedData) {
           return cachedData
         }
-        
+
         throw error
       }
     },
@@ -350,7 +350,7 @@ export const useUserSubscriptions = (userId: string) => {
 export const useSubscribeToTopic = () => {
   const queryClient = useQueryClient()
   const { addNotification } = useNotificationStore.getState()
-  
+
   return useMutation({
     mutationFn: async ({ userId, topicId }: { userId: string; topicId: number }) => {
       try {
@@ -363,12 +363,12 @@ export const useSubscribeToTopic = () => {
             priority: 'low',
             maxRetries: 3,
           })
-          
+
           return { userId, topicId }
         }
 
         const data = await supabaseHelpers.subscribeToTopic(userId, topicId)
-        
+
         addNotification({
           type: 'system',
           title: 'Subscription Added',
@@ -393,7 +393,7 @@ export const useSubscribeToTopic = () => {
 export const useUnsubscribeFromTopic = () => {
   const queryClient = useQueryClient()
   const { addNotification } = useNotificationStore.getState()
-  
+
   return useMutation({
     mutationFn: async ({ userId, topicId }: { userId: string; topicId: number }) => {
       try {
@@ -402,20 +402,20 @@ export const useUnsubscribeFromTopic = () => {
           useOfflineStore.getState().addAction({
             type: 'update',
             table: 'user_subscriptions',
-            data: { 
-              user_id: userId, 
-              topic_id: topicId, 
+            data: {
+              user_id: userId,
+              topic_id: topicId,
               updates: { is_active: false }
             },
             priority: 'low',
             maxRetries: 3,
           })
-          
+
           return { userId, topicId }
         }
 
         const data = await supabaseHelpers.unsubscribeFromTopic(userId, topicId)
-        
+
         addNotification({
           type: 'system',
           title: 'Subscription Removed',
@@ -458,7 +458,7 @@ export const useUserNotificationSettings = (userId: string) => {
 export const useUpdateNotificationSettings = () => {
   const queryClient = useQueryClient()
   const { addNotification } = useNotificationStore.getState()
-  
+
   return useMutation({
     mutationFn: async ({
       userId,
@@ -481,7 +481,7 @@ export const useUpdateNotificationSettings = () => {
           .single()
 
         if (error) throw error
-        
+
         addNotification({
           type: 'system',
           title: 'Notification Settings Updated',

@@ -1,19 +1,19 @@
 'use client'
 
-import React, { useEffect, createContext, useContext, useCallback, useMemo } from 'react'
+import React, { useEffect, createContext, useContext, useCallback, useMemo, useState } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { 
-  useAuthStore, 
-  useEmergencyStore, 
-  useTrustStore, 
-  useLocationStore, 
-  useNotificationStore, 
+import {
+  useAuthStore,
+  useEmergencyStore,
+  useTrustStore,
+  useLocationStore,
+  useNotificationStore,
   useOfflineStore,
   initializeStores,
   checkStoreHealth
 } from '@/store'
-import { 
+import {
   useEmergencyEventsSubscription,
   useEventConfirmationsSubscription,
   useUserProfilesSubscription,
@@ -78,46 +78,49 @@ export const StateManagementProvider: React.FC<StateManagementProviderProps> = (
 }) => {
   const [queryClient] = useState(() => createQueryClient())
   const [isInitialized, setIsInitialized] = useState(false)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState<any>(null)
   const { isOnline } = useNetworkStatus()
 
   // Initialize stores
   useEffect(() => {
+    let unsubscribeFn: (() => void) | undefined
+
     const initialize = async () => {
       try {
         console.log('[StateManagement] Initializing stores...')
-        
+
         // Initialize all stores
         await initializeStores()
-        
+
         // Check store health
         const health = checkStoreHealth()
         console.log('[StateManagement] Store health:', health)
-        
+
         // Set up error boundary
         const unsubscribe = globalErrorBoundary.subscribe((state) => {
-          if (state.hasError) {
+          if (state.hasError && state.error) {
             console.error('[StateManagement] Error boundary triggered:', state.error)
             setError(state.error)
-            
+
             // Report error
             reportError(state.error)
           }
         })
-        
+
+        unsubscribeFn = unsubscribe
         setIsInitialized(true)
-        
-        return unsubscribe
       } catch (err) {
         console.error('[StateManagement] Failed to initialize:', err)
         setError(classifyError(err))
       }
     }
 
-    const unsubscribe = initialize()
-    
+    initialize()
+
     return () => {
-      unsubscribe?.()
+      if (unsubscribeFn) {
+        unsubscribeFn()
+      }
     }
   }, [])
 
@@ -130,13 +133,11 @@ export const StateManagementProvider: React.FC<StateManagementProviderProps> = (
 
   // Handle network status changes
   useEffect(() => {
-    const { setRealtimeEnabled, startSync, stopSync } = useOfflineStore.getState()
-    
+    const { startSync, stopSync } = useOfflineStore.getState()
+
     if (isOnline) {
-      setRealtimeEnabled(true)
       startSync()
     } else {
-      setRealtimeEnabled(false)
       stopSync()
     }
   }, [isOnline])
@@ -144,21 +145,21 @@ export const StateManagementProvider: React.FC<StateManagementProviderProps> = (
   // Handle visibility changes (pause/resume sync when tab is hidden)
   useEffect(() => {
     const handleVisibilityChange = () => {
-      const { isSyncing, pauseTracking, resumeTracking } = useOfflineStore.getState()
-      
+      const { isSyncing, startSync, stopSync } = useOfflineStore.getState()
+
       if (document.hidden) {
         // Pause non-critical operations when tab is hidden
         if (isSyncing) {
-          pauseTracking()
+          stopSync()
         }
       } else {
         // Resume operations when tab is visible
-        resumeTracking()
+        startSync()
       }
     }
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
-    
+
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
@@ -170,13 +171,13 @@ export const StateManagementProvider: React.FC<StateManagementProviderProps> = (
       // Stop ongoing operations
       useOfflineStore.getState().stopSync()
       useLocationStore.getState().stopTracking()
-      
+
       // Save any pending state
       console.log('[StateManagement] Cleaning up before unload...')
     }
 
     window.addEventListener('beforeunload', handleBeforeUnload)
-    
+
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload)
     }
@@ -186,10 +187,10 @@ export const StateManagementProvider: React.FC<StateManagementProviderProps> = (
   const retry = useCallback(() => {
     setIsInitialized(false)
     setError(null)
-    
+
     // Reset error boundary
     globalErrorBoundary.reset()
-    
+
     // Re-initialize
     setTimeout(() => {
       window.location.reload()
@@ -248,7 +249,7 @@ export const StateManagementProvider: React.FC<StateManagementProviderProps> = (
       <QueryClientProvider client={queryClient}>
         {children}
         {enableDevtools && (
-          <ReactQueryDevtools 
+          <ReactQueryDevtools
             initialIsOpen={false}
             buttonPosition="bottom-left"
           />
@@ -267,10 +268,13 @@ export const useStateManagement = () => {
   return context
 }
 
+import { useQueryClient } from '@tanstack/react-query'
+
 // Performance monitoring hook
 export const useStateManagementPerformance = () => {
   const { isOnline } = useNetworkStatus()
-  
+  const queryClient = useQueryClient()
+
   useEffect(() => {
     if (!isOnline) return
 
@@ -278,30 +282,30 @@ export const useStateManagementPerformance = () => {
       // Monitor query performance
       const queryCache = queryClient.getQueryCache()
       const queries = queryCache.getAll()
-      
+
       const performance = {
         totalQueries: queries.length,
-        activeQueries: queries.filter(q => q.state.fetchStatus === 'fetching').length,
-        staleQueries: queries.filter(q => q.isStale()).length,
-        errorQueries: queries.filter(q => q.state.status === 'error').length,
-        averageQueryTime: queries.reduce((acc, q) => acc + (q.state.dataFetchTime || 0), 0) / queries.length,
+        activeQueries: queries.filter((q: any) => q.state.fetchStatus === 'fetching').length,
+        staleQueries: queries.filter((q: any) => q.isStale()).length,
+        errorQueries: queries.filter((q: any) => q.state.status === 'error').length,
+        averageQueryTime: queries.reduce((acc: number, q: any) => acc + (q.state.dataFetchTime || 0), 0) / queries.length,
       }
 
       // Log performance metrics
       console.log('[Performance] Query metrics:', performance)
-      
+
       // Report poor performance
       if (performance.errorQueries > performance.totalQueries * 0.1) {
         console.warn('[Performance] High error rate detected')
       }
-      
+
       if (performance.averageQueryTime > 5000) { // 5 seconds
         console.warn('[Performance] Slow queries detected')
       }
     }
 
     const interval = setInterval(monitorPerformance, 30000) // Every 30 seconds
-    
+
     return () => clearInterval(interval)
   }, [isOnline])
 }
@@ -310,15 +314,15 @@ export const useStateManagementPerformance = () => {
 export const useEmergencyMode = () => {
   const { events } = useEmergencyStore()
   const { addNotification } = useNotificationStore.getState()
-  
+
   useEffect(() => {
     // Check for high-priority emergencies
     const criticalEvents = events.filter(e => e.severity >= 5 && e.status === 'active')
-    
+
     if (criticalEvents.length > 0) {
       // Enable emergency mode
       document.body.classList.add('emergency-mode')
-      
+
       addNotification({
         type: 'emergency',
         title: 'Emergency Mode Active',
@@ -331,18 +335,12 @@ export const useEmergencyMode = () => {
       // Disable emergency mode
       document.body.classList.remove('emergency-mode')
     }
-    
+
     return () => {
       document.body.classList.remove('emergency-mode')
     }
   }, [events])
 }
 
-// Export the provider and hooks
+// Export the provider
 export default StateManagementProvider
-export {
-  StateManagementContext,
-  useStateManagement,
-  useStateManagementPerformance,
-  useEmergencyMode,
-}
