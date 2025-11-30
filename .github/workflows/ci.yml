@@ -7,13 +7,15 @@ on:
     branches: [main, develop]
 
 env:
-  NODE_VERSION: '18'
-  CACHE_VERSION: v1
+  NODE_VERSION: '18.x'
+  CACHE_VERSION: v2
 
 jobs:
   lint-and-type-check:
     name: Lint & Type Check
     runs-on: ubuntu-latest
+    outputs:
+      cache-hit: ${{ steps.cache.outputs.cache-hit }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -24,7 +26,20 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
+      - name: Cache node modules
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: ${{ runner.os }}-node-${{ env.CACHE_VERSION }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.CACHE_VERSION }}-
+            ${{ runner.os }}-node-
+
       - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Run ESLint
@@ -39,6 +54,7 @@ jobs:
   test:
     name: Test Suite
     runs-on: ubuntu-latest
+    needs: lint-and-type-check
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -49,22 +65,45 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: ${{ runner.os }}-node-${{ env.CACHE_VERSION }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.CACHE_VERSION }}-
+            ${{ runner.os }}-node-
+
       - name: Install dependencies
         run: npm ci
+
+      - name: Cache Jest cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/jest
+            coverage
+          key: ${{ runner.os }}-jest-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-jest-
 
       - name: Run unit tests
         run: npm run test:coverage
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           file: ./coverage/lcov.info
           flags: unittests
           name: codecov-umbrella
+          fail_ci_if_error: false
 
   e2e-test:
     name: E2E Tests
     runs-on: ubuntu-latest
+    needs: lint-and-type-check
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -75,26 +114,59 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: ${{ runner.os }}-node-${{ env.CACHE_VERSION }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.CACHE_VERSION }}-
+            ${{ runner.os }}-node-
+
       - name: Install dependencies
         run: npm ci
 
+      - name: Cache Playwright browsers
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
       - name: Install Playwright browsers
-        run: npm run test:e2e:playwright:install
+        run: npx playwright install --with-deps
 
       - name: Build application
         run: npm run build
 
-      - name: Run E2E tests
-        run: npm run test:e2e:playwright
+      - name: Cache build artifacts
+        uses: actions/cache@v3
+        with:
+          path: |
+            .next
+            out
+          key: ${{ runner.os }}-build-${{ hashFiles('**/package-lock.json', '**/next.config.js', '**/tailwind.config.ts', '**/tsconfig.json') }}
+          restore-keys: |
+            ${{ runner.os }}-build-
 
-      - uses: actions/upload-artifact@v3
+      - name: Run E2E tests
+        run: npx playwright test --config=playwright.config.ts
+        env:
+          CI: true
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: playwright-report
           path: playwright-report/
           retention-days: 30
           
-      - uses: actions/upload-artifact@v3
+      - name: Upload Playwright test results
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: playwright-test-results
@@ -104,6 +176,7 @@ jobs:
   security-audit:
     name: Security Audit
     runs-on: ubuntu-latest
+    needs: lint-and-type-check
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -114,19 +187,35 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: ${{ runner.os }}-node-${{ env.CACHE_VERSION }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.CACHE_VERSION }}-
+            ${{ runner.os }}-node-
+
       - name: Install dependencies
         run: npm ci
 
       - name: Run security audit
         run: npm audit --audit-level=moderate
 
-      - name: Run CodeQL Analysis
-        uses: github/codeql-action/init@v2
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
         with:
           languages: javascript
 
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:javascript"
 
   build-staging:
     name: Build Staging
@@ -143,6 +232,17 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: ${{ runner.os }}-node-${{ env.CACHE_VERSION }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.CACHE_VERSION }}-
+            ${{ runner.os }}-node-
+
       - name: Install dependencies
         run: npm ci
 
@@ -151,13 +251,31 @@ jobs:
         env:
           NEXT_PUBLIC_ENVIRONMENT: staging
 
+      - name: Cache build artifacts
+        uses: actions/cache@v3
+        with:
+          path: |
+            .next
+            out
+          key: ${{ runner.os }}-build-staging-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-build-staging-
+
       - name: Deploy to Vercel Staging
-        uses: amondnet/vercel-action@v20
+        id: deploy-staging
+        uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: '--env=staging'
+          working-directory: ./
+
+      - name: Deploy Edge Functions to Staging
+        if: steps.deploy-staging.outcome == 'success'
+        run: |
+          npx supabase login --token ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          npx supabase functions deploy --env=staging
 
   build-production:
     name: Build Production
@@ -174,6 +292,17 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: ${{ runner.os }}-node-${{ env.CACHE_VERSION }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.CACHE_VERSION }}-
+            ${{ runner.os }}-node-
+
       - name: Install dependencies
         run: npm ci
 
@@ -182,20 +311,34 @@ jobs:
         env:
           NEXT_PUBLIC_ENVIRONMENT: production
 
+      - name: Cache build artifacts
+        uses: actions/cache@v3
+        with:
+          path: |
+            .next
+            out
+          key: ${{ runner.os }}-build-production-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-build-production-
+
       - name: Deploy to Vercel Production
-        uses: amondnet/vercel-action@v20
+        id: deploy-production
+        uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: '--prod'
+          working-directory: ./
 
       - name: Deploy Edge Functions
+        if: steps.deploy-production.outcome == 'success'
         run: |
           npx supabase login --token ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           npx supabase functions deploy --env=production
 
       - name: Run database migrations
+        if: steps.deploy-production.outcome == 'success'
         run: |
           npx supabase login --token ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           npx supabase db push --db-url ${{ secrets.DATABASE_URL }}
@@ -215,8 +358,29 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: ${{ runner.os }}-node-${{ env.CACHE_VERSION }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.CACHE_VERSION }}-
+            ${{ runner.os }}-node-
+
       - name: Install dependencies
         run: npm ci
+
+      - name: Cache Lighthouse
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.lhci
+            .lighthouseci
+          key: ${{ runner.os }}-lighthouse-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-lighthouse-
 
       - name: Run Lighthouse CI
         run: |
@@ -230,16 +394,20 @@ jobs:
   notify:
     name: Notify Team
     runs-on: ubuntu-latest
-    needs: [build-staging, build-production]
+    needs: [build-staging, build-production, performance-test]
     if: always()
     steps:
       - name: Notify Slack on Success
-        if: success()
+        if: success() && (needs.build-staging.result == 'success' || needs.build-production.result == 'success')
         uses: 8398a7/action-slack@v3
         with:
           status: success
           channel: '#deployments'
-          text: '✅ OpenRelief deployed successfully!'
+          text: |
+            ✅ OpenRelief deployed successfully!
+            Branch: ${{ github.ref_name }}
+            Commit: ${{ github.sha }}
+            Workflow: ${{ github.workflow }}
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
@@ -249,6 +417,11 @@ jobs:
         with:
           status: failure
           channel: '#deployments'
-          text: '❌ OpenRelief deployment failed!'
+          text: |
+            ❌ OpenRelief deployment failed!
+            Branch: ${{ github.ref_name }}
+            Commit: ${{ github.sha }}
+            Workflow: ${{ github.workflow }}
+            Failed Jobs: ${{ join(needs.*.result, ', ') }}
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

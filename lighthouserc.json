@@ -1,0 +1,313 @@
+{
+  "ci": {
+    "collect": {
+      "url": [
+        "http://localhost:3000/",
+        "http://localhost:3000/offline",
+        "http://localhost:3000/offline/emergency",
+        "http://localhost:3000/pwa-status"
+      ],
+      "numberOfRuns": 3,
+      "settings": {
+        "chromeFlags": "--no-sandbox --headless",
+        "preset": "desktop",
+        "throttling": {
+          "rttMs": 40,
+          "throughputKbps": 10240,
+          "cpuSlowdownMultiplier": 1,
+          "requestLatencyMs": 0,
+          "downloadThroughputKbps": 0,
+          "uploadThroughputKbps": 0
+        }
+      }
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance": ["warn", {"minScore": 0.8}],
+        "categories:accessibility": ["error", {"minScore": 0.9}],
+        "categories:best-practices": ["warn", {"minScore": 0.8}],
+        "categories:seo": ["warn", {"minScore": 0.8}],
+        "categories:pwa": ["error", {"minScore": 0.8}],
+        
+        "categories:performance": ["warn", {"minScore": 0.8}],
+        "first-contentful-paint": ["warn", {"maxNumericValue": 2000}],
+        "largest-contentful-paint": ["warn", {"maxNumericValue": 2500}],
+        "cumulative-layout-shift": ["warn", {"maxNumericValue": 0.1}],
+        "total-blocking-time": ["warn", {"maxNumericValue": 300}],
+        "speed-index": ["warn", {"maxNumericValue": 3400}],
+        "interactive": ["warn", {"maxNumericValue": 3800}],
+        
+        "categories:accessibility": ["error", {"minScore": 0.9}],
+        "aria-allowed-attr": "error",
+        "aria-input-field-name": "error",
+        "aria-required-attr": "error",
+        "aria-required-children": "error",
+        "aria-required-parent": "error",
+        "aria-roles": "error",
+        "aria-valid-attr": "error",
+        "aria-valid-attr-value": "error",
+        "button-name": "error",
+        "bypass": "error",
+        "color-contrast": "warn",
+        "definition-list": "warn",
+        "dlitem": "warn",
+        "document-title": "error",
+        "form-field-multiple-labels": "error",
+        "frame-title": "error",
+        "heading-order": "warn",
+        "html-has-lang": "error",
+        "image-alt": "error",
+        "image-redundant-alt": "warn",
+        "input-button-name": "error",
+        "input-image-alt": "error",
+        "label": "error",
+        "link-name": "error",
+        "list": "warn",
+        "listitem": "warn",
+        "meta-viewport": "error",
+        "meta-viewport-large": "warn",
+        "object-alt": "error",
+        "tabindex": "warn",
+        "td-headers-attr": "warn",
+        "th-headers-attr": "warn",
+        "valid-lang": "warn",
+        "video-caption": "warn",
+        "video-title": "warn",
+        
+        "categories:best-practices": ["warn", {"minScore": 0.8}],
+        "appcache-manifest": "off",
+        "doctype": "error",
+        "charset": "error",
+        "geolocation-on-start": "warn",
+        "inspector-issues": "warn",
+        "javascript-libraries": "off",
+        "no-vulnerable-libraries": "error",
+        "password-inputs-can-be-cleared": "off",
+        "password-inputs-can-be-pasted": "off",
+        "protocol": "error",
+        "resource-hints": "warn",
+        "sri-implemented": "warn",
+        "ssl": "error",
+        "style-type": "error",
+        "uses-http2": "warn",
+        "uses-passive-event-listeners": "warn",
+        "webp-usage": "off",
+        "works-offline": "error",
+        
+        "categories:seo": ["warn", {"minScore": 0.8}],
+        "canonical": "warn",
+        "font-size": "warn",
+        "http-status-code": "error",
+        "image-alt": "error",
+        "image-size-responsive": "warn",
+        "inline-link-text": "warn",
+        "is-crawlable": "error",
+        "lang": "error",
+        "link-text": "warn",
+        "meta-description": "warn",
+        "plugins": "off",
+        "robots-txt": "warn",
+        "screenshot": "off",
+        "tap-targets": "warn",
+        "text-compression": "warn",
+        "viewport": "error",
+        
+        "categories:pwa": ["error", {"minScore": 0.8}],
+        "installable-manifest": "error",
+        "maskable-icon": "error",
+        "offline-start-url": "error",
+        "service-worker": "error",
+        "splash-screen": "error",
+        "themed-omnibox": "error",
+        "viewport": "error",
+        "width": "error",
+        "apple-touch-icon": "warn",
+        "content-width": "warn",
+        "display-mode": "error",
+        "follows-recommendations": "warn",
+        "is-on-https": "error",
+        "load-fast-enough-for-pwa": "warn",
+        "no-vulnerable-libraries": "error",
+        "pwa-cross-browser": "warn",
+        "pwa-each-page-has-url": "warn",
+        "pwa-full-page-metadata": "warn",
+        "pwa-installable": "error",
+        "pwa-optimized": "warn",
+        "pwa-page-transitions": "warn",
+        "pwa-responsive": "error",
+        "pwa-serviceworker": "error",
+        "redirects-http": "error",
+        "service-worker-controlled-pages": "error",
+        "supports-offline": "error",
+        "theme-color": "error",
+        "works-offline": "error"
+      }
+    },
+    "upload": {
+      "target": "temporary-public-storage"
+    },
+    "server": {
+      "port": 9009,
+      "storage": {
+        "storageMethod": "sql",
+        "sqlDatabasePath": "./lighthouse-results.db"
+      }
+    }
+  },
+  "ci:mobile": {
+    "collect": {
+      "url": [
+        "http://localhost:3000/",
+        "http://localhost:3000/offline",
+        "http://localhost:3000/offline/emergency",
+        "http://localhost:3000/pwa-status"
+      ],
+      "numberOfRuns": 3,
+      "settings": {
+        "chromeFlags": "--no-sandbox --headless",
+        "preset": "mobile",
+        "throttling": {
+          "rttMs": 150,
+          "throughputKbps": 1638.4,
+          "cpuSlowdownMultiplier": 4,
+          "requestLatencyMs": 0,
+          "downloadThroughputKbps": 0,
+          "uploadThroughputKbps": 0
+        },
+        "emulatedUserAgent": "Mozilla/5.0 (Linux; Android 10; SM-G975F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36",
+        "viewport": {
+          "width": 360,
+          "height": 640,
+          "deviceScaleFactor": 2,
+          "isMobile": true,
+          "hasTouch": true,
+          "isLandscape": false
+        }
+      }
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance": ["warn", {"minScore": 0.7}],
+        "categories:accessibility": ["error", {"minScore": 0.9}],
+        "categories:best-practices": ["warn", {"minScore": 0.8}],
+        "categories:seo": ["warn", {"minScore": 0.8}],
+        "categories:pwa": ["error", {"minScore": 0.8}],
+        
+        "categories:performance": ["warn", {"minScore": 0.7}],
+        "first-contentful-paint": ["warn", {"maxNumericValue": 3000}],
+        "largest-contentful-paint": ["warn", {"maxNumericValue": 4000}],
+        "cumulative-layout-shift": ["warn", {"maxNumericValue": 0.1}],
+        "total-blocking-time": ["warn", {"maxNumericValue": 600}],
+        "speed-index": ["warn", {"maxNumericValue": 4300}],
+        "interactive": ["warn", {"maxNumericValue": 7300}],
+        
+        "categories:pwa": ["error", {"minScore": 0.8}],
+        "installable-manifest": "error",
+        "maskable-icon": "error",
+        "offline-start-url": "error",
+        "service-worker": "error",
+        "splash-screen": "error",
+        "themed-omnibox": "error",
+        "viewport": "error",
+        "width": "error",
+        "pwa-responsive": "error",
+        "works-offline": "error"
+      }
+    }
+  },
+  "ci:desktop": {
+    "collect": {
+      "url": [
+        "http://localhost:3000/",
+        "http://localhost:3000/offline",
+        "http://localhost:3000/offline/emergency",
+        "http://localhost:3000/pwa-status"
+      ],
+      "numberOfRuns": 3,
+      "settings": {
+        "chromeFlags": "--no-sandbox --headless",
+        "preset": "desktop",
+        "throttling": {
+          "rttMs": 40,
+          "throughputKbps": 10240,
+          "cpuSlowdownMultiplier": 1,
+          "requestLatencyMs": 0,
+          "downloadThroughputKbps": 0,
+          "uploadThroughputKbps": 0
+        },
+        "emulatedUserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "viewport": {
+          "width": 1350,
+          "height": 940,
+          "deviceScaleFactor": 1,
+          "isMobile": false,
+          "hasTouch": false,
+          "isLandscape": true
+        }
+      }
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance": ["warn", {"minScore": 0.9}],
+        "categories:accessibility": ["error", {"minScore": 0.95}],
+        "categories:best-practices": ["warn", {"minScore": 0.9}],
+        "categories:seo": ["warn", {"minScore": 0.9}],
+        "categories:pwa": ["error", {"minScore": 0.85}],
+        
+        "categories:performance": ["warn", {"minScore": 0.9}],
+        "first-contentful-paint": ["warn", {"maxNumericValue": 1500}],
+        "largest-contentful-paint": ["warn", {"maxNumericValue": 2000}],
+        "cumulative-layout-shift": ["warn", {"maxNumericValue": 0.05}],
+        "total-blocking-time": ["warn", {"maxNumericValue": 200}],
+        "speed-index": ["warn", {"maxNumericValue": 3000}],
+        "interactive": ["warn", {"maxNumericValue": 3000}]
+      }
+    }
+  },
+  "ci:pwa-focus": {
+    "collect": {
+      "url": [
+        "http://localhost:3000/",
+        "http://localhost:3000/offline",
+        "http://localhost:3000/offline/emergency"
+      ],
+      "numberOfRuns": 5,
+      "settings": {
+        "chromeFlags": "--no-sandbox --headless",
+        "preset": "mobile",
+        "onlyCategories": ["pwa", "performance", "accessibility"],
+        "throttling": {
+          "rttMs": 150,
+          "throughputKbps": 1638.4,
+          "cpuSlowdownMultiplier": 4,
+          "requestLatencyMs": 0,
+          "downloadThroughputKbps": 0,
+          "uploadThroughputKbps": 0
+        }
+      }
+    },
+    "assert": {
+      "assertions": {
+        "categories:pwa": ["error", {"minScore": 0.9}],
+        "categories:performance": ["warn", {"minScore": 0.8}],
+        "categories:accessibility": ["error", {"minScore": 0.9}],
+        
+        "installable-manifest": "error",
+        "maskable-icon": "error",
+        "offline-start-url": "error",
+        "service-worker": "error",
+        "splash-screen": "error",
+        "themed-omnibox": "error",
+        "viewport": "error",
+        "width": "error",
+        "pwa-responsive": "error",
+        "works-offline": "error",
+        "supports-offline": "error",
+        "service-worker-controlled-pages": "error",
+        "load-fast-enough-for-pwa": "warn",
+        "pwa-installable": "error",
+        "pwa-optimized": "warn"
+      }
+    }
+  }
+}
