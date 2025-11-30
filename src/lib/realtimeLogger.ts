@@ -50,160 +50,132 @@ class RealtimeLogger {
     private log(
         level: RealtimeLogEntry['level'],
         component: string,
-        action: string,
-        message: string,
-        data?: any,
-        error?: any,
-        context?: RealtimeLogEntry['context']
-    ) {
-        const entry: RealtimeLogEntry = {
-            timestamp: new Date().toISOString(),
-            level,
-            component,
-            action,
-            message,
-            data,
-            error: error ? (error instanceof Error ? error.message : String(error)) : undefined,
-            context: context ? {
-                table: context.table !== undefined ? context.table : undefined,
-                eventId: context.eventId !== undefined ? context.eventId : undefined,
-                userId: context.userId !== undefined ? context.userId : undefined,
-                subscriptionId: context.subscriptionId !== undefined ? context.subscriptionId : undefined,
-                retryCount: context.retryCount !== undefined ? context.retryCount : undefined,
-                networkStatus: context.networkStatus !== undefined ? context.networkStatus : undefined,
-                connectionStatus: context.connectionStatus !== undefined ? context.connectionStatus : undefined,
-            } : undefined,
-        }
-
-        // Add to logs
-        this.logs.push(entry)
-
         // Keep only recent logs
-        if (this.logs.length > this.maxLogs) {
-            this.logs = this.logs.slice(-this.maxLogs)
-        }
+        if(this.logs.length > this.maxLogs) {
+    this.logs = this.logs.slice(-this.maxLogs)
+}
 
-        // Console output with formatting
-        const prefix = `[${level.toUpperCase()}][${component}][${action}]`
+// Console output with formatting
+const prefix = `[${level.toUpperCase()}][${component}][${action}]`
 
-        switch (level) {
-            case 'debug':
-                console.debug(prefix, message, data || '', error || '')
-                break
-            case 'info':
-                console.info(prefix, message, data || '', error || '')
-                break
-            case 'warn':
-                console.warn(prefix, message, data || '', error || '')
-                break
-            case 'error':
-                console.error(prefix, message, data || '', error || '')
-                break
-            case 'critical':
-                console.error('🚨', prefix, message, data || '', error || '')
-                break
-        }
+switch (level) {
+    case 'debug':
+        console.debug(prefix, message, data || '', error || '')
+        break
+    case 'info':
+        console.info(prefix, message, data || '', error || '')
+        break
+    case 'warn':
+        console.warn(prefix, message, data || '', error || '')
+        break
+    case 'error':
+        console.error(prefix, message, data || '', error || '')
+        break
+    case 'critical':
+        console.error('🚨', prefix, message, data || '', error || '')
+        break
+}
 
-        // Notify subscribers
-        this.notifySubscribers()
+// Notify subscribers
+this.notifySubscribers()
     }
 
-    // Subscription management
-    subscribe(callback: (logs: RealtimeLogEntry[]) => void) {
-        this.subscribers.push(callback)
-        callback(this.getRecentLogs())
+// Subscription management
+subscribe(callback: (logs: RealtimeLogEntry[]) => void) {
+    this.subscribers.push(callback)
+    callback(this.getRecentLogs())
 
-        return () => {
-            const index = this.subscribers.indexOf(callback)
-            if (index > -1) {
-                this.subscribers.splice(index, 1)
-            }
+    return () => {
+        const index = this.subscribers.indexOf(callback)
+        if (index > -1) {
+            this.subscribers.splice(index, 1)
         }
     }
+}
 
     private notifySubscribers() {
-        this.subscribers.forEach(callback => {
-            try {
-                callback(this.getRecentLogs())
-            } catch (error) {
-                console.error('[RealtimeLogger] Subscriber error:', error)
-            }
-        })
-    }
-
-    // Query methods
-    getRecentLogs(count: number = 100): RealtimeLogEntry[] {
-        return this.logs.slice(-count)
-    }
-
-    getLogsByLevel(level: RealtimeLogEntry['level']): RealtimeLogEntry[] {
-        return this.logs.filter(log => log.level === level)
-    }
-
-    getLogsByComponent(component: string): RealtimeLogEntry[] {
-        return this.logs.filter(log => log.component === component)
-    }
-
-    getErrorLogs(): RealtimeLogEntry[] {
-        return this.logs.filter(log => log.level === 'error' || log.level === 'critical')
-    }
-
-    // Analysis methods
-    getSubscriptionHealth(): {
-        totalConnections: number
-        successfulConnections: number
-        failedConnections: number
-        averageRetryCount: number
-        errorRate: number
-        recentErrors: RealtimeLogEntry[]
-    } {
-        const connectionLogs = this.logs.filter(log =>
-            log.action === 'subscribe' || log.action === 'connect'
-        )
-
-        const successfulConnections = connectionLogs.filter(log =>
-            log.level === 'info' && log.message.includes('Successfully')
-        )
-
-        const failedConnections = connectionLogs.filter(log =>
-            log.level === 'error' || log.level === 'critical'
-        )
-
-        const retryLogs = this.logs.filter(log =>
-            log.context?.retryCount && log.context.retryCount > 0
-        )
-
-        const averageRetryCount = retryLogs.length > 0
-            ? retryLogs.reduce((sum, log) => sum + (log.context?.retryCount || 0), 0) / retryLogs.length
-            : 0
-
-        const recentErrors = this.getErrorLogs().slice(-10)
-
-        return {
-            totalConnections: connectionLogs.length,
-            successfulConnections: successfulConnections.length,
-            failedConnections: failedConnections.length,
-            averageRetryCount,
-            errorRate: connectionLogs.length > 0 ? (failedConnections.length / connectionLogs.length) * 100 : 0,
-            recentErrors,
+    this.subscribers.forEach(callback => {
+        try {
+            callback(this.getRecentLogs())
+        } catch (error) {
+            console.error('[RealtimeLogger] Subscriber error:', error)
         }
+    })
+}
+
+// Query methods
+getRecentLogs(count: number = 100): RealtimeLogEntry[] {
+    return this.logs.slice(-count)
+}
+
+getLogsByLevel(level: RealtimeLogEntry['level']): RealtimeLogEntry[] {
+    return this.logs.filter(log => log.level === level)
+}
+
+getLogsByComponent(component: string): RealtimeLogEntry[] {
+    return this.logs.filter(log => log.component === component)
+}
+
+getErrorLogs(): RealtimeLogEntry[] {
+    return this.logs.filter(log => log.level === 'error' || log.level === 'critical')
+}
+
+// Analysis methods
+getSubscriptionHealth(): {
+    totalConnections: number
+    successfulConnections: number
+    failedConnections: number
+    averageRetryCount: number
+    errorRate: number
+    recentErrors: RealtimeLogEntry[]
+} {
+    const connectionLogs = this.logs.filter(log =>
+        log.action === 'subscribe' || log.action === 'connect'
+    )
+
+    const successfulConnections = connectionLogs.filter(log =>
+        log.level === 'info' && log.message.includes('Successfully')
+    )
+
+    const failedConnections = connectionLogs.filter(log =>
+        log.level === 'error' || log.level === 'critical'
+    )
+
+    const retryLogs = this.logs.filter(log =>
+        log.context?.retryCount && log.context.retryCount > 0
+    )
+
+    const averageRetryCount = retryLogs.length > 0
+        ? retryLogs.reduce((sum, log) => sum + (log.context?.retryCount || 0), 0) / retryLogs.length
+        : 0
+
+    const recentErrors = this.getErrorLogs().slice(-10)
+
+    return {
+        totalConnections: connectionLogs.length,
+        successfulConnections: successfulConnections.length,
+        failedConnections: failedConnections.length,
+        averageRetryCount,
+        errorRate: connectionLogs.length > 0 ? (failedConnections.length / connectionLogs.length) * 100 : 0,
+        recentErrors,
+    }
+}
+
+// Export methods
+exportLogs(): string {
+    const logData = {
+        exportTime: new Date().toISOString(),
+        health: this.getSubscriptionHealth(),
+        logs: this.logs,
     }
 
-    // Export methods
-    exportLogs(): string {
-        const logData = {
-            exportTime: new Date().toISOString(),
-            health: this.getSubscriptionHealth(),
-            logs: this.logs,
-        }
+    return JSON.stringify(logData, null, 2)
+}
 
-        return JSON.stringify(logData, null, 2)
-    }
-
-    clearLogs() {
-        this.logs = []
-        console.info('[RealtimeLogger] Logs cleared')
-    }
+clearLogs() {
+    this.logs = []
+    console.info('[RealtimeLogger] Logs cleared')
+}
 }
 
 // Global logger instance
@@ -241,20 +213,20 @@ export const logSubscriptionError = (component: string, table: string, error: an
 export const logConnectionState = (component: string, state: 'connecting' | 'connected' | 'disconnected' | 'error', table?: string) => {
     realtimeLogger.info(component, 'connection', `Connection state: ${state}`, null, {
         connectionStatus: state,
-        table,
+        ...(table ? { table } : {}),
         networkStatus: navigator.onLine,
     })
 }
 
 export const logBroadcastAttempt = (component: string, channel: string, eventId?: string) => {
     realtimeLogger.debug(component, 'broadcast', `Attempting broadcast to ${channel}`, null, {
-        eventId,
+        ...(eventId ? { eventId } : {}),
     })
 }
 
 export const logBroadcastSuccess = (component: string, channel: string, eventId?: string) => {
     realtimeLogger.info(component, 'broadcast', `Successfully broadcast to ${channel}`, null, {
-        eventId,
+        ...(eventId ? { eventId } : {}),
     })
 }
 
@@ -266,7 +238,7 @@ export const logBroadcastError = (component: string, channel: string, error: any
     })
 
     realtimeLogger.error(component, 'broadcast', `Failed to broadcast to ${channel}`, null, error, {
-        eventId,
+        ...(eventId ? { eventId } : {}),
         networkStatus: navigator.onLine,
     })
 }

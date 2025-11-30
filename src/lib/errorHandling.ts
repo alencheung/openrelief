@@ -474,6 +474,8 @@ export class EmergencyErrorBoundary {
   public retry = async () => {
     if (!this.state.error || this.state.isRecovering) return
 
+    const currentError = this.state.error // Store reference to avoid null issues
+
     this.state = {
       ...this.state,
       isRecovering: true,
@@ -482,7 +484,7 @@ export class EmergencyErrorBoundary {
     this.notifyListeners()
 
     try {
-      const recovered = await recoverFromError(this.state.error)
+      const recovered = await recoverFromError(currentError)
       if (recovered) {
         this.state = {
           hasError: false,

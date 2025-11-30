@@ -8,7 +8,7 @@ import { Page, expect } from '@playwright/test';
  */
 
 export class TestHelpers {
-  constructor(private page: Page) {}
+  constructor(private page: Page) { }
 
   /**
    * Navigate to a specific page and wait for it to load
@@ -26,7 +26,7 @@ export class TestHelpers {
     await this.page.waitForFunction(() => {
       return navigator.serviceWorker && navigator.serviceWorker.ready;
     });
-    
+
     // Wait for app to be fully loaded
     await this.page.waitForSelector('[data-testid="app-loaded"]', { timeout: 10000 });
   }
@@ -38,7 +38,7 @@ export class TestHelpers {
     await this.page.fill('[data-testid="email-input"]', email);
     await this.page.fill('[data-testid="password-input"]', password);
     await this.page.click('[data-testid="login-button"]');
-    
+
     // Wait for login to complete
     await this.page.waitForURL('**/dashboard');
     await expect(this.page.locator('[data-testid="user-menu"]')).toBeVisible();
@@ -50,7 +50,7 @@ export class TestHelpers {
   async logout() {
     await this.page.click('[data-testid="user-menu"]');
     await this.page.click('[data-testid="logout-button"]');
-    
+
     // Wait for logout to complete
     await this.page.waitForURL('**/');
   }
@@ -60,7 +60,7 @@ export class TestHelpers {
    */
   async mockGeolocation(latitude: number, longitude: number) {
     await this.page.context().grantPermissions(['geolocation']);
-    await this.page.setGeolocation({ latitude, longitude });
+    await this.page.context().setGeolocation({ latitude, longitude });
   }
 
   /**
@@ -111,20 +111,20 @@ export class TestHelpers {
 
     // Navigate to emergency reporting page
     await this.navigateToPage('/emergency/report');
-    
+
     // Fill out the form
     await this.page.selectOption('[data-testid="emergency-type"]', type);
     await this.page.fill('[data-testid="emergency-description"]', description);
-    
+
     // Set location if provided
     if (location) {
       await this.mockGeolocation(location.lat, location.lng);
       await this.page.click('[data-testid="use-current-location"]');
     }
-    
+
     // Submit the form
     await this.page.click('[data-testid="submit-report"]');
-    
+
     // Wait for confirmation
     await expect(this.page.locator('[data-testid="report-confirmation"]')).toBeVisible();
   }
@@ -135,7 +135,7 @@ export class TestHelpers {
   async isPWAInstalled() {
     return await this.page.evaluate(() => {
       return window.matchMedia('(display-mode: standalone)').matches ||
-             (navigator as any).standalone === true;
+        (navigator as any).standalone === true;
     });
   }
 
@@ -143,9 +143,9 @@ export class TestHelpers {
    * Take a screenshot with a custom name
    */
   async takeScreenshot(name: string) {
-    await this.page.screenshot({ 
+    await this.page.screenshot({
       path: `test-results/screenshots/${name}-${Date.now()}.png`,
-      fullPage: true 
+      fullPage: true
     });
   }
 
@@ -172,7 +172,7 @@ export class TestHelpers {
    */
   async triggerServiceWorkerSync() {
     await this.page.evaluate(() => {
-      return navigator.serviceWorker.ready.then(registration => {
+      return navigator.serviceWorker.ready.then((registration: any) => {
         return registration.sync.register('test-sync');
       });
     });
@@ -189,7 +189,7 @@ export const customExpect = {
   async toHaveMapLoaded(page: Page) {
     const mapContainer = page.locator('[data-testid="map-container"]');
     await expect(mapContainer).toBeVisible();
-    
+
     // Additional checks for map initialization
     await expect(page.locator('[data-testid="map-loaded"]')).toBeVisible();
   },

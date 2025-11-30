@@ -76,13 +76,13 @@ interface OfflineState {
   // Actions and queue
   actions: OfflineAction[]
   queue: SyncQueue[]
-  
+
   // Cache
   cache: Map<string, OfflineCache>
-  
+
   // Settings
   settings: OfflineSettings
-  
+
   // Sync state
   isOnline: boolean
   isSyncing: boolean
@@ -92,24 +92,24 @@ interface OfflineState {
     currentAction?: string
   }
   lastSyncTime: number | null
-  
+
   // Conflicts
   conflicts: ConflictResolution[]
-  
+
   // Metrics
   metrics: OfflineMetrics
-  
+
   // Performance
   storageQuota: {
     used: number
     quota: number
     percentage: number
   }
-  
+
   // Background sync
   bgSyncSupported: boolean
   bgSyncRegistered: boolean
-  
+
   // Error handling
   error: string | null
   lastError: {
@@ -129,12 +129,12 @@ interface OfflineActions {
   markActionFailed: (actionId: string, error: string) => void
   retryAction: (actionId: string) => void
   clearSyncedActions: () => void
-  
+
   // Queue management
   createSyncQueue: (actionIds: string[]) => string
   processQueue: (queueId?: string) => Promise<void>
   cancelQueue: (queueId: string) => void
-  
+
   // Cache management
   setCache: (key: string, data: any, options?: {
     expiresAt?: number
@@ -145,38 +145,38 @@ interface OfflineActions {
   removeCache: (key: string) => void
   clearCache: (tags?: string[]) => void
   cleanExpiredCache: () => void
-  
+
   // Sync management
   startSync: () => Promise<void>
   stopSync: () => void
   forceSync: () => Promise<void>
   scheduleSync: (delay?: number) => void
-  
+
   // Conflict management
   addConflict: (conflict: Omit<ConflictResolution, 'resolvedAt'>) => void
   resolveConflict: (actionId: string, resolution: ConflictResolution['resolution'], mergedData?: any) => void
   clearResolvedConflicts: () => void
-  
+
   // Settings management
   updateSettings: (settings: Partial<OfflineSettings>) => void
   resetSettings: () => void
-  
+
   // Metrics and monitoring
   updateMetrics: () => void
   getStorageQuota: () => Promise<void>
   optimizeStorage: () => Promise<void>
-  
+
   // Background sync
   registerBackgroundSync: () => Promise<void>
   unregisterBackgroundSync: () => Promise<void>
-  
+
   // Utility functions
   getPendingActions: (priority?: OfflineAction['priority']) => OfflineAction[]
   getFailedActions: () => OfflineAction[]
   getActionById: (actionId: string) => OfflineAction | undefined
   getActionsByTable: (table: string) => OfflineAction[]
   estimateSyncTime: (actions: OfflineAction[]) => number
-  
+
   // Error handling
   setError: (error: string | null, actionId?: string) => void
   clearError: () => void
@@ -213,33 +213,33 @@ const compressData = async (data: any): Promise<any> => {
     const stream = new CompressionStream('gzip')
     const writer = stream.writable.getWriter()
     const reader = stream.readable.getReader()
-    
+
     writer.write(new TextEncoder().encode(JSON.stringify(data)))
     writer.close()
-    
+
     const chunks: Uint8Array[] = []
     let done = false
-    
+
     while (!done) {
       const { value, done: readerDone } = await reader.read()
       done = readerDone
       if (value) chunks.push(value)
     }
-    
+
     const compressed = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0))
     let offset = 0
     for (const chunk of chunks) {
       compressed.set(chunk, offset)
       offset += chunk.length
     }
-    
+
     return {
       compressed: true,
       data: Array.from(compressed),
       originalSize: estimateDataSize(data),
     }
   }
-  
+
   return data
 }
 
@@ -249,30 +249,30 @@ const decompressData = async (compressedData: any): Promise<any> => {
       const stream = new DecompressionStream('gzip')
       const writer = stream.writable.getWriter()
       const reader = stream.readable.getReader()
-      
+
       writer.write(new Uint8Array(compressedData.data))
       writer.close()
-      
+
       const chunks: Uint8Array[] = []
       let done = false
-      
+
       while (!done) {
         const { value, done: readerDone } = await reader.read()
         done = readerDone
         if (value) chunks.push(value)
       }
-      
+
       const decompressed = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0))
       let offset = 0
       for (const chunk of chunks) {
         decompressed.set(chunk, offset)
         offset += chunk.length
       }
-      
+
       return JSON.parse(new TextDecoder().decode(decompressed))
     }
   }
-  
+
   return compressedData
 }
 
@@ -400,10 +400,10 @@ export const useOfflineStore = create<OfflineStore>()(
 
         processQueue: async (queueId) => {
           const { queue, isOnline, isSyncing } = get()
-          
+
           if (!isOnline || isSyncing) return
 
-          const targetQueue = queueId 
+          const targetQueue = queueId
             ? queue.find(q => q.id === queueId)
             : queue.find(q => q.status === 'pending')
 
@@ -427,10 +427,10 @@ export const useOfflineStore = create<OfflineStore>()(
 
             for (let i = 0; i < sortedActions.length; i++) {
               const action = sortedActions[i]
-              
+
               set((state) => ({
-                syncProgress: { 
-                  current: i + 1, 
+                syncProgress: {
+                  current: i + 1,
                   total: sortedActions.length,
                   currentAction: action.id,
                 },
@@ -438,7 +438,7 @@ export const useOfflineStore = create<OfflineStore>()(
 
               // Simulate API call - replace with actual implementation
               await new Promise(resolve => setTimeout(resolve, 1000))
-              
+
               // Mark as synced
               get().markActionSynced(action.id)
             }
@@ -446,7 +446,7 @@ export const useOfflineStore = create<OfflineStore>()(
             // Update queue status
             set((state) => ({
               queue: state.queue.map(q =>
-                q.id === targetQueue.id 
+                q.id === targetQueue.id
                   ? { ...q, status: 'completed', endTime: Date.now() }
                   : q
               ),
@@ -455,10 +455,10 @@ export const useOfflineStore = create<OfflineStore>()(
 
           } catch (error) {
             console.error('Sync queue failed:', error)
-            
+
             set((state) => ({
               queue: state.queue.map(q =>
-                q.id === targetQueue.id 
+                q.id === targetQueue.id
                   ? { ...q, status: 'failed', error: error instanceof Error ? error.message : 'Unknown error' }
                   : q
               ),
@@ -482,10 +482,10 @@ export const useOfflineStore = create<OfflineStore>()(
           const { settings } = get()
           const expiresAt = options.expiresAt || Date.now() + (settings.cacheMaxAge * 24 * 60 * 60 * 1000)
           const tags = options.tags || []
-          
+
           let cacheData = data
           let size = estimateDataSize(data)
-          
+
           if (settings.compressData && size > 1024) { // Only compress data larger than 1KB
             cacheData = await compressData(data)
           }
@@ -535,7 +535,7 @@ export const useOfflineStore = create<OfflineStore>()(
         clearCache: (tags) => {
           set((state) => {
             const newCache = new Map(state.cache)
-            
+
             if (tags && tags.length > 0) {
               // Clear only entries with specified tags
               for (const [key, entry] of newCache) {
@@ -547,7 +547,7 @@ export const useOfflineStore = create<OfflineStore>()(
               // Clear all cache
               newCache.clear()
             }
-            
+
             return { cache: newCache }
           })
         },
@@ -568,7 +568,7 @@ export const useOfflineStore = create<OfflineStore>()(
         // Sync management
         startSync: async () => {
           if (!get().isOnline) return
-          
+
           const pendingActions = get().getPendingActions()
           if (pendingActions.length === 0) return
 
@@ -602,7 +602,7 @@ export const useOfflineStore = create<OfflineStore>()(
         resolveConflict: (actionId, resolution, mergedData) => {
           set((state) => ({
             conflicts: state.conflicts.map(c =>
-              c.actionId === actionId 
+              c.actionId === actionId
                 ? { ...c, resolution, resolvedAt: Date.now(), mergedData }
                 : c
             ),
@@ -629,15 +629,15 @@ export const useOfflineStore = create<OfflineStore>()(
         // Metrics and monitoring
         updateMetrics: () => {
           const { actions, cache, lastSyncTime } = get()
-          
+
           const totalActions = actions.length
           const pendingActions = actions.filter(a => !a.synced && a.retryCount === 0).length
           const failedActions = actions.filter(a => !a.synced && a.retryCount > 0).length
           const syncedActions = actions.filter(a => a.synced).length
-          
+
           const cacheSize = Array.from(cache.values()).reduce((total, entry) => total + entry.size, 0)
           const cacheEntries = cache.size
-          
+
           const successRate = totalActions > 0 ? (syncedActions / totalActions) * 100 : 0
 
           set({
@@ -685,13 +685,13 @@ export const useOfflineStore = create<OfflineStore>()(
 
           // Sort by timestamp (oldest first) and remove oldest entries
           entries.sort((a, b) => a.timestamp - b.timestamp)
-          
+
           let currentSize = totalSize
           const targetSize = maxSizeBytes * 0.8 // Leave 20% buffer
 
           for (const entry of entries) {
             if (currentSize <= targetSize) break
-            
+
             get().removeCache(entry.key)
             currentSize -= entry.size
           }
@@ -728,8 +728,8 @@ export const useOfflineStore = create<OfflineStore>()(
         // Utility functions
         getPendingActions: (priority) => {
           const { actions } = get()
-          return actions.filter(a => 
-            !a.synced && 
+          return actions.filter(a =>
+            !a.synced &&
             a.retryCount < a.maxRetries &&
             (!priority || a.priority === priority)
           )
@@ -737,8 +737,8 @@ export const useOfflineStore = create<OfflineStore>()(
 
         getFailedActions: () => {
           const { actions } = get()
-          return actions.filter(a => 
-            !a.synced && 
+          return actions.filter(a =>
+            !a.synced &&
             a.retryCount >= a.maxRetries
           )
         },
@@ -754,13 +754,13 @@ export const useOfflineStore = create<OfflineStore>()(
         estimateSyncTime: (actions) => {
           // Base estimate: 2 seconds per action
           const baseTime = actions.length * 2000
-          
+
           // Adjust for priority (critical actions are faster)
           const priorityMultiplier = actions.some(a => a.priority === 'critical') ? 0.8 : 1.0
-          
+
           // Adjust for network conditions (simplified)
           const networkMultiplier = get().isOnline ? 1.0 : 2.0
-          
+
           return baseTime * priorityMultiplier * networkMultiplier
         },
 
@@ -813,7 +813,7 @@ export const useOfflineStore = create<OfflineStore>()(
 )
 
 // Selectors for common use cases
-export const useOfflineActions = () => useOfflineStore(state => ({
+export const useOfflineState = () => useOfflineStore(state => ({
   actions: state.actions,
   pendingActions: state.getPendingActions(),
   failedActions: state.getFailedActions(),

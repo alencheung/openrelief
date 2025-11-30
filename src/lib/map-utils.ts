@@ -354,6 +354,12 @@ export class EmergencyRouter {
       for (const feature of features) {
         const geometry = feature.geometry as GeoJSON.Point
         const coords = geometry.coordinates
+
+        // Skip if coordinates are invalid
+        if (typeof coords[0] !== 'number' || typeof coords[1] !== 'number') {
+          continue
+        }
+
         const featureLocation = new LngLat(coords[0], coords[1])
         const dist = location.distanceTo(featureLocation)
 

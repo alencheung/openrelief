@@ -1,4 +1,5 @@
 // Performance optimization utilities for OpenRelief emergency scenarios
+import { useState, useEffect } from 'react'
 
 // Types
 export interface PerformanceMetrics {
@@ -97,7 +98,7 @@ export class PerformanceMonitor {
     if (config) {
       this.config = { ...this.config, ...config }
     }
-    
+
     this.initializeMonitoring()
   }
 
@@ -155,8 +156,8 @@ export class PerformanceMonitor {
       const observer = new PerformanceObserver((list) => {
         const entries = list.getEntries()
         entries.forEach((entry) => {
-          if (!entry.hadRecentInput) {
-            this.metrics.userExperience.cumulativeLayoutShift += entry.value
+          if (!(entry as any).hadRecentInput) {
+            this.metrics.userExperience.cumulativeLayoutShift += (entry as any).value
           }
         })
       })
@@ -172,7 +173,7 @@ export class PerformanceMonitor {
         const entries = list.getEntries()
         entries.forEach((entry) => {
           if (entry.entryType === 'first-input') {
-            this.metrics.userExperience.firstInputDelay = entry.processingStart - entry.startTime
+            this.metrics.userExperience.firstInputDelay = (entry as any).processingStart - entry.startTime
           }
         })
       })
@@ -188,7 +189,7 @@ export class PerformanceMonitor {
       const checkMemory = () => {
         const memory = (performance as any).memory
         this.metrics.storePerformance.memoryUsage = memory.usedJSHeapSize / 1024 / 1024 // MB
-        
+
         // Trigger cleanup if memory is high
         if (this.metrics.storePerformance.memoryUsage > EMERGENCY_THRESHOLDS.memoryUsage) {
           this.optimizeMemoryUsage()
@@ -204,12 +205,12 @@ export class PerformanceMonitor {
     // Monitor connection quality
     if ('connection' in navigator) {
       const connection = (navigator as any).connection
-      
+
       const updateNetworkMetrics = () => {
         this.metrics.networkPerformance.latency = connection.rtt || 0
         this.metrics.networkPerformance.bandwidth = connection.downlink || 0
         this.metrics.networkPerformance.reliability = this.calculateReliability()
-        
+
         // Adjust config based on network quality
         this.adjustConfigForNetwork()
       }
@@ -255,7 +256,7 @@ export class PerformanceMonitor {
       if (requestCount > 0) {
         this.metrics.networkPerformance.latency = totalTime / requestCount
         this.metrics.queryPerformance.errorRate = (errorCount / requestCount) * 100
-        
+
         requestCount = 0
         totalTime = 0
         errorCount = 0
@@ -280,7 +281,7 @@ export class PerformanceMonitor {
 
   private adjustConfigForNetwork() {
     const { networkPerformance } = this.metrics
-    
+
     if (networkPerformance.latency > 1000) {
       this.config.networkQuality = 'slow'
     } else if (networkPerformance.latency > 300) {
@@ -292,7 +293,7 @@ export class PerformanceMonitor {
 
   private optimizeMemoryUsage() {
     console.log('[Performance] Optimizing memory usage...')
-    
+
     // Trigger garbage collection if available
     if (window.gc) {
       window.gc()
@@ -371,7 +372,7 @@ export class EmergencyOptimizer {
 
   public optimizeForEmergency() {
     console.log('[Emergency] Optimizing for emergency scenario...')
-    
+
     this.config.emergencyMode = true
     this.monitor.updateConfig(this.config)
 
@@ -394,7 +395,7 @@ export class EmergencyOptimizer {
     // Simplify UI
     // Prioritize critical elements
     document.body.classList.add('emergency-mode')
-    
+
     // Disable non-essential animations
     const style = document.createElement('style')
     style.textContent = `
@@ -424,13 +425,13 @@ export class EmergencyOptimizer {
 
   public exitEmergencyMode() {
     console.log('[Emergency] Exiting emergency mode...')
-    
+
     this.config.emergencyMode = false
     this.monitor.updateConfig(this.config)
 
     // Remove emergency optimizations
     document.body.classList.remove('emergency-mode')
-    
+
     // Remove emergency styles
     const emergencyStyles = document.querySelector('style[data-emergency="true"]')
     if (emergencyStyles) {
@@ -445,25 +446,25 @@ export const measureQueryPerformance = <T>(
   fn: () => Promise<T>
 ): Promise<T> => {
   const startTime = performance.now()
-  
+
   return fn().then(result => {
     const endTime = performance.now()
     const duration = endTime - startTime
-    
+
     console.log(`[Performance] Query ${queryName}: ${duration.toFixed(2)}ms`)
-    
+
     // Report slow queries
     if (duration > EMERGENCY_THRESHOLDS.queryTime) {
       console.warn(`[Performance] Slow query detected: ${queryName} (${duration.toFixed(2)}ms)`)
     }
-    
+
     return result
   }).catch(error => {
     const endTime = performance.now()
     const duration = endTime - startTime
-    
+
     console.error(`[Performance] Failed query ${queryName}: ${duration.toFixed(2)}ms`, error)
-    
+
     throw error
   })
 }
@@ -475,22 +476,22 @@ export const debounceForEmergency = <T extends any[], R>(
 ) => {
   let timeoutId: NodeJS.Timeout
   let lastCallTime = 0
-  
+
   return (...args: T) => {
     const now = Date.now()
     const isEmergency = document.body.classList.contains('emergency-mode')
     const actualDelay = isEmergency && emergencyDelay ? emergencyDelay : delay
-    
+
     // Clear previous timeout
     clearTimeout(timeoutId)
-    
+
     // For emergency mode, reduce debounce delay
     if (isEmergency && now - lastCallTime < actualDelay) {
       timeoutId = setTimeout(() => fn(...args), 50) // Minimal delay for emergency
     } else {
       timeoutId = setTimeout(() => fn(...args), actualDelay)
     }
-    
+
     lastCallTime = now
   }
 }
@@ -502,12 +503,12 @@ export const throttleForEmergency = <T extends any[], R>(
 ) => {
   let lastCallTime = 0
   let timeoutId: NodeJS.Timeout
-  
+
   return (...args: T) => {
     const now = Date.now()
     const isEmergency = document.body.classList.contains('emergency-mode')
     const actualDelay = isEmergency && emergencyDelay ? emergencyDelay : delay
-    
+
     if (now - lastCallTime >= actualDelay) {
       lastCallTime = now
       return fn(...args)
@@ -517,6 +518,7 @@ export const throttleForEmergency = <T extends any[], R>(
         lastCallTime = Date.now()
         fn(...args)
       }, actualDelay - (now - lastCallTime))
+      return undefined
     }
   }
 }
@@ -529,10 +531,10 @@ export const usePerformanceOptimization = () => {
   useEffect(() => {
     // Initialize monitoring
     const metrics = monitor.getMetrics()
-    
+
     // Check if emergency optimization is needed
     if (metrics.queryPerformance.errorRate > EMERGENCY_THRESHOLDS.errorRate ||
-        metrics.userExperience.firstInputDelay > EMERGENCY_THRESHOLDS.fid) {
+      metrics.userExperience.firstInputDelay > EMERGENCY_THRESHOLDS.fid) {
       optimizer.optimizeForEmergency()
     }
 

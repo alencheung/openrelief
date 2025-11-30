@@ -384,7 +384,7 @@ export const useEventConfirmationsSubscription = () => {
         console.log('[Realtime] New confirmation:', payload.new)
 
         // Update event confirmation count
-        const confirmationType = payload.new.confirmation_type
+        const confirmationType = payload.new.confirmation_type as 'confirm' | 'dispute'
         updateEvent(payload.new.event_id, {
           confirmation_count: confirmationType === 'confirm' ? 1 : 0,
           dispute_count: confirmationType === 'dispute' ? 1 : 0,

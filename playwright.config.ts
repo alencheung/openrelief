@@ -35,7 +35,7 @@ export default defineConfig({
     ['html', { outputFolder: 'playwright-report' }],
     ['json', { outputFile: 'test-results/results.json' }],
     ['junit', { outputFile: 'test-results/results.xml' }],
-    process.env.CI ? ['github'] : ['list'],
+    [process.env.CI ? 'github' : 'list'],
   ],
 
   // Global setup and teardown

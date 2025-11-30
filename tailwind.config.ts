@@ -89,6 +89,8 @@ const config: Config = {
       maxWidth: {
         '8xl': '88rem',
         '9xl': '96rem',
+        '128': '32rem',
+        '144': '36rem',
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',
@@ -144,10 +146,7 @@ const config: Config = {
         '128': '32rem',
         '144': '36rem',
       },
-      maxWidth: {
-        '128': '32rem',
-        '144': '36rem',
-      },
+
       zIndex: {
         '60': '60',
         '70': '70',
