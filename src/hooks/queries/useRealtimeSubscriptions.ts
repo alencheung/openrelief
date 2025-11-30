@@ -738,7 +738,9 @@ export const useRealtimeConnection = () => {
         clearTimeout(reconnectTimeoutRef.current)
       }
 
-      supabase.removeChannel(channel)
+      if (channel) {
+        supabase.removeChannel(channel)
+      }
     }
   }, [establishConnection, setRealtimeEnabled])
 }

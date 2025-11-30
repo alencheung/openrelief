@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Shield, AlertTriangle } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
 
 interface AuthGuardProps {
   children: React.ReactNode
@@ -71,7 +72,7 @@ export default function AuthGuard({ children, fallback }: AuthGuardProps) {
                     </h3>
                     <div className="mt-2 text-sm text-yellow-700">
                       <p>
-                        This is a demonstration of the OpenRelief platform. 
+                        This is a demonstration of the OpenRelief platform.
                         In production, proper authentication would be required.
                       </p>
                       <p className="mt-2">
@@ -83,17 +84,19 @@ export default function AuthGuard({ children, fallback }: AuthGuardProps) {
               </div>
 
               <div className="space-y-4">
-                <button
+                <Button
                   onClick={() => setIsAuthenticated(true)}
-                  className="btn btn-primary w-full"
+                  variant="default"
+                  className="w-full"
                 >
                   Continue to Demo
-                </button>
-                <button
-                  className="btn btn-outline w-full"
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full"
                 >
                   Sign In with Supabase
-                </button>
+                </Button>
               </div>
             </div>
 

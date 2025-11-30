@@ -1,16 +1,17 @@
 'use client'
 
-import { 
-  Flame, 
-  Heart, 
-  Shield, 
-  Smartphone, 
-  Map, 
+import {
+  Flame,
+  Heart,
+  Shield,
+  Smartphone,
+  Map,
   Users,
   Bell,
   Globe,
   Lock
 } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
 
 const features = [
   {
@@ -90,23 +91,31 @@ export default function Features() {
                   Ready to Make a Difference?
                 </h3>
                 <p className="mx-auto mt-5 max-w-xl text-lg leading-7 text-gray-300">
-                  Join thousands of volunteers and emergency responders using OpenRelief to coordinate 
+                  Join thousands of volunteers and emergency responders using OpenRelief to coordinate
                   disaster response efforts worldwide.
                 </p>
               </div>
               <div className="mt-10 flex items-center justify-center gap-x-6">
-                <a
-                  href="/signup"
-                  className="btn btn-primary bg-white text-gray-900 hover:bg-gray-100"
+                <Button
+                  asChild
+                  variant="default"
+                  size="lg"
+                  className="bg-white text-gray-900 hover:bg-gray-100"
                 >
-                  Get Started
-                </a>
-                <a
-                  href="/demo"
-                  className="btn btn-outline border-white text-white hover:bg-white hover:text-gray-900"
+                  <a href="/signup">
+                    Get Started
+                  </a>
+                </Button>
+                <Button
+                  asChild
+                  variant="outline"
+                  size="lg"
+                  className="border-white text-white hover:bg-white hover:text-gray-900"
                 >
-                  View Demo
-                </a>
+                  <a href="/demo">
+                    View Demo
+                  </a>
+                </Button>
               </div>
             </div>
           </div>

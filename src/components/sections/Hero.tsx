@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Play, Shield, Users, MapPin } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
 
 export default function Hero() {
   const [isPlaying, setIsPlaying] = useState(false)
@@ -21,23 +22,29 @@ export default function Hero() {
             <span className="block text-primary">Made Simple</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-gray-600">
-            Open-source platform that connects victims with resources through decentralized emergency coordination. 
+            Open-source platform that connects victims with resources through decentralized emergency coordination.
             Real-time alerts, trust-based verification, and offline-first design.
           </p>
           <div className="mt-10 flex items-center justify-center gap-x-6">
-            <button
+            <Button
               onClick={handleWatchVideo}
-              className="btn btn-primary flex items-center gap-2 px-8 py-3 text-base font-semibold"
+              variant="default"
+              size="lg"
+              className="flex items-center gap-2"
             >
               <Play className="h-5 w-5" />
               Watch Demo
-            </button>
-            <a
-              href="#features"
-              className="btn btn-outline flex items-center gap-2 px-8 py-3 text-base font-semibold"
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              size="lg"
+              className="flex items-center gap-2"
             >
-              Learn More
-            </a>
+              <a href="#features">
+                Learn More
+              </a>
+            </Button>
           </div>
         </div>
 

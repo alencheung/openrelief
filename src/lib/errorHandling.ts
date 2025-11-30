@@ -22,6 +22,7 @@ export interface ErrorInfo {
   retryable: boolean
   maxRetries?: number
   nextRetry?: number
+  error?: Error
 }
 
 export interface RetryConfig {
@@ -38,9 +39,9 @@ export interface RetryConfig {
 
 export interface ErrorBoundaryState {
   hasError: boolean
-  error: ErrorInfo | null
+  error: ErrorInfo | null | undefined
   errorCount: number
-  lastErrorTime: number | null
+  lastErrorTime: number | null | undefined
   retryCount: number
   isRecovering: boolean
 }
@@ -233,21 +234,21 @@ export const createRetryFunction = <T extends any[], R>(
 
   return async (...args: T): Promise<R> => {
     let lastError: any
-    
+
     for (let attempt = 0; attempt <= finalConfig.maxRetries; attempt++) {
       try {
         const result = await fn(...args)
-        
+
         if (attempt > 0 && finalConfig.onSuccess) {
           finalConfig.onSuccess(attempt)
         }
-        
+
         return result
       } catch (error) {
         lastError = error
-        
+
         const errorInfo = classifyError(error)
-        
+
         // Check if we should retry
         const shouldRetry = attempt < finalConfig.maxRetries &&
           errorInfo.retryable &&
@@ -262,34 +263,34 @@ export const createRetryFunction = <T extends any[], R>(
 
         // Calculate delay
         let delay = finalConfig.baseDelay * Math.pow(finalConfig.backoffFactor, attempt)
-        
+
         // Apply jitter if enabled
         if (finalConfig.jitter) {
           delay = delay * (0.5 + Math.random() * 0.5)
         }
-        
+
         // Respect max delay
         delay = Math.min(delay, finalConfig.maxDelay)
-        
+
         // Respect specific retry time for rate limiting
         if (errorInfo.type === 'rate_limit' && errorInfo.nextRetry) {
           delay = Math.max(delay, errorInfo.nextRetry - Date.now())
         }
 
-        console.warn(`[Retry] Attempt ${attempt + 1}/${finalConfig.maxRetries + 1} failed, retrying in ${Math.round(delay)}ms:`, error.message)
-        
+        console.warn(`[Retry] Attempt ${attempt + 1}/${finalConfig.maxRetries + 1} failed, retrying in ${Math.round(delay)}ms:`, (error as Error).message || 'Unknown error')
+
         if (finalConfig.onRetry) {
           finalConfig.onRetry(attempt + 1, error)
         }
-        
+
         await new Promise(resolve => setTimeout(resolve, delay))
       }
     }
-    
+
     if (finalConfig.onFailure) {
       finalConfig.onFailure(lastError, finalConfig.maxRetries + 1)
     }
-    
+
     throw lastError
   }
 }
@@ -301,7 +302,7 @@ export const recoverFromError = async (errorInfo: ErrorInfo): Promise<boolean> =
       // Try to reconnect
       if (navigator.onLine) {
         try {
-          const response = await fetch('/api/health', { 
+          const response = await fetch('/api/health', {
             method: 'HEAD',
             cache: 'no-cache',
             signal: AbortSignal.timeout(3000)
@@ -321,7 +322,7 @@ export const recoverFromError = async (errorInfo: ErrorInfo): Promise<boolean> =
           resolve(true)
         }
         window.addEventListener('online', handleOnline)
-        
+
         // Timeout after 30 seconds
         setTimeout(() => {
           window.removeEventListener('online', handleOnline)
@@ -332,7 +333,7 @@ export const recoverFromError = async (errorInfo: ErrorInfo): Promise<boolean> =
     case 'timeout':
       // Retry with shorter timeout
       try {
-        const response = await fetch('/api/health', { 
+        const response = await fetch('/api/health', {
           method: 'HEAD',
           cache: 'no-cache',
           signal: AbortSignal.timeout(1000)
@@ -348,7 +349,7 @@ export const recoverFromError = async (errorInfo: ErrorInfo): Promise<boolean> =
         try {
           const permission = await navigator.permissions.query({ name: 'geolocation' as PermissionName })
           if (permission.state === 'prompt') {
-            await navigator.geolocation.getCurrentPosition(() => {}, () => {})
+            await navigator.geolocation.getCurrentPosition(() => { }, () => { })
             return true
           }
         } catch {
@@ -457,7 +458,7 @@ export class EmergencyErrorBoundary {
   public subscribe = (listener: (state: ErrorBoundaryState) => void) => {
     this.listeners.push(listener)
     listener(this.state)
-    
+
     return () => {
       const index = this.listeners.indexOf(listener)
       if (index > -1) {
@@ -532,7 +533,7 @@ export class CircuitBreaker {
     private threshold: number = 5,
     private timeout: number = 60000, // 1 minute
     private monitorPeriod: number = 300000 // 5 minutes
-  ) {}
+  ) { }
 
   public async execute<T>(fn: () => Promise<T>): Promise<T> {
     if (this.state === 'open') {
@@ -595,14 +596,14 @@ export const createSafeAsyncFunction = <T extends any[], R>(
       return await fn(...args)
     } catch (error) {
       const errorInfo = classifyError(error)
-      
+
       if (errorHandler) {
         errorHandler(errorInfo)
       } else {
         console.error('[Safe Function] Error:', errorInfo)
         reportError(errorInfo)
       }
-      
+
       return null
     }
   }
@@ -617,7 +618,7 @@ export const withErrorHandling = <T extends any[], R>(
   } = {}
 ) => {
   const wrappedFn = createRetryFunction(fn, options.retry)
-  
+
   return async (...args: T): Promise<R> => {
     try {
       if (options.circuitBreaker) {
@@ -627,13 +628,13 @@ export const withErrorHandling = <T extends any[], R>(
       }
     } catch (error) {
       const errorInfo = classifyError(error)
-      
+
       if (options.onError) {
         options.onError(errorInfo)
       } else {
         reportError(errorInfo)
       }
-      
+
       throw error
     }
   }

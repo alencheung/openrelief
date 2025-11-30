@@ -157,50 +157,6 @@ const config: Config = {
       },
     },
   },
-  plugins: [
-    require('@tailwindcss/forms'),
-    require('@tailwindcss/typography'),
-    require('@tailwindcss/aspect-ratio'),
-    // Custom plugin for emergency-specific utilities
-    function({ addUtilities, theme }: any) {
-      const newUtilities = {
-        '.emergency-shadow': {
-          boxShadow: '0 0 20px rgba(239, 68, 68, 0.3)',
-        },
-        '.trust-glow': {
-          boxShadow: '0 0 10px rgba(34, 197, 94, 0.5)',
-        },
-        '.map-overlay': {
-          background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.1))',
-        },
-        '.pulse-emergency': {
-          animation: 'emergencyPulse 2s ease-in-out infinite',
-        },
-      }
-
-      addUtilities(newUtilities)
-    },
-    // Plugin for responsive container
-    function({ addComponents, theme }: any) {
-      addComponents({
-        '.container-responsive': {
-          width: '100%',
-          marginLeft: 'auto',
-          marginRight: 'auto',
-          paddingLeft: theme('spacing.4'),
-          paddingRight: theme('spacing.4'),
-          '@screen sm': {
-            paddingLeft: theme('spacing.6'),
-            paddingRight: theme('spacing.6'),
-          },
-          '@screen lg': {
-            paddingLeft: theme('spacing.8'),
-            paddingRight: theme('spacing.8'),
-          },
-        },
-      })
-    },
-  ],
   future: {
     hoverOnlyWhenSupported: true,
   },
