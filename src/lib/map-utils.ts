@@ -146,11 +146,27 @@ export class MapPerformanceManager {
   private lastFrameTime = 0
   private fps = 0
   private isLowEndDevice = false
+  private isMonitoring = false
 
   constructor(map: maplibregl.Map) {
+    console.log('[MapPerformanceManager] Constructor called with map:', !!map)
     this.map = map
     this.detectDevicePerformance()
-    this.setupPerformanceMonitoring()
+    // Don't start monitoring immediately - wait for map to be fully loaded
+    this.waitForMapLoad()
+  }
+
+  private waitForMapLoad() {
+    if (this.map.loaded() && this.map.getStyle()) {
+      console.log('[MapPerformanceManager] Map is loaded, starting performance monitoring')
+      this.setupPerformanceMonitoring()
+    } else {
+      console.log('[MapPerformanceManager] Waiting for map to load...')
+      this.map.on('load', () => {
+        console.log('[MapPerformanceManager] Map load event received, starting performance monitoring')
+        this.setupPerformanceMonitoring()
+      })
+    }
   }
 
   private detectDevicePerformance() {
@@ -168,6 +184,14 @@ export class MapPerformanceManager {
   }
 
   private setupPerformanceMonitoring() {
+    if (this.isMonitoring) {
+      console.log('[MapPerformanceManager] Performance monitoring already started')
+      return
+    }
+
+    console.log('[MapPerformanceManager] Setting up performance monitoring')
+    this.isMonitoring = true
+
     const measureFPS = () => {
       const now = performance.now()
       const delta = now - this.lastFrameTime
@@ -176,6 +200,8 @@ export class MapPerformanceManager {
         this.fps = Math.round((this.frameCount * 1000) / delta)
         this.frameCount = 0
         this.lastFrameTime = now
+
+        console.log('[MapPerformanceManager] FPS measured:', this.fps)
 
         // Adjust performance based on FPS
         this.adjustPerformanceSettings()
@@ -189,28 +215,52 @@ export class MapPerformanceManager {
   }
 
   private adjustPerformanceSettings() {
-    if (this.fps < 30) {
-      // Reduce complexity for better performance
-      if (this.map.getLayer('buildings')) {
-        this.map.setPaintProperty('buildings', 'fill-opacity', 0.3)
-      }
-      if (this.map.getLayer('roads-minor')) {
-        this.map.setPaintProperty('roads-minor', 'line-opacity', 0.5)
-      }
+    // DEBUG: Log map instance state
+    console.log('[MapPerformanceManager] adjustPerformanceSettings called', {
+      fps: this.fps,
+      mapExists: !!this.map,
+      mapStyle: this.map?.getStyle(),
+      isLowEndDevice: this.isLowEndDevice
+    })
 
-      // Reduce clustering radius for fewer calculations
-      if (this.isLowEndDevice) {
-        this.map.setMinZoom(10)
+    // Check if map instance exists and is valid
+    if (!this.map) {
+      console.error('[MapPerformanceManager] Map instance is undefined or null')
+      return
+    }
+
+    // Check if map is loaded and has style
+    if (!this.map.getStyle()) {
+      console.warn('[MapPerformanceManager] Map style not loaded yet')
+      return
+    }
+
+    try {
+      if (this.fps < 30) {
+        // Reduce complexity for better performance
+        if (this.map.getLayer('buildings')) {
+          this.map.setPaintProperty('buildings', 'fill-opacity', 0.3)
+        }
+        if (this.map.getLayer('roads-minor')) {
+          this.map.setPaintProperty('roads-minor', 'line-opacity', 0.5)
+        }
+
+        // Reduce clustering radius for fewer calculations
+        if (this.isLowEndDevice) {
+          this.map.setMinZoom(10)
+        }
+      } else if (this.fps > 50) {
+        // Restore full quality
+        if (this.map.getLayer('buildings')) {
+          this.map.setPaintProperty('buildings', 'fill-opacity', 0.6)
+        }
+        if (this.map.getLayer('roads-minor')) {
+          this.map.setPaintProperty('roads-minor', 'line-opacity', 0.7)
+        }
+        this.map.setMinZoom(2)
       }
-    } else if (this.fps > 50) {
-      // Restore full quality
-      if (this.map.getLayer('buildings')) {
-        this.map.setPaintProperty('buildings', 'fill-opacity', 0.6)
-      }
-      if (this.map.getLayer('roads-minor')) {
-        this.map.setPaintProperty('roads-minor', 'line-opacity', 0.7)
-      }
-      this.map.setMinZoom(2)
+    } catch (error) {
+      console.error('[MapPerformanceManager] Error adjusting performance settings:', error)
     }
   }
 
@@ -220,6 +270,13 @@ export class MapPerformanceManager {
 
   isLowEnd(): boolean {
     return this.isLowEndDevice
+  }
+
+  // Cleanup method to stop monitoring when map is destroyed
+  destroy() {
+    console.log('[MapPerformanceManager] Destroying performance manager')
+    this.isMonitoring = false
+    this.map = null as any
   }
 }
 

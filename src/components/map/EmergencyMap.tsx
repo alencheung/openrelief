@@ -108,6 +108,7 @@ export default function EmergencyMap({
     }), 'bottom-left')
 
     // Setup performance monitoring
+    console.log('[EmergencyMap] Creating MapPerformanceManager, map loaded:', !!map)
     performanceManagerRef.current = new MapPerformanceManager(map)
 
     // Setup accessibility features
@@ -122,6 +123,7 @@ export default function EmergencyMap({
     }
 
     map.on('load', () => {
+      console.log('[EmergencyMap] Map load event fired')
       setIsMapLoaded(true)
       onMapLoad?.(map)
 
@@ -142,8 +144,11 @@ export default function EmergencyMap({
     mapInstanceRef.current = map
 
     return () => {
+      console.log('[EmergencyMap] Cleaning up map and performance manager')
+      performanceManagerRef.current?.destroy()
       map.remove()
       mapInstanceRef.current = null
+      performanceManagerRef.current = null
     }
   }, [])
 
