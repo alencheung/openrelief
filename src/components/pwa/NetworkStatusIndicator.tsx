@@ -9,7 +9,7 @@ export function NetworkStatusIndicator() {
     const [show, setShow] = useState(false)
 
     useEffect(() => {
-        let timer: NodeJS.Timeout
+        let timer: NodeJS.Timeout | undefined
 
         if (!isOnline) {
             setShow(true)

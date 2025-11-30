@@ -104,9 +104,31 @@ export default function LocationTracker({
     const proximityThreshold = 1000 // 1km
 
     filteredEvents.forEach(event => {
+      // Log to validate coordinate parsing order
+      console.log('Debug: Raw event location:', event.location)
+      const locationParts = (event.location || '0 0').split(' ')
+      console.log('Debug: Location parts:', locationParts)
+
+      // FIXED: Verify correct coordinate order - typically format is "lng lat" in many systems
+      // but we're assuming "lat lng". Adding validation to detect issues.
+      let lat = parseFloat(locationParts[0] || '0')
+      let lng = parseFloat(locationParts[1] || '0')
+
+      // Validate coordinate ranges to detect potential order issues
+      if (Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+        console.warn('Debug: Invalid coordinate ranges detected - possible order issue:', { lat, lng, rawLocation: event.location })
+        // Try swapping as fallback
+        const tempLat = lat
+        lat = parseFloat(locationParts[1] || '0')
+        lng = parseFloat(locationParts[0] || '0')
+        console.log('Debug: Using swapped coordinates:', { lat, lng })
+      } else {
+        console.log('Debug: Using parsed coordinates:', { lat, lng })
+      }
+
       const eventLocation = {
-        lat: parseFloat((event.location || '0 0').split(' ')[0] || '0'),
-        lng: parseFloat((event.location || '0 0').split(' ')[1] || '0'),
+        lat,
+        lng,
       }
 
       const distance = calculateDistance(location, {
@@ -212,8 +234,41 @@ export default function LocationTracker({
   // Start tracking
   const startLocationTracking = useCallback(async () => {
     try {
-      // Request permission first
-      const permission = await requestLocationPermission(enableHighAccuracy)
+      console.log('Debug: Starting location tracking with high accuracy:', enableHighAccuracy)
+
+      // FIXED: Enhanced iOS permission handling
+      // First check if we're on iOS and need special handling
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+      console.log('Debug: Device detected as iOS:', isIOS)
+
+      // Request permission first with iOS-specific handling
+      let permission
+      if (isIOS) {
+        console.log('Debug: Using iOS-specific permission request')
+        // iOS requires explicit user gesture for high accuracy
+        try {
+          // First try with low accuracy to get basic permission
+          const basicPermission = await requestLocationPermission(false)
+          console.log('Debug: iOS basic permission result:', basicPermission)
+
+          if (basicPermission.granted) {
+            // Then request high accuracy if needed
+            permission = await requestLocationPermission(enableHighAccuracy)
+            console.log('Debug: iOS high accuracy permission result:', permission)
+          } else {
+            permission = basicPermission
+          }
+        } catch (iosError) {
+          console.error('Debug: iOS permission error:', iosError)
+          // Fallback to standard permission request
+          permission = await requestLocationPermission(enableHighAccuracy)
+        }
+      } else {
+        permission = await requestLocationPermission(enableHighAccuracy)
+      }
+
+      console.log('Debug: Final permission result:', permission)
+
       if (!permission.granted) {
         setLocationError('Location permission not granted')
         return
@@ -221,6 +276,7 @@ export default function LocationTracker({
 
       // Start watching position
       if ('geolocation' in navigator) {
+        console.log('Debug: Starting geolocation watch')
         watchIdRef.current = navigator.geolocation.watchPosition(
           handleLocationUpdate,
           handleLocationError,
@@ -236,6 +292,7 @@ export default function LocationTracker({
           highAccuracy: enableHighAccuracy,
           updateInterval,
         })
+        console.log('Debug: Location tracking started successfully')
       }
     } catch (error) {
       setLocationError(`Failed to start tracking: ${error}`)

@@ -150,17 +150,40 @@ export const useEmergencyEvent = (id: string) => {
 export const useCreateEmergencyEvent = () => {
   const queryClient = useQueryClient()
   const { addNotification } = useNotificationStore.getState()
-  const { updateTrustForAction } = useTrustStore.getState()
+  const { updateTrustForAction, getUserScore, thresholds } = useTrustStore.getState()
 
   return useMutation({
     mutationFn: async (event: EmergencyEventInsert) => {
       const userId = event.reporter_id
 
       try {
-        // Check trust score first
-        const userScore = useTrustStore.getState().getUserScore(userId)
-        if (userScore && userScore.score < 0.3) {
-          throw new Error('Insufficient trust score to report emergencies')
+        // Check trust score first with proper error handling
+        let userScore
+        try {
+          userScore = getUserScore(userId)
+        } catch (error) {
+          console.error('Error fetching user trust score:', error)
+          // Continue with default score if there's an error fetching
+          userScore = { score: 0.5 } // Default neutral score
+        }
+
+        // Use threshold from store for consistency
+        const minScore = thresholds?.reporting || 0.3
+
+        if (userScore && userScore.score < minScore) {
+          const error = new Error(`Insufficient trust score to report emergencies. Required: ${minScore}, Current: ${userScore.score}`)
+
+          // Add notification for user feedback
+          addNotification({
+            type: 'system',
+            title: 'Trust Score Too Low',
+            message: `Your trust score (${(userScore.score * 100).toFixed(1)}%) is below the minimum required (${(minScore * 100).toFixed(1)}%) to report emergencies. Continue contributing to the community to increase your trust score.`,
+            severity: 'warning',
+            priority: 'high',
+            channels: { inApp: true, push: false, email: false, sms: false },
+          })
+
+          throw error
         }
 
         // Optimistic update

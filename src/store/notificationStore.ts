@@ -60,6 +60,7 @@ export interface NotificationSettings {
     geofence: boolean
     system: boolean
     reminder: boolean
+    acknowledgment: boolean
   }
   severity: {
     info: boolean
@@ -111,10 +112,10 @@ interface NotificationState {
   // Notifications
   notifications: Notification[]
   queue: NotificationQueue[]
-  
+
   // Settings
   settings: NotificationSettings
-  
+
   // UI State
   isPanelOpen: boolean
   selectedNotification: Notification | null
@@ -128,16 +129,16 @@ interface NotificationState {
       end: Date
     }
   }
-  
+
   // Push notification state
   pushSupported: boolean
   pushPermission: NotificationPermission
   pushSubscription: PushSubscription | null
-  
+
   // Real-time
   isRealtimeEnabled: boolean
   lastSyncTime: Date | null
-  
+
   // Performance
   loading: boolean
   error: string | null
@@ -154,28 +155,28 @@ interface NotificationActions {
   markAsAcknowledged: (id: string) => void
   markAllAsRead: () => void
   clearNotifications: (filter?: (notification: Notification) => boolean) => void
-  
+
   // Queue management
   addToQueue: (notification: Omit<NotificationQueue, 'id' | 'scheduledFor' | 'retryCount' | 'status'>) => string
   removeFromQueue: (id: string) => void
   processQueue: () => Promise<void>
   retryFailed: () => Promise<void>
-  
+
   // Settings management
   updateSettings: (settings: Partial<NotificationSettings>) => void
   resetSettings: () => void
-  
+
   // UI management
   setPanelOpen: (open: boolean) => void
   setSelectedNotification: (notification: Notification | null) => void
   setFilter: (filter: Partial<NotificationState['filter']>) => void
   clearFilter: () => void
-  
+
   // Push notification management
   requestPushPermission: () => Promise<NotificationPermission>
   subscribeToPush: () => Promise<PushSubscription | null>
   unsubscribeFromPush: () => Promise<void>
-  
+
   // Emergency-specific notifications
   createEmergencyNotification: (data: {
     eventId: string
@@ -186,34 +187,34 @@ interface NotificationActions {
     location?: string
     actions?: NotificationAction[]
   }) => string
-  
+
   createTrustNotification: (data: {
     userId: string
     scoreChange: number
     newScore: number
     reason?: string
   }) => string
-  
+
   createGeofenceNotification: (data: {
     geofenceId: string
     action: 'enter' | 'exit'
     geofenceName: string
     severity?: Notification['severity']
   }) => string
-  
+
   createProximityNotification: (data: {
     targetId: string
     targetType: 'event' | 'user'
     distance: number
     threshold: number
   }) => string
-  
+
   // Utility functions
   getFilteredNotifications: () => Notification[]
   updateStats: () => void
   isInQuietHours: () => boolean
   shouldSendNotification: (notification: Notification) => boolean
-  
+
   // Error handling
   setError: (error: string | null) => void
   clearError: () => void
@@ -272,10 +273,10 @@ const isInQuietHours = (quietHours: NotificationSettings['quietHours']): boolean
 
   const now = new Date()
   const currentTime = now.getHours() * 60 + now.getMinutes()
-  
+
   const [startHour, startMin] = quietHours.start.split(':').map(Number)
   const [endHour, endMin] = quietHours.end.split(':').map(Number)
-  
+
   const startTime = startHour * 60 + startMin
   const endTime = endHour * 60 + endMin
 
@@ -404,7 +405,7 @@ export const useNotificationStore = create<NotificationStore>()(
 
         clearNotifications: (filter) => {
           set((state) => ({
-            notifications: filter 
+            notifications: filter
               ? state.notifications.filter(filter)
               : [],
             selectedNotification: null,
@@ -465,7 +466,7 @@ export const useNotificationStore = create<NotificationStore>()(
 
         retryFailed: async () => {
           const { queue } = get()
-          const failedItems = queue.filter(item => 
+          const failedItems = queue.filter(item =>
             item.status === 'failed' && item.retryCount < item.maxRetries
           )
 
@@ -479,7 +480,7 @@ export const useNotificationStore = create<NotificationStore>()(
           get().processQueue()
         },
 
-        updateQueueItem: (id: updates) => {
+        updateQueueItem: (id: string, updates: Partial<NotificationQueue>) => {
           set((state) => ({
             queue: state.queue.map(item =>
               item.id === id ? { ...item, ...updates } : item
@@ -549,7 +550,7 @@ export const useNotificationStore = create<NotificationStore>()(
             })
 
             set({ pushSubscription: subscription })
-            
+
             // Send subscription to server
             await fetch('/api/push/subscribe', {
               method: 'POST',
@@ -683,7 +684,7 @@ export const useNotificationStore = create<NotificationStore>()(
         // Utility functions
         getFilteredNotifications: () => {
           const { notifications, filter } = get()
-          
+
           return notifications.filter(notification => {
             if (filter.type && notification.type !== filter.type) return false
             if (filter.severity && notification.severity !== filter.severity) return false
@@ -710,12 +711,12 @@ export const useNotificationStore = create<NotificationStore>()(
 
         shouldSendNotification: (notification) => {
           const { settings } = get()
-          
+
           if (!settings.enabled) return false
           if (get().isInQuietHours() && notification.priority !== 'urgent') return false
           if (!settings.categories[notification.type]) return false
           if (!settings.severity[notification.severity]) return false
-          
+
           return true
         },
 

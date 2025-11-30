@@ -63,6 +63,7 @@ export default function GeofenceManager({
   })
   const [isSelectingLocation, setIsSelectingLocation] = useState(false)
   const [showForm, setShowForm] = useState(false)
+  const mapClickHandlerRef = useRef<((e: any) => void) | null>(null)
 
   const {
     geofences,
@@ -87,25 +88,48 @@ export default function GeofenceManager({
     }
   }, [currentLocation, formData.center.lat, formData.center.lng])
 
+  // FIXED: Add cleanup effect for map event listeners
+  useEffect(() => {
+    return () => {
+      // Clean up any remaining map event listeners when component unmounts
+      if (mapClickHandlerRef.current && mapInstance) {
+        console.log('Debug: Cleaning up map click listener on component unmount')
+        mapInstance.off('click', mapClickHandlerRef.current)
+        mapClickHandlerRef.current = null
+        mapInstance.getCanvas().style.cursor = ''
+      }
+    }
+  }, [mapInstance])
+
   // Handle location selection on map
   const handleLocationSelect = () => {
     if (!mapInstance) return
 
+    console.log('Debug: Starting location selection on map')
     setIsSelectingLocation(true)
     mapInstance.getCanvas().style.cursor = 'crosshair'
 
     const handleMapClick = (e: any) => {
+      console.log('Debug: Map clicked for location selection:', e.lngLat)
       const coords = e.lngLat
       setFormData(prev => ({
         ...prev,
         center: { lat: coords.lat, lng: coords.lng },
       }))
       mapInstance.getCanvas().style.cursor = ''
-      mapInstance.off('click', handleMapClick)
+      // FIXED: Properly clean up event listener
+      if (mapClickHandlerRef.current) {
+        mapInstance.off('click', mapClickHandlerRef.current)
+        mapClickHandlerRef.current = null
+      }
       setIsSelectingLocation(false)
+      console.log('Debug: Location selection completed:', { lat: coords.lat, lng: coords.lng })
     }
 
+    // FIXED: Store handler reference for proper cleanup
+    mapClickHandlerRef.current = handleMapClick
     mapInstance.on('click', handleMapClick)
+    console.log('Debug: Map click listener added')
   }
 
   // Start creating new geofence
@@ -148,29 +172,39 @@ export default function GeofenceManager({
       return
     }
 
-    const geofenceData = {
+    // FIXED: Handle expiresAt and metadata properly to avoid TypeScript errors
+    const geofenceData: Omit<Geofence, 'id' | 'createdAt'> = {
       name: formData.name.trim(),
       type: formData.type,
       center: formData.center,
       radius: formData.radius,
       isActive: formData.isActive,
       metadata: {
-        description: formData.description,
-        severity: formData.severity,
+        // FIXED: Only include description if it exists
+        ...(formData.description && { description: formData.description }),
+        // FIXED: Ensure severity is not undefined
+        severity: formData.severity || 'medium',
         createdBy: 'current-user', // Would come from auth
       },
-      expiresAt: formData.expiresAt ? new Date(formData.expiresAt) : undefined,
+      ...(formData.expiresAt && { expiresAt: new Date(formData.expiresAt) }),
     }
 
     if (isCreating) {
-      // @ts-ignore - ID and createdAt are generated
+      console.log('Debug: Creating new geofence with data:', geofenceData)
+      // FIXED: Proper ID generation - the store should generate the ID
       const id = addGeofence(geofenceData)
-      // @ts-ignore
-      onGeofenceCreate?.({ ...geofenceData, id, createdAt: new Date() })
+      console.log('Debug: Geofence created with ID:', id)
+
+      // Create complete geofence object for callback
+      const newGeofence: Geofence = {
+        ...geofenceData,
+        id,
+        createdAt: new Date(),
+      }
+      onGeofenceCreate?.(newGeofence)
     } else if (editingId) {
-      // @ts-ignore
+      console.log('Debug: Updating existing geofence:', editingId, geofenceData)
       updateGeofence(editingId, geofenceData)
-      // @ts-ignore
       onGeofenceUpdate?.(editingId, geofenceData)
     }
 
@@ -190,6 +224,15 @@ export default function GeofenceManager({
     setShowForm(false)
     setIsCreating(false)
     setEditingId(null)
+
+    // FIXED: Clean up map event listener when resetting form
+    if (mapClickHandlerRef.current && mapInstance) {
+      console.log('Debug: Cleaning up map click listener on form reset')
+      mapInstance.off('click', mapClickHandlerRef.current)
+      mapClickHandlerRef.current = null
+      mapInstance.getCanvas().style.cursor = ''
+    }
+
     setIsSelectingLocation(false)
     setFormData({
       name: '',

@@ -27,7 +27,10 @@ export interface EmergencyLayerConfig {
 }
 
 // OpenMapTiles style URL for emergency operations
-export const OPENMAPTILES_URL = 'https://api.maptiler.com/maps/streets-v2/style.json?key=get_your_own_OpMapTiles_API_key'
+// FIXED: Use environment variable for API key with fallback for development
+export const OPENMAPTILES_URL = process.env.NEXT_PUBLIC_MAPTILER_API_KEY
+  ? `https://api.maptiler.com/maps/streets-v2/style.json?key=${process.env.NEXT_PUBLIC_MAPTILER_API_KEY}`
+  : 'https://api.maptiler.com/maps/streets-v2/style.json?key=FallbackKeyForDevelopment'
 
 // Emergency-optimized map style configuration
 export const emergencyMapStyle = {
@@ -36,7 +39,10 @@ export const emergencyMapStyle = {
   sources: {
     'openmaptiles': {
       type: 'vector',
-      url: 'https://api.maptiler.com/tiles/v3/tiles.json?key=get_your_own_OpMapTiles_API_key',
+      // FIXED: Use environment variable for API key with fallback
+      url: process.env.NEXT_PUBLIC_MAPTILER_API_KEY
+        ? `https://api.maptiler.com/tiles/v3/tiles.json?key=${process.env.NEXT_PUBLIC_MAPTILER_API_KEY}`
+        : 'https://api.maptiler.com/tiles/v3/tiles.json?key=FallbackKeyForDevelopment',
       attribution: '© OpenMapTiles © OpenStreetMap contributors',
     },
     'emergency-events': {

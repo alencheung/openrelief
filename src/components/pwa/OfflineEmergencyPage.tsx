@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useOfflineActions } from '@/hooks/useNetworkStatus'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
@@ -116,9 +116,9 @@ export function OfflineEmergencyPage() {
     }
   }
 
-  useState(() => {
+  useEffect(() => {
     loadQueuedReports()
-  })
+  }, [])
 
   const getEmergencyTypeIcon = (type: string) => {
     const emergencyType = emergencyTypes.find(t => t.value === type)
@@ -170,8 +170,8 @@ export function OfflineEmergencyPage() {
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, type: type.value }))}
                     className={`p-3 text-center rounded-lg border-2 transition-colors ${formData.type === type.value
-                        ? 'border-red-500 bg-red-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-red-500 bg-red-50'
+                      : 'border-gray-200 hover:border-gray-300'
                       }`}
                   >
                     <div className="text-2xl mb-1">{type.icon}</div>
@@ -193,8 +193,8 @@ export function OfflineEmergencyPage() {
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, severity: level.value as any }))}
                     className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${formData.severity === level.value
-                        ? level.color
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      ? level.color
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                       }`}
                   >
                     {level.label}

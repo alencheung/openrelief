@@ -28,8 +28,7 @@ export function useNetworkStatus(): NetworkStatus {
 
     setNetworkStatus(prev => {
       const wasOffline = prev.isOffline
-
-      return {
+      const newState = {
         ...prev,
         isOnline: online,
         isOffline: !online,
@@ -41,18 +40,24 @@ export function useNetworkStatus(): NetworkStatus {
         downlink: getDownlink(),
         rtt: getRtt(),
       } as NetworkStatus
-    })
 
-    // Store in localStorage for persistence across page reloads
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('openrelief-network-status', JSON.stringify({
-        isOnline: online,
-        lastOnlineTime: online ? now.toISOString() : networkStatus.lastOnlineTime?.toISOString(),
-        lastOfflineTime: !online ? now.toISOString() : networkStatus.lastOfflineTime?.toISOString(),
-        reconnectAttempts: online ? 0 : networkStatus.reconnectAttempts + 1,
-      }))
-    }
-  }, [networkStatus.lastOnlineTime, networkStatus.lastOfflineTime, networkStatus.reconnectAttempts])
+      // Store in localStorage for persistence across page reloads (outside setState to avoid recursion)
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('openrelief-network-status', JSON.stringify({
+            isOnline: online,
+            lastOnlineTime: online ? now.toISOString() : null,
+            lastOfflineTime: !online ? now.toISOString() : null,
+            reconnectAttempts: online ? 0 : 1,
+          }))
+        } catch (error) {
+          console.warn('[Network] Failed to save status to localStorage:', error)
+        }
+      }
+
+      return newState
+    })
+  }, []) // No dependencies - we use the functional setState pattern
 
   // Get connection information from Network Information API
   function getConnectionType(): string | undefined {
@@ -84,26 +89,29 @@ export function useNetworkStatus(): NetworkStatus {
     return undefined
   }
 
+  // Load saved network status from localStorage - only once on mount
   useEffect(() => {
-    // Load saved network status from localStorage
     if (typeof window !== 'undefined') {
       try {
         const saved = localStorage.getItem('openrelief-network-status')
         if (saved) {
           const parsed = JSON.parse(saved)
-          setNetworkStatus(prev => ({
-            ...prev,
+          setNetworkStatus({
+            isOnline: navigator.onLine,
+            isOffline: !navigator.onLine,
+            reconnectAttempts: parsed.reconnectAttempts || 0,
             lastOnlineTime: parsed.lastOnlineTime ? new Date(parsed.lastOnlineTime) : null,
             lastOfflineTime: parsed.lastOfflineTime ? new Date(parsed.lastOfflineTime) : null,
-            reconnectAttempts: parsed.reconnectAttempts || 0,
-          }))
+          })
         }
       } catch (error) {
         console.error('Failed to load network status from localStorage:', error)
       }
     }
+  }, []) // Empty dependency - only run once on mount
 
-    // Listen for online/offline events
+  // Listen for online/offline events
+  useEffect(() => {
     const handleOnline = () => {
       console.log('[Network] Connection restored')
       updateNetworkStatus(true)
@@ -136,23 +144,57 @@ export function useNetworkStatus(): NetworkStatus {
     }
 
     // Periodic connection check (every 30 seconds)
-    const connectionCheckInterval = setInterval(() => {
+    const connectionCheckInterval = setInterval(async () => {
       if (navigator.onLine) {
-        // Try a lightweight request to verify actual connectivity
-        fetch('/api/health', {
-          cache: 'no-cache',
-          signal: AbortSignal.timeout(3000)
-        })
-          .then(() => {
-            if (!networkStatus.isOnline) {
-              updateNetworkStatus(true)
-            }
+        try {
+          // Try a lightweight request to verify actual connectivity
+          const response = await fetch('/api/health', {
+            cache: 'no-cache',
+            signal: AbortSignal.timeout(5000) // Increased timeout for better reliability
           })
-          .catch(() => {
-            if (networkStatus.isOnline) {
-              updateNetworkStatus(false)
-            }
-          })
+
+          if (response.ok) {
+            // Only update if we were previously offline
+            setNetworkStatus(currentState => {
+              if (!currentState.isOnline) {
+                updateNetworkStatus(true)
+              }
+              return currentState
+            })
+          } else {
+            // Server responded but with error status
+            setNetworkStatus(currentState => {
+              if (currentState.isOnline) {
+                updateNetworkStatus(false)
+              }
+              return currentState
+            })
+          }
+        } catch (error) {
+          // Handle different types of errors
+          let isNetworkError = false
+
+          if (error instanceof DOMException && error.name === 'AbortError') {
+            console.warn('[Network] Health check timeout')
+            isNetworkError = true
+          } else if (error instanceof TypeError) {
+            // Network error (failed to fetch)
+            console.warn('[Network] Health check failed:', error.message)
+            isNetworkError = true
+          } else {
+            console.error('[Network] Unexpected health check error:', error)
+            isNetworkError = true
+          }
+
+          if (isNetworkError) {
+            setNetworkStatus(currentState => {
+              if (currentState.isOnline) {
+                updateNetworkStatus(false)
+              }
+              return currentState
+            })
+          }
+        }
       }
     }, 30000)
 
@@ -167,7 +209,7 @@ export function useNetworkStatus(): NetworkStatus {
 
       clearInterval(connectionCheckInterval)
     }
-  }, [updateNetworkStatus, networkStatus.isOnline])
+  }, []) // Empty dependency - all callbacks are stable
 
   return networkStatus
 }
@@ -236,20 +278,49 @@ export function useOfflineActions() {
 // Helper functions for offline storage
 function openOfflineDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('OpenReliefOffline', 1)
+    // Check if IndexedDB is available
+    if (typeof indexedDB === 'undefined') {
+      reject(new Error('IndexedDB is not available in this browser'))
+      return
+    }
 
-    request.onerror = () => reject(request.error)
-    request.onsuccess = () => resolve(request.result)
+    try {
+      const request = indexedDB.open('OpenReliefOffline', 1)
 
-    request.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result
-
-      if (!db.objectStoreNames.contains('actions')) {
-        const store = db.createObjectStore('actions', { keyPath: 'id' })
-        store.createIndex('timestamp', 'timestamp', { unique: false })
-        store.createIndex('type', 'type', { unique: false })
-        store.createIndex('synced', 'synced', { unique: false })
+      request.onerror = () => {
+        console.error('[IndexedDB] Failed to open database:', request.error)
+        reject(request.error || new Error('Failed to open IndexedDB'))
       }
+
+      request.onsuccess = () => {
+        console.log('[IndexedDB] Database opened successfully')
+        resolve(request.result)
+      }
+
+      request.onupgradeneeded = (event) => {
+        try {
+          const db = (event.target as IDBOpenDBRequest).result
+
+          if (!db.objectStoreNames.contains('actions')) {
+            const store = db.createObjectStore('actions', { keyPath: 'id' })
+            store.createIndex('timestamp', 'timestamp', { unique: false })
+            store.createIndex('type', 'type', { unique: false })
+            store.createIndex('synced', 'synced', { unique: false })
+            console.log('[IndexedDB] Created actions object store')
+          }
+        } catch (error) {
+          console.error('[IndexedDB] Failed to upgrade database:', error)
+          reject(error)
+        }
+      }
+
+      request.onblocked = () => {
+        console.warn('[IndexedDB] Database open blocked - another connection might be open')
+      }
+
+    } catch (error) {
+      console.error('[IndexedDB] Exception while opening database:', error)
+      reject(error)
     }
   })
 }

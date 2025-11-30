@@ -124,12 +124,111 @@ export const StateManagementProvider: React.FC<StateManagementProviderProps> = (
     }
   }, [])
 
-  // Set up real-time subscriptions
-  useEmergencyEventsSubscription()
-  useEventConfirmationsSubscription()
-  useUserProfilesSubscription()
-  useTrustHistorySubscription()
-  useRealtimeConnection()
+  // Coordinated real-time subscriptions with dependency management
+  const [subscriptionsInitialized, setSubscriptionsInitialized] = useState(false)
+  const [subscriptionErrors, setSubscriptionErrors] = useState<string[]>([])
+
+  // Initialize subscriptions in priority order with error handling
+  useEffect(() => {
+    if (!isOnline || !isInitialized) return
+
+    console.log('[StateManagement] Initializing real-time subscriptions...')
+
+    const initializeSubscriptions = async () => {
+      const errors: string[] = []
+
+      try {
+        // 1. Critical: Emergency events (highest priority)
+        console.log('[StateManagement] Initializing emergency events subscription...')
+        const emergencySub = useEmergencyEventsSubscription()
+
+        // Wait for emergency subscription to connect before proceeding
+        if (emergencySub.status === 'error') {
+          errors.push(`Emergency events subscription failed: ${emergencySub.error}`)
+        }
+      } catch (error) {
+        errors.push(`Emergency events subscription error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      }
+
+      try {
+        // 2. High: Event confirmations
+        console.log('[StateManagement] Initializing event confirmations subscription...')
+        const confirmationSub = useEventConfirmationsSubscription()
+
+        if (confirmationSub.status === 'error') {
+          errors.push(`Event confirmations subscription failed: ${confirmationSub.error}`)
+        }
+      } catch (error) {
+        errors.push(`Event confirmations subscription error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      }
+
+      try {
+        // 3. Medium: User profiles (location-dependent)
+        console.log('[StateManagement] Initializing user profiles subscription...')
+        const profileSub = useUserProfilesSubscription()
+
+        if (profileSub.status === 'error') {
+          errors.push(`User profiles subscription failed: ${profileSub.error}`)
+        }
+      } catch (error) {
+        errors.push(`User profiles subscription error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      }
+
+      try {
+        // 4. Low: Trust history (non-critical)
+        console.log('[StateManagement] Initializing trust history subscription...')
+        const trustSub = useTrustHistorySubscription()
+
+        if (trustSub.status === 'error') {
+          errors.push(`Trust history subscription failed: ${trustSub.error}`)
+        }
+      } catch (error) {
+        errors.push(`Trust history subscription error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      }
+
+      try {
+        // 5. System: Connection monitoring (always active)
+        console.log('[StateManagement] Initializing connection monitoring...')
+        useRealtimeConnection()
+      } catch (error) {
+        errors.push(`Connection monitoring error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      }
+
+      setSubscriptionErrors(errors)
+
+      if (errors.length === 0) {
+        console.log('[StateManagement] All subscriptions initialized successfully')
+        setSubscriptionsInitialized(true)
+      } else {
+        console.error('[StateManagement] Subscription initialization errors:', errors)
+
+        // Report errors for debugging
+        errors.forEach((error, index) => {
+          reportError(classifyError(new Error(error), {
+            action: 'subscription_initialization',
+            errorIndex: index,
+            totalErrors: errors.length,
+          }))
+        })
+      }
+    }
+
+    // Add delay to prevent overwhelming the connection
+    const timeoutId = setTimeout(initializeSubscriptions, 1000)
+
+    return () => clearTimeout(timeoutId)
+  }, [isOnline, isInitialized])
+
+  // Update emergency store with subscription status
+  useEffect(() => {
+    const { setRealtimeEnabled } = useEmergencyStore.getState()
+
+    if (subscriptionErrors.length === 0 && subscriptionsInitialized) {
+      setRealtimeEnabled(true)
+    } else {
+      setRealtimeEnabled(false)
+    }
+  }, [subscriptionErrors, subscriptionsInitialized])
 
   // Handle network status changes
   useEffect(() => {

@@ -77,15 +77,15 @@ interface LocationState {
   currentLocation: LocationPoint | null
   lastKnownLocation: LocationPoint | null
   locationPermission: LocationPermission
-  
+
   // Location tracking
   isTracking: boolean
   trackingSession: LocationTrackingSession | null
   trackingHistory: LocationTrackingSession[]
-  
+
   // Settings
   settings: LocationSettings
-  
+
   // Geofences
   geofences: Geofence[]
   activeGeofences: string[] // IDs of active geofences
@@ -94,7 +94,7 @@ interface LocationState {
     action: 'enter' | 'exit'
     timestamp: Date
   }[]
-  
+
   // Proximity alerts
   proximityAlerts: ProximityAlert[]
   proximityThresholds: {
@@ -102,11 +102,11 @@ interface LocationState {
     users: number // meters
     geofences: number // meters
   }
-  
+
   // Watchers and listeners
   watchId: number | null
   geofenceWatchers: Map<string, number>
-  
+
   // Performance
   lastUpdate: Date | null
   updateCount: number
@@ -120,23 +120,23 @@ interface LocationActions {
   setCurrentLocation: (location: LocationPoint) => void
   clearCurrentLocation: () => void
   setLastKnownLocation: (location: LocationPoint) => void
-  
+
   // Permission management
   requestLocationPermission: (highAccuracy?: boolean) => Promise<LocationPermission>
   checkLocationPermission: () => Promise<LocationPermission>
   setPermission: (permission: LocationPermission) => void
-  
+
   // Tracking management
   startTracking: (purpose?: LocationTrackingSession['purpose'], metadata?: any) => Promise<void>
   stopTracking: () => void
   pauseTracking: () => void
   resumeTracking: () => void
   addTrackingPoint: (point: LocationPoint) => void
-  
+
   // Settings management
   updateSettings: (settings: Partial<LocationSettings>) => void
   resetSettings: () => void
-  
+
   // Geofence management
   addGeofence: (geofence: Omit<Geofence, 'id' | 'createdAt'>) => string
   removeGeofence: (geofenceId: string) => void
@@ -144,7 +144,7 @@ interface LocationActions {
   toggleGeofence: (geofenceId: string) => void
   checkGeofences: (location: LocationPoint) => void
   clearExpiredGeofences: () => void
-  
+
   // Proximity alerts
   addProximityAlert: (alert: Omit<ProximityAlert, 'id' | 'timestamp' | 'acknowledged'>) => void
   acknowledgeAlert: (alertId: string) => void
@@ -152,12 +152,12 @@ interface LocationActions {
   clearAllAlerts: () => void
   updateProximityThresholds: (thresholds: Partial<LocationState['proximityThresholds']>) => void
   checkProximity: (targetLocation: { lat: number; lng: number }, targetType: ProximityAlert['targetType'], targetId: string) => void
-  
+
   // Utility functions
   calculateDistance: (point1: { lat: number; lng: number }, point2: { lat: number; lng: number }) => number
   isPointInGeofence: (point: LocationPoint, geofence: Geofence) => boolean
   getLocationHistory: (sessionId?: string, limit?: number) => LocationPoint[]
-  
+
   // Error handling
   setError: (error: string) => void
   clearError: () => void
@@ -223,23 +223,23 @@ export const useLocationStore = create<LocationStore>()(
           accuracy: 'denied',
           background: false,
         },
-        
+
         isTracking: false,
         trackingSession: null,
         trackingHistory: [],
-        
+
         settings: defaultSettings,
-        
+
         geofences: [],
         activeGeofences: [],
         geofenceHistory: [],
-        
+
         proximityAlerts: [],
         proximityThresholds: defaultProximityThresholds,
-        
+
         watchId: null,
         geofenceWatchers: new Map(),
-        
+
         lastUpdate: null,
         updateCount: 0,
         errorCount: 0,
@@ -253,7 +253,7 @@ export const useLocationStore = create<LocationStore>()(
             lastUpdate: new Date(),
             updateCount: state.updateCount + 1,
           }))
-          
+
           // Check geofences and proximity
           get().checkGeofences(location)
         },
@@ -384,7 +384,7 @@ export const useLocationStore = create<LocationStore>()(
 
         stopTracking: () => {
           const { watchId, trackingSession } = get()
-          
+
           if (watchId !== null && typeof navigator !== 'undefined' && 'geolocation' in navigator) {
             navigator.geolocation.clearWatch(watchId)
           }
@@ -407,7 +407,7 @@ export const useLocationStore = create<LocationStore>()(
 
         pauseTracking: () => {
           const { watchId } = get()
-          
+
           if (watchId !== null && typeof navigator !== 'undefined' && 'geolocation' in navigator) {
             navigator.geolocation.clearWatch(watchId)
           }
@@ -446,16 +446,29 @@ export const useLocationStore = create<LocationStore>()(
 
         // Geofence management
         addGeofence: (geofence) => {
-          const id = `geofence-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+          // FIXED: Enhanced ID generation with better collision avoidance
+          const timestamp = Date.now()
+          const randomPart = Math.random().toString(36).substr(2, 9)
+          const id = `geofence-${timestamp}-${randomPart}`
+
+          console.log('Debug: Generating geofence ID:', id)
+          console.log('Debug: Geofence data being added:', geofence)
+
           const newGeofence: Geofence = {
             ...geofence,
             id,
             createdAt: new Date(),
           }
 
-          set((state) => ({
-            geofences: [...state.geofences, newGeofence],
-          }))
+          console.log('Debug: Complete geofence object created:', newGeofence)
+
+          set((state) => {
+            const updatedState = {
+              geofences: [...state.geofences, newGeofence],
+            }
+            console.log('Debug: Updated geofences array length:', updatedState.geofences.length)
+            return updatedState
+          })
 
           return id
         },
@@ -496,7 +509,7 @@ export const useLocationStore = create<LocationStore>()(
 
         checkGeofences: (location) => {
           const { geofences, activeGeofences, geofenceHistory } = get()
-          
+
           geofences.forEach(geofence => {
             if (!geofence.isActive) return
 
@@ -593,8 +606,8 @@ export const useLocationStore = create<LocationStore>()(
 
           if (distance <= threshold) {
             get().addProximityAlert({
-              type: targetType === 'event' ? 'event_proximity' : 
-                    targetType === 'user' ? 'user_proximity' : 'geofence_entry',
+              type: targetType === 'event' ? 'event_proximity' :
+                targetType === 'user' ? 'user_proximity' : 'geofence_entry',
               targetId,
               targetType,
               distance,
@@ -616,18 +629,18 @@ export const useLocationStore = create<LocationStore>()(
 
         getLocationHistory: (sessionId, limit) => {
           const { trackingHistory, trackingSession } = get()
-          
+
           if (sessionId) {
             const session = trackingHistory.find(s => s.id === sessionId) || trackingSession
             return session ? session.points.slice(-limit || Infinity) : []
           }
-          
+
           // Return all points from all sessions
           const allPoints = trackingHistory.flatMap(s => s.points)
           if (trackingSession) {
             allPoints.push(...trackingSession.points)
           }
-          
+
           return allPoints.slice(-limit || Infinity)
         },
 

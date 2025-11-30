@@ -8,7 +8,7 @@ import type {
 } from '@/components/ui/toast'
 
 const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000000
+const TOAST_REMOVE_DELAY = 5000 // 5 seconds - reasonable toast display time
 
 type ToasterToast = ToastProps & {
   id: string
@@ -73,6 +73,15 @@ const addToRemoveQueue = (toastId: string) => {
   toastTimeouts.set(toastId, timeout)
 }
 
+// Clear timeout for a specific toast
+const clearToastTimeout = (toastId: string) => {
+  const timeout = toastTimeouts.get(toastId)
+  if (timeout) {
+    clearTimeout(timeout)
+    toastTimeouts.delete(toastId)
+  }
+}
+
 export const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case 'ADD_TOAST':
@@ -115,6 +124,13 @@ export const reducer = (state: State, action: Action): State => {
       }
     }
     case 'REMOVE_TOAST':
+      // Clear timeout to prevent memory leak
+      if (action.toastId) {
+        clearToastTimeout(action.toastId)
+      } else {
+        // Clear all timeouts
+        toastTimeouts.forEach((_, toastId) => clearToastTimeout(toastId))
+      }
       if (action.toastId === undefined) {
         return {
           ...state,
@@ -175,13 +191,14 @@ function useToast() {
 
   React.useEffect(() => {
     listeners.push(setState)
+
     return () => {
       const index = listeners.indexOf(setState)
       if (index > -1) {
         listeners.splice(index, 1)
       }
     }
-  }, [state])
+  }, []) // Empty dependency array - only run once on mount/unmount
 
   return {
     ...state,

@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { AlertTriangle, MapPin, Camera, Mic, Send, X, Plus, Minus } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useEmergencyStore, useLocationStore } from '@/store'
+import { useEmergencyStore, useLocationStore, useOfflineStore } from '@/store'
 import { EmergencyEvent } from '@/types'
 import { Database } from '@/types/database'
 
@@ -85,6 +85,8 @@ export default function EmergencyReportInterface({
   const [images, setImages] = useState<File[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [mapPreview, setMapPreview] = useState(false)
+  const [audioPermission, setAudioPermission] = useState<'granted' | 'denied' | 'prompt' | null>(null)
+  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const audioRecorderRef = useRef<MediaRecorder | null>(null)
@@ -92,8 +94,8 @@ export default function EmergencyReportInterface({
 
   const { currentLocation } = useLocationStore()
   const { addOfflineAction } = useEmergencyStore()
+  const { addAction } = useOfflineStore()
 
-  // Initialize with user location if no initial location provided
   // Initialize with user location if no initial location provided
   useEffect(() => {
     if (!initialLocation && currentLocation) {
@@ -110,6 +112,39 @@ export default function EmergencyReportInterface({
       setRadius(selectedType.default_radius)
     }
   }, [selectedType])
+
+  // Monitor online status
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
+
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
+
+  // Check audio permission on mount
+  useEffect(() => {
+    const checkAudioPermission = async () => {
+      try {
+        const permission = await navigator.permissions.query({ name: 'microphone' as PermissionName })
+        setAudioPermission(permission.state as 'granted' | 'denied' | 'prompt')
+
+        permission.addEventListener('change', () => {
+          setAudioPermission(permission.state as 'granted' | 'denied' | 'prompt')
+        })
+      } catch (error) {
+        // Permissions API not supported, will check on actual access
+        setAudioPermission(null)
+      }
+    }
+
+    checkAudioPermission()
+  }, [])
 
   const handleTypeSelect = (type: EmergencyType) => {
     setSelectedType(type)
@@ -148,8 +183,42 @@ export default function EmergencyReportInterface({
 
   const startAudioRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const recorder = new MediaRecorder(stream)
+      // Check if mediaDevices is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Audio recording is not supported in this browser')
+      }
+
+      // Check if we already have permission
+      if (audioPermission === 'denied') {
+        throw new Error('Microphone permission has been denied. Please enable it in your browser settings.')
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: 44100
+        }
+      })
+
+      // Check for supported MIME types
+      const types = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/ogg;codecs=opus',
+        'audio/mp4',
+        'audio/wav'
+      ]
+
+      let mimeType = 'audio/webm'
+      for (const type of types) {
+        if (MediaRecorder.isTypeSupported(type)) {
+          mimeType = type
+          break
+        }
+      }
+
+      const recorder = new MediaRecorder(stream, { mimeType })
       audioChunksRef.current = []
 
       recorder.ondataavailable = (event) => {
@@ -159,9 +228,14 @@ export default function EmergencyReportInterface({
       }
 
       recorder.onstop = () => {
-        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
+        const blob = new Blob(audioChunksRef.current, { type: mimeType })
         setAudioBlob(blob)
         stream.getTracks().forEach(track => track.stop())
+      }
+
+      recorder.onerror = (event) => {
+        console.error('MediaRecorder error:', event)
+        throw new Error('Recording failed due to a technical issue')
       }
 
       recorder.start()
@@ -169,6 +243,16 @@ export default function EmergencyReportInterface({
       setIsRecording(true)
     } catch (error) {
       console.error('Failed to start audio recording:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Failed to start audio recording'
+
+      // Provide user-friendly error messages
+      if (errorMessage.includes('Permission denied')) {
+        alert('Microphone permission is required to record audio. Please allow microphone access in your browser settings.')
+      } else if (errorMessage.includes('not supported')) {
+        alert('Audio recording is not supported in your browser. Please try using a modern browser like Chrome, Firefox, or Edge.')
+      } else {
+        alert(`Recording failed: ${errorMessage}`)
+      }
     }
   }
 
@@ -216,14 +300,27 @@ export default function EmergencyReportInterface({
     }
 
     try {
-      // Try to submit immediately
-      onReportSubmitted(emergencyReport)
+      if (isOnline) {
+        // Try to submit immediately
+        onReportSubmitted(emergencyReport)
+      } else {
+        // Store offline with proper offline action
+        addAction({
+          type: 'create',
+          table: 'emergency_events',
+          data: emergencyReport,
+          priority: 'critical',
+          maxRetries: 5,
+        })
 
-      // Also add to offline actions for sync
-      addOfflineAction({
-        type: 'create',
-        data: emergencyReport,
-      })
+        // Also add to emergency store for UI
+        addOfflineAction({
+          type: 'create',
+          data: emergencyReport,
+        })
+
+        alert('You are currently offline. Your emergency report has been saved and will be submitted when you reconnect.')
+      }
 
       // Reset form
       setSelectedType(null)
@@ -237,14 +334,27 @@ export default function EmergencyReportInterface({
     } catch (error) {
       console.error('Failed to submit emergency report:', error)
 
-      // Still add to offline actions even if submission fails
-      addOfflineAction({
-        type: 'create',
-        data: emergencyReport,
-      })
+      // Fallback to offline storage
+      try {
+        addAction({
+          type: 'create',
+          table: 'emergency_events',
+          data: emergencyReport,
+          priority: 'critical',
+          maxRetries: 5,
+        })
 
-      alert('Report saved offline. Will sync when connection is available.')
-      onClose()
+        addOfflineAction({
+          type: 'create',
+          data: emergencyReport,
+        })
+
+        alert('Report saved offline. Will sync when connection is available.')
+        onClose()
+      } catch (offlineError) {
+        console.error('Failed to save report offline:', offlineError)
+        alert('Failed to save your report. Please try again or contact support if the issue persists.')
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -269,6 +379,19 @@ export default function EmergencyReportInterface({
           >
             <X className="h-6 w-6" />
           </button>
+        </div>
+
+        {/* Connection Status */}
+        <div className="px-6 py-2 bg-gray-50 border-b">
+          <div className="flex items-center space-x-2">
+            <div className={cn(
+              'w-2 h-2 rounded-full',
+              isOnline ? 'bg-green-500' : 'bg-red-500'
+            )} />
+            <span className="text-sm text-gray-600">
+              {isOnline ? 'Online - Report will be submitted immediately' : 'Offline - Report will be saved locally'}
+            </span>
+          </div>
         </div>
 
         {/* Emergency Type Selection */}
@@ -477,6 +600,12 @@ export default function EmergencyReportInterface({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Audio Recording
+                {audioPermission && (
+                  <span className="ml-2 text-xs text-gray-500">
+                    ({audioPermission === 'granted' ? '✓ Permission granted' :
+                      audioPermission === 'denied' ? '✗ Permission denied' : '? Permission needed'})
+                  </span>
+                )}
               </label>
               <div className="flex items-center space-x-3">
                 {!isRecording && !audioBlob && (
