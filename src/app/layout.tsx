@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import { Suspense } from 'react'
 import { Providers } from '@/components/providers/Providers'
@@ -11,8 +11,6 @@ export const metadata: Metadata = {
   description: 'Offline-first emergency coordination platform for decentralized disaster response with 24+ hour offline capability',
   keywords: ['emergency', 'coordination', 'disaster', 'relief', 'open-source', 'pwa', 'offline'],
   authors: [{ name: 'OpenRelief Contributors' }],
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover',
-  themeColor: '#dc2626',
   manifest: '/manifest.json',
   icons: {
     icon: '/icons/icon-192x192.png',
@@ -45,6 +43,16 @@ export const metadata: Metadata = {
     'msapplication-TileColor': '#dc2626',
     'msapplication-config': '/browserconfig.xml',
   },
+}
+
+// Separate viewport export as required by Next.js 15+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+  themeColor: '#dc2626',
 }
 
 export default function RootLayout({
