@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { supabase } from '@/lib/supabase'
 
 export interface User {
   id: string
@@ -60,45 +61,59 @@ export const useAuthStore = create<AuthStore>()(
 
       // Actions
       signIn: async (email: string, password: string) => {
+        console.log('🔍 DEBUG: signIn called', { email })
         set({ isLoading: true, error: null })
 
         try {
-          // This is a placeholder - will be implemented with Supabase auth
-          await new Promise(resolve => setTimeout(resolve, 1000))
-
-          const mockUser: User = {
-            id: 'mock-user-id',
+          console.log('🔍 DEBUG: Attempting Supabase signIn')
+          const { data, error } = await supabase.auth.signInWithPassword({
             email,
-            trust_score: 0.5,
-            notification_preferences: {
-              email: true,
-              push: true,
-              sms: false,
-              quiet_hours: {
-                start: '22:00',
-                end: '07:00',
-              },
-            },
-            privacy_settings: {
-              location_sharing: true,
-              profile_visibility: 'public',
-              data_retention: 30,
-            },
-          }
-
-          const mockSession = {
-            access_token: 'mock-access-token',
-            refresh_token: 'mock-refresh-token',
-            expires_at: Date.now() + 3600000, // 1 hour
-          }
-
-          set({
-            user: mockUser,
-            isAuthenticated: true,
-            session: mockSession,
-            isLoading: false,
+            password,
           })
+
+          if (error) {
+            console.error('❌ DEBUG: Supabase signIn error', error)
+            throw error
+          }
+
+          console.log('✅ DEBUG: Supabase signIn successful', { user: data.user?.id })
+
+          if (data.user && data.session) {
+            const user: User = {
+              id: data.user.id,
+              email: data.user.email!,
+              trust_score: 0.5, // Default trust score
+              notification_preferences: {
+                email: true,
+                push: true,
+                sms: false,
+                quiet_hours: {
+                  start: '22:00',
+                  end: '07:00',
+                },
+              },
+              privacy_settings: {
+                location_sharing: true,
+                profile_visibility: 'public',
+                data_retention: 30,
+              },
+            }
+
+            const session = {
+              access_token: data.session.access_token,
+              refresh_token: data.session.refresh_token!,
+              expires_at: data.session.expires_at!,
+            }
+
+            set({
+              user,
+              isAuthenticated: true,
+              session,
+              isLoading: false,
+            })
+          }
         } catch (error) {
+          console.error('❌ DEBUG: signIn failed', error)
           set({
             error: error instanceof Error ? error.message : 'Sign in failed',
             isLoading: false,
@@ -107,15 +122,67 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       signUp: async (email: string, password: string) => {
+        console.log('🔍 DEBUG: signUp called in authStore', { email, passwordLength: password.length })
         set({ isLoading: true, error: null })
 
         try {
-          // Placeholder implementation
-          await new Promise(resolve => setTimeout(resolve, 1000))
+          console.log('🔍 DEBUG: Attempting Supabase signUp')
+          const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+          })
 
-          // After successful signup, automatically sign in
-          get().signIn(email, password)
+          if (error) {
+            console.error('❌ DEBUG: Supabase signUp error', error)
+            throw error
+          }
+
+          console.log('✅ DEBUG: Supabase signUp successful', { user: data.user?.id })
+
+          if (data.user && data.session) {
+            // User is automatically signed in
+            const user: User = {
+              id: data.user.id,
+              email: data.user.email!,
+              trust_score: 0.5, // Default trust score
+              notification_preferences: {
+                email: true,
+                push: true,
+                sms: false,
+                quiet_hours: {
+                  start: '22:00',
+                  end: '07:00',
+                },
+              },
+              privacy_settings: {
+                location_sharing: true,
+                profile_visibility: 'public',
+                data_retention: 30,
+              },
+            }
+
+            const session = {
+              access_token: data.session.access_token,
+              refresh_token: data.session.refresh_token!,
+              expires_at: data.session.expires_at!,
+            }
+
+            set({
+              user,
+              isAuthenticated: true,
+              session,
+              isLoading: false,
+            })
+          } else {
+            // Email confirmation required
+            console.log('🔍 DEBUG: Email confirmation required')
+            set({
+              error: 'Please check your email to confirm your account',
+              isLoading: false,
+            })
+          }
         } catch (error) {
+          console.error('❌ DEBUG: signUp failed', error)
           set({
             error: error instanceof Error ? error.message : 'Sign up failed',
             isLoading: false,
@@ -123,7 +190,15 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
-      signOut: () => {
+      signOut: async () => {
+        console.log('🔍 DEBUG: signOut called')
+        try {
+          await supabase.auth.signOut()
+          console.log('✅ DEBUG: Supabase signOut successful')
+        } catch (error) {
+          console.error('❌ DEBUG: Supabase signOut error', error)
+        }
+
         set({
           user: null,
           isAuthenticated: false,

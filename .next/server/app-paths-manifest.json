@@ -1,5 +1,6 @@
 {
   "/api/health/route": "app/api/health/route.js",
   "/_not-found/page": "app/_not-found/page.js",
-  "/signup/page": "app/signup/page.js"
+  "/signup/page": "app/signup/page.js",
+  "/page": "app/page.js"
 }
