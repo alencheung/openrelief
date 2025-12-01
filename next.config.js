@@ -4,6 +4,8 @@ const withPWA = require('next-pwa')({
   disable: process.env.NODE_ENV === 'development',
   register: true,
   skipWaiting: true,
+  // Add build manifest to precache manifest
+  include: ['_next/app-build-manifest.json'],
   runtimeCaching: [
     {
       urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -35,6 +37,18 @@ const withPWA = require('next-pwa')({
         expiration: {
           maxEntries: 60,
           maxAgeSeconds: 30 * 24 * 60 * 60 // 30 days
+        }
+      }
+    },
+    // Add fallback for missing build manifest
+    {
+      urlPattern: /\/_next\/app-build-manifest\.json$/i,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'build-manifest',
+        expiration: {
+          maxEntries: 1,
+          maxAgeSeconds: 60 * 60 // 1 hour
         }
       }
     },
@@ -138,7 +152,7 @@ const nextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(self), microphone=(self), geolocation=(self), notifications=(self)',
+            value: 'camera=(self), microphone=(self), geolocation=(self)',
           },
           {
             key: 'Cross-Origin-Embedder-Policy',

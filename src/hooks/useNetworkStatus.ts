@@ -16,8 +16,8 @@ interface NetworkStatus {
 
 export function useNetworkStatus(): NetworkStatus {
   const [networkStatus, setNetworkStatus] = useState<NetworkStatus>({
-    isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
-    isOffline: typeof navigator !== 'undefined' ? !navigator.onLine : false,
+    isOnline: true, // Default to true for SSR consistency
+    isOffline: false, // Default to false for SSR consistency
     reconnectAttempts: 0,
     lastOnlineTime: null,
     lastOfflineTime: null,
@@ -103,9 +103,26 @@ export function useNetworkStatus(): NetworkStatus {
             lastOnlineTime: parsed.lastOnlineTime ? new Date(parsed.lastOnlineTime) : null,
             lastOfflineTime: parsed.lastOfflineTime ? new Date(parsed.lastOfflineTime) : null,
           })
+        } else {
+          // Initialize with actual navigator state on client side
+          setNetworkStatus({
+            isOnline: navigator.onLine,
+            isOffline: !navigator.onLine,
+            reconnectAttempts: 0,
+            lastOnlineTime: null,
+            lastOfflineTime: null,
+          })
         }
       } catch (error) {
         console.error('Failed to load network status from localStorage:', error)
+        // Fallback to navigator state
+        setNetworkStatus({
+          isOnline: navigator.onLine,
+          isOffline: !navigator.onLine,
+          reconnectAttempts: 0,
+          lastOnlineTime: null,
+          lastOfflineTime: null,
+        })
       }
     }
   }, []) // Empty dependency - only run once on mount

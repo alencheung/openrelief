@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { Toaster } from '@/components/ui/toaster'
 import { PWAManager } from '@/components/pwa/PWAManager'
+import { NoSSRProvider } from '@/components/providers/NoSSRProvider'
 
 interface ProvidersProps {
     children: React.ReactNode
@@ -28,11 +29,13 @@ export function Providers({ children }: ProvidersProps) {
     return (
         <QueryClientProvider client={queryClient}>
             <PWAManager>
-                {children}
-                <Toaster />
-                {process.env.NODE_ENV === 'development' && (
-                    <ReactQueryDevtools initialIsOpen={false} />
-                )}
+                <NoSSRProvider>
+                    {children}
+                    <Toaster />
+                    {process.env.NODE_ENV === 'development' && (
+                        <ReactQueryDevtools initialIsOpen={false} />
+                    )}
+                </NoSSRProvider>
             </PWAManager>
         </QueryClientProvider>
     )
