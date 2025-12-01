@@ -36,7 +36,9 @@ export const OPENMAPTILES_URL = process.env.NEXT_PUBLIC_MAPTILER_API_KEY
 export const emergencyMapStyle = {
   version: 8 as 8,
   name: 'OpenRelief Emergency Style',
-  glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
+  glyphs: process.env.NEXT_PUBLIC_MAPTILER_API_KEY
+    ? `https://api.maptiler.com/fonts/{fontstack}/{range}.pbf?key=${process.env.NEXT_PUBLIC_MAPTILER_API_KEY}`
+    : 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
   sources: {
     'openmaptiles': {
       type: 'vector',

@@ -157,6 +157,8 @@ export class MapPerformanceManager {
   }
 
   private waitForMapLoad() {
+    if (!this.map) return
+
     if (this.map.loaded() && this.map.getStyle()) {
       console.log('[MapPerformanceManager] Map is loaded, starting performance monitoring')
       this.setupPerformanceMonitoring()
@@ -219,7 +221,8 @@ export class MapPerformanceManager {
     console.log('[MapPerformanceManager] adjustPerformanceSettings called', {
       fps: this.fps,
       mapExists: !!this.map,
-      mapStyle: this.map?.getStyle(),
+      // Safe access to getStyle
+      mapStyle: this.map && typeof this.map.getStyle === 'function' ? !!this.map.getStyle() : false,
       isLowEndDevice: this.isLowEndDevice
     })
 
@@ -230,7 +233,7 @@ export class MapPerformanceManager {
     }
 
     // Check if map is loaded and has style
-    if (!this.map.getStyle()) {
+    if (typeof this.map.getStyle !== 'function' || !this.map.getStyle()) {
       console.warn('[MapPerformanceManager] Map style not loaded yet')
       return
     }
@@ -247,7 +250,11 @@ export class MapPerformanceManager {
 
         // Reduce clustering radius for fewer calculations
         if (this.isLowEndDevice) {
-          this.map.setMinZoom(10)
+          try {
+            this.map.setMinZoom(10)
+          } catch (e) {
+            console.warn('[MapPerformanceManager] Failed to set min zoom', e)
+          }
         }
       } else if (this.fps > 50) {
         // Restore full quality
@@ -257,7 +264,11 @@ export class MapPerformanceManager {
         if (this.map.getLayer('roads-minor')) {
           this.map.setPaintProperty('roads-minor', 'line-opacity', 0.7)
         }
-        this.map.setMinZoom(2)
+        try {
+          this.map.setMinZoom(2)
+        } catch (e) {
+          console.warn('[MapPerformanceManager] Failed to set min zoom', e)
+        }
       }
     } catch (error) {
       console.error('[MapPerformanceManager] Error adjusting performance settings:', error)
