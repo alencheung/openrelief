@@ -1,0 +1,333 @@
+/* Enhanced Map Styles for OpenRelief Emergency Map */
+
+/* Base styles for map containers */
+.map-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Responsive map container styles */
+.responsive-map-container {
+  --map-legend-position: bottom-left;
+  --map-alerts-position: top-left;
+  --map-spatial-position: top-right;
+  --map-controls-size: md;
+  --map-popup-width: md;
+  --map-popup-position: bottom;
+}
+
+/* Accessibility styles */
+.high-contrast {
+  --background: 000000;
+  --foreground: ffffff;
+  --muted: 404040;
+  --border: 808080;
+}
+
+.reduced-motion * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+.large-text {
+  font-size: 120% !important;
+}
+
+.focus-visible *:focus {
+  outline: 3px solid #0066cc !important;
+  outline-offset: 2px !important;
+}
+
+/* Screen reader only content */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Enhanced map animations */
+@keyframes slide-in-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-out-right {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes emergency-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+.animate-slide-in-up {
+  animation: slide-in-up 0.3s ease-out forwards;
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.3s ease-out forwards;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out forwards;
+}
+
+.animate-slide-out-right {
+  animation: slide-out-right 0.3s ease-in forwards;
+}
+
+.animate-emergency-pulse {
+  animation: emergency-pulse 2s ease-in-out infinite;
+}
+
+/* Glass effect for overlays */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Gradient border for emergencies */
+.gradient-border {
+  position: relative;
+  background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #ffeaa7, #dfe6e9);
+  background-size: 300% 300%;
+  animation: gradient-shift 3s ease infinite;
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Emergency type colors */
+.emergency-fire { background-color: #ef4444; }
+.emergency-medical { background-color: #ec4899; }
+.emergency-security { background-color: #f59e0b; }
+.emergency-natural { background-color: #3b82f6; }
+.emergency-infrastructure { background-color: #f97316; }
+
+/* Trust level colors */
+.trust-excellent { background-color: #22c55e; }
+.trust-good { background-color: #84cc16; }
+.trust-moderate { background-color: #eab308; }
+.trust-low { background-color: #f97316; }
+.trust-critical { background-color: #ef4444; }
+
+/* Status colors */
+.status-active { background-color: #22c55e; }
+.status-inactive { background-color: #6b7280; }
+.status-pending { background-color: #f59e0b; }
+.status-resolved { background-color: #22c55e; }
+.status-critical { background-color: #ef4444; }
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .map-container .map-legend {
+    position: fixed !important;
+    bottom: 1rem !important;
+    left: 1rem !important;
+    right: 1rem !important;
+    max-width: none !important;
+    max-height: 40vh !important;
+    overflow-y: auto !important;
+  }
+  
+  .map-container .proximity-alerts {
+    position: fixed !important;
+    top: 1rem !important;
+    left: 1rem !important;
+    right: 1rem !important;
+    max-width: none !important;
+    max-height: 30vh !important;
+    overflow-y: auto !important;
+  }
+  
+  .map-container .emergency-details {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    max-width: none !important;
+    border-radius: 1rem 1rem 0 0 !important;
+    max-height: 60vh !important;
+    overflow-y: auto !important;
+  }
+  
+  .map-container .spatial-info {
+    position: fixed !important;
+    bottom: 1rem !important;
+    right: 1rem !important;
+    max-width: 200px !important;
+  }
+  
+  .map-container .accessibility-controls {
+    position: fixed !important;
+    top: 1rem !important;
+    right: 1rem !important;
+    z-index: 1000 !important;
+  }
+}
+
+/* Tablet optimizations */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .map-container .map-legend {
+    max-width: 300px !important;
+  }
+  
+  .map-container .proximity-alerts {
+    max-width: 350px !important;
+  }
+  
+  .map-container .emergency-details {
+    max-width: 500px !important;
+  }
+}
+
+/* High contrast mode */
+.high-contrast .map-container .map-legend,
+.high-contrast .map-container .proximity-alerts,
+.high-contrast .map-container .emergency-details,
+.high-contrast .map-container .spatial-info {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border: 2px solid #ffffff !important;
+}
+
+.high-contrast .map-container .emergency-fire { background-color: #ff0000 !important; }
+.high-contrast .map-container .emergency-medical { background-color: #ff00ff !important; }
+.high-contrast .map-container .emergency-security { background-color: #ffff00 !important; }
+.high-contrast .map-container .emergency-natural { background-color: #0000ff !important; }
+.high-contrast .map-container .emergency-infrastructure { background-color: #ff8800 !important; }
+
+/* Print styles */
+@media print {
+  .map-container .map-controls,
+  .map-container .accessibility-controls {
+    display: none !important;
+  }
+  
+  .map-container .map-legend,
+  .map-container .proximity-alerts,
+  .map-container .emergency-details {
+    position: static !important;
+    margin: 1rem 0 !important;
+    break-inside: avoid;
+  }
+}
+
+/* Keyboard navigation focus styles */
+.keyboard-nav .map-container *:focus {
+  outline: 2px solid #0066cc !important;
+  outline-offset: 2px !important;
+}
+
+.keyboard-nav .map-container *:focus:not(:focus-visible) {
+  outline: none !important;
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .map-container button {
+    min-height: 44px !important;
+    min-width: 44px !important;
+  }
+  
+  .map-container .interactive-element {
+    padding: 0.5rem !important;
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .map-container * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast preferences */
+@media (prefers-contrast: high) {
+  .map-container {
+    --background: 000000;
+    --foreground: ffffff;
+    --muted: 404040;
+    --border: 808080;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .map-container .map-legend,
+  .map-container .proximity-alerts,
+  .map-container .emergency-details,
+  .map-container .spatial-info {
+    background: rgba(30, 30, 30, 0.95) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+  }
+}
+
+/* Light mode support */
+@media (prefers-color-scheme: light) {
+  .map-container .map-legend,
+  .map-container .proximity-alerts,
+  .map-container .emergency-details,
+  .map-container .spatial-info {
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: #000000 !important;
+    border-color: rgba(0, 0, 0, 0.2) !important;
+  }
+}

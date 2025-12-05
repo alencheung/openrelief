@@ -6,6 +6,29 @@ import { cn } from '@/lib/utils'
 import { useEmergencyStore, useLocationStore, useOfflineStore } from '@/store'
 import { EmergencyEvent } from '@/types'
 import { Database } from '@/types/database'
+import { useFocusManagement, useAriaAnnouncer, useFormValidationAnnouncer } from '@/hooks/accessibility'
+import { 
+  EnhancedCard,
+  EnhancedCardHeader,
+  EnhancedCardTitle,
+  EnhancedCardContent,
+  FormFeedback,
+  EnhancedButton
+} from '@/components/ui'
+import {
+  EnhancedInput,
+  EnhancedTextarea,
+  EnhancedRadioGroup,
+  EnhancedRangeSlider,
+  EnhancedFileUpload,
+  AudioRecorder,
+  ImagePreview,
+  EmergencyFormLayout,
+  EmergencyFormSection,
+  EmergencyFormActions,
+  FormProgress,
+  FormProgressSummary
+} from '@/components/ui/forms'
 
 interface EmergencyReportInterfaceProps {
   isOpen: boolean
@@ -67,6 +90,14 @@ const emergencyTypes: EmergencyType[] = [
   },
 ]
 
+const formSteps = [
+  { id: 'type', title: 'Emergency Type', description: 'Select the type of emergency' },
+  { id: 'details', title: 'Emergency Details', description: 'Provide details about the emergency' },
+  { id: 'location', title: 'Location', description: 'Specify the affected area' },
+  { id: 'evidence', title: 'Evidence', description: 'Add photos or audio recordings' },
+  { id: 'review', title: 'Review', description: 'Review your report before submitting' },
+]
+
 export default function EmergencyReportInterface({
   isOpen,
   onClose,
@@ -74,23 +105,31 @@ export default function EmergencyReportInterface({
   initialLocation,
   mapInstance,
 }: EmergencyReportInterfaceProps) {
+  const [currentStep, setCurrentStep] = useState(0)
   const [selectedType, setSelectedType] = useState<EmergencyType | null>(null)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [severity, setSeverity] = useState(3)
   const [location, setLocation] = useState(initialLocation || null)
   const [radius, setRadius] = useState(500)
-  const [isRecording, setIsRecording] = useState(false)
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
-  const [images, setImages] = useState<File[]>([])
+  const [audioRecording, setAudioRecording] = useState<any>(null)
+  const [images, setImages] = useState<any[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [mapPreview, setMapPreview] = useState(false)
   const [audioPermission, setAudioPermission] = useState<'granted' | 'denied' | 'prompt' | null>(null)
   const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true)
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
 
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const audioRecorderRef = useRef<MediaRecorder | null>(null)
-  const audioChunksRef = useRef<Blob[]>([])
+  
+  // Accessibility hooks
+  const { containerRef, getFocusableElements, focusFirstElement } = useFocusManagement({
+    trapFocus: true,
+    autoFocus: true,
+    restoreFocus: true,
+  })
+  const { announcePolite, announceAssertive } = useAriaAnnouncer()
+  const { announceValidationErrors, announceFieldError, announceFieldSuccess } = useFormValidationAnnouncer()
 
   const { currentLocation } = useLocationStore()
   const { addOfflineAction } = useEmergencyStore()
@@ -146,16 +185,98 @@ export default function EmergencyReportInterface({
     checkAudioPermission()
   }, [])
 
-  const handleTypeSelect = (type: EmergencyType) => {
-    setSelectedType(type)
-    setRadius(type.default_radius)
+  // Validate current step
+  const validateStep = (stepIndex: number): boolean => {
+    const errors: Record<string, string> = {}
+    
+    switch (stepIndex) {
+      case 0: // Emergency Type
+        if (!selectedType) {
+          errors.type = 'Please select an emergency type'
+          announceFieldError('Emergency type', 'Please select an emergency type')
+        } else {
+          announceFieldSuccess('Emergency type', 'Emergency type selected')
+        }
+        break
+      case 1: // Emergency Details
+        if (!title.trim()) {
+          errors.title = 'Title is required'
+          announceFieldError('Title', 'Title is required')
+        } else if (title.length < 5) {
+          errors.title = 'Title must be at least 5 characters'
+          announceFieldError('Title', 'Title must be at least 5 characters')
+        } else if (title.length > 100) {
+          errors.title = 'Title must be less than 100 characters'
+          announceFieldError('Title', 'Title must be less than 100 characters')
+        } else {
+          announceFieldSuccess('Title', 'Title is valid')
+        }
+        
+        if (!description.trim()) {
+          errors.description = 'Description is required'
+          announceFieldError('Description', 'Description is required')
+        } else if (description.length < 10) {
+          errors.description = 'Description must be at least 10 characters'
+          announceFieldError('Description', 'Description must be at least 10 characters')
+        } else if (description.length > 500) {
+          errors.description = 'Description must be less than 500 characters'
+          announceFieldError('Description', 'Description must be less than 500 characters')
+        } else {
+          announceFieldSuccess('Description', 'Description is valid')
+        }
+        break
+      case 2: // Location
+        if (!location) {
+          errors.location = 'Please select a location on the map'
+          announceFieldError('Location', 'Please select a location on the map')
+        } else {
+          announceFieldSuccess('Location', 'Location selected')
+        }
+        break
+    }
+    
+    setFormErrors(errors)
+    const isValid = Object.keys(errors).length === 0
+    announceValidationErrors(errors)
+    return isValid
   }
 
+  // Handle step navigation
+  const handleNextStep = () => {
+    if (validateStep(currentStep)) {
+      const nextStep = Math.min(currentStep + 1, formSteps.length - 1)
+      setCurrentStep(nextStep)
+      announcePolite(`Moved to step ${nextStep + 1}: ${formSteps[nextStep].title}`)
+    }
+  }
+
+  const handlePrevStep = () => {
+    const prevStep = Math.max(currentStep - 1, 0)
+    setCurrentStep(prevStep)
+    announcePolite(`Moved to step ${prevStep + 1}: ${formSteps[prevStep].title}`)
+  }
+
+  const handleStepClick = (stepIndex: number) => {
+    if (stepIndex < currentStep || validateStep(currentStep)) {
+      setCurrentStep(stepIndex)
+      announcePolite(`Jumped to step ${stepIndex + 1}: ${formSteps[stepIndex].title}`)
+    }
+  }
+
+  // Handle type selection
+  const handleTypeSelect = (type: EmergencyType) => {
+    setSelectedType(type)
+    setFormErrors(prev => ({ ...prev, type: '' }))
+    announcePolite(`Selected emergency type: ${type.name}`)
+  }
+
+  // Handle location selection
   const handleLocationSelect = () => {
     if (!mapInstance) return
 
     // Enable map interaction mode for location selection
     mapInstance.getCanvas().style.cursor = 'crosshair'
+    announcePolite('Click on the map to select emergency location')
 
     const handleMapClick = (e: any) => {
       const coords = e.lngLat
@@ -166,122 +287,79 @@ export default function EmergencyReportInterface({
       mapInstance.getCanvas().style.cursor = ''
       mapInstance.off('click', handleMapClick)
       setMapPreview(false)
+      setFormErrors(prev => ({ ...prev, location: '' }))
+      announcePolite(`Location selected: ${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`)
     }
 
     mapInstance.on('click', handleMapClick)
     setMapPreview(true)
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
-    setImages(prev => [...prev, ...files].slice(0, 5)) // Limit to 5 images
+  // Handle file uploads
+  const handleImageUpload = (files: File[], previews: any[]) => {
+    setImages(prev => [...prev, ...previews].slice(0, 5)) // Limit to 5 images
   }
 
-  const removeImage = (index: number) => {
-    setImages(prev => prev.filter((_, i) => i !== index))
+  const handleImageRemove = (imageId: string, image: any) => {
+    setImages(prev => prev.filter(img => img.id !== imageId))
   }
 
-  const startAudioRecording = async () => {
-    try {
-      // Check if mediaDevices is supported
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('Audio recording is not supported in this browser')
-      }
+  const handleAudioRecording = (recording: any) => {
+    setAudioRecording(recording)
+  }
 
-      // Check if we already have permission
-      if (audioPermission === 'denied') {
-        throw new Error('Microphone permission has been denied. Please enable it in your browser settings.')
-      }
+  const handleAudioRemove = () => {
+    setAudioRecording(null)
+  }
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          sampleRate: 44100
-        }
-      })
-
-      // Check for supported MIME types
-      const types = [
-        'audio/webm;codecs=opus',
-        'audio/webm',
-        'audio/ogg;codecs=opus',
-        'audio/mp4',
-        'audio/wav'
-      ]
-
-      let mimeType = 'audio/webm'
-      for (const type of types) {
-        if (MediaRecorder.isTypeSupported(type)) {
-          mimeType = type
-          break
-        }
-      }
-
-      const recorder = new MediaRecorder(stream, { mimeType })
-      audioChunksRef.current = []
-
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data)
-        }
-      }
-
-      recorder.onstop = () => {
-        const blob = new Blob(audioChunksRef.current, { type: mimeType })
-        setAudioBlob(blob)
-        stream.getTracks().forEach(track => track.stop())
-      }
-
-      recorder.onerror = (event) => {
-        console.error('MediaRecorder error:', event)
-        throw new Error('Recording failed due to a technical issue')
-      }
-
-      recorder.start()
-      audioRecorderRef.current = recorder
-      setIsRecording(true)
-    } catch (error) {
-      console.error('Failed to start audio recording:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Failed to start audio recording'
-
-      // Provide user-friendly error messages
-      if (errorMessage.includes('Permission denied')) {
-        alert('Microphone permission is required to record audio. Please allow microphone access in your browser settings.')
-      } else if (errorMessage.includes('not supported')) {
-        alert('Audio recording is not supported in your browser. Please try using a modern browser like Chrome, Firefox, or Edge.')
-      } else {
-        alert(`Recording failed: ${errorMessage}`)
-      }
+  // Validate entire form
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {}
+    
+    if (!selectedType) {
+      errors.type = 'Please select an emergency type'
     }
-  }
-
-  const stopAudioRecording = () => {
-    if (audioRecorderRef.current && isRecording) {
-      audioRecorderRef.current.stop()
-      setIsRecording(false)
+    
+    if (!title.trim()) {
+      errors.title = 'Title is required'
+    } else if (title.length < 5) {
+      errors.title = 'Title must be at least 5 characters'
+    } else if (title.length > 100) {
+      errors.title = 'Title must be less than 100 characters'
     }
+    
+    if (!description.trim()) {
+      errors.description = 'Description is required'
+    } else if (description.length < 10) {
+      errors.description = 'Description must be at least 10 characters'
+    } else if (description.length > 500) {
+      errors.description = 'Description must be less than 500 characters'
+    }
+    
+    if (!location) {
+      errors.location = 'Please select a location on the map'
+    }
+    
+    setFormErrors(errors)
+    return Object.keys(errors).length === 0
   }
 
-  const removeAudio = () => {
-    setAudioBlob(null)
-    audioChunksRef.current = []
-  }
-
+  // Handle form submission
   const handleSubmit = async () => {
-    if (!selectedType || !title || !description || !location) {
-      alert('Please fill in all required fields')
+    if (!validateForm()) {
+      announceAssertive('Please fix form errors before submitting')
       return
     }
 
     setIsSubmitting(true)
+    announcePolite('Submitting emergency report...')
 
     const emergencyReport: Omit<EmergencyEvent, 'id' | 'created_at' | 'updated_at'> = {
-      type_id: selectedType.id,
+      type_id: selectedType!.id,
       reporter_id: 'current-user', // This would come from auth
       title,
       description,
-      location: `${location.lat} ${location.lng}`,
+      location: `${location!.lat} ${location!.lng}`,
       radius_meters: radius,
       severity,
       status: 'pending',
@@ -289,8 +367,8 @@ export default function EmergencyReportInterface({
       confirmation_count: 0,
       dispute_count: 0,
       metadata: {
-        images: images.map(img => URL.createObjectURL(img)),
-        audio: audioBlob ? URL.createObjectURL(audioBlob) : null,
+        images: images.map(img => img.url),
+        audio: audioRecording ? audioRecording.url : null,
         reported_at: new Date().toISOString(),
         device_info: navigator.userAgent,
       },
@@ -318,8 +396,6 @@ export default function EmergencyReportInterface({
           type: 'create',
           data: emergencyReport,
         })
-
-        alert('You are currently offline. Your emergency report has been saved and will be submitted when you reconnect.')
       }
 
       // Reset form
@@ -329,349 +405,394 @@ export default function EmergencyReportInterface({
       setSeverity(3)
       setRadius(500)
       setImages([])
-      setAudioBlob(null)
+      setAudioRecording(null)
+      setCurrentStep(0)
       onClose()
     } catch (error) {
       console.error('Failed to submit emergency report:', error)
-
-      // Fallback to offline storage
-      try {
-        addAction({
-          type: 'create',
-          table: 'emergency_events',
-          data: emergencyReport,
-          priority: 'critical',
-          maxRetries: 5,
-        })
-
-        addOfflineAction({
-          type: 'create',
-          data: emergencyReport,
-        })
-
-        alert('Report saved offline. Will sync when connection is available.')
-        onClose()
-      } catch (offlineError) {
-        console.error('Failed to save report offline:', offlineError)
-        alert('Failed to save your report. Please try again or contact support if the issue persists.')
-      }
+      setFormErrors(prev => ({ 
+        ...prev, 
+        submit: 'Failed to submit report. Please try again.' 
+      }))
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const adjustRadius = (delta: number) => {
-    setRadius(prev => Math.max(50, Math.min(5000, prev + delta)))
-  }
-
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div
+      ref={containerRef}
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="emergency-report-title"
+      aria-describedby="emergency-report-description"
+    >
+      <div className="bg-background rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-900">Report Emergency</h2>
-          <button
+        <div className="flex items-center justify-between p-6 border-b bg-card">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-6 w-6 text-destructive" />
+            <h2 id="emergency-report-title" className="text-xl font-semibold text-foreground">
+              Report Emergency
+            </h2>
+          </div>
+          <EnhancedButton
+            variant="ghost"
+            size="icon"
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
             aria-label="Close emergency report"
+            title="Close emergency report (Escape)"
           >
-            <X className="h-6 w-6" />
-          </button>
+            <X className="h-5 w-5" />
+          </EnhancedButton>
+        </div>
+
+        {/* Progress */}
+        <div className="px-6 py-4 bg-muted/30 border-b">
+          <FormProgress
+            steps={formSteps}
+            currentStep={currentStep}
+            onStepClick={handleStepClick}
+            variant="steps"
+            showDescriptions={false}
+            aria-label="Emergency report form progress"
+          />
         </div>
 
         {/* Connection Status */}
-        <div className="px-6 py-2 bg-gray-50 border-b">
-          <div className="flex items-center space-x-2">
-            <div className={cn(
-              'w-2 h-2 rounded-full',
-              isOnline ? 'bg-green-500' : 'bg-red-500'
-            )} />
-            <span className="text-sm text-gray-600">
+        <div className="px-6 py-2 bg-muted/20 border-b">
+          <div className="flex items-center gap-2">
+            <div
+              className={cn(
+                'w-2 h-2 rounded-full',
+                isOnline ? 'bg-success' : 'bg-destructive'
+              )}
+              aria-hidden="true"
+            />
+            <span className="text-sm text-muted-foreground">
               {isOnline ? 'Online - Report will be submitted immediately' : 'Offline - Report will be saved locally'}
             </span>
           </div>
         </div>
 
-        {/* Emergency Type Selection */}
-        <div className="p-6 border-b">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Emergency Type</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {emergencyTypes.map((type) => (
-              <button
-                key={type.id}
-                onClick={() => handleTypeSelect(type)}
-                className={cn(
-                  'p-4 rounded-lg border-2 transition-all text-left',
-                  selectedType?.id === type.id
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                )}
-              >
-                <div className="text-2xl mb-2">{type.icon}</div>
-                <div className="font-medium text-gray-900">{type.name}</div>
-                <div className="text-xs text-gray-500 mt-1">{type.description}</div>
-              </button>
-            ))}
+        {/* Form Content */}
+        <div className="flex-1 overflow-y-auto">
+          <div id="emergency-report-description" className="sr-only">
+            Complete this form to report an emergency. The form has 5 steps: emergency type, details, location, evidence, and review.
           </div>
-        </div>
-
-        {/* Emergency Details */}
-        <div className="p-6 border-b">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Emergency Details</h3>
-
-          <div className="space-y-4">
-            {/* Title */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Title <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Brief description of the emergency"
-                maxLength={100}
-              />
-            </div>
-
-            {/* Description */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                rows={4}
-                placeholder="Detailed description of the emergency situation"
-                maxLength={500}
-              />
-            </div>
-
-            {/* Severity */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Severity Level <span className="text-red-500">*</span>
-              </label>
-              <div className="flex items-center space-x-2">
-                {[1, 2, 3, 4, 5].map((level) => (
-                  <button
-                    key={level}
-                    onClick={() => setSeverity(level)}
-                    className={cn(
-                      'w-10 h-10 rounded-lg border-2 transition-all font-medium',
-                      severity === level
-                        ? 'border-red-500 bg-red-50 text-red-700'
-                        : 'border-gray-200 hover:border-gray-300'
-                    )}
-                  >
-                    {level}
-                  </button>
-                ))}
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                1=Low, 3=Medium, 5=Critical
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Location */}
-        <div className="p-6 border-b">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Location</h3>
-
-          <div className="space-y-4">
-            {/* Current Location Display */}
-            <div className="flex items-center space-x-3">
-              <MapPin className="h-5 w-5 text-gray-400" />
-              <div className="flex-1">
-                {location ? (
-                  <div className="text-sm text-gray-900">
-                    {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
-                  </div>
-                ) : (
-                  <div className="text-sm text-gray-500">No location selected</div>
-                )}
-              </div>
-              <button
-                onClick={handleLocationSelect}
-                className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+          <EmergencyFormLayout className="p-6">
+            {/* Step 1: Emergency Type */}
+            {currentStep === 0 && (
+              <EmergencyFormSection
+                title="Emergency Type"
+                description="Select the type of emergency you are reporting"
+                aria-label="Step 1 of 5: Emergency Type"
               >
-                {mapPreview ? 'Click on Map' : 'Select on Map'}
-              </button>
-            </div>
-
-            {/* Radius */}
-            {location && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Affected Area Radius: {radius}m
-                </label>
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => adjustRadius(-50)}
-                    className="p-1 border border-gray-300 rounded hover:bg-gray-50"
-                  >
-                    <Minus className="h-4 w-4" />
-                  </button>
-                  <input
-                    type="range"
-                    min="50"
-                    max="5000"
-                    step="50"
-                    value={radius}
-                    onChange={(e) => setRadius(Number(e.target.value))}
-                    className="flex-1"
-                  />
-                  <button
-                    onClick={() => adjustRadius(50)}
-                    className="p-1 border border-gray-300 rounded hover:bg-gray-50"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Map Preview */}
-            {mapPreview && mapInstance && (
-              <div className="h-48 bg-gray-100 rounded-lg flex items-center justify-center">
-                <div className="text-center text-gray-500">
-                  <MapPin className="h-8 w-8 mx-auto mb-2" />
-                  <p className="text-sm">Click on the map to set location</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Media Attachments */}
-        <div className="p-6 border-b">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Evidence & Media</h3>
-
-          <div className="space-y-4">
-            {/* Images */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Photos (max 5)
-              </label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleImageUpload}
-                className="hidden"
-              />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <Camera className="h-4 w-4" />
-                <span>Add Photos</span>
-              </button>
-
-              {images.length > 0 && (
-                <div className="grid grid-cols-3 gap-2 mt-3">
-                  {images.map((image, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={URL.createObjectURL(image)}
-                        alt={`Emergency evidence ${index + 1}`}
-                        className="w-full h-20 object-cover rounded-lg"
-                      />
-                      <button
-                        onClick={() => removeImage(index)}
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" role="radiogroup" aria-labelledby="emergency-type-heading">
+                  <h3 id="emergency-type-heading" className="sr-only">
+                    Select emergency type
+                  </h3>
+                  {emergencyTypes.map((type) => (
+                    <EnhancedCard
+                      key={type.id}
+                      className={cn(
+                        'cursor-pointer transition-all hover:scale-105',
+                        selectedType?.id === type.id
+                          ? 'ring-2 ring-primary border-primary'
+                          : 'hover:border-primary/50'
+                      )}
+                      onClick={() => handleTypeSelect(type)}
+                      interactive
+                      role="radio"
+                      aria-checked={selectedType?.id === type.id}
+                      aria-label={`${type.name}: ${type.description}`}
+                      tabIndex={currentStep === 0 ? 0 : -1}
+                    >
+                      <div className="text-center p-4">
+                        <div className="text-4xl mb-2">{type.icon}</div>
+                        <div className="font-medium text-foreground">{type.name}</div>
+                        <div className="text-xs text-muted-foreground mt-1">{type.description}</div>
+                      </div>
+                    </EnhancedCard>
                   ))}
                 </div>
-              )}
-            </div>
-
-            {/* Audio */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Audio Recording
-                {audioPermission && (
-                  <span className="ml-2 text-xs text-gray-500">
-                    ({audioPermission === 'granted' ? '✓ Permission granted' :
-                      audioPermission === 'denied' ? '✗ Permission denied' : '? Permission needed'})
-                  </span>
+                {formErrors.type && (
+                  <FormFeedback type="error" message={formErrors.type} />
                 )}
-              </label>
-              <div className="flex items-center space-x-3">
-                {!isRecording && !audioBlob && (
-                  <button
-                    onClick={startAudioRecording}
-                    className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <Mic className="h-4 w-4" />
-                    <span>Start Recording</span>
-                  </button>
-                )}
+              </EmergencyFormSection>
+            )}
 
-                {isRecording && (
-                  <button
-                    onClick={stopAudioRecording}
-                    className="flex items-center space-x-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                  >
-                    <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                    <span>Stop Recording</span>
-                  </button>
-                )}
+            {/* Step 2: Emergency Details */}
+            {currentStep === 1 && (
+              <EmergencyFormSection
+                title="Emergency Details"
+                description="Provide detailed information about the emergency"
+                aria-label="Step 2 of 5: Emergency Details"
+              >
+                <div className="space-y-6">
+                  <EnhancedInput
+                    label="Title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Brief description of the emergency"
+                    maxLength={100}
+                    required
+                    errorText={formErrors.title}
+                    floatingLabel
+                    validateOnChange
+                    validator={(value) => {
+                      if (!value.trim()) return 'Title is required'
+                      if (value.length < 5) return 'Title must be at least 5 characters'
+                      if (value.length > 100) return 'Title must be less than 100 characters'
+                      return null
+                    }}
+                  />
 
-                {audioBlob && (
-                  <div className="flex items-center space-x-2">
-                    <audio src={URL.createObjectURL(audioBlob)} controls className="h-8" />
-                    <button
-                      onClick={removeAudio}
-                      className="text-red-500 hover:text-red-600"
+                  <EnhancedTextarea
+                    label="Description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Detailed description of the emergency situation"
+                    maxLength={500}
+                    showCharacterCount
+                    required
+                    errorText={formErrors.description}
+                    floatingLabel
+                    validateOnChange
+                    validator={(value) => {
+                      if (!value.trim()) return 'Description is required'
+                      if (value.length < 10) return 'Description must be at least 10 characters'
+                      if (value.length > 500) return 'Description must be less than 500 characters'
+                      return null
+                    }}
+                  />
+
+                  <EnhancedRadioGroup
+                    label="Severity Level"
+                    options={[
+                      { value: '1', label: 'Low - Minor issue' },
+                      { value: '2', label: 'Moderate - Some impact' },
+                      { value: '3', label: 'High - Significant impact' },
+                      { value: '4', label: 'Severe - Major impact' },
+                      { value: '5', label: 'Critical - Life-threatening' },
+                    ]}
+                    value={severity.toString()}
+                    onChange={(value) => setSeverity(parseInt(value))}
+                    orientation="horizontal"
+                    required
+                  />
+                </div>
+              </EmergencyFormSection>
+            )}
+
+            {/* Step 3: Location */}
+            {currentStep === 2 && (
+              <EmergencyFormSection
+                title="Location"
+                description="Specify the exact location and affected area"
+                aria-label="Step 3 of 5: Location"
+              >
+                <div className="space-y-6">
+                  <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-lg">
+                    <MapPin className="h-5 w-5 text-muted-foreground" />
+                    <div className="flex-1">
+                      {location ? (
+                        <div className="text-sm text-foreground">
+                          {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-muted-foreground">No location selected</div>
+                      )}
+                    </div>
+                    <EnhancedButton
+                      onClick={handleLocationSelect}
+                      variant={mapPreview ? 'warning' : 'default'}
                     >
-                      <X className="h-4 w-4" />
-                    </button>
+                      {mapPreview ? 'Click on Map' : 'Select on Map'}
+                    </EnhancedButton>
                   </div>
-                )}
-              </div>
-            </div>
-          </div>
+
+                  {location && (
+                    <EnhancedRangeSlider
+                      label="Affected Area Radius"
+                      value={radius}
+                      onChange={setRadius}
+                      min={50}
+                      max={5000}
+                      step={50}
+                      showValue
+                      valueFormatter={(value) => `${value}m`}
+                      marks={[
+                        { value: 200, label: '200m' },
+                        { value: 500, label: '500m' },
+                        { value: 1000, label: '1km' },
+                        { value: 2000, label: '2km' },
+                      ]}
+                    />
+                  )}
+
+                  {mapPreview && mapInstance && (
+                    <div className="h-48 bg-muted rounded-lg flex items-center justify-center">
+                      <div className="text-center text-muted-foreground">
+                        <MapPin className="h-8 w-8 mx-auto mb-2" />
+                        <p className="text-sm">Click on the map to set location</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {formErrors.location && (
+                    <FormFeedback type="error" message={formErrors.location} />
+                  )}
+                </div>
+              </EmergencyFormSection>
+            )}
+
+            {/* Step 4: Evidence */}
+            {currentStep === 3 && (
+              <EmergencyFormSection
+                title="Evidence & Media"
+                description="Add photos or audio recordings to support your report"
+                aria-label="Step 4 of 5: Evidence & Media"
+              >
+                <div className="space-y-6">
+                  <EnhancedFileUpload
+                    label="Photos"
+                    accept="image/*"
+                    multiple
+                    maxFiles={5}
+                    maxSize={5 * 1024 * 1024} // 5MB
+                    showPreviews
+                    onFilesChange={handleImageUpload}
+                    onFileRemove={handleImageRemove}
+                  />
+
+                  <AudioRecorder
+                    label="Audio Recording"
+                    maxDuration={60} // 1 minute
+                    showLevels
+                    showDuration
+                    showPlayback
+                    onRecordingStop={handleAudioRecording}
+                  />
+                </div>
+              </EmergencyFormSection>
+            )}
+
+            {/* Step 5: Review */}
+            {currentStep === 4 && (
+              <EmergencyFormSection
+                title="Review Report"
+                description="Please review your emergency report before submitting"
+                aria-label="Step 5 of 5: Review Report"
+              >
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium text-foreground">Emergency Details</h3>
+                      <div className="space-y-2 text-sm">
+                        <div><span className="font-medium">Type:</span> {selectedType?.name}</div>
+                        <div><span className="font-medium">Title:</span> {title}</div>
+                        <div><span className="font-medium">Severity:</span> {severity}/5</div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium text-foreground">Location</h3>
+                      <div className="space-y-2 text-sm">
+                        <div><span className="font-medium">Coordinates:</span> {location?.lat.toFixed(6)}, {location?.lng.toFixed(6)}</div>
+                        <div><span className="font-medium">Radius:</span> {radius}m</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-lg font-medium text-foreground mb-2">Description</h3>
+                    <p className="text-sm text-muted-foreground bg-muted/30 p-4 rounded-lg">
+                      {description}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-lg font-medium text-foreground mb-2">Evidence</h3>
+                    <div className="flex gap-4">
+                      {images.length > 0 && (
+                        <div className="text-sm text-muted-foreground">
+                          {images.length} photo{images.length > 1 ? 's' : ''} attached
+                        </div>
+                      )}
+                      {audioRecording && (
+                        <div className="text-sm text-muted-foreground">
+                          Audio recording attached ({Math.round(audioRecording.duration)}s)
+                        </div>
+                      )}
+                      {images.length === 0 && !audioRecording && (
+                        <div className="text-sm text-muted-foreground">
+                          No evidence attached
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </EmergencyFormSection>
+            )}
+          </EmergencyFormLayout>
         </div>
 
-        {/* Submit Button */}
-        <div className="p-6 bg-gray-50">
-          <div className="flex items-center justify-between">
-            <button
+        {/* Form Actions */}
+        <EmergencyFormActions>
+          <div className="flex items-center gap-3">
+            <EnhancedButton
+              variant="outline"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors"
+              disabled={isSubmitting}
+              aria-label="Cancel emergency report"
             >
               Cancel
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={isSubmitting || !selectedType || !title || !description || !location}
-              className={cn(
-                'flex items-center space-x-2 px-6 py-2 rounded-lg transition-colors',
-                isSubmitting || !selectedType || !title || !description || !location
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-red-500 text-white hover:bg-red-600'
-              )}
-            >
-              {isSubmitting ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-              <span>{isSubmitting ? 'Submitting...' : 'Submit Emergency Report'}</span>
-            </button>
+            </EnhancedButton>
+            
+            {currentStep > 0 && (
+              <EnhancedButton
+                variant="outline"
+                onClick={handlePrevStep}
+                disabled={isSubmitting}
+                aria-label={`Go to previous step: ${formSteps[currentStep - 1].title}`}
+              >
+                Previous
+              </EnhancedButton>
+            )}
+            
+            {currentStep < formSteps.length - 1 ? (
+              <EnhancedButton
+                onClick={handleNextStep}
+                disabled={isSubmitting}
+                aria-label={`Go to next step: ${formSteps[currentStep + 1].title}`}
+              >
+                Next
+              </EnhancedButton>
+            ) : (
+              <EnhancedButton
+                variant="destructive"
+                onClick={handleSubmit}
+                loading={isSubmitting}
+                disabled={isSubmitting}
+                aria-label="Submit emergency report"
+              >
+                {isSubmitting ? 'Submitting...' : 'Submit Emergency Report'}
+              </EnhancedButton>
+            )}
           </div>
-        </div>
+          
+          <FormProgressSummary
+            currentStep={currentStep}
+            totalSteps={formSteps.length}
+            completedSteps={currentStep}
+            variant="compact"
+            aria-label={`Form progress: step ${currentStep + 1} of ${formSteps.length}`}
+          />
+        </EmergencyFormActions>
       </div>
     </div>
   )

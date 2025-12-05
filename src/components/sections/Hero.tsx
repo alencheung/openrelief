@@ -3,9 +3,11 @@
 import { useState } from 'react'
 import { Play, Shield, Users, MapPin } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { useMobileDetection } from '@/hooks/useMobileDetection'
 
 export default function Hero() {
   const [isPlaying, setIsPlaying] = useState(false)
+  const { isMobile, isTablet, breakpoint } = useMobileDetection()
 
   const handleWatchVideo = () => {
     setIsPlaying(true)
@@ -15,40 +17,66 @@ export default function Hero() {
 
   return (
     <div className="relative overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container-responsive py-20 px-4 sm:px-6 lg:px-8">
+      <div className="container-responsive py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8 safe-area-inset-top">
         <div className="text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl lg:text-7xl">
+          <h1 className={cn(
+            "font-bold tracking-tight text-gray-900",
+            isMobile ? "text-3xl sm:text-4xl" :
+            isTablet ? "text-5xl" :
+            "text-6xl lg:text-7xl"
+          )}>
             Emergency Coordination
             <span className="block text-primary">Made Simple</span>
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-gray-600">
+          <p className={cn(
+            "leading-8 text-gray-600",
+            isMobile ? "mt-4 text-sm max-w-lg" :
+            isTablet ? "mt-5 text-base max-w-xl" :
+            "mt-6 text-lg max-w-2xl mx-auto"
+          )}>
             Open-source platform that connects victims with resources through decentralized emergency coordination.
             Real-time alerts, trust-based verification, and offline-first design.
           </p>
-          <div className="mt-10 flex items-center justify-center gap-x-6">
+          <div className={cn(
+            "flex items-center justify-center",
+            isMobile ? "mt-6 flex-col gap-3 w-full px-4" :
+            isTablet ? "mt-8 gap-x-4" :
+            "mt-10 gap-x-6"
+          )}>
             <Button
               onClick={handleWatchVideo}
               variant="default"
-              size="lg"
-              className="flex items-center gap-2"
+              size={isMobile ? "lg" : "lg"}
+              className={cn(
+                "flex items-center gap-2 touch-target",
+                isMobile && "w-full"
+              )}
             >
               <Play className="h-5 w-5" />
-              Watch Demo
+              {isMobile ? "Watch Demo" : "Watch Demo"}
             </Button>
             <Button
               asChild
               variant="outline"
-              size="lg"
-              className="flex items-center gap-2"
+              size={isMobile ? "lg" : "lg"}
+              className={cn(
+                "flex items-center gap-2 touch-target",
+                isMobile && "w-full"
+              )}
             >
               <a href="#features">
-                Learn More
+                {isMobile ? "Learn More" : "Learn More"}
               </a>
             </Button>
           </div>
         </div>
 
-        <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+        <div className={cn(
+          "grid gap-8",
+          isMobile ? "mt-12 grid-cols-1" :
+          isTablet ? "mt-14 grid-cols-2" :
+          "mt-16 grid-cols-2 lg:grid-cols-4"
+        )}>
           <div className="text-center">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
               <Shield className="h-8 w-8 text-primary" />

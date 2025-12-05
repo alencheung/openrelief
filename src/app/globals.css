@@ -2,70 +2,225 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import mobile-specific styles */
+@import '../styles/mobile.css';
+
 @layer base {
   :root {
-    /* Color palette */
-    --color-primary: 59 130 246;
+    /* Enhanced color palette with WCAG AA compliance */
+    --color-primary: 59 130 246; /* Blue 500 - 4.5:1 contrast on white */
     --color-primary-foreground: 255 255 255;
-    --color-secondary: 107 114 128;
+    --color-primary-hover: 37 99 235; /* Blue 600 - darker for hover states */
+    
+    --color-secondary: 107 114 128; /* Gray 500 */
     --color-secondary-foreground: 255 255 255;
-    --color-accent: 99 102 241;
+    --color-secondary-hover: 75 85 99; /* Gray 600 */
+    
+    --color-accent: 99 102 241; /* Indigo 500 */
     --color-accent-foreground: 255 255 255;
-    --color-destructive: 239 68 68;
+    --color-accent-hover: 79 70 229; /* Indigo 600 */
+    
+    --color-destructive: 220 38 38; /* Red 600 - better contrast than Red 500 */
     --color-destructive-foreground: 255 255 255;
-    --color-muted: 243 244 246;
-    --color-muted-foreground: 107 114 128;
+    --color-destructive-hover: 185 28 28; /* Red 700 */
+    
+    --color-success: 22 163 74; /* Green 600 - better contrast than Green 500 */
+    --color-success-foreground: 255 255 255;
+    --color-success-hover: 21 128 61; /* Green 700 */
+    
+    --color-warning: 217 119 6; /* Amber 600 - better contrast than Amber 500 */
+    --color-warning-foreground: 255 255 255;
+    --color-warning-hover: 180 83 9; /* Amber 700 */
+    
+    --color-info: 37 99 235; /* Blue 600 - better contrast than Blue 500 */
+    --color-info-foreground: 255 255 255;
+    --color-info-hover: 29 78 216; /* Blue 700 */
+    
+    /* Neutral colors with better contrast hierarchy */
+    --color-muted: 249 250 251; /* Gray 50 */
+    --color-muted-foreground: 107 114 128; /* Gray 500 */
     --color-background: 255 255 255;
-    --color-foreground: 17 24 39;
+    --color-foreground: 17 24 39; /* Gray 900 */
     --color-card: 255 255 255;
-    --color-card-foreground: 17 24 39;
-    --color-border: 229 231 235;
+    --color-card-foreground: 17 24 39; /* Gray 900 */
+    --color-border: 229 231 235; /* Gray 200 */
     --color-input: 255 255 255;
-    --color-ring: 59 130 246;
-
-    /* Emergency colors */
-    --emergency-fire: 239 68 68;
-    --emergency-medical: 236 72 153;
-    --emergency-security: 251 191 36;
-    --emergency-natural: 59 130 246;
-    --emergency-infrastructure: 245 158 11;
-
-    /* Trust score colors */
-    --trust-high: 34 197 94;
-    --trust-medium: 251 191 36;
-    --trust-low: 239 68 68;
-
-    /* Map colors */
-    --map-background: 248 250 252;
-    --map-water: 59 130 246;
-    --map-land: 243 244 246;
-    --map-road: 156 163 175;
+    --color-ring: 59 130 246; /* Blue 500 */
+    
+    /* Enhanced emergency type colors with semantic meaning and better contrast */
+    --emergency-fire: 220 38 38; /* Red 600 - high visibility, critical */
+    --emergency-fire-hover: 185 28 28; /* Red 700 */
+    --emergency-fire-light: 254 226 226; /* Red 100 - for backgrounds */
+    --emergency-fire-dark: 127 29 29; /* Red 900 - for text */
+    
+    --emergency-medical: 219 39 119; /* Pink 600 - medical emergency */
+    --emergency-medical-hover: 190 24 93; /* Pink 700 */
+    --emergency-medical-light: 251 207 232; /* Pink 100 */
+    --emergency-medical-dark: 131 24 67; /* Pink 900 */
+    
+    --emergency-security: 202 138 4; /* Yellow 600 - security threat */
+    --emergency-security-hover: 161 98 7; /* Yellow 700 */
+    --emergency-security-light: 254 240 138; /* Yellow 100 */
+    --emergency-security-dark: 120 53 15; /* Yellow 900 */
+    
+    --emergency-natural: 37 99 235; /* Blue 600 - natural disaster */
+    --emergency-natural-hover: 29 78 216; /* Blue 700 */
+    --emergency-natural-light: 219 234 254; /* Blue 100 */
+    --emergency-natural-dark: 30 58 138; /* Blue 900 */
+    
+    --emergency-infrastructure: 154 52 18; /* Orange 600 - infrastructure failure */
+    --emergency-infrastructure-hover: 124 45 18; /* Orange 700 */
+    --emergency-infrastructure-light: 254 215 170; /* Orange 100 */
+    --emergency-infrastructure-dark: 92 28 4; /* Orange 900 */
+    
+    /* Enhanced trust score colors with better visual hierarchy */
+    --trust-excellent: 22 163 74; /* Green 600 - 90-100% */
+    --trust-good: 34 197 94; /* Green 500 - 70-89% */
+    --trust-moderate: 217 119 6; /* Amber 600 - 50-69% */
+    --trust-low: 239 68 68; /* Red 500 - 30-49% */
+    --trust-critical: 220 38 38; /* Red 600 - 0-29% */
+    
+    /* Trust score background colors */
+    --trust-excellent-bg: 220 252 231; /* Green 100 */
+    --trust-good-bg: 220 252 231; /* Green 100 */
+    --trust-moderate-bg: 254 240 138; /* Yellow 100 */
+    --trust-low-bg: 254 202 202; /* Red 100 */
+    --trust-critical-bg: 254 202 202; /* Red 100 */
+    
+    /* Enhanced map colors with better contrast */
+    --map-background: 248 250 252; /* Slate 50 */
+    --map-water: 59 130 246; /* Blue 500 */
+    --map-land: 241 245 249; /* Slate 100 */
+    --map-road: 148 163 184; /* Slate 400 */
+    --map-building: 203 213 225; /* Slate 300 */
+    --map-park: 187 247 208; /* Green 200 */
+    
+    /* Status colors with semantic meaning */
+    --status-active: 34 197 94; /* Green 500 */
+    --status-inactive: 107 114 128; /* Gray 500 */
+    --status-pending: 217 119 6; /* Amber 600 */
+    --status-resolved: 37 99 235; /* Blue 600 */
+    --status-critical: 220 38 38; /* Red 600 */
+    
+    /* Typography scale */
+    --font-size-xs: 0.75rem; /* 12px */
+    --font-size-sm: 0.875rem; /* 14px */
+    --font-size-base: 1rem; /* 16px */
+    --font-size-lg: 1.125rem; /* 18px */
+    --font-size-xl: 1.25rem; /* 20px */
+    --font-size-2xl: 1.5rem; /* 24px */
+    --font-size-3xl: 1.875rem; /* 30px */
+    --font-size-4xl: 2.25rem; /* 36px */
+    
+    /* Line heights for better readability */
+    --line-height-tight: 1.25;
+    --line-height-normal: 1.5;
+    --line-height-relaxed: 1.625;
+    
+    /* Spacing scale */
+    --spacing-xs: 0.25rem; /* 4px */
+    --spacing-sm: 0.5rem; /* 8px */
+    --spacing-md: 1rem; /* 16px */
+    --spacing-lg: 1.5rem; /* 24px */
+    --spacing-xl: 2rem; /* 32px */
+    --spacing-2xl: 3rem; /* 48px */
+    
+    /* Border radius */
+    --radius-sm: 0.125rem; /* 2px */
+    --radius-md: 0.375rem; /* 6px */
+    --radius-lg: 0.5rem; /* 8px */
+    --radius-xl: 0.75rem; /* 12px */
+    --radius-full: 9999px;
+    
+    /* Shadows with better depth */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    
+    /* Animation durations */
+    --duration-fast: 150ms;
+    --duration-normal: 300ms;
+    --duration-slow: 500ms;
   }
 
   .dark {
-    --color-primary: 96 165 250;
-    --color-primary-foreground: 15 23 42;
-    --color-secondary: 75 85 99;
-    --color-secondary-foreground: 248 250 252;
-    --color-accent: 139 92 246;
-    --color-accent-foreground: 248 250 252;
-    --color-destructive: 220 38 38;
-    --color-destructive-foreground: 248 250 252;
-    --color-muted: 31 41 55;
-    --color-muted-foreground: 148 163 184;
-    --color-background: 15 23 42;
-    --color-foreground: 248 250 252;
-    --color-card: 30 41 59;
-    --color-card-foreground: 248 250 252;
-    --color-border: 51 65 85;
-    --color-input: 30 41 59;
-    --color-ring: 96 165 250;
-
+    /* Enhanced dark mode colors with better contrast */
+    --color-primary: 96 165 250; /* Blue 400 - good contrast on dark */
+    --color-primary-foreground: 15 23 42; /* Slate 900 */
+    --color-primary-hover: 147 197 253; /* Blue 300 */
+    
+    --color-secondary: 75 85 99; /* Gray 600 */
+    --color-secondary-foreground: 248 250 252; /* Slate 50 */
+    --color-secondary-hover: 107 114 128; /* Gray 500 */
+    
+    --color-accent: 139 92 246; /* Violet 500 */
+    --color-accent-foreground: 248 250 252; /* Slate 50 */
+    --color-accent-hover: 167 139 250; /* Violet 400 */
+    
+    --color-destructive: 248 113 113; /* Red 400 - better contrast on dark */
+    --color-destructive-foreground: 15 23 42; /* Slate 900 */
+    --color-destructive-hover: 252 165 165; /* Red 300 */
+    
+    --color-success: 74 222 128; /* Green 400 - better contrast on dark */
+    --color-success-foreground: 15 23 42; /* Slate 900 */
+    --color-success-hover: 134 239 172; /* Green 300 */
+    
+    --color-warning: 251 191 36; /* Amber 400 - better contrast on dark */
+    --color-warning-foreground: 15 23 42; /* Slate 900 */
+    --color-warning-hover: 252 211 77; /* Amber 300 */
+    
+    --color-info: 147 197 253; /* Blue 300 - better contrast on dark */
+    --color-info-foreground: 15 23 42; /* Slate 900 */
+    --color-info-hover: 191 219 254; /* Blue 200 */
+    
+    /* Neutral colors for dark mode */
+    --color-muted: 30 41 59; /* Slate 800 */
+    --color-muted-foreground: 148 163 184; /* Slate 400 */
+    --color-background: 15 23 42; /* Slate 900 */
+    --color-foreground: 248 250 252; /* Slate 50 */
+    --color-card: 30 41 59; /* Slate 800 */
+    --color-card-foreground: 248 250 252; /* Slate 50 */
+    --color-border: 51 65 85; /* Slate 700 */
+    --color-input: 30 41 59; /* Slate 800 */
+    --color-ring: 96 165 250; /* Blue 400 */
+    
+    /* Dark mode emergency colors */
+    --emergency-fire-light: 127 29 29; /* Red 900 */
+    --emergency-fire-dark: 254 226 226; /* Red 100 */
+    
+    --emergency-medical-light: 131 24 67; /* Pink 900 */
+    --emergency-medical-dark: 251 207 232; /* Pink 100 */
+    
+    --emergency-security-light: 120 53 15; /* Yellow 900 */
+    --emergency-security-dark: 254 240 138; /* Yellow 100 */
+    
+    --emergency-natural-light: 30 58 138; /* Blue 900 */
+    --emergency-natural-dark: 219 234 254; /* Blue 100 */
+    
+    --emergency-infrastructure-light: 92 28 4; /* Orange 900 */
+    --emergency-infrastructure-dark: 254 215 170; /* Orange 100 */
+    
+    /* Dark mode trust score colors */
+    --trust-excellent-bg: 22 101 52; /* Green 900 */
+    --trust-good-bg: 22 101 52; /* Green 900 */
+    --trust-moderate-bg: 120 53 15; /* Yellow 900 */
+    --trust-low-bg: 127 29 29; /* Red 900 */
+    --trust-critical-bg: 127 29 29; /* Red 900 */
+    
     /* Dark mode map colors */
-    --map-background: 15 23 42;
-    --map-water: 30 58 138;
-    --map-land: 30 41 59;
-    --map-road: 75 85 99;
+    --map-background: 15 23 42; /* Slate 900 */
+    --map-water: 30 58 138; /* Blue 900 */
+    --map-land: 30 41 59; /* Slate 800 */
+    --map-road: 71 85 105; /* Slate 600 */
+    --map-building: 100 116 139; /* Slate 500 */
+    --map-park: 34 197 94; /* Green 500 */
+    
+    /* Dark mode shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.6), 0 8px 10px -6px rgb(0 0 0 / 0.6);
   }
 
   * {
@@ -74,105 +229,277 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-normal);
+    color: rgb(var(--color-foreground));
+    background-color: rgb(var(--color-background));
   }
 
-  /* Custom scrollbar */
+  /* Enhanced typography hierarchy */
+  h1 {
+    font-size: var(--font-size-3xl);
+    font-weight: 800;
+    line-height: var(--line-height-tight);
+    letter-spacing: -0.025em;
+    margin-bottom: var(--spacing-lg);
+  }
+
+  h2 {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    line-height: var(--line-height-tight);
+    letter-spacing: -0.025em;
+    margin-bottom: var(--spacing-md);
+  }
+
+  h3 {
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    line-height: var(--line-height-tight);
+    margin-bottom: var(--spacing-md);
+  }
+
+  h4 {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    line-height: var(--line-height-normal);
+    margin-bottom: var(--spacing-sm);
+  }
+
+  h5 {
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    line-height: var(--line-height-normal);
+    margin-bottom: var(--spacing-sm);
+  }
+
+  h6 {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    line-height: var(--line-height-normal);
+    margin-bottom: var(--spacing-xs);
+  }
+
+  p {
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-relaxed);
+    margin-bottom: var(--spacing-md);
+  }
+
+  /* Enhanced custom scrollbar */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-muted;
+    background-color: rgb(var(--color-muted));
+    border-radius: var(--radius-full);
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-muted-foreground/30 rounded-md;
+    background-color: rgb(var(--color-muted-foreground) / 0.3);
+    border-radius: var(--radius-full);
+    transition: background-color var(--duration-normal) ease;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted-foreground/50;
+    background-color: rgb(var(--color-muted-foreground) / 0.5);
   }
 
-  /* Focus styles */
+  /* Enhanced focus styles with better accessibility */
   :focus-visible {
-    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+    outline: none;
+    box-shadow: 0 0 0 2px rgb(var(--color-ring)), 0 0 0 4px rgb(var(--color-ring) / 0.2);
+    border-radius: var(--radius-md);
   }
 
-  /* Map container */
+  /* Enhanced map container */
   .map-container {
-    @apply w-full h-full min-h-[400px] rounded-lg overflow-hidden border;
+    @apply w-full h-full min-h-[400px] rounded-xl overflow-hidden border;
+    box-shadow: var(--shadow-md);
+    background-color: rgb(var(--map-background));
   }
 
-  /* Emergency event markers */
+  /* Enhanced emergency event markers with semantic colors */
   .emergency-marker {
-    @apply w-8 h-8 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-white font-bold text-xs;
+    @apply w-10 h-10 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-white font-bold text-xs;
+    box-shadow: var(--shadow-lg);
+    transition: all var(--duration-normal) ease;
+    position: relative;
+  }
+
+  .emergency-marker::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: var(--radius-full);
+    background: inherit;
+    opacity: 0.3;
+    z-index: -1;
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
   .emergency-marker.fire {
-    @apply bg-red-500;
+    background-color: rgb(var(--emergency-fire));
   }
 
   .emergency-marker.medical {
-    @apply bg-pink-500;
+    background-color: rgb(var(--emergency-medical));
   }
 
   .emergency-marker.security {
-    @apply bg-yellow-500;
+    background-color: rgb(var(--emergency-security));
   }
 
   .emergency-marker.natural {
-    @apply bg-blue-500;
+    background-color: rgb(var(--emergency-natural));
   }
 
   .emergency-marker.infrastructure {
-    @apply bg-orange-500;
+    background-color: rgb(var(--emergency-infrastructure));
   }
 
-  /* Trust score indicators */
+  .emergency-marker:hover {
+    transform: scale(1.1);
+    z-index: 10;
+  }
+
+  /* Enhanced trust score indicators with semantic colors */
   .trust-indicator {
-    @apply inline-flex items-center px-2 py-1 rounded-full text-xs font-medium;
+    @apply inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold;
+    transition: all var(--duration-normal) ease;
+    border: 1px solid transparent;
   }
 
-  .trust-high {
-    @apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200;
+  .trust-excellent {
+    background-color: rgb(var(--trust-excellent-bg));
+    color: rgb(var(--trust-excellent));
+    border-color: rgb(var(--trust-excellent) / 0.2);
   }
 
-  .trust-medium {
-    @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200;
+  .trust-good {
+    background-color: rgb(var(--trust-good-bg));
+    color: rgb(var(--trust-good));
+    border-color: rgb(var(--trust-good) / 0.2);
+  }
+
+  .trust-moderate {
+    background-color: rgb(var(--trust-moderate-bg));
+    color: rgb(var(--trust-moderate));
+    border-color: rgb(var(--trust-moderate) / 0.2);
   }
 
   .trust-low {
-    @apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200;
+    background-color: rgb(var(--trust-low-bg));
+    color: rgb(var(--trust-low));
+    border-color: rgb(var(--trust-low) / 0.2);
   }
 
-  /* Loading states */
+  .trust-critical {
+    background-color: rgb(var(--trust-critical-bg));
+    color: rgb(var(--trust-critical));
+    border-color: rgb(var(--trust-critical) / 0.2);
+  }
+
+  .trust-indicator:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Enhanced status indicators */
+  .status-indicator {
+    @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium;
+    transition: all var(--duration-normal) ease;
+  }
+
+  .status-active {
+    background-color: rgb(var(--status-active) / 0.1);
+    color: rgb(var(--status-active));
+    border: 1px solid rgb(var(--status-active) / 0.2);
+  }
+
+  .status-inactive {
+    background-color: rgb(var(--status-inactive) / 0.1);
+    color: rgb(var(--status-inactive));
+    border: 1px solid rgb(var(--status-inactive) / 0.2);
+  }
+
+  .status-pending {
+    background-color: rgb(var(--status-pending) / 0.1);
+    color: rgb(var(--status-pending));
+    border: 1px solid rgb(var(--status-pending) / 0.2);
+  }
+
+  .status-resolved {
+    background-color: rgb(var(--status-resolved) / 0.1);
+    color: rgb(var(--status-resolved));
+    border: 1px solid rgb(var(--status-resolved) / 0.2);
+  }
+
+  .status-critical {
+    background-color: rgb(var(--status-critical) / 0.1);
+    color: rgb(var(--status-critical));
+    border: 1px solid rgb(var(--status-critical) / 0.2);
+    animation: statusPulse 2s ease-in-out infinite;
+  }
+
+  /* Enhanced loading states */
   .loading-skeleton {
-    @apply animate-pulse bg-muted rounded;
+    @apply rounded-lg;
+    background: linear-gradient(90deg, rgb(var(--color-muted)) 25%, rgb(var(--color-muted) / 0.5) 50%, rgb(var(--color-muted)) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
   }
 
   .loading-spinner {
-    @apply animate-spin rounded-full border-2 border-muted border-t-primary;
+    @apply animate-spin rounded-full border-2 border-transparent;
+    border-top-color: rgb(var(--color-primary));
+    width: 1.5rem;
+    height: 1.5rem;
   }
 
-  /* Offline indicator */
+  .loading-dots {
+    @apply inline-flex gap-1;
+  }
+
+  .loading-dots span {
+    @apply w-2 h-2 rounded-full bg-current;
+    animation: loadingDot 1.4s ease-in-out infinite both;
+  }
+
+  .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+  .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+  /* Enhanced offline indicator */
   .offline-indicator {
-    @apply fixed top-4 right-4 bg-destructive text-destructive-foreground px-3 py-2 rounded-md shadow-lg z-50;
+    @apply fixed top-4 right-4 px-4 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2;
+    background-color: rgb(var(--color-destructive));
+    color: rgb(var(--color-destructive-foreground));
+    box-shadow: var(--shadow-lg);
+    animation: slideInRight var(--duration-normal) ease-out;
   }
 
-  /* PWA install prompt */
+  /* Enhanced PWA install prompt */
   .pwa-install-prompt {
-    @apply fixed bottom-4 left-4 right-4 bg-card border rounded-lg shadow-lg p-4 z-40;
+    @apply fixed bottom-4 left-4 right-4 rounded-lg shadow-lg p-4 z-40;
+    background-color: rgb(var(--color-card));
+    border: 1px solid rgb(var(--color-border));
+    box-shadow: var(--shadow-xl);
+    animation: slideInUp var(--duration-normal) ease-out;
   }
 
-  /* Notification styles */
+  /* Enhanced notification styles */
   .notification-enter {
     @apply transform translate-x-full opacity-0;
   }
 
   .notification-enter-active {
-    @apply transform translate-x-0 opacity-100 transition-all duration-300 ease-out;
+    @apply transform translate-x-0 opacity-100 transition-all;
+    transition-duration: var(--duration-normal);
+    transition-timing-function: ease-out;
   }
 
   .notification-exit {
@@ -180,7 +507,66 @@
   }
 
   .notification-exit-active {
-    @apply transform translate-x-full opacity-0 transition-all duration-300 ease-in;
+    @apply transform translate-x-full opacity-0 transition-all;
+    transition-duration: var(--duration-normal);
+    transition-timing-function: ease-in;
+  }
+
+  /* Enhanced form validation feedback */
+  .form-feedback {
+    @apply mt-2 text-sm font-medium flex items-center gap-2;
+    animation: fadeIn var(--duration-normal) ease-out;
+  }
+
+  .form-feedback-success {
+    color: rgb(var(--color-success));
+  }
+
+  .form-feedback-error {
+    color: rgb(var(--color-destructive));
+  }
+
+  .form-feedback-warning {
+    color: rgb(var(--color-warning));
+  }
+
+  .form-feedback-info {
+    color: rgb(var(--color-info));
+  }
+
+  /* Enhanced button states */
+  .btn-interactive {
+    transition: all var(--duration-normal) ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-interactive::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: var(--radius-full);
+    background: rgba(255, 255, 255, 0.2);
+    transform: translate(-50%, -50%);
+    transition: width var(--duration-slow) ease, height var(--duration-slow) ease;
+  }
+
+  .btn-interactive:active::before {
+    width: 300px;
+    height: 300px;
+  }
+
+  /* Enhanced card hover effects */
+  .card-interactive {
+    transition: all var(--duration-normal) ease;
+  }
+
+  .card-interactive:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
   }
 
   /* Print styles */
@@ -191,7 +577,321 @@
 
     .map-container {
       @apply border border-gray-300;
+      box-shadow: none;
     }
+
+    .emergency-marker::before {
+      display: none;
+    }
+
+    .btn-interactive::before {
+      display: none;
+    }
+  }
+}
+
+@layer utilities {
+  /* Enhanced animations and keyframes */
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.5;
+      transform: scale(1.05);
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  @keyframes loadingDot {
+    0%, 80%, 100% {
+      transform: scale(0);
+      opacity: 0.5;
+    }
+    40% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes statusPulse {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.7;
+      transform: scale(1.02);
+    }
+  }
+
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideInUp {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideInLeft {
+    from {
+      transform: translateX(-100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideInDown {
+    from {
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes bounce {
+    0%, 100% {
+      transform: translateY(-25%);
+      animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+    }
+    50% {
+      transform: translateY(0);
+      animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+    }
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes ping {
+    75%, 100% {
+      transform: scale(2);
+      opacity: 0;
+    }
+  }
+
+  @keyframes fadeOut {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
+  /* Enhanced animation utilities */
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .animate-shimmer {
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+
+  .animate-slide-in-right {
+    animation: slideInRight var(--duration-normal) ease-out;
+  }
+
+  .animate-slide-in-up {
+    animation: slideInUp var(--duration-normal) ease-out;
+  }
+
+  .animate-slide-in-left {
+    animation: slideInLeft var(--duration-normal) ease-out;
+  }
+
+  .animate-slide-in-down {
+    animation: slideInDown var(--duration-normal) ease-out;
+  }
+
+  .animate-bounce {
+    animation: bounce 1s infinite;
+  }
+
+  .animate-spin {
+    animation: spin 1s linear infinite;
+  }
+
+  .animate-ping {
+    animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+
+  .animate-fade-out {
+    animation: fadeOut var(--duration-normal) ease-out;
+  }
+
+  /* Enhanced emergency type utilities */
+  .emergency-fire {
+    background-color: rgb(var(--emergency-fire));
+    color: rgb(255 255 255);
+  }
+
+  .emergency-fire-bg {
+    background-color: rgb(var(--emergency-fire-light));
+    color: rgb(var(--emergency-fire-dark));
+  }
+
+  .emergency-medical {
+    background-color: rgb(var(--emergency-medical));
+    color: rgb(255 255 255);
+  }
+
+  .emergency-medical-bg {
+    background-color: rgb(var(--emergency-medical-light));
+    color: rgb(var(--emergency-medical-dark));
+  }
+
+  .emergency-security {
+    background-color: rgb(var(--emergency-security));
+    color: rgb(255 255 255);
+  }
+
+  .emergency-security-bg {
+    background-color: rgb(var(--emergency-security-light));
+    color: rgb(var(--emergency-security-dark));
+  }
+
+  .emergency-natural {
+    background-color: rgb(var(--emergency-natural));
+    color: rgb(255 255 255);
+  }
+
+  .emergency-natural-bg {
+    background-color: rgb(var(--emergency-natural-light));
+    color: rgb(var(--emergency-natural-dark));
+  }
+
+  .emergency-infrastructure {
+    background-color: rgb(var(--emergency-infrastructure));
+    color: rgb(255 255 255);
+  }
+
+  .emergency-infrastructure-bg {
+    background-color: rgb(var(--emergency-infrastructure-light));
+    color: rgb(var(--emergency-infrastructure-dark));
+  }
+
+  /* Enhanced trust score utilities */
+  .trust-excellent-text {
+    color: rgb(var(--trust-excellent));
+  }
+
+  .trust-good-text {
+    color: rgb(var(--trust-good));
+  }
+
+  .trust-moderate-text {
+    color: rgb(var(--trust-moderate));
+  }
+
+  .trust-low-text {
+    color: rgb(var(--trust-low));
+  }
+
+  .trust-critical-text {
+    color: rgb(var(--trust-critical));
+  }
+
+  /* Enhanced status utilities */
+  .status-active-text {
+    color: rgb(var(--status-active));
+  }
+
+  .status-inactive-text {
+    color: rgb(var(--status-inactive));
+  }
+
+  .status-pending-text {
+    color: rgb(var(--status-pending));
+  }
+
+  .status-resolved-text {
+    color: rgb(var(--status-resolved));
+  }
+
+  .status-critical-text {
+    color: rgb(var(--status-critical));
+  }
+
+  /* Enhanced interaction utilities */
+  .interactive {
+    transition: all var(--duration-normal) ease;
+    cursor: pointer;
+  }
+
+  .interactive:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .interactive:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* Enhanced visual feedback utilities */
+  .glass-effect {
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .dark .glass-effect {
+    background-color: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .gradient-border {
+    position: relative;
+    background: linear-gradient(var(--color-background), var(--color-background)) padding-box,
+                linear-gradient(45deg, rgb(var(--color-primary)), rgb(var(--color-accent))) border-box;
+    border: 2px solid transparent;
+  }
+
+  /* Enhanced spacing utilities */
+  .space-y-reverse > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 0;
+    margin-bottom: var(--spacing-md);
+  }
+
+  .space-x-reverse > :not([hidden]) ~ :not([hidden]) {
+    margin-left: 0;
+    margin-right: var(--spacing-md);
   }
 }
 
