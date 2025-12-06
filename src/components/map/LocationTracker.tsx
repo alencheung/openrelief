@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { Navigation, Crosshair, Activity, Shield, AlertTriangle } from 'lucide-react'
+import { Navigation, Crosshair, Activity, Shield, AlertTriangle, Eye, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useLocationStore, useEmergencyStore } from '@/store'
 import { LocationPoint, Geofence } from '@/types'
+import { usePrivacy } from '@/hooks/usePrivacy'
 
 interface LocationTrackerProps {
   className?: string
@@ -40,6 +41,16 @@ export default function LocationTracker({
     altitude: 0,
     satelliteCount: 0,
   })
+  const [showPreciseLocation, setShowPreciseLocation] = useState(true)
+  const [privacyInfo, setPrivacyInfo] = useState<{
+    isAnonymized: boolean;
+    hasDifferentialPrivacy: boolean;
+    privacyBudgetUsed: number;
+  }>({
+    isAnonymized: false,
+    hasDifferentialPrivacy: false,
+    privacyBudgetUsed: 0,
+  })
 
   const watchIdRef = useRef<number | null>(null)
   const lastLocationRef = useRef<LocationPoint | null>(null)
@@ -61,6 +72,16 @@ export default function LocationTracker({
   } = useLocationStore()
 
   const { events, filteredEvents } = useEmergencyStore()
+  
+  // Privacy hook for location protection
+  const {
+    protectLocationData,
+    privacyContext,
+    assessPrivacyImpact
+  } = usePrivacy({
+    userId: 'current-user', // Would come from auth context
+    enableLogging: true
+  })
 
   // Calculate tracking statistics
   const calculateStats = useCallback((location: LocationPoint) => {
@@ -158,9 +179,9 @@ export default function LocationTracker({
     })
   }, [filteredEvents, calculateDistance, addProximityAlert, onProximityAlert])
 
-  // Handle location update
+  // Handle location update with privacy protection
   const handleLocationUpdate = useCallback((position: GeolocationPosition) => {
-    const location: LocationPoint = {
+    const rawLocation: LocationPoint = {
       lat: position.coords.latitude,
       lng: position.coords.longitude,
       accuracy: position.coords.accuracy,
@@ -170,6 +191,23 @@ export default function LocationTracker({
       ...(position.coords.heading ? { heading: position.coords.heading } : {}),
       ...(position.coords.speed ? { speed: position.coords.speed } : {}),
     }
+
+    // Apply privacy protection to location data
+    const protectedLocation = protectLocationData(rawLocation, {
+      applyDifferentialPrivacy: privacyContext.settings.differentialPrivacy,
+      applyAnonymization: privacyContext.settings.anonymizeData,
+      precisionLevel: privacyContext.settings.locationPrecision
+    })
+
+    // Update privacy info for UI display
+    setPrivacyInfo({
+      isAnonymized: protectedLocation.isAnonymized,
+      hasDifferentialPrivacy: protectedLocation.hasDifferentialPrivacy,
+      privacyBudgetUsed: protectedLocation.privacyBudgetUsed
+    })
+
+    // Use protected location for further processing
+    const location = showPreciseLocation ? rawLocation : protectedLocation.data
 
     // Update trail if enabled
     if (showTrail) {
@@ -381,7 +419,48 @@ export default function LocationTracker({
             {locationPermission.granted && (
               <Shield className="h-4 w-4 text-blue-500" />
             )}
+            {/* Privacy indicators */}
+            {privacyInfo.isAnonymized && (
+              <div className="flex items-center space-x-1">
+                <EyeOff className="h-4 w-4 text-purple-500" />
+                <span className="text-xs text-purple-600">Anonymized</span>
+              </div>
+            )}
+            {privacyInfo.hasDifferentialPrivacy && (
+              <div className="flex items-center space-x-1">
+                <Shield className="h-4 w-4 text-green-500" />
+                <span className="text-xs text-green-600">DP</span>
+              </div>
+            )}
           </div>
+        </div>
+
+        {/* Privacy Controls */}
+        <div className="flex items-center justify-between mb-4 p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center space-x-2">
+            <span className="text-sm font-medium text-gray-700">Location Precision:</span>
+            <button
+              onClick={() => setShowPreciseLocation(!showPreciseLocation)}
+              className="flex items-center space-x-1 px-2 py-1 text-xs bg-white border rounded hover:bg-gray-50"
+            >
+              {showPreciseLocation ? (
+                <>
+                  <Eye className="h-3 w-3" />
+                  <span>Precise</span>
+                </>
+              ) : (
+                <>
+                  <EyeOff className="h-3 w-3" />
+                  <span>Protected</span>
+                </>
+              )}
+            </button>
+          </div>
+          {privacyInfo.privacyBudgetUsed > 0 && (
+            <div className="text-xs text-gray-600">
+              Privacy Budget Used: {(privacyInfo.privacyBudgetUsed * 100).toFixed(1)}%
+            </div>
+          )}
         </div>
 
         {/* Current Location */}
@@ -392,9 +471,17 @@ export default function LocationTracker({
               <div className="flex-1">
                 <div className="text-sm font-medium text-gray-900">
                   Current Location
+                  {!showPreciseLocation && (
+                    <span className="ml-2 text-xs text-purple-600">(Privacy Protected)</span>
+                  )}
                 </div>
                 <div className="text-xs text-gray-500">
                   {currentLocation.lat.toFixed(6)}, {currentLocation.lng.toFixed(6)}
+                  {!showPreciseLocation && (
+                    <span className="ml-2 text-xs text-gray-400">
+                      (±{Math.max(100, privacyContext.settings.locationPrecision * 100)}m accuracy)
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -450,9 +537,12 @@ export default function LocationTracker({
             <button
               onClick={startLocationTracking}
               className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              disabled={!privacyContext.settings.locationSharing}
             >
               <Navigation className="h-4 w-4" />
-              <span>Start Tracking</span>
+              <span>
+                {privacyContext.settings.locationSharing ? 'Start Tracking' : 'Location Sharing Disabled'}
+              </span>
             </button>
           ) : (
             <button
@@ -468,8 +558,18 @@ export default function LocationTracker({
             onClick={getCurrentPosition}
             className="flex items-center justify-center px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             title="Get current position"
+            disabled={!privacyContext.settings.locationSharing}
           >
             <Crosshair className="h-4 w-4" />
+          </button>
+
+          {/* Privacy Settings Link */}
+          <button
+            onClick={() => window.open('/privacy', '_blank')}
+            className="flex items-center justify-center px-3 py-2 border border-purple-300 rounded-lg hover:bg-purple-50 transition-colors"
+            title="Privacy Settings"
+          >
+            <Shield className="h-4 w-4 text-purple-500" />
           </button>
         </div>
 

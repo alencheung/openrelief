@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabaseHelpers, supabase } from '@/lib/supabase'
 import { Database } from '@/types/database'
 import { useTrustStore, useNotificationStore, useOfflineStore } from '@/store'
+import { usePrivacy } from '@/hooks/usePrivacy'
 
 // Types
 export type UserProfile = Database['public']['Tables']['user_profiles']['Row']
@@ -11,20 +12,65 @@ export type UserTrustHistory = Database['public']['Tables']['user_trust_history'
 export type UserSubscription = Database['public']['Tables']['user_subscriptions']['Row']
 export type UserNotificationSettings = Database['public']['Tables']['user_notification_settings']['Row']
 
-// User profile queries
-export const useUserProfile = (userId: string) => {
+// User profile queries with privacy protection
+export const useUserProfile = (userId: string, options: { applyPrivacy?: boolean } = {}) => {
+  const { protectUserData, encryptSensitiveData, decryptSensitiveData, privacyContext } = usePrivacy({
+    userId,
+    enableLogging: true
+  })
+
   return useQuery({
-    queryKey: ['user-profile', userId],
+    queryKey: ['user-profile', userId, options.applyPrivacy],
     queryFn: async () => {
       try {
         const data: any = await supabaseHelpers.getUserProfile(userId)
 
+        // Apply privacy protection if requested
+        let protectedData = data
+        if (options.applyPrivacy) {
+          // Apply temporal decay to trust score
+          if (data.trust_score && data.updated_at) {
+            data.trust_score = privacyContext.applyTemporalDecayToData?.(
+              data.trust_score,
+              new Date(data.updated_at),
+              'trustScore'
+            ) || data.trust_score
+          }
+
+          // Protect user data with anonymization
+          const protectedResult = protectUserData([data], {
+            applyKAnonymity: privacyContext.settings.kAnonymity,
+            applyDifferentialPrivacy: privacyContext.settings.differentialPrivacy,
+            clusterUsers: false // Don't cluster single user profiles
+          })
+          
+          protectedData = protectedResult.data[0]
+
+          // Encrypt sensitive fields if encryption is enabled
+          if (privacyContext.settings.endToEndEncryption) {
+            const sensitiveFields = {
+              email: data.email,
+              phone: data.phone,
+              address: data.address
+            }
+            
+            const encryptedData = await encryptSensitiveData(sensitiveFields, userId)
+            if (encryptedData) {
+              protectedData.encrypted_fields = encryptedData
+              // Remove original sensitive fields
+              delete protectedData.email
+              delete protectedData.phone
+              delete protectedData.address
+            }
+          }
+        }
+
         // Update trust store
         useTrustStore.getState().setUserScore(userId, {
           userId,
-          score: data.trust_score,
-          previousScore: data.trust_score,
-          lastUpdated: new Date(data.updated_at),
+          score: protectedData.trust_score,
+          previousScore: protectedData.trust_score,
+          lastUpdated: new Date(protectedData.updated_at),
           history: [],
           factors: {
             reportingAccuracy: 0.5,
@@ -40,12 +86,12 @@ export const useUserProfile = (userId: string) => {
         })
 
         // Cache for offline use
-        useOfflineStore.getState().setCache(`user-profile-${userId}`, data, {
+        useOfflineStore.getState().setCache(`user-profile-${userId}`, protectedData, {
           tags: ['user', 'profile'],
           expiresAt: Date.now() + (10 * 60 * 1000), // 10 minutes
         })
 
-        return data
+        return protectedData
       } catch (error) {
         // Fallback to cache
         const cachedData = useOfflineStore.getState().getCache(`user-profile-${userId}`)
@@ -522,19 +568,41 @@ export const useUserStats = (userId: string) => {
 export const useNearbyUsers = (
   center: { lat: number; lng: number },
   radius: number = 1000, // 1km default
-  limit: number = 50
+  limit: number = 50,
+  options: { applyPrivacy?: boolean } = {}
 ) => {
+  const { protectLocationData, protectUserData, privacyContext } = usePrivacy({
+    enableLogging: true
+  })
+
   return useQuery({
-    queryKey: ['nearby-users', center, radius, limit],
+    queryKey: ['nearby-users', center, radius, limit, options.applyPrivacy],
     queryFn: async () => {
+      // Apply privacy protection to center location
+      const protectedCenter = options.applyPrivacy ? protectLocationData(center, {
+        applyDifferentialPrivacy: privacyContext.settings.differentialPrivacy,
+        applyAnonymization: privacyContext.settings.anonymizeData
+      }) : { data: center }
+
       const { data, error } = await (supabase.rpc as any)('get_nearby_users', {
-        p_lat: center.lat,
-        p_lng: center.lng,
+        p_lat: protectedCenter.data.lat,
+        p_lng: protectedCenter.data.lng,
         p_radius_meters: radius,
         p_limit: limit,
       })
 
       if (error) throw error
+
+      // Apply privacy protection to results
+      if (options.applyPrivacy && data) {
+        const protectedResult = protectUserData(data, {
+          applyKAnonymity: privacyContext.settings.kAnonymity,
+          applyDifferentialPrivacy: false // Already applied to location
+        })
+        
+        return protectedResult.data
+      }
+
       return data
     },
     enabled: !!(center.lat && center.lng),
