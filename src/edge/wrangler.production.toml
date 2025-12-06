@@ -1,0 +1,268 @@
+name = "openrelief-emergency-dispatch"
+main = "emergency-dispatch.ts"
+compatibility_date = "2023-05-18"
+compatibility_flags = ["nodejs_compat"]
+
+# Production configuration
+[env.production]
+name = "openrelief-emergency-dispatch-prod"
+vars = { 
+  ENVIRONMENT = "production",
+  LOG_LEVEL = "info",
+  MAX_BATCH_SIZE = "100",
+  MAX_EXECUTION_TIME = "29000",
+  ENABLE_METRICS = "true",
+  ENABLE_TRACING = "true"
+}
+
+# Staging configuration
+[env.staging]
+name = "openrelief-emergency-dispatch-staging"
+vars = { 
+  ENVIRONMENT = "staging",
+  LOG_LEVEL = "debug",
+  MAX_BATCH_SIZE = "50",
+  MAX_EXECUTION_TIME = "25000",
+  ENABLE_METRICS = "true",
+  ENABLE_TRACING = "false"
+}
+
+# Production KV Namespaces
+[[env.production.kv_namespaces]]
+binding = "TARGETS_KV"
+id = "targets_kv_namespace_production"
+preview_id = "targets_kv_preview_production"
+
+[[env.production.kv_namespaces]]
+binding = "ANALYTICS_KV"
+id = "analytics_kv_namespace_production"
+preview_id = "analytics_kv_preview_production"
+
+[[env.production.kv_namespaces]]
+binding = "DISPATCH_METRICS"
+id = "dispatch_metrics_kv_namespace_production"
+preview_id = "dispatch_metrics_preview_production"
+
+[[env.production.kv_namespaces]]
+binding = "EMERGENCY_CACHE"
+id = "emergency_cache_kv_namespace_production"
+preview_id = "emergency_cache_preview_production"
+
+# Staging KV Namespaces
+[[env.staging.kv_namespaces]]
+binding = "TARGETS_KV"
+id = "targets_kv_namespace_staging"
+preview_id = "targets_kv_preview_staging"
+
+[[env.staging.kv_namespaces]]
+binding = "ANALYTICS_KV"
+id = "analytics_kv_namespace_staging"
+preview_id = "analytics_kv_preview_staging"
+
+[[env.staging.kv_namespaces]]
+binding = "DISPATCH_METRICS"
+id = "dispatch_metrics_kv_namespace_staging"
+preview_id = "dispatch_metrics_preview_staging"
+
+[[env.staging.kv_namespaces]]
+binding = "EMERGENCY_CACHE"
+id = "emergency_cache_kv_namespace_staging"
+preview_id = "emergency_cache_preview_staging"
+
+# Production D1 Database
+[[env.production.d1_databases]]
+binding = "EMERGENCY_DB"
+database_name = "emergency_events_db_production"
+database_id = "emergency_events_database_id_production"
+
+# Staging D1 Database
+[[env.staging.d1_databases]]
+binding = "EMERGENCY_DB"
+database_name = "emergency_events_db_staging"
+database_id = "emergency_events_database_id_staging"
+
+# Production Environment Variables
+[env.production.vars]
+ENVIRONMENT = "production"
+LOG_LEVEL = "info"
+MAX_BATCH_SIZE = "100"
+MAX_EXECUTION_TIME = "29000"
+ENABLE_METRICS = "true"
+ENABLE_TRACING = "true"
+SENTRY_DSN = "https://PRODUCTION_SENTRY_DSN_REPLACE@sentry.io/1234567"
+DATABASE_URL = "postgresql://postgres:PRODUCTION_PASSWORD_REPLACE@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
+SUPABASE_URL = "https://openrelief.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9wZW5yZWxpZWYiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTY5NzQwMDAwMCwiZXhwIjoyMDEyOTc2MDAwfQ.PRODUCTION_ANON_KEY_REPLACE"
+FCM_SERVER_KEY = "AAAA_PRODUCTION_FCM_KEY_REPLACE"
+APNS_KEY_ID = "PRODUCTION_APNS_KEY_ID_REPLACE"
+APNS_TEAM_ID = "PRODUCTION_APPLE_TEAM_ID_REPLACE"
+OPENAI_API_KEY = "sk-PRODUCTION_OPENAI_KEY_REPLACE"
+WEBHOOK_SECRET = "PRODUCTION_WEBHOOK_SECRET_REPLACE"
+API_SECRET_KEY = "PRODUCTION_API_SECRET_KEY_REPLACE"
+EMERGENCY_ALERT_COOLDOWN_SECONDS = "60"
+EMERGENCY_MAX_ALERTS_PER_USER_PER_HOUR = "10"
+EMERGENCY_TRUST_THRESHOLD = "0.7"
+EMERGENCY_AUTO_EXPIRE_HOURS = "24"
+RATE_LIMIT_WINDOW_MS = "900000"
+RATE_LIMIT_MAX_REQUESTS = "100"
+CACHE_TTL_SECONDS = "300"
+
+# Staging Environment Variables
+[env.staging.vars]
+ENVIRONMENT = "staging"
+LOG_LEVEL = "debug"
+MAX_BATCH_SIZE = "50"
+MAX_EXECUTION_TIME = "25000"
+ENABLE_METRICS = "true"
+ENABLE_TRACING = "false"
+SENTRY_DSN = "https://STAGING_SENTRY_DSN_REPLACE@sentry.io/1234568"
+DATABASE_URL = "postgresql://postgres:STAGING_PASSWORD_REPLACE@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
+SUPABASE_URL = "https://staging.openrelief.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0YWdpbmcub3BlbnJlbGllZiIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjk3NDAwMDAwLCJleHAiOjIwMTI5NzYwMDB9.STAGING_ANON_KEY_REPLACE"
+FCM_SERVER_KEY = "AAAA_STAGING_FCM_KEY_REPLACE"
+APNS_KEY_ID = "STAGING_APNS_KEY_ID_REPLACE"
+APNS_TEAM_ID = "STAGING_APPLE_TEAM_ID_REPLACE"
+OPENAI_API_KEY = "sk-STAGING_OPENAI_KEY_REPLACE"
+WEBHOOK_SECRET = "STAGING_WEBHOOK_SECRET_REPLACE"
+API_SECRET_KEY = "STAGING_API_SECRET_KEY_REPLACE"
+EMERGENCY_ALERT_COOLDOWN_SECONDS = "30"
+EMERGENCY_MAX_ALERTS_PER_USER_PER_HOUR = "20"
+EMERGENCY_TRUST_THRESHOLD = "0.5"
+EMERGENCY_AUTO_EXPIRE_HOURS = "12"
+RATE_LIMIT_WINDOW_MS = "900000"
+RATE_LIMIT_MAX_REQUESTS = "200"
+CACHE_TTL_SECONDS = "600"
+
+# Production Triggers for scheduled tasks
+[[env.production.triggers]]
+crons = ["0 */5 * * * *"] # Every 5 minutes for cleanup
+
+[[env.production.triggers]]
+crons = ["0 * * * *"] # Every hour for metrics
+
+[[env.production.triggers]]
+crons = ["0 2 * * *"] # Daily at 2 AM for deep cleanup
+
+# Staging Triggers for scheduled tasks
+[[env.staging.triggers]]
+crons = ["*/10 * * * *"] # Every 10 minutes for cleanup
+
+[[env.staging.triggers]]
+crons = ["0 */2 * * *"] # Every 2 hours for metrics
+
+# Production Route Configuration
+[[env.production.routes]]
+pattern = "dispatch.openrelief.org/*"
+zone_name = "openrelief.org"
+
+[[env.production.routes]]
+pattern = "api.openrelief.org/dispatch/*"
+zone_name = "openrelief.org"
+
+# Staging Route Configuration
+[[env.staging.routes]]
+pattern = "dispatch-staging.openrelief.org/*"
+zone_name = "openrelief.org"
+
+[[env.staging.routes]]
+pattern = "api-staging.openrelief.org/dispatch/*"
+zone_name = "openrelief.org"
+
+# Production Limits and quotas
+[env.production.limits]
+cpu_ms = 50000 # 50 seconds CPU time
+memory_mb = 128
+max_requests_per_minute = 1000
+
+# Staging Limits and quotas
+[env.staging.limits]
+cpu_ms = 30000 # 30 seconds CPU time
+memory_mb = 64
+max_requests_per_minute = 500
+
+# Production Analytics Engine
+[env.production.analytics]
+enabled = true
+sampling_rate = 1.0
+
+# Staging Analytics Engine
+[env.staging.analytics]
+enabled = true
+sampling_rate = 0.1
+
+# Production Security Headers
+[env.production.security]
+origin = ["https://openrelief.org", "https://www.openrelief.org", "https://app.openrelief.org"]
+methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+headers = ["Content-Type", "Authorization", "X-Requested-With"]
+max_age = 86400
+
+# Staging Security Headers
+[env.staging.security]
+origin = ["https://staging.openrelief.org", "https://localhost:3000"]
+methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+headers = ["Content-Type", "Authorization", "X-Requested-With"]
+max_age = 3600
+
+# Production KV Namespace Settings
+[[kv_namespaces]]
+binding = "TARGETS_KV"
+id = "targets_kv_namespace_production"
+preview_id = "targets_kv_preview_production"
+
+[[kv_namespaces]]
+binding = "ANALYTICS_KV"
+id = "analytics_kv_namespace_production"
+preview_id = "analytics_kv_preview_production"
+
+[[kv_namespaces]]
+binding = "DISPATCH_METRICS"
+id = "dispatch_metrics_kv_namespace_production"
+preview_id = "dispatch_metrics_preview_production"
+
+[[kv_namespaces]]
+binding = "EMERGENCY_CACHE"
+id = "emergency_cache_kv_namespace_production"
+preview_id = "emergency_cache_preview_production"
+
+# D1 Database Configuration
+[[d1_databases]]
+binding = "EMERGENCY_DB"
+database_name = "emergency_events_db_production"
+database_id = "emergency_events_database_id_production"
+
+# Global Environment Variables
+[vars]
+ENVIRONMENT = "production"
+LOG_LEVEL = "info"
+MAX_BATCH_SIZE = "100"
+MAX_EXECUTION_TIME = "29000"
+ENABLE_METRICS = "true"
+ENABLE_TRACING = "true"
+
+# Global Triggers
+[[triggers]]
+crons = ["0 */5 * * * *"] # Every 5 minutes for cleanup
+
+# Global Routes
+[[routes]]
+pattern = "dispatch.openrelief.org/*"
+zone_name = "openrelief.org"
+
+# Global Limits
+[limits]
+cpu_ms = 50000 # 50 seconds CPU time
+memory_mb = 128
+max_requests_per_minute = 1000
+
+# Global Analytics
+[analytics]
+enabled = true
+sampling_rate = 1.0
+
+# Global Security
+[security]
+origin = ["https://openrelief.org", "https://www.openrelief.org", "https://app.openrelief.org"]
+methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+headers = ["Content-Type", "Authorization", "X-Requested-With"]
+max_age = 86400

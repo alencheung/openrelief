@@ -1,0 +1,465 @@
+name: Security Testing
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run security tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: 'Type of security test to run'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - dependencies
+          - static-analysis
+          - api-security
+          - configuration
+          - compliance
+
+env:
+  NODE_VERSION: '18'
+  # Enable security-focused npm audit
+  NPM_AUDIT_LEVEL: 'moderate'
+
+jobs:
+  # Dependency vulnerability scanning
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    if: github.event.inputs.test_type == 'all' || github.event.inputs.test_type == 'dependencies' || github.event_name == 'schedule'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run npm audit
+        run: |
+          npm audit --json > audit-results.json || true
+          npm audit --audit-level moderate > audit-report.txt || true
+          
+      - name: Parse audit results
+        id: parse-audit
+        run: |
+          if [ -f audit-results.json ]; then
+            echo "audit_results=$(cat audit-results.json | jq -c '.')" >> $GITHUB_OUTPUT
+            echo "vulnerabilities_count=$(cat audit-results.json | jq '.vulnerabilities | length')" >> $GITHUB_OUTPUT
+            echo "high_vulnerabilities=$(cat audit-results.json | jq '.vulnerabilities | map(select(.severity == "high")) | length')" >> $GITHUB_OUTPUT
+            echo "critical_vulnerabilities=$(cat audit-results.json | jq '.vulnerabilities | map(select(.severity == "critical")) | length')" >> $GITHUB_OUTPUT
+          else
+            echo "audit_results={}" >> $GITHUB_OUTPUT
+            echo "vulnerabilities_count=0" >> $GITHUB_OUTPUT
+            echo "high_vulnerabilities=0" >> $GITHUB_OUTPUT
+            echo "critical_vulnerabilities=0" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+        
+      - name: Upload audit results
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-audit-results
+          path: |
+            audit-results.json
+            audit-report.txt
+          retention-days: 30
+          
+      - name: Security check - High vulnerabilities
+        if: steps.parse-audit.outputs.high_vulnerabilities > 0 || steps.parse-audit.outputs.critical_vulnerabilities > 0
+        run: |
+          echo "::error::High or critical vulnerabilities detected!"
+          echo "High vulnerabilities: ${{ steps.parse-audit.outputs.high_vulnerabilities }}"
+          echo "Critical vulnerabilities: ${{ steps.parse-audit.outputs.critical_vulnerabilities }}"
+          exit 1
+
+  # Static code analysis
+  static-analysis:
+    name: Static Code Security Analysis
+    runs-on: ubuntu-latest
+    if: github.event.inputs.test_type == 'all' || github.event.inputs.test_type == 'static-analysis' || github.event_name == 'schedule'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run security tests
+        run: |
+          echo "Running comprehensive security analysis..."
+          node scripts/security-test.js
+          
+      - name: Upload security test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-test-results
+          path: |
+            security-test-report.json
+            security-test-results.xml
+          retention-days: 30
+          
+      - name: Check security test results
+        id: check-results
+        run: |
+          if [ -f security-test-report.json ]; then
+            failed_tests=$(cat security-test-report.json | jq '.summary.failedTests')
+            critical_issues=$(cat security-test-report.json | jq '.summary.criticalIssues')
+            echo "failed_tests=$failed_tests" >> $GITHUB_OUTPUT
+            echo "critical_issues=$critical_issues" >> $GITHUB_OUTPUT
+          else
+            echo "failed_tests=0" >> $GITHUB_OUTPUT
+            echo "critical_issues=0" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+        
+      - name: Security check - Critical issues
+        if: steps.check-results.outputs.critical_issues > 0
+        run: |
+          echo "::error::Critical security issues detected!"
+          echo "Failed tests: ${{ steps.check-results.outputs.failed_tests }}"
+          echo "Critical issues: ${{ steps.check-results.outputs.critical_issues }}"
+          exit 1
+
+  # API security testing
+  api-security:
+    name: API Security Testing
+    runs-on: ubuntu-latest
+    if: github.event.inputs.test_type == 'all' || github.event.inputs.test_type == 'api-security' || github.event_name == 'schedule'
+    
+    services:
+      # Start the application for API testing
+      app:
+        image: node:18-alpine
+        ports:
+          - 3000:3000
+        env:
+          NODE_ENV: test
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.TEST_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.TEST_SUPABASE_SERVICE_KEY }}
+        options: >-
+          --health-cmd "node -e 'console.log(\"Server ready\")'"
+          --health-interval 10
+          --health-timeout 30
+          
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build application
+        run: npm run build
+        
+      - name: Wait for application to be ready
+        run: |
+          echo "Waiting for application to be ready..."
+          timeout 60 bash -c 'until curl -f http://localhost:3000/api/health; do sleep 2; done'
+          
+      - name: Run API security tests
+        run: |
+          echo "Running API security tests..."
+          # Install API testing tools
+          npm install -g owasp-zap2.10.0-standalone
+          
+          # Run ZAP baseline scan
+          mkdir -p zap-results
+          zap-baseline.py -t http://localhost:3000 -g zap-results/baseline-report.json || true
+          
+          # Run custom API security tests
+          node scripts/api-security-test.js http://localhost:3000 || true
+          
+      - name: Upload API security results
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-security-results
+          path: |
+            zap-results/
+            api-security-report.json
+          retention-days: 30
+          
+      - name: Parse API security results
+        id: parse-api-results
+        run: |
+          if [ -f api-security-report.json ]; then
+            high_alerts=$(cat api-security-report.json | jq '.highAlerts // length')
+            critical_alerts=$(cat api-security-report.json | jq '.criticalAlerts // length')
+            echo "high_alerts=$high_alerts" >> $GITHUB_OUTPUT
+            echo "critical_alerts=$critical_alerts" >> $GITHUB_OUTPUT
+          else
+            echo "high_alerts=0" >> $GITHUB_OUTPUT
+            echo "critical_alerts=0" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+        
+      - name: Security check - Critical API issues
+        if: steps.parse-api-results.outputs.critical_alerts > 0
+        run: |
+          echo "::error::Critical API security issues detected!"
+          echo "High alerts: ${{ steps.parse-api-results.outputs.high_alerts }}"
+          echo "Critical alerts: ${{ steps.parse-api-results.outputs.critical_alerts }}"
+          exit 1
+
+  # Configuration security testing
+  config-security:
+    name: Configuration Security Testing
+    runs-on: ubuntu-latest
+    if: github.event.inputs.test_type == 'all' || github.event.inputs.test_type == 'configuration' || github.event_name == 'schedule'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Check environment variables
+        run: |
+          echo "Checking for exposed secrets..."
+          
+          # Check for common secret patterns
+          if grep -r -E "(PASSWORD|SECRET|KEY|TOKEN)" . --include="*.js" --include="*.ts" --include="*.json" --exclude-dir=node_modules --exclude-dir=.next; then
+            echo "::warning::Potential secrets found in code"
+          fi
+          
+          # Check for hardcoded credentials
+          if grep -r -E "(mongodb://|postgres://|mysql://|api_key|private_key)" . --include="*.js" --include="*.ts" --include="*.json" --exclude-dir=node_modules --exclude-dir=.next; then
+            echo "::warning::Potential hardcoded credentials found"
+          fi
+          
+      - name: Check security configuration
+        run: |
+          echo "Checking security configuration..."
+          
+          # Check Next.js security headers
+          if ! grep -q "X-Frame-Options" next.config.js; then
+            echo "::warning::Missing X-Frame-Options header"
+          fi
+          
+          if ! grep -q "Content-Security-Policy" next.config.js; then
+            echo "::warning::Missing Content-Security-Policy header"
+          fi
+          
+          # Check CORS configuration
+          if grep -q "origin: \[\"\*\"\]" next.config.js; then
+            echo "::warning::Overly permissive CORS policy"
+          fi
+          
+      - name: Check package.json security
+        run: |
+          echo "Checking package.json for security issues..."
+          
+          # Check for vulnerable dependencies
+          npm audit --audit-level moderate > npm-audit.txt || true
+          
+          # Check for scripts with security implications
+          if grep -E "(curl|wget|fetch|eval|exec)" package.json; then
+            echo "::warning::Potentially unsafe scripts in package.json"
+          fi
+
+  # Compliance testing
+  compliance:
+    name: Compliance Testing
+    runs-on: ubuntu-latest
+    if: github.event.inputs.test_type == 'all' || github.event.inputs.test_type == 'compliance' || github.event_name == 'schedule'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run OWASP ZAP Baseline Scan
+        run: |
+          echo "Running OWASP ZAP baseline scan..."
+          
+          # Install ZAP
+          npm install -g owasp-zap2.10.0-standalone
+          
+          # Start application in background
+          npm run build &
+          npm start &
+          APP_PID=$!
+          
+          # Wait for application to start
+          sleep 30
+          
+          # Run ZAP baseline scan
+          zap-baseline.py -t http://localhost:3000 -g zap-results/owasp-baseline.json || true
+          
+          # Stop application
+          kill $APP_PID || true
+          
+      - name: Upload OWASP results
+        uses: actions/upload-artifact@v4
+        with:
+          name: owasp-compliance-results
+          path: zap-results/
+          retention-days: 30
+          
+      - name: Check OWASP compliance
+        id: check-owasp
+        run: |
+          if [ -f zap-results/owasp-baseline.json ]; then
+            alerts_high=$(cat zap-results/owasp-baseline.json | jq '.site[0].alerts | map(select(.risk == "High")) | length')
+            alerts_medium=$(cat zap-results/owasp-baseline.json | jq '.site[0].alerts | map(select(.risk == "Medium")) | length')
+            echo "alerts_high=$alerts_high" >> $GITHUB_OUTPUT
+            echo "alerts_medium=$alerts_medium" >> $GITHUB_OUTPUT
+          else
+            echo "alerts_high=0" >> $GITHUB_OUTPUT
+            echo "alerts_medium=0" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+        
+      - name: Compliance check - High risk issues
+        if: steps.check-owasp.outputs.alerts_high > 0
+        run: |
+          echo "::error::High risk OWASP issues detected!"
+          echo "High risk alerts: ${{ steps.check-owasp.outputs.alerts_high }}"
+          echo "Medium risk alerts: ${{ steps.check-owasp.outputs.alerts_medium }}"
+          exit 1
+
+  # Generate security report
+  security-report:
+    name: Generate Security Report
+    runs-on: ubuntu-latest
+    needs: [dependency-scan, static-analysis, api-security, config-security, compliance]
+    if: always()
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: |
+            dependency-audit-results
+            security-test-results
+            api-security-results
+            owasp-compliance-results
+          
+      - name: Generate comprehensive security report
+        run: |
+          echo "Generating comprehensive security report..."
+          
+          # Create combined report
+          cat > security-comprehensive-report.json << EOF
+          {
+            "scan_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "commit_sha": "${{ github.sha }}",
+            "branch": "${{ github.ref }}",
+            "repository": "${{ github.repository }}",
+            "dependency_scan": $(cat dependency-audit-results/audit-results.json 2>/dev/null || echo '{}'),
+            "static_analysis": $(cat security-test-results/security-test-report.json 2>/dev/null || echo '{}'),
+            "api_security": $(cat api-security-results/api-security-report.json 2>/dev/null || echo '{}'),
+            "owasp_compliance": $(cat owasp-compliance-results/owasp-baseline.json 2>/dev/null || echo '{}'),
+            "summary": {
+              "total_vulnerabilities": $(cat dependency-audit-results/audit-results.json 2>/dev/null | jq '.vulnerabilities | length' || echo 0),
+              "critical_issues": $(cat security-test-results/security-test-report.json 2>/dev/null | jq '.summary.criticalIssues' || echo 0),
+              "high_issues": $(cat security-test-results/security-test-report.json 2>/dev/null | jq '.summary.highIssues' || echo 0),
+              "medium_issues": $(cat security-test-results/security-test-report.json 2>/dev/null | jq '.summary.mediumIssues' || echo 0),
+              "low_issues": $(cat security-test-results/security-test-report.json 2>/dev/null | jq '.summary.lowIssues' || echo 0)
+            }
+          }
+          EOF
+          
+      - name: Upload comprehensive report
+        uses: actions/upload-artifact@v4
+        with:
+          name: comprehensive-security-report
+          path: security-comprehensive-report.json
+          retention-days: 90
+          
+      - name: Create security status badge
+        run: |
+          # Extract summary metrics
+          CRITICAL_ISSUES=$(cat security-comprehensive-report.json | jq '.summary.critical_issues')
+          HIGH_ISSUES=$(cat security-comprehensive-report.json | jq '.summary.high_issues')
+          
+          # Determine badge color
+          if [ "$CRITICAL_ISSUES" -gt 0 ]; then
+            BADGE_COLOR="critical"
+            BADGE_MESSAGE="Critical"
+          elif [ "$HIGH_ISSUES" -gt 0 ]; then
+            BADGE_COLOR="high"
+            BADGE_MESSAGE="High"
+          else
+            BADGE_COLOR="success"
+            BADGE_MESSAGE="Secure"
+          fi
+          
+          # Create badge
+          echo "Creating security badge: $BADGE_MESSAGE ($BADGE_COLOR)"
+          
+      - name: Update security badge
+        if: github.ref == 'refs/heads/main'
+        run: |
+          # This would update a security badge in the repository
+          echo "Security status: $BADGE_MESSAGE"
+          echo "Critical issues: $CRITICAL_ISSUES"
+          echo "High issues: $HIGH_ISSUES"
+
+  # Notify on security issues
+  notify:
+    name: Notify on Security Issues
+    runs-on: ubuntu-latest
+    needs: [dependency-scan, static-analysis, api-security, config-security, compliance]
+    if: failure() && github.event_name != 'schedule'
+    
+    steps:
+      - name: Send security alert
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const sha = context.sha;
+            
+            // Create issue for security failures
+            if (context.payload.workflow_run && context.payload.workflow_run.conclusion === 'failure') {
+              await github.rest.issues.create({
+                owner,
+                repo,
+                title: '🚨 Security Test Failed',
+                body: `Security tests failed on commit ${sha}
+                
+                **Workflow**: ${context.workflow}
+                **Run ID**: ${context.runId}
+                
+                Please review the security test results and address the issues immediately.
+                
+                [View Security Test Results](https://github.com/${owner}/${repo}/actions/runs/${context.runId})
+                `,
+                labels: ['security', 'critical', 'automated-test']
+              });
+            }
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

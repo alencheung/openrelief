@@ -1,0 +1,78 @@
+# Production Supabase Configuration
+# This file contains production database settings and optimizations
+
+[project]
+ref = "openrelief-production"
+api_url = "https://openrelief.supabase.co"
+db_url = "postgresql://postgres:PRODUCTION_PASSWORD_REPLACE@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
+studio_url = "https://openrelief.supabase.co/studio"
+
+[database]
+port = 5432
+shadow_port = 54320
+major_version = 15
+
+[auth]
+site_url = "https://openrelief.org"
+additional_redirect_urls = ["https://www.openrelief.org", "https://app.openrelief.org", "https://staging.openrelief.org"]
+jwt_expiry = 3600
+refresh_token_rotation_enabled = true
+security_update_password_require_reauthentication = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+max_frequency = "1s"
+
+[auth.sms]
+enable_signup = false
+enable_confirmations = false
+template = "Your code is {{ .Code }}"
+
+[auth.external.github]
+enabled = true
+client_id = "PRODUCTION_GITHUB_CLIENT_ID"
+secret = "PRODUCTION_GITHUB_SECRET"
+redirect_uri = "https://openrelief.org/auth/v1/callback"
+
+[auth.external.google]
+enabled = true
+client_id = "PRODUCTION_GOOGLE_CLIENT_ID"
+secret = "PRODUCTION_GOOGLE_SECRET"
+redirect_uri = "https://openrelief.org/auth/v1/callback"
+
+[storage]
+file_size_limit = "52428800" # 50MB
+image_transformation_enabled = true
+image_transformation_format = "webp"
+
+[analytics]
+enabled = true
+
+[edge_functions]
+enabled = true
+port = 9000
+verify_jwt = true
+
+[realtime]
+enabled = true
+
+# Production performance optimizations
+[performance]
+pool_size = 20
+max_connections = 100
+connection_timeout = 30
+idle_timeout = 300
+
+# Backup configuration
+[backup]
+enabled = true
+retention_days = 30
+backup_schedule = "0 2 * * *" # Daily at 2 AM UTC
+
+# Monitoring
+[monitoring]
+enabled = true
+log_level = "info"
+slow_query_threshold = 1000 # ms

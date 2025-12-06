@@ -1,341 +1,666 @@
-'use client'
+/**
+ * Reduced Motion Hook for OpenRelief
+ * 
+ * Provides comprehensive reduced motion support for users with vestibular
+ * disorders or those who prefer reduced motion for better accessibility.
+ */
 
 import { useEffect, useState, useCallback } from 'react'
 
 export interface ReducedMotionOptions {
   /**
-   * Initial value for reduced motion preference
+   * Whether to respect system preference
    */
-  initialValue?: boolean
+  respectSystemPreference?: boolean
   /**
-   * Whether to listen for system preference changes
+   * Whether to enable motion controls
    */
-  listenForChanges?: boolean
+  enableControls?: boolean
   /**
-   * Custom media query to check
+   * Default reduced motion state
    */
-  mediaQuery?: string
+  defaultReduced?: boolean
   /**
-   * Callback when reduced motion preference changes
+   * Callback when reduced motion changes
    */
-  onChange?: (prefersReducedMotion: boolean) => void
+  onReducedMotionChange?: (reduced: boolean) => void
+  /**
+   * Animation duration override
+   */
+  animationDuration?: number
+  /**
+   * Transition duration override
+   */
+  transitionDuration?: number
 }
 
 export interface ReducedMotionState {
   /**
-   * Whether user prefers reduced motion
+   * Whether reduced motion is currently active
    */
-  prefersReducedMotion: boolean
+  isReduced: boolean
   /**
-   * Whether the current environment supports reduced motion detection
+   * Whether system prefers reduced motion
    */
-  isSupported: boolean
+  systemPrefersReduced: boolean
   /**
-   * The current media query match state
+   * Whether user has manually set reduced motion
    */
-  mediaQueryMatch: MediaQueryList | null
+  userReduced: boolean
+  /**
+   * Current animation duration
+   */
+  animationDuration: number
+  /**
+   * Current transition duration
+   */
+  transitionDuration: number
+  /**
+   * Available motion controls
+   */
+  controls: ReducedMotionControls
+}
+
+export interface ReducedMotionControls {
+  /**
+   * Toggle reduced motion
+   */
+  toggleReducedMotion: () => void
+  /**
+   * Set reduced motion state
+   */
+  setReducedMotion: (reduced: boolean) => void
+  /**
+   * Set animation duration
+   */
+  setAnimationDuration: (duration: number) => void
+  /**
+   * Set transition duration
+   */
+  setTransitionDuration: (duration: number) => void
+  /**
+   * Reset to system preference
+   */
+  resetToSystemPreference: () => void
 }
 
 /**
- * Hook for detecting and respecting user's reduced motion preferences
+ * Hook for managing reduced motion preferences
  */
-export function useReducedMotion(options: ReducedMotionOptions = {}) {
+export function useReducedMotion(options: ReducedMotionOptions = {}): ReducedMotionState & ReducedMotionControls {
   const {
-    initialValue = false,
-    listenForChanges = true,
-    mediaQuery = '(prefers-reduced-motion: reduce)',
-    onChange,
+    respectSystemPreference = true,
+    enableControls = true,
+    defaultReduced = false,
+    onReducedMotionChange,
+    animationDuration = 0,
+    transitionDuration = 0,
   } = options
 
-  const [state, setState] = useState<ReducedMotionState>(() => ({
-    prefersReducedMotion: initialValue,
-    isSupported: typeof window !== 'undefined' && 'matchMedia' in window,
-    mediaQueryMatch: null,
-  }))
+  const [userReduced, setUserReduced] = useState(defaultReduced)
+  const [systemPrefersReduced, setSystemPrefersReduced] = useState(false)
+  const [currentAnimationDuration, setCurrentAnimationDuration] = useState(animationDuration)
+  const [currentTransitionDuration, setCurrentTransitionDuration] = useState(transitionDuration)
 
   /**
-   * Update reduced motion state
+   * Check system preference for reduced motion
    */
-  const updateState = useCallback((prefersReducedMotion: boolean, mediaQueryMatch: MediaQueryList | null) => {
-    setState(prevState => {
-      const newState = {
-        ...prevState,
-        prefersReducedMotion,
-        mediaQueryMatch,
+  const checkSystemPreference = useCallback(() => {
+    if (typeof window === 'undefined') return false
+    
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+    setSystemPrefersReduced(mediaQuery.matches)
+    
+    return mediaQuery.matches
+  }, [])
+
+  /**
+   * Calculate effective reduced motion state
+   */
+  const isReduced = respectSystemPreference 
+    ? systemPrefersReduced || userReduced
+    : userReduced
+
+  /**
+   * Toggle reduced motion
+   */
+  const toggleReducedMotion = useCallback(() => {
+    const newUserReduced = !userReduced
+    setUserReduced(newUserReduced)
+    onReducedMotionChange?.(newUserReduced)
+  }, [userReduced, onReducedMotionChange])
+
+  /**
+   * Set reduced motion state
+   */
+  const setReducedMotion = useCallback((reduced: boolean) => {
+    setUserReduced(reduced)
+    onReducedMotionChange?.(reduced)
+  }, [onReducedMotionChange])
+
+  /**
+   * Set animation duration
+   */
+  const setAnimationDuration = useCallback((duration: number) => {
+    setCurrentAnimationDuration(duration)
+  }, [])
+
+  /**
+   * Set transition duration
+   */
+  const setTransitionDuration = useCallback((duration: number) => {
+    setCurrentTransitionDuration(duration)
+  }, [])
+
+  /**
+   * Reset to system preference
+   */
+  const resetToSystemPreference = useCallback(() => {
+    setUserReduced(false)
+    onReducedMotionChange?.(systemPrefersReduced)
+  }, [systemPrefersReduced, onReducedMotionChange])
+
+  /**
+   * Apply reduced motion styles to document
+   */
+  const applyReducedMotionStyles = useCallback(() => {
+    const root = document.documentElement
+    
+    if (isReduced) {
+      root.classList.add('reduced-motion')
+      
+      // Apply reduced motion CSS variables
+      root.style.setProperty('--animation-duration-multiplier', '0.01')
+      root.style.setProperty('--transition-duration-multiplier', '0.01')
+      
+      if (currentAnimationDuration > 0) {
+        root.style.setProperty('--animation-duration', `${currentAnimationDuration}ms`)
       }
       
-      // Only call onChange if the value actually changed
-      if (prevState.prefersReducedMotion !== prefersReducedMotion) {
-        onChange?.(prefersReducedMotion)
+      if (currentTransitionDuration > 0) {
+        root.style.setProperty('--transition-duration', `${currentTransitionDuration}ms`)
       }
+    } else {
+      root.classList.remove('reduced-motion')
       
-      return newState
-    })
-  }, [onChange])
-
-  /**
-   * Check reduced motion preference
-   */
-  const checkReducedMotion = useCallback(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) {
-      updateState(false, null)
-      return
+      // Reset CSS variables
+      root.style.removeProperty('--animation-duration-multiplier')
+      root.style.removeProperty('--transition-duration-multiplier')
+      root.style.removeProperty('--animation-duration')
+      root.style.removeProperty('--transition-duration')
     }
-
-    try {
-      const mediaQueryMatch = window.matchMedia(mediaQuery)
-      updateState(mediaQueryMatch.matches, mediaQueryMatch)
-      
-      return mediaQueryMatch
-    } catch (error) {
-      console.warn('Failed to check reduced motion preference:', error)
-      updateState(false, null)
-      return null
-    }
-  }, [mediaQuery, updateState])
+  }, [isReduced, currentAnimationDuration, currentTransitionDuration])
 
   /**
-   * Handle media query change
-   */
-  const handleMediaQueryChange = useCallback((event: MediaQueryListEvent) => {
-    updateState(event.matches, event.target)
-  }, [updateState])
-
-  /**
-   * Initialize reduced motion detection
+   * Listen for system preference changes
    */
   useEffect(() => {
-    if (!listenForChanges) return
+    if (!respectSystemPreference) return
 
-    const mediaQueryMatch = checkReducedMotion()
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
     
-    if (!mediaQueryMatch) return
-
-    // Add listener for changes
-    if (mediaQueryMatch.addEventListener) {
-      mediaQueryMatch.addEventListener('change', handleMediaQueryChange)
+    const handleChange = (e: MediaQueryListEvent) => {
+      setSystemPrefersReduced(e.matches)
+    }
+    
+    // Initial check
+    setSystemPrefersReduced(mediaQuery.matches)
+    
+    // Listen for changes
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handleChange)
     } else {
       // Fallback for older browsers
-      mediaQueryMatch.addListener(handleMediaQueryChange)
+      mediaQuery.addListener(handleChange)
     }
-
+    
     return () => {
-      // Clean up listener
-      if (mediaQueryMatch?.removeEventListener) {
-        mediaQueryMatch.removeEventListener('change', handleMediaQueryChange)
-      } else if (mediaQueryMatch?.removeListener) {
-        mediaQueryMatch.removeListener(handleMediaQueryChange)
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener('change', handleChange)
+      } else {
+        mediaQuery.removeListener(handleChange)
       }
     }
-  }, [listenForChanges, checkReducedMotion, handleMediaQueryChange])
+  }, [respectSystemPreference])
 
-  // Initial check
+  /**
+   * Apply styles when state changes
+   */
   useEffect(() => {
-    if (state.mediaQueryMatch === null) {
-      checkReducedMotion()
-    }
-  }, [state.mediaQueryMatch, checkReducedMotion])
+    applyReducedMotionStyles()
+  }, [applyReducedMotionStyles])
 
   return {
-    prefersReducedMotion: state.prefersReducedMotion,
-    isSupported: state.isSupported,
-    mediaQueryMatch: state.mediaQueryMatch,
+    // State
+    isReduced,
+    systemPrefersReduced,
+    userReduced,
+    animationDuration: currentAnimationDuration,
+    transitionDuration: currentTransitionDuration,
+    controls: {
+      toggleReducedMotion,
+      setReducedMotion,
+      setAnimationDuration,
+      setTransitionDuration,
+      resetToSystemPreference,
+    }
   }
 }
 
 /**
- * Hook for managing animations with reduced motion respect
+ * Hook for reduced motion animations
  */
 export function useReducedMotionAnimation<T extends Record<string, any>>(
-  animations: T,
-  reducedAnimations?: Partial<T>
+  animationName: string,
+  keyframes: T,
+  options: {
+    duration?: number
+    easing?: string
+    fill?: 'forwards' | 'backwards' | 'both' | 'none'
+    iterations?: number | 'infinite'
+    direction?: 'normal' | 'reverse' | 'alternate' | 'alternate-reverse'
+  } = {}
 ) {
-  const { prefersReducedMotion } = useReducedMotion()
+  const { isReduced } = useReducedMotion()
   
-  return prefersReducedMotion ? { ...animations, ...reducedAnimations } : animations
-}
+  const {
+    duration = 300,
+    easing = 'ease-in-out',
+    fill = 'forwards',
+    iterations = 1,
+    direction = 'normal',
+  } = options
 
-/**
- * Hook for managing transition durations with reduced motion
- */
-export function useReducedMotionTransition(
-  normalDuration: string | number,
-  reducedDuration: string | number = '0s'
-) {
-  const { prefersReducedMotion } = useReducedMotion()
-  
-  return prefersReducedMotion ? reducedDuration : normalDuration
-}
-
-/**
- * Hook for managing CSS classes with reduced motion
- */
-export function useReducedMotionClass(
-  normalClass: string,
-  reducedClass: string = ''
-) {
-  const { prefersReducedMotion } = useReducedMotion()
-  
-  return prefersReducedMotion ? reducedClass : normalClass
-}
-
-/**
- * Hook for managing animation frame callbacks with reduced motion
- */
-export function useReducedMotionAnimationFrame() {
-  const { prefersReducedMotion } = useReducedMotion()
-  
-  const requestAnimationCallback = useCallback((callback: FrameRequestCallback) => {
-    if (prefersReducedMotion) {
-      // Skip animation and execute immediately
-      callback(0)
-      return -1 // Return invalid ID to indicate no animation was requested
-    } else {
-      return requestAnimationFrame(callback)
+  /**
+   * Get animation properties respecting reduced motion
+   */
+  const getAnimationProps = () => {
+    if (isReduced) {
+      return {
+        animationName: 'none',
+        duration: 0,
+        easing: 'linear',
+        fill: 'none',
+        iterations: 0,
+        direction: 'normal',
+      }
     }
-  }, [prefersReducedMotion])
-  
-  const cancelAnimationCallback = useCallback((id: number) => {
-    if (id !== -1) {
-      cancelAnimationFrame(id)
+    
+    return {
+      animationName,
+      duration,
+      easing,
+      fill,
+      iterations,
+      direction,
     }
-  }, [])
-  
+  }
+
   return {
-    requestAnimationFrame: requestAnimationCallback,
-    cancelAnimationFrame: cancelAnimationCallback,
+    animationProps: getAnimationProps(),
+    keyframes: isReduced ? {} : keyframes,
+    isReduced,
   }
 }
 
 /**
- * Hook for managing scroll behavior with reduced motion
+ * Hook for reduced motion transitions
+ */
+export function useReducedMotionTransition(options: {
+  duration?: number
+  easing?: string
+  delay?: number
+  property?: string | string[]
+} = {}) {
+  const { isReduced } = useReducedMotion()
+  
+  const {
+    duration = 200,
+    easing = 'ease-in-out',
+    delay = 0,
+    property = 'all',
+  } = options
+
+  /**
+   * Get transition properties respecting reduced motion
+   */
+  const getTransitionProps = () => {
+    if (isReduced) {
+      return {
+        duration: 0,
+        easing: 'linear',
+        delay: 0,
+        property: 'none',
+      }
+    }
+    
+    return {
+      duration,
+      easing,
+      delay,
+      property,
+    }
+  }
+
+  return {
+    transitionProps: getTransitionProps(),
+    transitionString: isReduced 
+      ? 'none' 
+      : `${property} ${duration}ms ${easing} ${delay}ms`,
+    isReduced,
+  }
+}
+
+/**
+ * Hook for reduced motion CSS classes
+ */
+export function useReducedMotionClass() {
+  const { isReduced } = useReducedMotion()
+  
+  /**
+   * Get CSS classes respecting reduced motion
+   */
+  const getClasses = (baseClass: string, animatedClass?: string) => {
+    if (isReduced) {
+      return `${baseClass} reduced-motion`
+    }
+    
+    return animatedClass ? `${baseClass} ${animatedClass}` : baseClass
+  }
+
+  return {
+    getClasses,
+    isReduced,
+  }
+}
+
+/**
+ * Hook for reduced motion animation frame
+ */
+export function useReducedMotionAnimationFrame() {
+  const { isReduced } = useReducedMotion()
+  const animationFrameRef = useRef<number>()
+  const callbackRef = useRef<() => void>()
+
+  /**
+   * Request animation frame respecting reduced motion
+   */
+  const requestAnimationFrame = useCallback((callback: () => void) => {
+    if (isReduced) {
+      // For reduced motion, use setTimeout with longer delay
+      callbackRef.current = callback
+      animationFrameRef.current = window.setTimeout(callback, 16) as any
+    } else {
+      // Use standard requestAnimationFrame
+      callbackRef.current = callback
+      animationFrameRef.current = window.requestAnimationFrame(callback)
+    }
+  }, [isReduced])
+
+  /**
+   * Cancel animation frame
+   */
+  const cancelAnimationFrame = useCallback(() => {
+    if (animationFrameRef.current) {
+      if (isReduced) {
+        window.clearTimeout(animationFrameRef.current)
+      } else {
+        window.cancelAnimationFrame(animationFrameRef.current)
+      }
+      animationFrameRef.current = undefined
+    }
+  }, [isReduced])
+
+  return {
+    requestAnimationFrame,
+    cancelAnimationFrame,
+    isReduced,
+  }
+}
+
+/**
+ * Hook for reduced motion scroll behavior
  */
 export function useReducedMotionScroll() {
-  const { prefersReducedMotion } = useReducedMotion()
+  const { isReduced } = useReducedMotion()
   
-  const scrollToElement = useCallback((
-    element: HTMLElement,
-    options: ScrollIntoViewOptions = {}
-  ) => {
+  /**
+   * Get scroll behavior respecting reduced motion
+   */
+  const getScrollBehavior = (): ScrollBehavior => {
+    return isReduced ? 'auto' : 'smooth'
+  }
+
+  /**
+   * Scroll to element respecting reduced motion
+   */
+  const scrollToElement = useCallback((element: HTMLElement, options?: ScrollIntoViewOptions) => {
     const scrollOptions: ScrollIntoViewOptions = {
+      behavior: getScrollBehavior(),
+      block: 'start',
+      inline: 'nearest',
       ...options,
-      behavior: prefersReducedMotion ? 'auto' : (options.behavior || 'smooth'),
     }
     
     element.scrollIntoView(scrollOptions)
-  }, [prefersReducedMotion])
-  
-  const scrollTo = useCallback((
-    x: number,
-    y: number,
-    options: ScrollToOptions = {}
-  ) => {
-    const scrollOptions: ScrollToOptions = {
-      ...options,
-      left: x,
-      top: y,
-      behavior: prefersReducedMotion ? 'auto' : (options.behavior || 'smooth'),
+  }, [isReduced])
+
+  /**
+   * Scroll to position respecting reduced motion
+   */
+  const scrollToPosition = useCallback((x: number, y: number) => {
+    if (isReduced) {
+      window.scrollTo(x, y)
+    } else {
+      window.scrollTo({
+        left: x,
+        top: y,
+        behavior: 'smooth',
+      })
     }
-    
-    window.scrollTo(scrollOptions)
-  }, [prefersReducedMotion])
-  
+  }, [isReduced])
+
   return {
+    getScrollBehavior,
     scrollToElement,
-    scrollTo,
-    prefersReducedMotion,
+    scrollToPosition,
+    isReduced,
   }
 }
 
 /**
- * Hook for managing carousel/slider animations with reduced motion
+ * Hook for reduced motion carousel
  */
 export function useReducedMotionCarousel(options: {
   autoPlay?: boolean
   interval?: number
-  transitionDuration?: string
-}) {
-  const { autoPlay = false, interval = 3000, transitionDuration = '0.5s' } = options
-  const { prefersReducedMotion } = useReducedMotion()
+  transitionDuration?: number
+} = {}) {
+  const { isReduced } = useReducedMotion()
   
-  const shouldAutoPlay = autoPlay && !prefersReducedMotion
-  const effectiveInterval = prefersReducedMotion ? 0 : interval
-  const effectiveTransitionDuration = prefersReducedMotion ? '0s' : transitionDuration
-  
+  const {
+    autoPlay = false,
+    interval = 3000,
+    transitionDuration = 500,
+  } = options
+
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const intervalRef = useRef<NodeJS.Timeout>()
+
+  /**
+   * Get effective auto play setting
+   */
+  const effectiveAutoPlay = autoPlay && !isReduced
+
+  /**
+   * Get effective transition duration
+   */
+  const effectiveTransitionDuration = isReduced ? 0 : transitionDuration
+
+  /**
+   * Go to next slide
+   */
+  const next = useCallback(() => {
+    setCurrentIndex(prev => prev + 1)
+  }, [])
+
+  /**
+   * Go to previous slide
+   */
+  const previous = useCallback(() => {
+    setCurrentIndex(prev => prev - 1)
+  }, [])
+
+  /**
+   * Go to specific slide
+   */
+  const goToSlide = useCallback((index: number) => {
+    setCurrentIndex(index)
+  }, [])
+
+  /**
+   * Setup auto play
+   */
+  useEffect(() => {
+    if (effectiveAutoPlay) {
+      intervalRef.current = setInterval(() => {
+        next()
+      }, interval)
+    } else {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+      }
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+      }
+    }
+  }, [effectiveAutoPlay, interval, next])
+
   return {
-    shouldAutoPlay,
-    effectiveInterval,
+    currentIndex,
+    next,
+    previous,
+    goToSlide,
+    isReduced,
+    effectiveAutoPlay,
     effectiveTransitionDuration,
-    prefersReducedMotion,
   }
 }
 
 /**
- * Hook for managing video playback with reduced motion
+ * Hook for reduced motion video
  */
 export function useReducedMotionVideo() {
-  const { prefersReducedMotion } = useReducedMotion()
+  const { isReduced } = useReducedMotion()
   
-  const getVideoAttributes = useCallback((attributes: {
-    autoplay?: boolean
-    loop?: boolean
-    muted?: boolean
-    playsInline?: boolean
-  }) => {
+  /**
+   * Get video properties respecting reduced motion
+   */
+  const getVideoProps = () => {
     return {
-      ...attributes,
-      autoplay: attributes.autoplay && !prefersReducedMotion,
-      loop: attributes.loop && !prefersReducedMotion,
+      autoPlay: !isReduced,
+      muted: isReduced, // Mute when auto-playing without user interaction
+      playsInline: true,
+      loop: false,
+      controls: true,
     }
-  }, [prefersReducedMotion])
-  
+  }
+
+  /**
+   * Play video respecting reduced motion
+   */
+  const playVideo = useCallback((video: HTMLVideoElement) => {
+    if (isReduced) {
+      // For reduced motion, show poster instead of playing
+      video.poster = video.poster || ''
+      return
+    }
+    
+    video.play().catch(error => {
+      console.warn('Video playback failed:', error)
+    })
+  }, [isReduced])
+
   return {
-    prefersReducedMotion,
-    getVideoAttributes,
+    getVideoProps,
+    playVideo,
+    isReduced,
   }
 }
 
 /**
- * Hook for managing CSS custom properties with reduced motion
+ * Hook for reduced motion CSS properties
  */
 export function useReducedMotionCSSProperties() {
-  const { prefersReducedMotion } = useReducedMotion()
+  const { isReduced } = useReducedMotion()
   
-  const getCSSProperties = useCallback((properties: Record<string, string>) => {
-    if (prefersReducedMotion) {
-      // Remove or reduce animation-related properties
-      const reducedProperties = { ...properties }
-      
-      // Remove animation properties
-      delete reducedProperties.animation
-      delete reducedProperties.animationName
-      delete reducedProperties.animationDuration
-      delete reducedProperties.animationTimingFunction
-      delete reducedProperties.animationDelay
-      delete reducedProperties.animationIterationCount
-      delete reducedProperties.animationDirection
-      delete reducedProperties.animationFillMode
-      delete reducedProperties.animationPlayState
-      
-      // Remove transition properties
-      delete reducedProperties.transition
-      delete reducedProperties.transitionProperty
-      delete reducedProperties.transitionDuration
-      delete reducedProperties.transitionTimingFunction
-      delete reducedProperties.transitionDelay
-      
-      // Remove transform properties that might cause motion
-      delete reducedProperties.transform
-      delete reducedProperties.transformOrigin
-      
-      return reducedProperties
+  /**
+   * Get CSS properties respecting reduced motion
+   */
+  const getCSSProperties = () => {
+    if (isReduced) {
+      return {
+        animation: 'none',
+        transition: 'none',
+        transform: 'none',
+        opacity: 1,
+      }
     }
     
-    return properties
-  }, [prefersReducedMotion])
-  
+    return {
+      animation: '',
+      transition: '',
+      transform: '',
+      opacity: '',
+    }
+  }
+
   return {
-    prefersReducedMotion,
     getCSSProperties,
+    isReduced,
+  }
+}
+
+/**
+ * Utility function to check if reduced motion is preferred
+ */
+export function checkReducedMotionPreference(): boolean {
+  if (typeof window === 'undefined') return false
+  
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
+/**
+ * Utility function to add reduced motion listener
+ */
+export function addReducedMotionListener(callback: (prefersReduced: boolean) => void): () => void {
+  if (typeof window === 'undefined') return () => {}
+  
+  const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+  
+  const handleChange = (e: MediaQueryListEvent) => {
+    callback(e.matches)
+  }
+  
+  // Initial check
+  callback(mediaQuery.matches)
+  
+  // Listen for changes
+  if (mediaQuery.addEventListener) {
+    mediaQuery.addEventListener('change', handleChange)
+  } else {
+    mediaQuery.addListener(handleChange)
+  }
+  
+  // Return cleanup function
+  return () => {
+    if (mediaQuery.removeEventListener) {
+      mediaQuery.removeEventListener('change', handleChange)
+    } else {
+      mediaQuery.removeListener(handleChange)
+    }
   }
 }

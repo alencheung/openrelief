@@ -37,6 +37,16 @@ export {
   useAccessibilitySettings,
 } from './AccessibilityPanel'
 
+export {
+  EmergencyAccessibility,
+  useEmergencyAccessibility,
+} from './EmergencyAccessibility'
+
+export {
+  MotorAccessibility,
+  useMotorAccessibility,
+} from './MotorAccessibility'
+
 // Re-export types
 export type {
   SkipLink,
@@ -67,3 +77,13 @@ export type {
   AccessibilitySettings,
   AccessibilityPanelProps,
 } from './AccessibilityPanel'
+
+export type {
+  EmergencyAccessibilityProps,
+  EmergencyAccessibilitySettings,
+} from './EmergencyAccessibility'
+
+export type {
+  MotorAccessibilityProps,
+  MotorAccessibilitySettings,
+} from './MotorAccessibility'

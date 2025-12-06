@@ -1,0 +1,52 @@
+name = "openrelief-emergency-dispatch"
+main = "emergency-dispatch.ts"
+compatibility_date = "2023-05-18"
+compatibility_flags = ["nodejs_compat"]
+
+[env.production]
+name = "openrelief-emergency-dispatch-prod"
+
+[env.staging]
+name = "openrelief-emergency-dispatch-staging"
+
+# KV Namespaces for data storage
+[[kv_namespaces]]
+binding = "TARGETS_KV"
+id = "targets_kv_namespace"
+preview_id = "targets_kv_preview"
+
+[[kv_namespaces]]
+binding = "ANALYTICS_KV"
+id = "analytics_kv_namespace"
+preview_id = "analytics_kv_preview"
+
+[[kv_namespaces]]
+binding = "DISPATCH_METRICS"
+id = "dispatch_metrics_kv_namespace"
+preview_id = "dispatch_metrics_preview"
+
+# D1 Database for structured data
+[[d1_databases]]
+binding = "EMERGENCY_DB"
+database_name = "emergency_events_db"
+database_id = "emergency_events_database_id"
+
+# Environment variables
+[vars]
+ENVIRONMENT = "production"
+LOG_LEVEL = "info"
+MAX_BATCH_SIZE = "100"
+MAX_EXECUTION_TIME = "29000" # 29 seconds (Cloudflare limit is 30s)
+
+# Triggers for scheduled tasks
+[[triggers]]
+crons = ["0 */5 * * * *"] # Every 5 minutes for cleanup
+
+# Route configuration
+[[routes]]
+pattern = "dispatch.openrelief.org/*"
+zone_name = "openrelief.org"
+
+# Limits and quotas
+[limits]
+cpu_ms = 50000 # 50 seconds CPU time

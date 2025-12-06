@@ -1,0 +1,249 @@
+{
+  "version": 2,
+  "name": "openrelief",
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/sw.js",
+      "dest": "/sw.js"
+    },
+    {
+      "src": "/manifest.json",
+      "dest": "/manifest.json"
+    },
+    {
+      "src": "/robots.txt",
+      "dest": "/robots.txt"
+    },
+    {
+      "src": "/sitemap.xml",
+      "dest": "/sitemap.xml"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ],
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "@supabase-url",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase-anon-key",
+    "NEXT_PUBLIC_MAPTILER_API_KEY": "@maptiler-api-key",
+    "NEXT_PUBLIC_MAP_STYLE_URL": "@maptiler-style-url",
+    "NEXT_PUBLIC_SENTRY_DSN": "@sentry-public-dsn",
+    "NEXT_PUBLIC_ENVIRONMENT": "@environment",
+    "NEXT_PUBLIC_ENABLE_ANALYTICS": "@enable-analytics",
+    "NEXT_PUBLIC_ENABLE_OFFLINE_SYNC": "@enable-offline-sync",
+    "NEXT_PUBLIC_ENABLE_PUSH_NOTIFICATIONS": "@enable-push-notifications",
+    "NEXT_PUBLIC_ENABLE_TRUST_SYSTEM": "@enable-trust-system",
+    "NEXT_PUBLIC_CDN_URL": "@cdn-url",
+    "NEXT_PUBLIC_PERFORMANCE_MONITORING": "@performance-monitoring",
+    "NEXT_PUBLIC_ENABLE_SENTRY": "@enable-sentry"
+  },
+  "build": {
+    "env": {
+      "SUPABASE_SERVICE_ROLE_KEY": "@supabase-service-key",
+      "DATABASE_URL": "@database-url",
+      "EDGE_FUNCTION_URL": "@edge-function-url",
+      "FCM_SERVER_KEY": "@fcm-server-key",
+      "APNS_KEY_ID": "@apns-key-id",
+      "APNS_TEAM_ID": "@apns-team-id",
+      "SENTRY_DSN": "@sentry-dsn",
+      "OPENAI_API_KEY": "@openai-api-key",
+      "NEXTAUTH_SECRET": "@nextauth-secret",
+      "NEXTAUTH_URL": "@nextauth-url",
+      "JWT_SECRET": "@jwt-secret",
+      "ENCRYPTION_KEY": "@encryption-key",
+      "REDIS_URL": "@redis-url",
+      "REDIS_PASSWORD": "@redis-password",
+      "EMAIL_FROM": "@email-from",
+      "EMAIL_FROM_NAME": "@email-from-name",
+      "SMTP_HOST": "@smtp-host",
+      "SMTP_PORT": "@smtp-port",
+      "SMTP_USER": "@smtp-user",
+      "SMTP_PASS": "@smtp-pass",
+      "STORAGE_BUCKET": "@storage-bucket",
+      "STORAGE_REGION": "@storage-region",
+      "AWS_ACCESS_KEY_ID": "@aws-access-key-id",
+      "AWS_SECRET_ACCESS_KEY": "@aws-secret-access-key",
+      "AWS_S3_BUCKET": "@aws-s3-bucket",
+      "GOOGLE_ANALYTICS_ID": "@google-analytics-id",
+      "GOOGLE_TAG_MANAGER_ID": "@google-tag-manager-id",
+      "POSTHOG_API_KEY": "@posthog-api-key",
+      "POSTHOG_HOST": "@posthog-host",
+      "LOG_LEVEL": "@log-level",
+      "DB_POOL_MIN": "@db-pool-min",
+      "DB_POOL_MAX": "@db-pool-max",
+      "EMERGENCY_ALERT_COOLDOWN_SECONDS": "@emergency-alert-cooldown-seconds",
+      "EMERGENCY_MAX_ALERTS_PER_USER_PER_HOUR": "@emergency-max-alerts-per-user-per-hour",
+      "EMERGENCY_TRUST_THRESHOLD": "@emergency-trust-threshold",
+      "EMERGENCY_AUTO_EXPIRE_HOURS": "@emergency-auto-expire-hours",
+      "MAPBOX_ACCESS_TOKEN": "@mapbox-access-token",
+      "TWILIO_ACCOUNT_SID": "@twilio-account-sid",
+      "TWILIO_AUTH_TOKEN": "@twilio-auth-token",
+      "TWILIO_PHONE_NUMBER": "@twilio-phone-number",
+      "WEBHOOK_SECRET": "@webhook-secret",
+      "API_SECRET_KEY": "@api-secret-key",
+      "CRON_SECRET": "@cron-secret",
+      "DATA_RETENTION_DAYS": "@data-retention-days",
+      "AUDIT_LOG_RETENTION_DAYS": "@audit-log-retention-days",
+      "PRIVACY_REQUEST_EMAIL": "@privacy-request-email",
+      "BACKUP_SCHEDULE": "@backup-schedule",
+      "BACKUP_RETENTION_DAYS": "@backup-retention-days",
+      "BACKUP_S3_BUCKET": "@backup-s3-bucket",
+      "BACKUP_ENCRYPTION_KEY": "@backup-encryption-key",
+      "AUTOSCALING_ENABLED": "@autoscaling-enabled",
+      "MIN_INSTANCES": "@min-instances",
+      "MAX_INSTANCES": "@max-instances",
+      "CPU_THRESHOLD": "@cpu-threshold",
+      "MEMORY_THRESHOLD": "@memory-threshold",
+      "HEALTH_CHECK_INTERVAL": "@health-check-interval",
+      "HEALTH_CHECK_TIMEOUT": "@health-check-timeout",
+      "HEALTH_CHECK_PATH": "@health-check-path"
+    }
+  },
+  "functions": {
+    "src": "supabase/functions/**/*.ts",
+    "runtime": "nodejs18.x"
+  },
+  "installCommand": "npm ci",
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "regions": ["iad1", "sfo1", "hnd1"],
+  "domain": "openrelief.org",
+  "alias": ["www.openrelief.org", "app.openrelief.org"],
+  "git": {
+    "deploymentEnabled": {
+      "main": true,
+      "develop": true
+    }
+  },
+  "headers": [
+    {
+      "source": "/sw.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        },
+        {
+          "key": "Service-Worker-Allowed",
+          "value": "/"
+        }
+      ]
+    },
+    {
+      "source": "/manifest.json",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        },
+        {
+          "key": "Content-Type",
+          "value": "application/manifest+json"
+        }
+      ]
+    },
+    {
+      "source": "/_next/static/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, must-revalidate"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(self), microphone=(self), geolocation=(self)"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains; preload"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.vercel-insights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.openrelief.org https://openrelief.supabase.co; worker-src 'self' blob:; manifest-src 'self';"
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/home",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/emergency",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/report",
+      "destination": "/",
+      "permanent": true
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/health",
+      "destination": "/api/health"
+    },
+    {
+      "source": "/api/emergency",
+      "destination": "/api/emergency"
+    },
+    {
+      "source": "/api/privacy/(.*)",
+      "destination": "/api/privacy/$1"
+    }
+  ],
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "github": {
+    "silent": true
+  }
+}

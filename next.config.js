@@ -49,9 +49,6 @@ const withPWA = require('next-pwa')({
 })
 
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   experimental: {
     optimizeCss: true,
     optimizePackageImports: ['lucide-react', '@heroicons/react'],
@@ -127,7 +124,7 @@ const nextConfig = {
           },
         ],
       },
-      // Security headers for all routes
+      // Enhanced security headers for all routes
       {
         source: '/(.*)',
         headers: [
@@ -140,12 +137,16 @@ const nextConfig = {
             value: 'nosniff',
           },
           {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block',
+          },
+          {
             key: 'Referrer-Policy',
             value: 'strict-origin-when-cross-origin',
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(self), microphone=(self), geolocation=(self)',
+            value: 'camera=(self), microphone=(self), geolocation=(self), accelerometer=(), ambient-light-sensor=(), autoplay=(self), battery=(), cross-origin-isolated=(), display-capture=(), document-domain=(), encrypted-media=(self), execution-while-not-rendered=(), execution-while-out-of-viewport=(), fullscreen=(self), gamepad=(self), gyroscope=(), magnetometer=(), midi=(), navigation-override=(), payment=(self), picture-in-picture=(self), publickey-credentials-get=(self), screen-wake-lock=(self), sync-xhr=(self), usb=(), xr-spatial-tracking=()',
           },
           {
             key: 'Cross-Origin-Embedder-Policy',
@@ -154,6 +155,91 @@ const nextConfig = {
           {
             key: 'Cross-Origin-Opener-Policy',
             value: 'same-origin',
+          },
+          {
+            key: 'Cross-Origin-Resource-Policy',
+            value: 'same-origin',
+          },
+        ],
+      },
+      // Content Security Policy headers
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.vercel-insights.com https://browser.sentry-cdn.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "font-src 'self' https://fonts.gstatic.com",
+              "img-src 'self' data: https: blob:",
+              "connect-src 'self' https://api.openrelief.org https://openrelief.supabase.co https://dispatch.openrelief.org wss://openrelief.supabase.co",
+              "media-src 'self' blob:",
+              "object-src 'none'",
+              "child-src 'self'",
+              "frame-src 'none'",
+              "worker-src 'self' blob:",
+              "manifest-src 'self'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "frame-ancestors 'none'",
+              "upgrade-insecure-requests"
+            ].join('; ')
+          },
+          {
+            key: 'Content-Security-Policy-Report-Only',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.vercel-insights.com https://browser.sentry-cdn.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "font-src 'self' https://fonts.gstatic.com",
+              "img-src 'self' data: https: blob:",
+              "connect-src 'self' https://api.openrelief.org https://openrelief.supabase.co https://dispatch.openrelief.org wss://openrelief.supabase.co",
+              "media-src 'self' blob:",
+              "object-src 'none'",
+              "child-src 'self'",
+              "frame-src 'none'",
+              "worker-src 'self' blob:",
+              "manifest-src 'self'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "frame-ancestors 'none'",
+              "upgrade-insecure-requests",
+              "report-uri https://openrelief.report-uri.com/csp-violation"
+            ].join('; ')
+          },
+        ],
+      },
+      // HSTS headers (production only)
+      ...(process.env.NODE_ENV === 'production' ? [{
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains; preload',
+          },
+        ],
+      }] : []),
+      // API-specific security headers
+      {
+        source: '/api/(.*)',
+        headers: [
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'X-Download-Options',
+            value: 'noopen',
+          },
+          {
+            key: 'X-Permitted-Cross-Domain-Policies',
+            value: 'none',
+          },
+          {
+            key: 'X-Robots-Tag',
+            value: 'noindex, nofollow',
           },
         ],
       },

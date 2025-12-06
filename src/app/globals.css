@@ -1083,3 +1083,939 @@
     @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background;
   }
 }
+
+/* Enhanced Accessibility Styles for WCAG 2.1 AA Compliance */
+
+/* Emergency High Contrast Mode */
+.emergency-high-contrast {
+  --color-primary: 0 0 255; /* Pure white */
+  --color-primary-foreground: 0 0 0; /* Pure black */
+  --color-secondary: 240 240 240; /* Light gray */
+  --color-secondary-foreground: 0 0 0; /* Pure black */
+  --color-accent: 255 255 0; /* Pure yellow */
+  --color-accent-foreground: 0 0 0; /* Pure black */
+  --color-destructive: 255 255 255; /* Pure white */
+  --color-destructive-foreground: 0 0 0; /* Pure black */
+  --color-success: 255 255 255; /* Pure white */
+  --color-success-foreground: 0 0 0; /* Pure black */
+  --color-warning: 255 255 255; /* Pure white */
+  --color-warning-foreground: 0 0 0; /* Pure black */
+  --color-info: 255 255 255; /* Pure white */
+  --color-info-foreground: 0 0 0; /* Pure black */
+  --color-background: 0 0 0; /* Pure black */
+  --color-foreground: 255 255 255; /* Pure white */
+  --color-card: 0 0 0; /* Pure black */
+  --color-card-foreground: 255 255 255; /* Pure white */
+  --color-border: 255 255 255; /* Pure white */
+  --color-input: 0 0 0; /* Pure black */
+  --color-ring: 255 255 255; /* Pure white */
+  
+  /* Emergency type colors in high contrast */
+  --emergency-fire: 255 255 255; /* White on black */
+  --emergency-fire-foreground: 0 0 0;
+  --emergency-medical: 255 255 255; /* White on black */
+  --emergency-medical-foreground: 0 0 0;
+  --emergency-security: 255 255 255; /* White on black */
+  --emergency-security-foreground: 0 0 0;
+  --emergency-natural: 255 255 255; /* White on black */
+  --emergency-natural-foreground: 0 0 0;
+  --emergency-infrastructure: 255 255 255; /* White on black */
+  --emergency-infrastructure-foreground: 0 0 0;
+}
+
+/* Emergency Large Text Mode */
+.emergency-large-text {
+  font-size: 1.5rem; /* 24px - 150% of base */
+  line-height: 1.6;
+  letter-spacing: 0.05em;
+  word-spacing: 0.1em;
+}
+
+/* Emergency Reduced Motion */
+.emergency-reduced-motion {
+  /* Disable all animations and transitions */
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  transition-delay: 0s !important;
+}
+
+/* Emergency Simplified Interface */
+.emergency-simplified {
+  /* Remove all non-essential visual elements */
+  background: var(--color-background);
+  color: var(--color-foreground);
+  border: 2px solid var(--color-border);
+}
+
+.emergency-simplified * {
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  text-decoration: underline !important;
+}
+
+.emergency-simplified button,
+.emergency-simplified input,
+.emergency-simplified select,
+.emergency-simplified textarea {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  border: 2px solid var(--color-foreground);
+  padding: 1rem;
+  font-size: 1.25rem;
+  margin: 0.5rem 0;
+}
+
+/* Emergency Flash Alert */
+.emergency-flash {
+  animation: emergencyFlash 1s ease-in-out;
+}
+
+@keyframes emergencyFlash {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; background-color: #ff0000; }
+}
+
+/* High Contrast Mode Toggle */
+.high-contrast-mode {
+  --color-primary: 0 0 0; /* Pure black */
+  --color-primary-foreground: 255 255 255; /* Pure white */
+  --color-secondary: 128 128 128; /* Medium gray */
+  --color-secondary-foreground: 255 255 255; /* Pure white */
+  --color-accent: 255 255 0; /* Pure yellow */
+  --color-accent-foreground: 0 0 0; /* Pure black */
+  --color-destructive: 255 255 255; /* Pure white */
+  --color-destructive-foreground: 0 0 0; /* Pure black */
+  --color-success: 255 255 255; /* Pure white */
+  --color-success-foreground: 0 0 0; /* Pure black */
+  --color-warning: 255 255 255; /* Pure white */
+  --color-warning-foreground: 0 0 0; /* Pure black */
+  --color-info: 255 255 255; /* Pure white */
+  --color-info-foreground: 0 0 0; /* Pure black */
+  --color-background: 255 255 255; /* Pure white */
+  --color-foreground: 0 0 0; /* Pure black */
+  --color-card: 255 255 255; /* Pure white */
+  --color-card-foreground: 0 0 0; /* Pure black */
+  --color-border: 0 0 0; /* Pure black */
+  --color-input: 255 255 255; /* Pure white */
+  --color-input-foreground: 0 0 0; /* Pure black */
+  --color-ring: 0 0 0; /* Pure black */
+}
+
+/* Enhanced Focus Styles for Emergency Mode */
+.emergency-high-contrast :focus-visible,
+.emergency-high-contrast *:focus-visible {
+  outline: 3px solid #ffff00 !important; /* Yellow outline on black */
+  outline-offset: 2px;
+  background-color: #ffff00 !important; /* Yellow background */
+  color: #000000 !important; /* Black text */
+}
+
+/* Screen Reader Only Emergency Styles */
+.sr-only-emergency {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Emergency Keyboard Navigation */
+.emergency-keyboard-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  border-bottom: 2px solid var(--color-border);
+  padding: 0.5rem;
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  font-size: 0.875rem;
+}
+
+.emergency-keyboard-nav button {
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+  border: 1px solid var(--color-border);
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  font-weight: 600;
+  min-width: 120px;
+}
+
+/* Emergency Voice Control Indicator */
+.emergency-voice-indicator {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 2rem;
+  border-radius: 0.5rem;
+  z-index: 10000;
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.emergency-voice-indicator.recording {
+  background: rgba(220, 38, 38, 0.9); /* Red */
+  animation: voiceRecording 1.5s ease-in-out infinite;
+}
+
+@keyframes voiceRecording {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Emergency Touch Targets (44x44px minimum) */
+.emergency-touch-target {
+  min-width: 44px !important;
+  min-height: 44px !important;
+  padding: 12px !important;
+  margin: 4px !important;
+  border-radius: 8px !important;
+  font-size: 1.125rem !important;
+  font-weight: 600 !important;
+}
+
+/* Emergency Status Indicators */
+.emergency-status-critical {
+  background: #dc2626;
+  color: white;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  font-weight: 700;
+  animation: emergencyPulse 2s ease-in-out infinite;
+}
+
+.emergency-status-warning {
+  background: #f59e0b;
+  color: white;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+}
+
+.emergency-status-info {
+  background: #3b82f6;
+  color: white;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+}
+
+/* Emergency Audio Announcements */
+.emergency-audio-announcement {
+  position: fixed;
+  top: -10000px;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* Emergency Vibration Patterns */
+@media (prefers-reduced-motion: no-preference) {
+  .emergency-vibration {
+    /* Only enable vibration if user prefers motion */
+    animation: emergencyVibration 0.5s ease-in-out;
+  }
+}
+
+@keyframes emergencyVibration {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+/* Emergency Color Blindness Support */
+.emergency-colorblind-friendly {
+  /* Add patterns and textures for color information */
+  background-image:
+    linear-gradient(45deg, transparent 40%, rgba(255, 255, 255, 0.1) 40%, transparent 60%),
+    linear-gradient(-45deg, transparent 40%, rgba(255, 255, 255, 0.1) 40%, transparent 60%);
+  background-size: 10px 10px;
+  background-position: 0 0, 5px 5px;
+}
+
+/* Emergency Print Styles */
+@media print {
+  .emergency-high-contrast {
+    /* Ensure high contrast works in print */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  .emergency-simplified {
+    /* Simplified print layout */
+    background: white !important;
+    color: black !important;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+  
+  .emergency-print-only {
+    display: block !important;
+    font-size: 12pt;
+    line-height: 1.4;
+    margin: 1rem 0;
+  }
+}
+
+/* Emergency Accessibility Utilities */
+.emergency-skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+  padding: 0.5rem 1rem;
+  text-decoration: none;
+  z-index: 9999;
+  border-radius: 0 0 0.5rem 0.5rem;
+  font-weight: 600;
+}
+
+.emergency-skip-link:focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Emergency Landmarks */
+.emergency-landmark {
+  /* Clear landmark indicators */
+  border: 2px dashed var(--color-border);
+  margin: 1rem 0;
+  padding: 0.5rem;
+}
+
+.emergency-landmark[role="banner"] {
+  border-color: var(--color-destructive);
+}
+
+.emergency-landmark[role="navigation"] {
+  border-color: var(--color-info);
+}
+
+.emergency-landmark[role="main"] {
+  border-color: var(--color-success);
+}
+
+.emergency-landmark[role="contentinfo"] {
+  border-color: var(--color-muted);
+}
+
+/* Emergency ARIA Live Regions */
+.emergency-live-region {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  border: 2px solid var(--color-border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  max-width: 300px;
+  z-index: 9998;
+}
+
+.emergency-live-region.polite {
+  border-color: var(--color-info);
+}
+
+.emergency-live-region.assertive {
+  border-color: var(--color-destructive);
+  background: var(--color-destructive);
+  color: var(--color-destructive-foreground);
+  animation: emergencyAlert 1s ease-in-out infinite;
+}
+
+@keyframes emergencyAlert {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Emergency Progress Indicators */
+.emergency-progress {
+  position: relative;
+  background: var(--color-background);
+  border: 2px solid var(--color-border);
+  border-radius: 0.5rem;
+  height: 8px;
+  overflow: hidden;
+}
+
+.emergency-progress-bar {
+  height: 100%;
+  background: var(--color-primary);
+  transition: width 0.3s ease;
+}
+
+.emergency-progress-indeterminate {
+  animation: emergencyProgress 1.5s ease-in-out infinite;
+}
+
+@keyframes emergencyProgress {
+  0% { width: 0%; }
+  50% { width: 60%; }
+  100% { width: 0%; }
+}
+
+/* Emergency Error States */
+.emergency-error {
+  background: var(--color-destructive);
+  color: var(--color-destructive-foreground);
+  border: 2px solid var(--color-destructive);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  font-weight: 600;
+  animation: emergencyError 0.5s ease-in-out infinite;
+}
+
+@keyframes emergencyError {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+/* Emergency Success States */
+.emergency-success {
+  background: var(--color-success);
+  color: var(--color-success-foreground);
+  border: 2px solid var(--color-success);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  font-weight: 600;
+}
+
+/* Emergency Loading States */
+.emergency-loading {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  border: 2px solid var(--color-border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  position: relative;
+}
+
+.emergency-loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid var(--color-primary);
+  border-radius: 50%;
+  border-top-color: transparent;
+  border-right-color: transparent;
+  animation: emergencySpin 1s linear infinite;
+}
+
+@keyframes emergencySpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive Emergency Accessibility */
+@media (max-width: 768px) {
+  .emergency-keyboard-nav {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .emergency-keyboard-nav button {
+    min-width: 100%;
+    margin: 0.25rem 0;
+  }
+  
+  .emergency-voice-indicator {
+    width: 90%;
+    font-size: 1rem;
+  }
+  
+  .emergency-live-region {
+    right: 5px;
+    top: 5px;
+    max-width: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .emergency-simplified {
+    font-size: 1.125rem;
+  }
+  
+  .emergency-touch-target {
+    min-width: 48px;
+    min-height: 48px;
+    padding: 8px;
+  }
+  
+  .emergency-keyboard-nav button {
+    font-size: 0.875rem;
+    padding: 0.75rem 0.5rem;
+  }
+}
+
+/* Motor Accessibility Styles for OpenRelief */
+
+/* Motor accessibility variables */
+:root {
+  /* Motor accessibility variables */
+  --motor-touch-target-size: 44px;
+  --motor-touch-target-min-size: 44px;
+  --motor-dwell-time: 1000ms;
+  --motor-scan-speed: 2000ms;
+}
+
+/* Touch target optimization */
+.motor-touch-optimized button,
+.motor-touch-optimized input,
+.motor-touch-optimized select,
+.motor-touch-optimized textarea,
+.motor-touch-optimized [role="button"],
+.motor-touch-optimized [role="link"],
+.motor-touch-optimized [role="checkbox"],
+.motor-touch-optimized [role="radio"],
+.motor-touch-optimized [role="tab"] {
+  min-width: var(--motor-touch-target-min-size);
+  min-height: var(--motor-touch-target-min-size);
+  padding: calc(var(--motor-touch-target-min-size) / 4);
+  margin: calc(var(--motor-touch-target-min-size) / 8);
+}
+
+/* Dwell clicking indicators */
+.motor-dwell-clicking .motor-dwell-target {
+  position: relative;
+}
+
+.motor-dwell-clicking .motor-dwell-target::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.3);
+  transition: width var(--motor-dwell-time) linear, height var(--motor-dwell-time) linear;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.motor-dwell-clicking .motor-dwell-target:hover::before {
+  width: 100%;
+  height: 100%;
+}
+
+/* Scanning mode styles */
+.motor-scanning-mode *:focus {
+  outline: 3px solid hsl(var(--destructive));
+  outline-offset: 2px;
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+.motor-scanning-mode .scanning-active {
+  outline: 3px solid hsl(var(--destructive));
+  outline-offset: 2px;
+  background-color: rgba(239, 68, 68, 0.2);
+  animation: scanning-highlight var(--motor-scan-speed) infinite;
+}
+
+@keyframes scanning-highlight {
+  0%, 100% {
+    background-color: rgba(239, 68, 68, 0.1);
+  }
+  50% {
+    background-color: rgba(239, 68, 68, 0.3);
+  }
+}
+
+/* Voice control styles */
+.motor-voice-control .voice-activatable {
+  position: relative;
+}
+
+.motor-voice-control .voice-activatable::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border: 2px solid transparent;
+  border-radius: inherit;
+  transition: border-color 0.3s;
+}
+
+.motor-voice-control .voice-activatable.voice-highlight::after {
+  border-color: hsl(var(--destructive));
+  animation: voice-pulse 1s infinite;
+}
+
+@keyframes voice-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Switch control styles */
+.motor-switch-control .switch-scannable {
+  position: relative;
+}
+
+.motor-switch-control .switch-scannable.switch-selected {
+  outline: 3px solid hsl(var(--primary));
+  outline-offset: 2px;
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Eye tracking styles */
+.motor-eye-tracking .eye-trackable {
+  position: relative;
+}
+
+.motor-eye-tracking .eye-trackable.eye-hover {
+  outline: 3px solid hsl(var(--primary));
+  outline-offset: 2px;
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Head tracking styles */
+.motor-head-tracking .head-trackable {
+  position: relative;
+}
+
+.motor-head-tracking .head-trackable.head-hover {
+  outline: 3px solid hsl(var(--accent));
+  outline-offset: 2px;
+  background-color: rgba(168, 85, 247, 0.1);
+}
+
+/* Gesture control styles */
+.motor-gesture-control .gesture-activatable {
+  position: relative;
+  touch-action: manipulation;
+}
+
+.motor-gesture-control .gesture-activatable.gesture-detected {
+  outline: 3px solid hsl(var(--secondary));
+  outline-offset: 2px;
+  background-color: rgba(168, 85, 247, 0.1);
+}
+
+/* Alternative input styles */
+.motor-alternative-input .alt-input-enabled {
+  position: relative;
+}
+
+.motor-alternative-input .alt-input-enabled.alt-input-focus {
+  outline: 3px solid hsl(var(--muted-foreground));
+  outline-offset: 2px;
+  background-color: rgba(107, 114, 128, 0.1);
+}
+
+/* Haptic feedback styles */
+.motor-haptic-feedback .haptic-active {
+  animation: haptic-buzz 0.2s;
+}
+
+@keyframes haptic-buzz {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-1px);
+  }
+  75% {
+    transform: translateX(1px);
+  }
+}
+
+.motor-haptic-feedback .haptic-success {
+  animation: haptic-success 0.3s;
+}
+
+@keyframes haptic-success {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.motor-haptic-feedback .haptic-error {
+  animation: haptic-error 0.3s;
+}
+
+@keyframes haptic-error {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-2px);
+  }
+  75% {
+    transform: translateX(2px);
+  }
+}
+
+/* Audio cues styles */
+.motor-audio-cues .audio-cue-success::before {
+  content: '✓';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  animation: audio-cue-pop 0.3s;
+}
+
+.motor-audio-cues .audio-cue-error::before {
+  content: '✗';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: hsl(var(--destructive));
+  color: hsl(var(--destructive-foreground));
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  animation: audio-cue-pop 0.3s;
+}
+
+@keyframes audio-cue-pop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Visual cues styles */
+.motor-visual-cues .visual-cue-focus {
+  position: relative;
+}
+
+.motor-visual-cues .visual-cue-focus::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border: 2px solid hsl(var(--ring));
+  border-radius: inherit;
+  animation: visual-cue-pulse 1s infinite;
+  pointer-events: none;
+}
+
+@keyframes visual-cue-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Motor accessibility responsive design */
+@media (max-width: 768px) {
+  /* Larger touch targets on mobile */
+  .motor-touch-optimized button,
+  .motor-touch-optimized input,
+  .motor-touch-optimized select,
+  .motor-touch-optimized textarea,
+  .motor-touch-optimized [role="button"],
+  .motor-touch-optimized [role="link"],
+  .motor-touch-optimized [role="checkbox"],
+  .motor-touch-optimized [role="radio"],
+  .motor-touch-optimized [role="tab"] {
+    min-width: calc(var(--motor-touch-target-min-size) * 1.5);
+    min-height: calc(var(--motor-touch-target-min-size) * 1.5);
+    padding: calc(var(--motor-touch-target-min-size) * 0.375);
+    margin: calc(var(--motor-touch-target-min-size) * 0.125);
+  }
+}
+
+/* High contrast motor accessibility */
+.high-contrast .motor-dwell-clicking .motor-dwell-target::before {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.high-contrast .motor-scanning-mode *:focus {
+  outline: 3px solid hsl(var(--foreground));
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.high-contrast .motor-scanning-mode .scanning-active {
+  outline: 3px solid hsl(var(--foreground));
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* Emergency mode motor accessibility */
+.emergency-high-contrast .motor-dwell-clicking .motor-dwell-target::before {
+  background: rgba(239, 68, 68, 0.3);
+}
+
+.emergency-high-contrast .motor-scanning-mode *:focus {
+  outline: 3px solid hsl(var(--destructive));
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+.emergency-high-contrast .motor-scanning-mode .scanning-active {
+  outline: 3px solid hsl(var(--destructive));
+  background-color: rgba(239, 68, 68, 0.2);
+}
+
+/* Motor accessibility for emergency touch targets */
+.emergency-touch-target {
+  min-width: 44px !important;
+  min-height: 44px !important;
+  padding: 12px !important;
+  margin: 4px !important;
+  border-radius: 8px !important;
+  font-size: 1.125rem !important;
+  font-weight: 600 !important;
+  position: relative;
+}
+
+.emergency-touch-target::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 2px solid transparent;
+  border-radius: inherit;
+  transition: border-color 0.2s;
+}
+
+.emergency-touch-target:focus::after {
+  border-color: hsl(var(--destructive));
+  animation: emergency-touch-pulse 1s infinite;
+}
+
+@keyframes emergency-touch-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Motor accessibility for reduced motion users */
+@media (prefers-reduced-motion: reduce) {
+  .motor-dwell-clicking .motor-dwell-target::before {
+    transition: none;
+  }
+  
+  .motor-scanning-mode .scanning-active {
+    animation: none;
+  }
+  
+  .motor-voice-control .voice-activatable.voice-highlight::after {
+    animation: none;
+  }
+  
+  .motor-haptic-feedback .haptic-active,
+  .motor-haptic-feedback .haptic-success,
+  .motor-haptic-feedback .haptic-error {
+    animation: none;
+  }
+  
+  .motor-audio-cues .audio-cue-success::before,
+  .motor-audio-cues .audio-cue-error::before {
+    animation: none;
+  }
+  
+  .motor-visual-cues .visual-cue-focus::after {
+    animation: none;
+  }
+  
+  .emergency-touch-target:focus::after {
+    animation: none;
+  }
+}
+
+/* Motor accessibility for touch devices */
+@media (pointer: coarse) {
+  .motor-touch-optimized button,
+  .motor-touch-optimized input,
+  .motor-touch-optimized select,
+  .motor-touch-optimized textarea,
+  .motor-touch-optimized [role="button"],
+  .motor-touch-optimized [role="link"],
+  .motor-touch-optimized [role="checkbox"],
+  .motor-touch-optimized [role="radio"],
+  .motor-touch-optimized [role="tab"] {
+    min-width: 48px;
+    min-height: 48px;
+    padding: 12px;
+    margin: 6px;
+  }
+  
+  .emergency-touch-target {
+    min-width: 48px !important;
+    min-height: 48px !important;
+    padding: 14px !important;
+    margin: 6px !important;
+  }
+}
+
+/* Motor accessibility for fine pointer devices */
+@media (pointer: fine) {
+  .motor-touch-optimized button,
+  .motor-touch-optimized input,
+  .motor-touch-optimized select,
+  .motor-touch-optimized textarea,
+  .motor-touch-optimized [role="button"],
+  .motor-touch-optimized [role="link"],
+  .motor-touch-optimized [role="checkbox"],
+  .motor-touch-optimized [role="radio"],
+  .motor-touch-optimized [role="tab"] {
+    min-width: var(--motor-touch-target-min-size);
+    min-height: var(--motor-touch-target-min-size);
+    padding: calc(var(--motor-touch-target-min-size) / 4);
+    margin: calc(var(--motor-touch-target-min-size) / 8);
+  }
+}
