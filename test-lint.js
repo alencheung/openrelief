@@ -1,3 +1,3 @@
 // Test file for pre-commit hook
-var unused_var = 123;
-console.log('test');
+// This file is used to test pre-commit hooks
+console.log('Pre-commit hooks are working!')
