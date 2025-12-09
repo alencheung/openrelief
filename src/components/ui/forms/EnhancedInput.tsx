@@ -38,8 +38,7 @@ const enhancedInputVariants = cva(
 )
 
 export interface EnhancedInputProps
-  extends React.InputHTMLAttributes<HTMLInputElement>,
-    VariantProps<typeof enhancedInputVariants> {
+  extends React.InputHTMLAttributes<HTMLInputElement>, VariantProps<typeof enhancedInputVariants> {
   label?: string
   helperText?: string
   errorText?: string
@@ -56,32 +55,35 @@ export interface EnhancedInputProps
 }
 
 const EnhancedInput = React.forwardRef<HTMLInputElement, EnhancedInputProps>(
-  ({
-    className,
-    variant,
-    size,
-    inputType,
-    label,
-    helperText,
-    errorText,
-    successText,
-    warningText,
-    leftIcon,
-    rightIcon,
-    showPasswordToggle = false,
-    floatingLabel = false,
-    required = false,
-    validateOnChange = false,
-    validator,
-    onValidationChange,
-    type,
-    value,
-    onChange,
-    onBlur,
-    onFocus,
-    id,
-    ...props
-  }, ref) => {
+  (
+    {
+      className,
+      variant,
+      size,
+      inputType,
+      label,
+      helperText,
+      errorText,
+      successText,
+      warningText,
+      leftIcon,
+      rightIcon,
+      showPasswordToggle = false,
+      floatingLabel = false,
+      required = false,
+      validateOnChange = false,
+      validator,
+      onValidationChange,
+      type,
+      value,
+      onChange,
+      onBlur,
+      onFocus,
+      id,
+      ...props
+    },
+    ref
+  ) => {
     const [isFocused, setIsFocused] = React.useState(false)
     const [showPassword, setShowPassword] = React.useState(false)
     const [validationState, setValidationState] = React.useState<{
@@ -89,7 +91,8 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, EnhancedInputProps>(
       message: string | null
     }>({ isValid: null, message: null })
 
-    const inputId = id || `input-${React.useId()}`
+    const generatedId = React.useId()
+    const inputId = id || `input-${generatedId}`
     const hasValue = value !== undefined && value !== ''
     const isFloating = floatingLabel && (isFocused || hasValue)
 
@@ -98,7 +101,7 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, EnhancedInputProps>(
 
     // Determine the final variant based on props and validation state
     const getVariant = () => {
-      if (errorText || validationState.message && !validationState.isValid) {
+      if (errorText || (validationState.message && !validationState.isValid)) {
         return 'error'
       }
       if (successText || validationState.isValid) {
@@ -241,7 +244,9 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, EnhancedInputProps>(
             onChange={handleInputChange}
             onBlur={handleInputBlur}
             onFocus={handleInputFocus}
-            aria-invalid={errorText || (validationState.message && !validationState.isValid) ? 'true' : 'false'}
+            aria-invalid={
+              errorText || (validationState.message && !validationState.isValid) ? 'true' : 'false'
+            }
             aria-describedby={getDescribedBy()}
             aria-required={required}
             {...props}
@@ -249,17 +254,9 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, EnhancedInputProps>(
 
           {/* Right Side Icons */}
           <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-            {stateIcon && (
-              <div className="text-current">
-                {stateIcon}
-              </div>
-            )}
+            {stateIcon && <div className="text-current">{stateIcon}</div>}
 
-            {rightIcon && !stateIcon && (
-              <div className="text-muted-foreground">
-                {rightIcon}
-              </div>
-            )}
+            {rightIcon && !stateIcon && <div className="text-muted-foreground">{rightIcon}</div>}
 
             {/* Password Toggle */}
             {showPasswordToggle && type === 'password' && (
@@ -291,7 +288,11 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, EnhancedInputProps>(
                     : 'text-muted-foreground'
             )}
             role="alert"
-            aria-live={errorText || (validationState.message && !validationState.isValid) ? 'assertive' : 'polite'}
+            aria-live={
+              errorText || (validationState.message && !validationState.isValid)
+                ? 'assertive'
+                : 'polite'
+            }
           >
             {errorText || successText || warningText || validationState.message || helperText}
           </div>

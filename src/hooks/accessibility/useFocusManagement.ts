@@ -3,7 +3,6 @@
 import { useRef, useEffect, useCallback } from 'react'
 
 export interface FocusManagementOptions {
-
   /**
    * Whether to trap focus within the container
    */
@@ -90,9 +89,7 @@ export function useFocusManagement(options: FocusManagementOptions = {}) {
       'video[controls]'
     ].join(', ')
 
-    const elements = Array.from(
-      containerRef.current.querySelectorAll(selector)
-    ) as HTMLElement[]
+    const elements = Array.from(containerRef.current.querySelectorAll(selector)) as HTMLElement[]
 
     // Filter out elements that are hidden or excluded
     return elements.filter(element => {
@@ -189,39 +186,40 @@ export function useFocusManagement(options: FocusManagementOptions = {}) {
   /**
    * Handle keyboard navigation within the trapped area
    */
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (!isTrappedRef.current || !trapFocus) {
-      return
-    }
-
-    if (event.key === 'Tab') {
-      const focusableElements = getFocusableElements()
-
-      if (focusableElements.length === 0) {
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (!isTrappedRef.current || !trapFocus) {
         return
       }
 
-      const firstElement = focusableElements[0]
-      const lastElement = focusableElements[focusableElements.length - 1]
+      if (event.key === 'Tab') {
+        const focusableElements = getFocusableElements()
 
-      if (event.shiftKey) {
-        // Shift + Tab: Move to previous element
-        if (document.activeElement === firstElement) {
-          event.preventDefault()
-          lastElement.focus()
+        if (focusableElements.length === 0) {
+          return
         }
-      } else {
-        // Tab: Move to next element
-        if (document.activeElement === lastElement) {
-          event.preventDefault()
-          firstElement.focus()
+
+        const firstElement = focusableElements[0]
+        const lastElement = focusableElements[focusableElements.length - 1]
+
+        if (event.shiftKey) {
+          // Shift + Tab: Move to previous element
+          if (document.activeElement === firstElement) {
+            event.preventDefault()
+            lastElement.focus()
+          } else if (document.activeElement === lastElement) {
+            // Tab: Move to next element
+            event.preventDefault()
+            firstElement.focus()
+          }
         }
+      } else if (event.key === 'Escape') {
+        // Escape: Release focus trap
+        endFocusTrap()
       }
-    } else if (event.key === 'Escape') {
-      // Escape: Release focus trap
-      endFocusTrap()
-    }
-  }, [trapFocus, getFocusableElements, endFocusTrap])
+    },
+    [trapFocus, getFocusableElements, endFocusTrap]
+  )
 
   /**
    * Set up focus trap when container is mounted
@@ -312,18 +310,20 @@ export function useFocusOrder(elements: HTMLElement[]) {
       return
     }
 
-    currentIndexRef.current = currentIndexRef.current <= 0
-      ? elements.length - 1
-      : currentIndexRef.current - 1
+    currentIndexRef.current =
+      currentIndexRef.current <= 0 ? elements.length - 1 : currentIndexRef.current - 1
     elements[currentIndexRef.current]?.focus()
   }, [elements])
 
-  const setIndex = useCallback((index: number) => {
-    if (index >= 0 && index < elements.length) {
-      currentIndexRef.current = index
-      elements[index]?.focus()
-    }
-  }, [elements])
+  const setIndex = useCallback(
+    (index: number) => {
+      if (index >= 0 && index < elements.length) {
+        currentIndexRef.current = index
+        elements[index]?.focus()
+      }
+    },
+    [elements]
+  )
 
   return { next, previous, setIndex, currentIndex: currentIndexRef.current }
 }

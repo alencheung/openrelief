@@ -32,7 +32,8 @@ const enhancedTextareaVariants = cva(
 )
 
 export interface EnhancedTextareaProps
-  extends React.TextareaHTMLAttributes<HTMLTextAreaElement>,
+  extends
+    React.TextareaHTMLAttributes<HTMLTextAreaElement>,
     VariantProps<typeof enhancedTextareaVariants> {
   label?: string
   helperText?: string
@@ -51,31 +52,34 @@ export interface EnhancedTextareaProps
 }
 
 const EnhancedTextarea = React.forwardRef<HTMLTextAreaElement, EnhancedTextareaProps>(
-  ({
-    className,
-    variant,
-    size,
-    resizable,
-    label,
-    helperText,
-    errorText,
-    successText,
-    warningText,
-    showCharacterCount = false,
-    maxLength,
-    showExpandButton = false,
-    floatingLabel = false,
-    required = false,
-    validateOnChange = false,
-    validator,
-    onValidationChange,
-    onExpand,
-    value,
-    onChange,
-    onBlur,
-    id,
-    ...props
-  }, ref) => {
+  (
+    {
+      className,
+      variant,
+      size,
+      resizable,
+      label,
+      helperText,
+      errorText,
+      successText,
+      warningText,
+      showCharacterCount = false,
+      maxLength,
+      showExpandButton = false,
+      floatingLabel = false,
+      required = false,
+      validateOnChange = false,
+      validator,
+      onValidationChange,
+      onExpand,
+      value,
+      onChange,
+      onBlur,
+      id,
+      ...props
+    },
+    ref
+  ) => {
     const [isFocused, setIsFocused] = React.useState(false)
     const [isExpanded, setIsExpanded] = React.useState(false)
     const [validationState, setValidationState] = React.useState<{
@@ -84,14 +88,15 @@ const EnhancedTextarea = React.forwardRef<HTMLTextAreaElement, EnhancedTextareaP
     }>({ isValid: null, message: null })
 
     const textareaRef = React.useRef<HTMLTextAreaElement>(null)
-    const inputId = id || `textarea-${React.useId()}`
+    const generatedId = React.useId()
+    const inputId = id || `textarea-${generatedId}`
     const hasValue = value !== undefined && value !== ''
     const isFloating = floatingLabel && (isFocused || hasValue)
     const currentLength = value?.toString().length || 0
 
     // Determine the final variant based on props and validation state
     const getVariant = () => {
-      if (errorText || validationState.message && !validationState.isValid) {
+      if (errorText || (validationState.message && !validationState.isValid)) {
         return 'error'
       }
       if (successText || validationState.isValid) {
@@ -229,7 +234,7 @@ const EnhancedTextarea = React.forwardRef<HTMLTextAreaElement, EnhancedTextareaP
               isExpanded && 'min-h-[300px]',
               className
             )}
-            ref={(node) => {
+            ref={node => {
               if (typeof ref === 'function') {
                 ref(node)
               } else if (ref) {
@@ -248,18 +253,11 @@ const EnhancedTextarea = React.forwardRef<HTMLTextAreaElement, EnhancedTextareaP
           {/* Bottom Bar */}
           <div className="absolute bottom-2 right-2 flex items-center gap-2">
             {/* State Icon */}
-            {stateIcon && (
-              <div className="text-current">
-                {stateIcon}
-              </div>
-            )}
+            {stateIcon && <div className="text-current">{stateIcon}</div>}
 
             {/* Character Count */}
             {showCharacterCount && (
-              <div className={cn(
-                'text-xs',
-                getCharacterCountColor()
-              )}>
+              <div className={cn('text-xs', getCharacterCountColor())}>
                 {currentLength}
                 {maxLength && ` / ${maxLength}`}
               </div>
@@ -281,16 +279,18 @@ const EnhancedTextarea = React.forwardRef<HTMLTextAreaElement, EnhancedTextareaP
 
         {/* Helper Text */}
         {(helperText || errorText || successText || warningText || validationState.message) && (
-          <div className={cn(
-            'mt-2 text-xs',
-            errorText || (validationState.message && !validationState.isValid)
-              ? 'text-destructive'
-              : successText || validationState.isValid
-                ? 'text-success'
-                : warningText
-                  ? 'text-warning'
-                  : 'text-muted-foreground'
-          )}>
+          <div
+            className={cn(
+              'mt-2 text-xs',
+              errorText || (validationState.message && !validationState.isValid)
+                ? 'text-destructive'
+                : successText || validationState.isValid
+                  ? 'text-success'
+                  : warningText
+                    ? 'text-warning'
+                    : 'text-muted-foreground'
+            )}
+          >
             {errorText || successText || warningText || validationState.message || helperText}
           </div>
         )}

@@ -34,7 +34,8 @@ export interface RadioOption {
 }
 
 export interface EnhancedRadioGroupProps
-  extends Omit<React.FieldsetHTMLAttributes<HTMLFieldSetElement>, 'onChange'>,
+  extends
+    Omit<React.FieldsetHTMLAttributes<HTMLFieldSetElement>, 'onChange'>,
     VariantProps<typeof enhancedRadioVariants> {
   options: RadioOption[]
   label?: string
@@ -55,36 +56,40 @@ export interface EnhancedRadioGroupProps
 }
 
 const EnhancedRadioGroup = React.forwardRef<HTMLFieldSetElement, EnhancedRadioGroupProps>(
-  ({
-    className,
-    variant,
-    size,
-    options,
-    label,
-    helperText,
-    errorText,
-    successText,
-    warningText,
-    name,
-    value,
-    defaultValue,
-    required = false,
-    orientation = 'vertical',
-    validateOnChange = false,
-    validator,
-    onValidationChange,
-    onChange,
-    renderOption,
-    disabled,
-    ...props
-  }, ref) => {
+  (
+    {
+      className,
+      variant,
+      size,
+      options,
+      label,
+      helperText,
+      errorText,
+      successText,
+      warningText,
+      name,
+      value,
+      defaultValue,
+      required = false,
+      orientation = 'vertical',
+      validateOnChange = false,
+      validator,
+      onValidationChange,
+      onChange,
+      renderOption,
+      disabled,
+      ...props
+    },
+    ref
+  ) => {
     const [selectedValue, setSelectedValue] = React.useState(value || defaultValue || '')
     const [validationState, setValidationState] = React.useState<{
       isValid: boolean | null
       message: string | null
     }>({ isValid: null, message: null })
 
-    const radioGroupName = name || `radio-group-${React.useId()}`
+    const generatedId = React.useId()
+    const radioGroupName = name || `radio-group-${generatedId}`
 
     // Update selected value when prop changes
     React.useEffect(() => {
@@ -95,7 +100,7 @@ const EnhancedRadioGroup = React.forwardRef<HTMLFieldSetElement, EnhancedRadioGr
 
     // Determine final variant based on props and validation state
     const getVariant = () => {
-      if (errorText || validationState.message && !validationState.isValid) {
+      if (errorText || (validationState.message && !validationState.isValid)) {
         return 'error'
       }
       if (successText || validationState.isValid) {
@@ -148,23 +153,22 @@ const EnhancedRadioGroup = React.forwardRef<HTMLFieldSetElement, EnhancedRadioGr
       >
         {/* Legend */}
         {label && (
-          <legend className={cn(
-            'text-sm font-medium leading-none',
-            currentVariant === 'error' && 'text-destructive',
-            currentVariant === 'success' && 'text-success',
-            currentVariant === 'warning' && 'text-warning'
-          )}>
+          <legend
+            className={cn(
+              'text-sm font-medium leading-none',
+              currentVariant === 'error' && 'text-destructive',
+              currentVariant === 'success' && 'text-success',
+              currentVariant === 'warning' && 'text-warning'
+            )}
+          >
             {label}
             {required && <span className="text-destructive ml-1">*</span>}
           </legend>
         )}
 
         {/* Radio Options */}
-        <div className={cn(
-          'space-y-3',
-          isHorizontal && 'sm:flex sm:gap-6 sm:space-y-0'
-        )}>
-          {options.map((option) => {
+        <div className={cn('space-y-3', isHorizontal && 'sm:flex sm:gap-6 sm:space-y-0')}>
+          {options.map(option => {
             const isChecked = selectedValue === option.value
             const radioId = `${radioGroupName}-${option.value}`
 
@@ -196,10 +200,12 @@ const EnhancedRadioGroup = React.forwardRef<HTMLFieldSetElement, EnhancedRadioGr
                   onClick={() => !option.disabled && !disabled && handleRadioChange(option.value)}
                 >
                   {isChecked && (
-                    <div className={cn(
-                      'rounded-full bg-current',
-                      size === 'sm' ? 'h-1.5 w-1.5' : size === 'lg' ? 'h-2.5 w-2.5' : 'h-2 w-2'
-                    )} />
+                    <div
+                      className={cn(
+                        'rounded-full bg-current',
+                        size === 'sm' ? 'h-1.5 w-1.5' : size === 'lg' ? 'h-2.5 w-2.5' : 'h-2 w-2'
+                      )}
+                    />
                   )}
                 </div>
 
@@ -244,16 +250,18 @@ const EnhancedRadioGroup = React.forwardRef<HTMLFieldSetElement, EnhancedRadioGr
 
         {/* Helper Text */}
         {(helperText || errorText || successText || warningText || validationState.message) && (
-          <div className={cn(
-            'text-xs',
-            errorText || (validationState.message && !validationState.isValid)
-              ? 'text-destructive'
-              : successText || validationState.isValid
-                ? 'text-success'
-                : warningText
-                  ? 'text-warning'
-                  : 'text-muted-foreground'
-          )}>
+          <div
+            className={cn(
+              'text-xs',
+              errorText || (validationState.message && !validationState.isValid)
+                ? 'text-destructive'
+                : successText || validationState.isValid
+                  ? 'text-success'
+                  : warningText
+                    ? 'text-warning'
+                    : 'text-muted-foreground'
+            )}
+          >
             {errorText || successText || warningText || validationState.message || helperText}
           </div>
         )}

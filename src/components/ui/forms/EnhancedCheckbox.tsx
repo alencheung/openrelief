@@ -27,7 +27,8 @@ const enhancedCheckboxVariants = cva(
 )
 
 export interface EnhancedCheckboxProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>,
+  extends
+    Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>,
     VariantProps<typeof enhancedCheckboxVariants> {
   label?: string
   helperText?: string
@@ -43,38 +44,42 @@ export interface EnhancedCheckboxProps
 }
 
 const EnhancedCheckbox = React.forwardRef<HTMLInputElement, EnhancedCheckboxProps>(
-  ({
-    className,
-    variant,
-    size,
-    label,
-    helperText,
-    errorText,
-    successText,
-    warningText,
-    indeterminate = false,
-    labelPosition = 'end',
-    required = false,
-    validateOnChange = false,
-    validator,
-    onValidationChange,
-    checked,
-    onChange,
-    onBlur,
-    id,
-    ...props
-  }, ref) => {
+  (
+    {
+      className,
+      variant,
+      size,
+      label,
+      helperText,
+      errorText,
+      successText,
+      warningText,
+      indeterminate = false,
+      labelPosition = 'end',
+      required = false,
+      validateOnChange = false,
+      validator,
+      onValidationChange,
+      checked,
+      onChange,
+      onBlur,
+      id,
+      ...props
+    },
+    ref
+  ) => {
     const [validationState, setValidationState] = React.useState<{
       isValid: boolean | null
       message: string | null
     }>({ isValid: null, message: null })
 
     const checkboxRef = React.useRef<HTMLInputElement>(null)
-    const inputId = id || `checkbox-${React.useId()}`
+    const generatedId = React.useId()
+    const inputId = id || `checkbox-${generatedId}`
 
     // Determine final variant based on props and validation state
     const getVariant = () => {
-      if (errorText || validationState.message && !validationState.isValid) {
+      if (errorText || (validationState.message && !validationState.isValid)) {
         return 'error'
       }
       if (successText || validationState.isValid) {
@@ -125,10 +130,9 @@ const EnhancedCheckbox = React.forwardRef<HTMLInputElement, EnhancedCheckboxProp
 
     return (
       <div className="space-y-2">
-        <div className={cn(
-          'flex items-start gap-2',
-          labelPosition === 'start' && 'flex-row-reverse'
-        )}>
+        <div
+          className={cn('flex items-start gap-2', labelPosition === 'start' && 'flex-row-reverse')}
+        >
           {/* Checkbox */}
           <div className="relative flex items-center">
             <input
@@ -139,7 +143,7 @@ const EnhancedCheckbox = React.forwardRef<HTMLInputElement, EnhancedCheckboxProp
                 'sr-only',
                 className
               )}
-              ref={(node) => {
+              ref={node => {
                 if (typeof ref === 'function') {
                   ref(node)
                 } else if (ref) {
@@ -164,12 +168,18 @@ const EnhancedCheckbox = React.forwardRef<HTMLInputElement, EnhancedCheckboxProp
               )}
               onClick={() => checkboxRef.current?.click()}
             >
-              {checked && <Check className={cn(size === 'sm' ? 'h-2 w-2' : size === 'lg' ? 'h-4 w-4' : 'h-3 w-3')} />}
+              {checked && (
+                <Check
+                  className={cn(size === 'sm' ? 'h-2 w-2' : size === 'lg' ? 'h-4 w-4' : 'h-3 w-3')}
+                />
+              )}
               {indeterminate && (
-                <div className={cn(
-                  size === 'sm' ? 'h-1 w-2' : size === 'lg' ? 'h-1.5 w-3' : 'h-1 w-2.5',
-                  'bg-current rounded-sm'
-                )} />
+                <div
+                  className={cn(
+                    size === 'sm' ? 'h-1 w-2' : size === 'lg' ? 'h-1.5 w-3' : 'h-1 w-2.5',
+                    'bg-current rounded-sm'
+                  )}
+                />
               )}
             </div>
           </div>
@@ -194,16 +204,18 @@ const EnhancedCheckbox = React.forwardRef<HTMLInputElement, EnhancedCheckboxProp
 
         {/* Helper Text */}
         {(helperText || errorText || successText || warningText || validationState.message) && (
-          <div className={cn(
-            'text-xs',
-            errorText || (validationState.message && !validationState.isValid)
-              ? 'text-destructive'
-              : successText || validationState.isValid
-                ? 'text-success'
-                : warningText
-                  ? 'text-warning'
-                  : 'text-muted-foreground'
-          )}>
+          <div
+            className={cn(
+              'text-xs',
+              errorText || (validationState.message && !validationState.isValid)
+                ? 'text-destructive'
+                : successText || validationState.isValid
+                  ? 'text-success'
+                  : warningText
+                    ? 'text-warning'
+                    : 'text-muted-foreground'
+            )}
+          >
             {errorText || successText || warningText || validationState.message || helperText}
           </div>
         )}
