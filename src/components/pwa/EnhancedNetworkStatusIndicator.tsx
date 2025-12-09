@@ -42,9 +42,9 @@ interface NetworkType {
 }
 
 export function EnhancedNetworkStatusIndicator() {
-  const { 
-    isOnline, 
-    isOffline, 
+  const {
+    isOnline,
+    isOffline,
     reconnectAttempts,
     connectionType,
     effectiveType,
@@ -53,18 +53,18 @@ export function EnhancedNetworkStatusIndicator() {
     lastOnlineTime,
     lastOfflineTime
   } = useNetworkStatus()
-  
-  const { 
-    isSyncing, 
-    syncProgress, 
-    pendingActions, 
+
+  const {
+    isSyncing,
+    syncProgress,
+    pendingActions,
     failedActions,
     metrics
   } = useOfflineStore()
-  
+
   const { announcePolite, announceAssertive } = useAriaAnnouncer()
   const { prefersReducedMotion } = useReducedMotion()
-  
+
   const [expanded, setExpanded] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
   const [connectionStatus, setConnectionStatus] = useState<'stable' | 'unstable' | 'connecting' | 'offline'>('stable')
@@ -171,7 +171,7 @@ export function EnhancedNetworkStatusIndicator() {
   // Get signal strength icon
   const getSignalIcon = () => {
     const quality = getConnectionQuality()
-    
+
     switch (quality.level) {
       case 'excellent':
         return SignalHighIcon
@@ -204,7 +204,7 @@ export function EnhancedNetworkStatusIndicator() {
       setConnectionStatus('stable')
       setShowSuccess(true)
       announcePolite('Connection restored successfully.')
-      
+
       // Hide success indicator after 3 seconds
       setTimeout(() => setShowSuccess(false), 3000)
     }
@@ -219,7 +219,7 @@ export function EnhancedNetworkStatusIndicator() {
         cache: 'no-cache',
         signal: AbortSignal.timeout(5000)
       })
-      
+
       if (response.ok) {
         setIsConnecting(false)
         setShowSuccess(true)
@@ -242,10 +242,10 @@ export function EnhancedNetworkStatusIndicator() {
         <div className={`
           relative flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg backdrop-blur-sm
           transition-all duration-300 ease-in-out
-          ${isOnline 
-            ? 'bg-white/90 border border-gray-200 text-gray-900' 
-            : 'bg-red-600/90 border border-red-700 text-white'
-          }
+          ${isOnline
+      ? 'bg-white/90 border border-gray-200 text-gray-900'
+      : 'bg-red-600/90 border border-red-700 text-white'
+    }
           ${prefersReducedMotion ? '' : 'hover:shadow-xl'}
         `}>
           {/* Status Icon and Text */}
@@ -262,13 +262,13 @@ export function EnhancedNetworkStatusIndicator() {
               ) : (
                 <WifiOffIcon className="w-4 h-4 text-red-600" />
               )}
-              
+
               {/* Pulse animation for active connection */}
               {isOnline && !prefersReducedMotion && (
                 <span className="absolute inset-0 rounded-full bg-green-400 opacity-30 animate-ping" />
               )}
             </div>
-            
+
             <div className="flex flex-col">
               <span className="text-sm font-medium">
                 {isConnecting ? 'Connecting...' : isOnline ? 'Online' : 'Offline'}
@@ -291,10 +291,10 @@ export function EnhancedNetworkStatusIndicator() {
                     key={bar}
                     className={`
                       w-1 h-3 rounded-sm transition-all duration-300
-                      ${quality.signalStrength >= bar * 25 
-                        ? quality.color.replace('text', 'bg') 
-                        : 'bg-gray-300'
-                      }
+                      ${quality.signalStrength >= bar * 25
+                    ? quality.color.replace('text', 'bg')
+                    : 'bg-gray-300'
+                  }
                     `}
                     style={{
                       height: `${bar * 3}px`
@@ -384,7 +384,7 @@ export function EnhancedNetworkStatusIndicator() {
                       {quality.level.charAt(0).toUpperCase() + quality.level.slice(1)}
                     </span>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <span className="text-xs text-gray-500">Speed</span>
@@ -407,7 +407,7 @@ export function EnhancedNetworkStatusIndicator() {
                       <Loader2Icon className="w-4 h-4 animate-spin text-blue-600" />
                     )}
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <span className="text-xs text-gray-500">Pending</span>
@@ -425,10 +425,10 @@ export function EnhancedNetworkStatusIndicator() {
 
                   {isSyncing && syncProgress.total > 0 && (
                     <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
+                      <div
                         className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                        style={{ 
-                          width: `${(syncProgress.current / syncProgress.total) * 100}%` 
+                        style={{
+                          width: `${(syncProgress.current / syncProgress.total) * 100}%`
                         }}
                       />
                     </div>

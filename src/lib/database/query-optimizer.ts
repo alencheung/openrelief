@@ -1,6 +1,6 @@
 /**
  * Database Query Optimizer for High-Load Emergency Scenarios
- * 
+ *
  * This module provides intelligent query optimization for:
  * - Spatial queries with geographic indexing
  * - Connection pooling and load balancing
@@ -128,7 +128,7 @@ class DatabaseQueryOptimizer {
           performanceMonitor.endTimer(timerId, 'database', 'database_query_execution_time', {
             cache_hit: 'true'
           })
-          
+
           return {
             data: cachedResult,
             error: null,
@@ -142,11 +142,11 @@ class DatabaseQueryOptimizer {
 
       // Get connection from pool
       const connection = await this.getConnection(options.useReadReplica)
-      
+
       try {
         // Optimize query
         const optimization = await this.optimizeQuery(query, params, options.spatialOptimization)
-        
+
         // Execute with timeout
         const result = await this.executeWithTimeout(
           connection,
@@ -326,7 +326,7 @@ class DatabaseQueryOptimizer {
       try {
         // Execute queries in parallel with priority considerations
         const results = await Promise.allSettled(
-          sortedQueries.map((alertQuery, index) => 
+          sortedQueries.map((alertQuery, index) =>
             this.executeWithTimeout(
               connections[index],
               alertQuery.query,
@@ -450,7 +450,9 @@ class DatabaseQueryOptimizer {
    */
 
   private async initializeConnectionPool(): Promise<void> {
-    if (!this.config.enableConnectionPooling) return
+    if (!this.config.enableConnectionPooling) {
+      return
+    }
 
     // Initialize primary connections
     for (let i = 0; i < Math.floor(this.config.maxConnections * 0.7); i++) {
@@ -496,14 +498,14 @@ class DatabaseQueryOptimizer {
 
   private async getConnection(useReadReplica: boolean = false): Promise<SupabaseClient> {
     if (!this.config.enableConnectionPooling) {
-      return useReadReplica && this.readReplicas.length > 0 
-        ? this.readReplicas[0] 
+      return useReadReplica && this.readReplicas.length > 0
+        ? this.readReplicas[0]
         : this.supabase
     }
 
     // Try to get available connection from pool
     const availableConnection = this.connectionPool.find(conn => !conn.inUse)
-    
+
     if (availableConnection) {
       availableConnection.inUse = true
       availableConnection.lastUsed = Date.now()
@@ -541,7 +543,9 @@ class DatabaseQueryOptimizer {
   }
 
   private releaseConnection(client: SupabaseClient): void {
-    if (!this.config.enableConnectionPooling) return
+    if (!this.config.enableConnectionPooling) {
+      return
+    }
 
     const connection = this.connectionPool.find(conn => conn.client === client)
     if (connection) {
@@ -582,7 +586,7 @@ class DatabaseQueryOptimizer {
   ): Promise<QueryOptimizationResult> {
     // This would integrate with PostgreSQL's EXPLAIN ANALYZE
     // For now, return basic optimization info
-    
+
     return {
       optimizedQuery: query,
       optimizedParams: params,
@@ -627,22 +631,24 @@ class DatabaseQueryOptimizer {
   private getFromCache(query: string, params: any[]): any | null {
     const cacheKey = this.generateCacheKey(query, params)
     const entry = this.queryCache.get(cacheKey)
-    
-    if (!entry) return null
-    
+
+    if (!entry) {
+      return null
+    }
+
     // Check if cache entry is still valid
     if (Date.now() - entry.timestamp > entry.ttl) {
       this.queryCache.delete(cacheKey)
       return null
     }
-    
+
     entry.hitCount++
     return entry.result
   }
 
   private setCache(query: string, params: any[], result: any): void {
     const cacheKey = this.generateCacheKey(query, params)
-    
+
     this.queryCache.set(cacheKey, {
       query,
       params,
@@ -651,7 +657,7 @@ class DatabaseQueryOptimizer {
       ttl: this.config.cacheTTL,
       hitCount: 0
     })
-    
+
     // Clean up old cache entries
     if (this.queryCache.size > 1000) {
       this.cleanupCache()
@@ -660,7 +666,7 @@ class DatabaseQueryOptimizer {
 
   private cleanupCache(): void {
     const now = Date.now()
-    
+
     for (const [key, entry] of this.queryCache.entries()) {
       if (now - entry.timestamp > entry.ttl) {
         this.queryCache.delete(key)
@@ -678,11 +684,19 @@ class DatabaseQueryOptimizer {
 
   private getQueryType(query: string): 'select' | 'insert' | 'update' | 'delete' | 'rpc' {
     const trimmedQuery = query.trim().toLowerCase()
-    
-    if (trimmedQuery.startsWith('select')) return 'select'
-    if (trimmedQuery.startsWith('insert')) return 'insert'
-    if (trimmedQuery.startsWith('update')) return 'update'
-    if (trimmedQuery.startsWith('delete')) return 'delete'
+
+    if (trimmedQuery.startsWith('select')) {
+      return 'select'
+    }
+    if (trimmedQuery.startsWith('insert')) {
+      return 'insert'
+    }
+    if (trimmedQuery.startsWith('update')) {
+      return 'update'
+    }
+    if (trimmedQuery.startsWith('delete')) {
+      return 'delete'
+    }
     return 'rpc'
   }
 
@@ -726,7 +740,7 @@ class DatabaseQueryOptimizer {
   }> {
     const totalCacheHits = Array.from(this.queryCache.values())
       .reduce((sum, entry) => sum + entry.hitCount, 0)
-    
+
     const cacheHitRate = this.queryCache.size > 0 ? totalCacheHits / this.queryCache.size : 0
 
     // Get recent query metrics
@@ -734,9 +748,9 @@ class DatabaseQueryOptimizer {
     const queryTimes = recentMetrics
       .filter(m => m.name === 'database_query_execution_time')
       .map(m => m.value)
-    
-    const avgQueryTime = queryTimes.length > 0 
-      ? queryTimes.reduce((sum, time) => sum + time, 0) / queryTimes.length 
+
+    const avgQueryTime = queryTimes.length > 0
+      ? queryTimes.reduce((sum, time) => sum + time, 0) / queryTimes.length
       : 0
 
     return {

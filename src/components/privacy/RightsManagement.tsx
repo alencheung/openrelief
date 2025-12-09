@@ -1,17 +1,17 @@
 /**
  * GDPR Rights Management Component for OpenRelief
- * 
+ *
  * This component provides users with interfaces to exercise their GDPR rights
  * including access, rectification, erasure, portability, and consent management.
  */
 
-'use client';
+'use client'
 
-import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { StatusIndicator } from '@/components/ui/StatusIndicator';
-import { useToast } from '@/hooks/use-toast';
+import React, { useState, useEffect } from 'react'
+import { Card } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
+import { StatusIndicator } from '@/components/ui/StatusIndicator'
+import { useToast } from '@/hooks/use-toast'
 import {
   FileText,
   Download,
@@ -52,7 +52,7 @@ import {
   CheckSquare,
   Square,
   MoreHorizontal
-} from 'lucide-react';
+} from 'lucide-react'
 
 // Types for GDPR rights management
 interface DataRequest {
@@ -119,13 +119,13 @@ interface DataSubjectRequest {
 }
 
 const RightsManagement: React.FC = () => {
-  const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<'requests' | 'consent' | 'activity' | 'subjects'>('requests');
-  const [isLoading, setIsLoading] = useState(false);
-  const [selectedRequest, setSelectedRequest] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
+  const { toast } = useToast()
+  const [activeTab, setActiveTab] = useState<'requests' | 'consent' | 'activity' | 'subjects'>('requests')
+  const [isLoading, setIsLoading] = useState(false)
+  const [selectedRequest, setSelectedRequest] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filterStatus, setFilterStatus] = useState<string>('all')
+  const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d')
 
   // Mock data for demonstration
   const [dataRequests, setDataRequests] = useState<DataRequest[]>([
@@ -181,7 +181,7 @@ const RightsManagement: React.FC = () => {
       legalBasis: 'GDPR Article 16 - Right to Rectification',
       deliveryMethod: 'api_access'
     }
-  ]);
+  ])
 
   const [consentRecords, setConsentRecords] = useState<ConsentRecord[]>([
     {
@@ -221,7 +221,7 @@ const RightsManagement: React.FC = () => {
       processingLocation: 'international',
       automatedDecision: false
     }
-  ]);
+  ])
 
   const [processingActivities, setProcessingActivities] = useState<DataProcessingActivity[]>([
     {
@@ -263,7 +263,7 @@ const RightsManagement: React.FC = () => {
       privacyImpact: 'high',
       location: 'International Research Institute'
     }
-  ]);
+  ])
 
   const [subjectRequests, setSubjectRequests] = useState<DataSubjectRequest[]>([
     {
@@ -292,114 +292,118 @@ const RightsManagement: React.FC = () => {
       appealable: true,
       appealDeadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
     }
-  ]);
+  ])
 
   // Format time ago
   const formatTimeAgo = (date: Date) => {
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / (1000 * 60));
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / (1000 * 60))
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
 
-    if (diffMins < 60) return `${diffMins} minutes ago`;
-    if (diffHours < 24) return `${diffHours} hours ago`;
-    return `${diffDays} days ago`;
-  };
+    if (diffMins < 60) {
+      return `${diffMins} minutes ago`
+    }
+    if (diffHours < 24) {
+      return `${diffHours} hours ago`
+    }
+    return `${diffDays} days ago`
+  }
 
   // Get status color
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'green';
-      case 'processing': return 'blue';
-      case 'submitted': return 'yellow';
-      case 'rejected': case 'appealed': return 'red';
-      case 'draft': return 'gray';
-      default: return 'gray';
+      case 'completed': return 'green'
+      case 'processing': return 'blue'
+      case 'submitted': return 'yellow'
+      case 'rejected': case 'appealed': return 'red'
+      case 'draft': return 'gray'
+      default: return 'gray'
     }
-  };
+  }
 
   // Get priority color
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'urgent': return 'red';
-      case 'high': return 'orange';
-      case 'medium': return 'yellow';
-      case 'low': return 'green';
-      default: return 'gray';
+      case 'urgent': return 'red'
+      case 'high': return 'orange'
+      case 'medium': return 'yellow'
+      case 'low': return 'green'
+      default: return 'gray'
     }
-  };
+  }
 
   // Submit new data request
   const submitDataRequest = async (type: DataRequest['type']) => {
-    setIsLoading(true);
+    setIsLoading(true)
     try {
       // In a real implementation, submit to API
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
       toast({
-        title: "Request Submitted",
+        title: 'Request Submitted',
         description: `Your ${type} request has been submitted successfully.`
-      });
+      })
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to submit data request",
-        variant: "destructive"
-      });
+        title: 'Error',
+        description: 'Failed to submit data request',
+        variant: 'destructive'
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   // Withdraw consent
   const withdrawConsent = async (id: string) => {
-    setIsLoading(true);
+    setIsLoading(true)
     try {
       // In a real implementation, update consent status
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+      await new Promise(resolve => setTimeout(resolve, 1500))
+
       setConsentRecords(prev =>
         prev.map(consent =>
-          consent.id === id 
+          consent.id === id
             ? { ...consent, consentGiven: false, withdrawnAt: new Date() }
             : consent
         )
-      );
-      
+      )
+
       toast({
-        title: "Consent Withdrawn",
-        description: "Your consent has been successfully withdrawn."
-      });
+        title: 'Consent Withdrawn',
+        description: 'Your consent has been successfully withdrawn.'
+      })
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to withdraw consent",
-        variant: "destructive"
-      });
+        title: 'Error',
+        description: 'Failed to withdraw consent',
+        variant: 'destructive'
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   // Download request data
   const downloadRequestData = async (id: string) => {
     try {
       // In a real implementation, initiate download
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
       toast({
-        title: "Download Started",
-        description: "Your requested data is being prepared for download."
-      });
+        title: 'Download Started',
+        description: 'Your requested data is being prepared for download.'
+      })
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to prepare data for download",
-        variant: "destructive"
-      });
+        title: 'Error',
+        description: 'Failed to prepare data for download',
+        variant: 'destructive'
+      })
     }
-  };
+  }
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
@@ -438,10 +442,10 @@ const RightsManagement: React.FC = () => {
                 : 'text-gray-600 hover:text-gray-800'
             }`}
           >
-            {tab === 'requests' ? 'Data Requests' :
-             tab === 'consent' ? 'Consent Management' :
-             tab === 'activity' ? 'Processing Activity' :
-             tab === 'subjects' ? 'Subject Rights' : tab}
+            {tab === 'requests' ? 'Data Requests'
+              : tab === 'consent' ? 'Consent Management'
+                : tab === 'activity' ? 'Processing Activity'
+                  : tab === 'subjects' ? 'Subject Rights' : tab}
           </button>
         ))}
       </div>
@@ -467,7 +471,7 @@ const RightsManagement: React.FC = () => {
                     <option value="rejected">Rejected</option>
                   </select>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
                   <Search className="h-4 w-4 text-gray-600" />
                   <input
@@ -479,7 +483,7 @@ const RightsManagement: React.FC = () => {
                   />
                 </div>
               </div>
-              
+
               <div className="flex space-x-2">
                 <Button onClick={() => submitDataRequest('access')} size="sm">
                   <FileText className="h-4 w-4 mr-2" />
@@ -499,14 +503,14 @@ const RightsManagement: React.FC = () => {
                 </Button>
               </div>
             </div>
-            
+
             <div className="space-y-4">
               {dataRequests
-                .filter(request => 
-                  (filterStatus === 'all' || request.status === filterStatus) &&
-                  (searchQuery === '' || 
-                    request.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    request.description.toLowerCase().includes(searchQuery.toLowerCase())
+                .filter(request =>
+                  (filterStatus === 'all' || request.status === filterStatus)
+                  && (searchQuery === ''
+                    || request.title.toLowerCase().includes(searchQuery.toLowerCase())
+                    || request.description.toLowerCase().includes(searchQuery.toLowerCase())
                   )
                 )
                 .map((request) => (
@@ -528,9 +532,9 @@ const RightsManagement: React.FC = () => {
                         {formatTimeAgo(request.createdAt)}
                       </div>
                     </div>
-                    
+
                     <p className="text-gray-800 mb-3">{request.description}</p>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                       <div>
                         <span className="text-gray-600">Reference:</span>
@@ -555,7 +559,7 @@ const RightsManagement: React.FC = () => {
                         <div className="font-medium capitalize">{request.deliveryMethod.replace('_', ' ')}</div>
                       </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                       <div>
                         <span className="text-gray-600">Submitted:</span>
@@ -570,7 +574,7 @@ const RightsManagement: React.FC = () => {
                         <div>{request.estimatedCompletion?.toLocaleDateString() || 'N/A'}</div>
                       </div>
                     </div>
-                    
+
                     {request.attachments.length > 0 && (
                       <div className="mb-3">
                         <h4 className="font-medium mb-2">Attachments</h4>
@@ -588,11 +592,11 @@ const RightsManagement: React.FC = () => {
                         </div>
                       </div>
                     )}
-                    
+
                     <div className="flex items-center justify-between pt-3 border-t">
                       <div className="flex items-center space-x-2">
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => setSelectedRequest(request.id)}
                         >
@@ -635,15 +639,15 @@ const RightsManagement: React.FC = () => {
                 <span>Active consents: {consentRecords.filter(c => c.consentGiven).length}</span>
               </div>
             </div>
-            
+
             <div className="space-y-4">
               {consentRecords.map((consent) => (
                 <div key={consent.id} className="border rounded-lg p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center space-x-2">
-                      <StatusIndicator 
-                        status={consent.consentGiven ? 'green' : 'red'} 
-                        text="" 
+                      <StatusIndicator
+                        status={consent.consentGiven ? 'green' : 'red'}
+                        text=""
                       />
                       <div>
                         <h3 className="font-medium">{consent.purpose}</h3>
@@ -654,7 +658,7 @@ const RightsManagement: React.FC = () => {
                       {consent.consentGiven ? `Given: ${formatTimeAgo(consent.consentDate)}` : 'Not given'}
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-3">
                     <div>
                       <span className="text-gray-600">Data Types:</span>
@@ -671,7 +675,7 @@ const RightsManagement: React.FC = () => {
                       <div className="font-medium capitalize">{consent.processingLocation.replace('_', ' ')}</div>
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-3">
                     <div>
                       <span className="text-gray-600">Legal Basis:</span>
@@ -682,7 +686,7 @@ const RightsManagement: React.FC = () => {
                       <div className="font-medium">{consent.automatedDecision ? 'Yes' : 'No'}</div>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between mb-3">
                     <div>
                       <span className="text-gray-600">Expiry Date:</span>
@@ -695,8 +699,8 @@ const RightsManagement: React.FC = () => {
                         {consent.withdrawnAt ? `Withdrawn: ${formatTimeAgo(consent.withdrawnAt)}` : 'Active'}
                       </span>
                       {consent.canWithdraw && consent.consentGiven && !consent.withdrawnAt && (
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => withdrawConsent(consent.id)}
                           disabled={isLoading}
@@ -724,7 +728,7 @@ const RightsManagement: React.FC = () => {
                 <span>Recent activities: {processingActivities.length}</span>
               </div>
             </div>
-            
+
             <div className="space-y-4">
               {processingActivities.map((activity) => (
                 <div key={activity.id} className="border rounded-lg p-4">
@@ -743,7 +747,7 @@ const RightsManagement: React.FC = () => {
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-gray-600">Purpose:</span>
@@ -762,7 +766,7 @@ const RightsManagement: React.FC = () => {
                       <div className="font-medium">{activity.retentionPeriod} days</div>
                     </div>
                   </div>
-                  
+
                   <div className="mb-3">
                     <h4 className="font-medium mb-2">Processing Details</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -773,13 +777,13 @@ const RightsManagement: React.FC = () => {
                       <div>
                         <span className="text-gray-600">Privacy Impact:</span>
                         <StatusIndicator status={
-                          activity.privacyImpact === 'high' ? 'red' :
-                          activity.privacyImpact === 'medium' ? 'yellow' : 'green'
+                          activity.privacyImpact === 'high' ? 'red'
+                            : activity.privacyImpact === 'medium' ? 'yellow' : 'green'
                         } text={activity.privacyImpact} />
                       </div>
                     </div>
                   </div>
-                  
+
                   {activity.location && (
                     <div className="flex items-center space-x-2 text-sm text-gray-600">
                       <Globe className="h-4 w-4" />
@@ -804,7 +808,7 @@ const RightsManagement: React.FC = () => {
                 <span>Active requests: {subjectRequests.length}</span>
               </div>
             </div>
-            
+
             <div className="space-y-4">
               {subjectRequests.map((request) => (
                 <div key={request.id} className="border rounded-lg p-4">
@@ -827,9 +831,9 @@ const RightsManagement: React.FC = () => {
                       {formatTimeAgo(request.createdAt)}
                     </div>
                   </div>
-                  
+
                   <p className="text-gray-800 mb-3">{request.description}</p>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-gray-600">Response Due:</span>
@@ -840,7 +844,7 @@ const RightsManagement: React.FC = () => {
                       <div className="font-medium">{request.appealable ? 'Yes' : 'No'}</div>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between pt-3 border-t">
                     <div className="text-sm text-gray-600">
                       {request.respondedAt && `Responded: ${formatTimeAgo(request.respondedAt)}`}
@@ -867,7 +871,7 @@ const RightsManagement: React.FC = () => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default RightsManagement;
+export default RightsManagement

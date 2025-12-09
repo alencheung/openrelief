@@ -30,7 +30,7 @@ export default function LocationTracker({
   updateInterval = 5000,
   showAccuracy = true,
   showTrail = false,
-  maxTrailPoints = 100,
+  maxTrailPoints = 100
 }: LocationTrackerProps) {
   const [isTracking, setIsTracking] = useState(false)
   const [locationError, setLocationError] = useState<string | null>(null)
@@ -39,7 +39,7 @@ export default function LocationTracker({
     speed: 0,
     heading: 0,
     altitude: 0,
-    satelliteCount: 0,
+    satelliteCount: 0
   })
   const [showPreciseLocation, setShowPreciseLocation] = useState(true)
   const [privacyInfo, setPrivacyInfo] = useState<{
@@ -49,7 +49,7 @@ export default function LocationTracker({
   }>({
     isAnonymized: false,
     hasDifferentialPrivacy: false,
-    privacyBudgetUsed: 0,
+    privacyBudgetUsed: 0
   })
 
   const watchIdRef = useRef<number | null>(null)
@@ -68,11 +68,11 @@ export default function LocationTracker({
     proximityAlerts,
     addGeofence,
     checkGeofences,
-    addProximityAlert,
+    addProximityAlert
   } = useLocationStore()
 
   const { events, filteredEvents } = useEmergencyStore()
-  
+
   // Privacy hook for location protection
   const {
     protectLocationData,
@@ -90,7 +90,7 @@ export default function LocationTracker({
       speed: location.speed || 0,
       heading: location.heading || 0,
       altitude: location.altitude || 0,
-      satelliteCount: 0, // This would need GPS hardware access
+      satelliteCount: 0 // This would need GPS hardware access
     }
 
     // Calculate speed if not provided
@@ -112,9 +112,9 @@ export default function LocationTracker({
     const Δφ = ((point2.lat - point1.lat) * Math.PI) / 180
     const Δλ = ((point2.lng - point1.lng) * Math.PI) / 180
 
-    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-      Math.cos(φ1) * Math.cos(φ2) *
-      Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2)
+      + Math.cos(φ1) * Math.cos(φ2)
+      * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 
     return R * c // Distance in meters
@@ -149,13 +149,13 @@ export default function LocationTracker({
 
       const eventLocation = {
         lat,
-        lng,
+        lng
       }
 
       const distance = calculateDistance(location, {
         lat: eventLocation.lat,
         lng: eventLocation.lng,
-        timestamp: Date.now(),
+        timestamp: Date.now()
       })
 
       if (distance <= proximityThreshold) {
@@ -166,14 +166,14 @@ export default function LocationTracker({
           distance,
           threshold: proximityThreshold,
           message: `Near emergency: ${event.title} (${Math.round(distance)}m away)`,
-          severity: event.severity >= 4 ? 'critical' :
-            event.severity >= 3 ? 'warning' : 'info',
+          severity: event.severity >= 4 ? 'critical'
+            : event.severity >= 3 ? 'warning' : 'info'
         })
 
         onProximityAlert?.({
           event,
           distance,
-          severity: event.severity,
+          severity: event.severity
         })
       }
     })
@@ -189,7 +189,7 @@ export default function LocationTracker({
       ...(position.coords.altitude ? { altitude: position.coords.altitude } : {}),
       ...(position.coords.altitudeAccuracy ? { altitudeAccuracy: position.coords.altitudeAccuracy } : {}),
       ...(position.coords.heading ? { heading: position.coords.heading } : {}),
-      ...(position.coords.speed ? { speed: position.coords.speed } : {}),
+      ...(position.coords.speed ? { speed: position.coords.speed } : {})
     }
 
     // Apply privacy protection to location data
@@ -244,7 +244,7 @@ export default function LocationTracker({
     calculateStats,
     onLocationUpdate,
     showTrail,
-    maxTrailPoints,
+    maxTrailPoints
   ])
 
   // Handle location error
@@ -321,14 +321,14 @@ export default function LocationTracker({
           {
             enableHighAccuracy,
             timeout: 15000,
-            maximumAge: updateInterval,
+            maximumAge: updateInterval
           }
         )
 
         setIsTracking(true)
         startTracking('emergency_response', {
           highAccuracy: enableHighAccuracy,
-          updateInterval,
+          updateInterval
         })
         console.log('Debug: Location tracking started successfully')
       }
@@ -342,7 +342,7 @@ export default function LocationTracker({
     handleLocationUpdate,
     handleLocationError,
     requestLocationPermission,
-    startTracking,
+    startTracking
   ])
 
   // Stop tracking
@@ -366,7 +366,7 @@ export default function LocationTracker({
         {
           enableHighAccuracy,
           timeout: 10000,
-          maximumAge: 60000, // 1 minute
+          maximumAge: 60000 // 1 minute
         }
       )
     }
@@ -391,15 +391,25 @@ export default function LocationTracker({
   }, [isLocationTracking, isTracking, startLocationTracking, stopLocationTracking])
 
   const getAccuracyColor = (accuracy: number) => {
-    if (accuracy < 10) return 'text-green-500'
-    if (accuracy < 50) return 'text-yellow-500'
+    if (accuracy < 10) {
+      return 'text-green-500'
+    }
+    if (accuracy < 50) {
+      return 'text-yellow-500'
+    }
     return 'text-red-500'
   }
 
   const getAccuracyText = (accuracy: number) => {
-    if (accuracy < 10) return 'Excellent'
-    if (accuracy < 50) return 'Good'
-    if (accuracy < 100) return 'Fair'
+    if (accuracy < 10) {
+      return 'Excellent'
+    }
+    if (accuracy < 50) {
+      return 'Good'
+    }
+    if (accuracy < 100) {
+      return 'Fair'
+    }
     return 'Poor'
   }
 
@@ -582,8 +592,8 @@ export default function LocationTracker({
                 <div key={alert.id} className="flex items-center space-x-2 text-xs">
                   <div className={cn(
                     'w-2 h-2 rounded-full',
-                    alert.severity === 'critical' ? 'bg-red-500' :
-                      alert.severity === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
+                    alert.severity === 'critical' ? 'bg-red-500'
+                      : alert.severity === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
                   )} />
                   <span className="text-gray-600">{alert.message}</span>
                 </div>
@@ -606,9 +616,9 @@ export default function LocationTracker({
                 <div key={geofence.id} className="flex items-center space-x-2 text-xs">
                   <div className={cn(
                     'w-2 h-2 rounded-full',
-                    geofence.type === 'emergency' ? 'bg-red-500' :
-                      geofence.type === 'safe_zone' ? 'bg-green-500' :
-                        geofence.type === 'restricted' ? 'bg-orange-500' : 'bg-gray-500'
+                    geofence.type === 'emergency' ? 'bg-red-500'
+                      : geofence.type === 'safe_zone' ? 'bg-green-500'
+                        : geofence.type === 'restricted' ? 'bg-orange-500' : 'bg-gray-500'
                   )} />
                   <span className="text-gray-600">{geofence.name}</span>
                 </div>

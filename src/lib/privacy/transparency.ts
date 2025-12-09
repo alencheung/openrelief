@@ -1,18 +1,18 @@
 /**
  * Transparency Utilities for OpenRelief
- * 
+ *
  * This module provides utilities for generating transparency reports,
  * tracking data processing activities, and ensuring compliance with
  * transparency obligations under GDPR and other privacy regulations.
  */
 
-import { 
-  PrivacyAuditLog, 
-  LegalRequest, 
+import {
+  PrivacyAuditLog,
+  LegalRequest,
   DataProcessingPurpose,
   GranularDataPermissions,
   PrivacyZone
-} from '@/hooks/usePrivacy';
+} from '@/hooks/usePrivacy'
 
 // Transparency report configuration
 export interface TransparencyReportConfig {
@@ -132,12 +132,12 @@ export const generateTransparencyReport = (
   privacyZones: PrivacyZone[],
   config: TransparencyReportConfig
 ) => {
-  const { reportPeriod, includePersonalData, anonymizeSensitiveInfo } = config;
-  
+  const { reportPeriod, includePersonalData, anonymizeSensitiveInfo } = config
+
   // Filter logs by report period
   const filteredLogs = auditLogs.filter(
     log => log.timestamp >= reportPeriod.start && log.timestamp <= reportPeriod.end
-  );
+  )
 
   // Generate data processing activities
   const dataProcessingActivities: DataProcessingActivity[] = filteredLogs.map(log => ({
@@ -157,26 +157,26 @@ export const generateTransparencyReport = (
     automatedDecision: log.automatedDecision,
     decisionLogic: log.automatedDecision ? getDecisionLogic(log.action) : undefined,
     userRights: getUserRightsForDataType(log.dataType)
-  }));
+  }))
 
   // Generate third-party sharing report
-  const thirdPartySharing: ThirdPartySharing[] = extractThirdPartySharing(filteredLogs, anonymizeSensitiveInfo);
+  const thirdPartySharing: ThirdPartySharing[] = extractThirdPartySharing(filteredLogs, anonymizeSensitiveInfo)
 
   // Generate algorithmic decision explanations
-  const algorithmicDecisions: AlgorithmicDecision[] = extractAlgorithmicDecisions(filteredLogs, anonymizeSensitiveInfo);
+  const algorithmicDecisions: AlgorithmicDecision[] = extractAlgorithmicDecisions(filteredLogs, anonymizeSensitiveInfo)
 
   // Calculate system metrics
   const systemMetrics: SystemTransparencyMetrics = calculateSystemMetrics(
     filteredLogs,
     legalRequests,
     reportPeriod
-  );
+  )
 
   // Generate privacy impact assessments
   const privacyImpactAssessments: PrivacyImpactAssessment[] = generatePrivacyImpactAssessments(
     dataProcessingActivities,
     reportPeriod
-  );
+  )
 
   return {
     reportMetadata: {
@@ -212,58 +212,60 @@ export const generateTransparencyReport = (
       dataProtectionImpact: assessDataProtectionImpact(dataProcessingActivities),
       userRightsFulfillment: assessUserRightsFulfillment(legalRequests)
     }
-  };
-};
+  }
+}
 
 // Anonymize user ID for transparency reports
 const anonymizeUserId = (userId?: string): string | undefined => {
-  if (!userId) return undefined;
-  
-  // Generate a consistent hash for the user ID
-  let hash = 0;
-  for (let i = 0; i < userId.length; i++) {
-    const char = userId.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32-bit integer
+  if (!userId) {
+    return undefined
   }
-  
-  return `user_${Math.abs(hash)}`;
-};
+
+  // Generate a consistent hash for the user ID
+  let hash = 0
+  for (let i = 0; i < userId.length; i++) {
+    const char = userId.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash &= hash // Convert to 32-bit integer
+  }
+
+  return `user_${Math.abs(hash)}`
+}
 
 // Get data processing purpose for a data type
 const getDataProcessingPurpose = (
   dataType: string,
   purposes: DataProcessingPurpose[]
 ): string => {
-  const purpose = purposes.find(p => p.dataTypes.includes(dataType));
-  return purpose?.name || 'service_delivery';
-};
+  const purpose = purposes.find(p => p.dataTypes.includes(dataType))
+  return purpose?.name || 'service_delivery'
+}
 
 // Get processor for a specific action
 const getProcessorForAction = (action: string): string | undefined => {
   const processors: Record<string, string> = {
-    'location_query': 'OpenRelief Location Services',
-    'profile_view': 'OpenRelief User Management',
-    'emergency_response': 'OpenRelief Emergency Services',
-    'data_export': 'OpenRelief Data Export Service',
-    'third_party_sharing': 'OpenRelief Data Sharing Gateway'
-  };
-  
-  return processors[action];
-};
+    location_query: 'OpenRelief Location Services',
+    profile_view: 'OpenRelief User Management',
+    emergency_response: 'OpenRelief Emergency Services',
+    data_export: 'OpenRelief Data Export Service',
+    third_party_sharing: 'OpenRelief Data Sharing Gateway'
+  }
+
+  return processors[action]
+}
 
 // Determine data location for a data type
 const determineDataLocation = (dataType: string): string | undefined => {
   const locations: Record<string, string> = {
-    'location': 'EU',
-    'profile': 'EU',
-    'emergency': 'EU',
-    'health': 'EU',
-    'communication': 'EU'
-  };
-  
-  return locations[dataType];
-};
+    location: 'EU',
+    profile: 'EU',
+    emergency: 'EU',
+    health: 'EU',
+    communication: 'EU'
+  }
+
+  return locations[dataType]
+}
 
 // Get security measures for a data type
 const getSecurityMeasuresForDataType = (dataType: string): string[] => {
@@ -272,28 +274,28 @@ const getSecurityMeasuresForDataType = (dataType: string): string[] => {
     'Encryption in transit',
     'Access control',
     'Audit logging'
-  ];
-  
+  ]
+
   const specificMeasures: Record<string, string[]> = {
-    'location': [
+    location: [
       'Differential privacy',
       'K-anonymity',
       'Location precision reduction'
     ],
-    'profile': [
+    profile: [
       'Data anonymization',
       'Pseudonymization',
       'Access logging'
     ],
-    'health': [
+    health: [
       'Enhanced encryption',
       'Strict access controls',
       'Audit trails'
     ]
-  };
-  
-  return [...baseMeasures, ...(specificMeasures[dataType] || [])];
-};
+  }
+
+  return [...baseMeasures, ...(specificMeasures[dataType] || [])]
+}
 
 // Get user rights for a data type
 const getUserRightsForDataType = (dataType: string): string[] => {
@@ -302,37 +304,37 @@ const getUserRightsForDataType = (dataType: string): string[] => {
     'Right to rectification',
     'Right to erasure',
     'Right to restriction of processing'
-  ];
-  
+  ]
+
   const specificRights: Record<string, string[]> = {
-    'location': [
+    location: [
       'Right to object to processing',
       'Right to data portability'
     ],
-    'profile': [
+    profile: [
       'Right to object to processing',
       'Right to data portability'
     ],
-    'health': [
+    health: [
       'Right to object to processing',
       'Right to data portability'
     ]
-  };
-  
-  return [...baseRights, ...(specificRights[dataType] || [])];
-};
+  }
+
+  return [...baseRights, ...(specificRights[dataType] || [])]
+}
 
 // Get decision logic for automated decisions
 const getDecisionLogic = (action: string): string => {
   const decisionLogic: Record<string, string> = {
-    'location_query': 'Location is processed using differential privacy with ε=0.1 to balance utility and privacy',
-    'profile_view': 'Profile data is anonymized using k-anonymity with k=5 to ensure individual privacy',
-    'emergency_response': 'Emergency data is shared with verified responders based on proximity and availability',
-    'trust_score_calculation': 'Trust score is calculated based on response time, reliability, and community feedback'
-  };
-  
-  return decisionLogic[action] || 'Decision logic is not documented for this action';
-};
+    location_query: 'Location is processed using differential privacy with ε=0.1 to balance utility and privacy',
+    profile_view: 'Profile data is anonymized using k-anonymity with k=5 to ensure individual privacy',
+    emergency_response: 'Emergency data is shared with verified responders based on proximity and availability',
+    trust_score_calculation: 'Trust score is calculated based on response time, reliability, and community feedback'
+  }
+
+  return decisionLogic[action] || 'Decision logic is not documented for this action'
+}
 
 // Extract third-party sharing events from audit logs
 const extractThirdPartySharing = (
@@ -353,11 +355,11 @@ const extractThirdPartySharing = (
       retentionPeriod: log.retentionPeriod,
       securityMeasures: getSecurityMeasuresForDataType(log.dataType),
       internationalTransfer: determineDataLocation(log.dataType) !== 'EU',
-      safeguards: determineDataLocation(log.dataType) !== 'EU' 
+      safeguards: determineDataLocation(log.dataType) !== 'EU'
         ? ['Standard Contractual Clauses', 'Technical safeguards']
         : []
-    }));
-};
+    }))
+}
 
 // Extract algorithmic decisions from audit logs
 const extractAlgorithmicDecisions = (
@@ -378,8 +380,8 @@ const extractAlgorithmicDecisions = (
       impact: log.metadata?.impact || 'neutral',
       userCanAppeal: true,
       appealProcess: 'Users can appeal automated decisions through the privacy dashboard'
-    }));
-};
+    }))
+}
 
 // Calculate system-wide transparency metrics
 const calculateSystemMetrics = (
@@ -387,42 +389,42 @@ const calculateSystemMetrics = (
   legalRequests: LegalRequest[],
   reportPeriod: { start: Date; end: Date }
 ): SystemTransparencyMetrics => {
-  const totalUsers = new Set(logs.map(log => log.userId)).size;
+  const totalUsers = new Set(logs.map(log => log.userId)).size
   const activeUsers = new Set(
     logs
       .filter(log => log.timestamp >= reportPeriod.start)
       .map(log => log.userId)
-  ).size;
-  
-  const dataProcessingOperations = logs.length;
-  const dataSubjects = totalUsers;
-  const thirdPartySharingEvents = logs.filter(log => 
+  ).size
+
+  const dataProcessingOperations = logs.length
+  const dataSubjects = totalUsers
+  const thirdPartySharingEvents = logs.filter(log =>
     log.action.includes('third_party_sharing')
-  ).length;
-  
-  const legalRequestsReceived = legalRequests.length;
-  const legalRequestsProcessed = legalRequests.filter(r => 
+  ).length
+
+  const legalRequestsReceived = legalRequests.length
+  const legalRequestsProcessed = legalRequests.filter(r =>
     r.status === 'completed'
-  ).length;
-  
-  const dataBreaches = logs.filter(log => 
+  ).length
+
+  const dataBreaches = logs.filter(log =>
     log.action.includes('data_breach')
-  ).length;
-  
+  ).length
+
   // Calculate average response time for legal requests
-  const completedRequests = legalRequests.filter(r => r.status === 'completed');
+  const completedRequests = legalRequests.filter(r => r.status === 'completed')
   const averageResponseTime = completedRequests.length > 0
     ? completedRequests.reduce((sum, r) => {
-        const responseTime = r.updatedAt.getTime() - r.createdAt.getTime();
-        return sum + responseTime;
-      }, 0) / completedRequests.length / (1000 * 60 * 60 * 24) // Convert to days
-    : 0;
-  
+      const responseTime = r.updatedAt.getTime() - r.createdAt.getTime()
+      return sum + responseTime
+    }, 0) / completedRequests.length / (1000 * 60 * 60 * 24) // Convert to days
+    : 0
+
   // Calculate compliance score (0-100)
-  const complianceScore = Math.min(100, Math.max(0, 
+  const complianceScore = Math.min(100, Math.max(0,
     100 - (dataBreaches * 10) - (averageResponseTime * 2)
-  ));
-  
+  ))
+
   return {
     totalUsers,
     activeUsers,
@@ -435,8 +437,8 @@ const calculateSystemMetrics = (
     averageResponseTime,
     complianceScore,
     lastUpdated: new Date()
-  };
-};
+  }
+}
 
 // Generate privacy impact assessments
 const generatePrivacyImpactAssessments = (
@@ -446,12 +448,12 @@ const generatePrivacyImpactAssessments = (
   // Group activities by project/purpose
   const activitiesByPurpose = activities.reduce((acc, activity) => {
     if (!acc[activity.purpose]) {
-      acc[activity.purpose] = [];
+      acc[activity.purpose] = []
     }
-    acc[activity.purpose].push(activity);
-    return acc;
-  }, {} as Record<string, DataProcessingActivity[]>);
-  
+    acc[activity.purpose].push(activity)
+    return acc
+  }, {} as Record<string, DataProcessingActivity[]>)
+
   return Object.entries(activitiesByPurpose).map(([purpose, purposeActivities]) => ({
     id: `pia_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     timestamp: new Date(),
@@ -498,25 +500,25 @@ const generatePrivacyImpactAssessments = (
     approvalStatus: 'approved',
     approvedBy: 'Data Protection Officer',
     approvedAt: new Date()
-  }));
-};
+  }))
+}
 
 // Assess GDPR compliance
 const assessGDPRCompliance = (
   activities: DataProcessingActivity[],
   legalRequests: LegalRequest[]
 ) => {
-  const hasLegalBasis = activities.every(a => a.legalBasis);
-  const hasPurposeLimitation = activities.every(a => a.purpose);
-  const hasDataMinimization = activities.every(a => a.securityMeasures.includes('Data minimization'));
-  const hasRetentionPeriod = activities.every(a => a.retentionPeriod > 0);
-  const hasSecurityMeasures = activities.every(a => a.securityMeasures.length > 0);
-  const hasUserRights = activities.every(a => a.userRights.length > 0);
-  
-  const legalRequestCompliance = legalRequests.every(r => 
+  const hasLegalBasis = activities.every(a => a.legalBasis)
+  const hasPurposeLimitation = activities.every(a => a.purpose)
+  const hasDataMinimization = activities.every(a => a.securityMeasures.includes('Data minimization'))
+  const hasRetentionPeriod = activities.every(a => a.retentionPeriod > 0)
+  const hasSecurityMeasures = activities.every(a => a.securityMeasures.length > 0)
+  const hasUserRights = activities.every(a => a.userRights.length > 0)
+
+  const legalRequestCompliance = legalRequests.every(r =>
     r.status === 'completed' || r.status === 'processing'
-  );
-  
+  )
+
   const score = [
     hasLegalBasis,
     hasPurposeLimitation,
@@ -525,8 +527,8 @@ const assessGDPRCompliance = (
     hasSecurityMeasures,
     hasUserRights,
     legalRequestCompliance
-  ].filter(Boolean).length / 7 * 100;
-  
+  ].filter(Boolean).length / 7 * 100
+
   return {
     score,
     hasLegalBasis,
@@ -536,42 +538,42 @@ const assessGDPRCompliance = (
     hasSecurityMeasures,
     hasUserRights,
     legalRequestCompliance
-  };
-};
+  }
+}
 
 // Assess data protection impact
 const assessDataProtectionImpact = (activities: DataProcessingActivity[]) => {
-  const highImpactActivities = activities.filter(a => a.impactAssessment);
-  const automatedDecisions = activities.filter(a => a.automatedDecision);
-  const internationalTransfers = activities.filter(a => a.thirdPartyCountry && a.thirdPartyCountry !== 'EU');
-  
+  const highImpactActivities = activities.filter(a => a.impactAssessment)
+  const automatedDecisions = activities.filter(a => a.automatedDecision)
+  const internationalTransfers = activities.filter(a => a.thirdPartyCountry && a.thirdPartyCountry !== 'EU')
+
   return {
     highImpactActivities: highImpactActivities.length,
     automatedDecisions: automatedDecisions.length,
     internationalTransfers: internationalTransfers.length,
-    overallRisk: highImpactActivities.length > 0 ? 'high' : 
-                 automatedDecisions.length > activities.length / 2 ? 'medium' : 'low'
-  };
-};
+    overallRisk: highImpactActivities.length > 0 ? 'high'
+      : automatedDecisions.length > activities.length / 2 ? 'medium' : 'low'
+  }
+}
 
 // Assess user rights fulfillment
 const assessUserRightsFulfillment = (legalRequests: LegalRequest[]) => {
-  const totalRequests = legalRequests.length;
-  const completedRequests = legalRequests.filter(r => r.status === 'completed').length;
-  const pendingRequests = legalRequests.filter(r => r.status === 'pending').length;
-  const overdueRequests = legalRequests.filter(r => 
-    r.status === 'pending' && 
-    r.responseDeadline && 
-    new Date() > r.responseDeadline
-  ).length;
-  
+  const totalRequests = legalRequests.length
+  const completedRequests = legalRequests.filter(r => r.status === 'completed').length
+  const pendingRequests = legalRequests.filter(r => r.status === 'pending').length
+  const overdueRequests = legalRequests.filter(r =>
+    r.status === 'pending'
+    && r.responseDeadline
+    && new Date() > r.responseDeadline
+  ).length
+
   const averageProcessingTime = completedRequests.length > 0
     ? completedRequests.reduce((sum, r) => {
-        const processingTime = r.updatedAt.getTime() - r.createdAt.getTime();
-        return sum + processingTime;
-      }, 0) / completedRequests.length / (1000 * 60 * 60 * 24) // Convert to days
-    : 0;
-  
+      const processingTime = r.updatedAt.getTime() - r.createdAt.getTime()
+      return sum + processingTime
+    }, 0) / completedRequests.length / (1000 * 60 * 60 * 24) // Convert to days
+    : 0
+
   return {
     totalRequests,
     completedRequests,
@@ -580,8 +582,8 @@ const assessUserRightsFulfillment = (legalRequests: LegalRequest[]) => {
     completionRate: totalRequests > 0 ? (completedRequests / totalRequests) * 100 : 0,
     averageProcessingTime,
     withinLegalDeadline: overdueRequests === 0
-  };
-};
+  }
+}
 
 // Export transparency report to different formats
 export const exportTransparencyReport = (
@@ -590,19 +592,19 @@ export const exportTransparencyReport = (
 ): string | Blob => {
   switch (format) {
     case 'json':
-      return JSON.stringify(report, null, 2);
-    
+      return JSON.stringify(report, null, 2)
+
     case 'csv':
-      return convertToCSV(report);
-    
+      return convertToCSV(report)
+
     case 'pdf':
       // In a real implementation, you would use a PDF library like jsPDF
-      return new Blob(['PDF export not implemented in this demo'], { type: 'application/pdf' });
-    
+      return new Blob(['PDF export not implemented in this demo'], { type: 'application/pdf' })
+
     default:
-      throw new Error(`Unsupported format: ${format}`);
+      throw new Error(`Unsupported format: ${format}`)
   }
-};
+}
 
 // Convert report to CSV format
 const convertToCSV = (report: any): string => {
@@ -614,8 +616,8 @@ const convertToCSV = (report: any): string => {
     'Purpose',
     'Legal Basis',
     'Automated Decision'
-  ];
-  
+  ]
+
   const rows = report.dataProcessingActivities.map((activity: DataProcessingActivity) => [
     activity.timestamp.toISOString(),
     activity.userId || '',
@@ -624,12 +626,12 @@ const convertToCSV = (report: any): string => {
     activity.purpose,
     activity.legalBasis,
     activity.automatedDecision ? 'Yes' : 'No'
-  ]);
-  
+  ])
+
   return [headers, ...rows]
     .map(row => row.map(cell => `"${cell}"`).join(','))
-    .join('\n');
-};
+    .join('\n')
+}
 
 // Generate user-specific transparency report
 export const generateUserTransparencyReport = (
@@ -638,9 +640,9 @@ export const generateUserTransparencyReport = (
   legalRequests: LegalRequest[],
   config: TransparencyReportConfig
 ) => {
-  const userLogs = auditLogs.filter(log => log.userId === userId);
-  const userRequests = legalRequests.filter(req => req.metadata?.userId === userId);
-  
+  const userLogs = auditLogs.filter(log => log.userId === userId)
+  const userRequests = legalRequests.filter(req => req.metadata?.userId === userId)
+
   return generateTransparencyReport(
     userLogs,
     userRequests,
@@ -648,5 +650,5 @@ export const generateUserTransparencyReport = (
     [], // Granular permissions would be filtered for this user
     [], // Privacy zones would be filtered for this user
     config
-  );
-};
+  )
+}

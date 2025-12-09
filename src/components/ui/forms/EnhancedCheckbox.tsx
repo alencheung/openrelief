@@ -11,18 +11,18 @@ const enhancedCheckboxVariants = cva(
         default: 'border-primary text-primary focus-visible:ring-primary',
         error: 'border-destructive text-destructive focus-visible:ring-destructive',
         success: 'border-success text-success focus-visible:ring-success',
-        warning: 'border-warning text-warning focus-visible:ring-warning',
+        warning: 'border-warning text-warning focus-visible:ring-warning'
       },
       size: {
         sm: 'h-3 w-3',
         default: 'h-4 w-4',
-        lg: 'h-5 w-5',
-      },
+        lg: 'h-5 w-5'
+      }
     },
     defaultVariants: {
       variant: 'default',
-      size: 'default',
-    },
+      size: 'default'
+    }
   }
 )
 
@@ -43,9 +43,9 @@ export interface EnhancedCheckboxProps
 }
 
 const EnhancedCheckbox = React.forwardRef<HTMLInputElement, EnhancedCheckboxProps>(
-  ({ 
-    className, 
-    variant, 
+  ({
+    className,
+    variant,
     size,
     label,
     helperText,
@@ -62,42 +62,50 @@ const EnhancedCheckbox = React.forwardRef<HTMLInputElement, EnhancedCheckboxProp
     onChange,
     onBlur,
     id,
-    ...props 
+    ...props
   }, ref) => {
     const [validationState, setValidationState] = React.useState<{
       isValid: boolean | null
       message: string | null
     }>({ isValid: null, message: null })
-    
+
     const checkboxRef = React.useRef<HTMLInputElement>(null)
     const inputId = id || `checkbox-${React.useId()}`
-    
+
     // Determine final variant based on props and validation state
     const getVariant = () => {
-      if (errorText || validationState.message && !validationState.isValid) return 'error'
-      if (successText || validationState.isValid) return 'success'
-      if (warningText) return 'warning'
+      if (errorText || validationState.message && !validationState.isValid) {
+        return 'error'
+      }
+      if (successText || validationState.isValid) {
+        return 'success'
+      }
+      if (warningText) {
+        return 'warning'
+      }
       return variant
     }
-    
+
     // Handle validation
     const validateInput = (inputChecked: boolean) => {
-      if (!validator || !validateOnChange) return
-      
+      if (!validator || !validateOnChange) {
+        return
+      }
+
       const validationResult = validator(inputChecked)
       const isValid = validationResult === null
       const message = validationResult || null
-      
+
       setValidationState({ isValid, message })
       onValidationChange?.(isValid, message || undefined)
     }
-    
+
     // Handle checkbox change
     const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       onChange?.(e)
       validateInput(e.target.checked)
     }
-    
+
     // Handle checkbox blur
     const handleCheckboxBlur = (e: React.FocusEvent<HTMLInputElement>) => {
       onBlur?.(e)
@@ -105,16 +113,16 @@ const EnhancedCheckbox = React.forwardRef<HTMLInputElement, EnhancedCheckboxProp
         validateInput(e.target.checked)
       }
     }
-    
+
     // Set indeterminate state
     React.useEffect(() => {
       if (checkboxRef.current) {
         checkboxRef.current.indeterminate = indeterminate
       }
     }, [indeterminate])
-    
+
     const currentVariant = getVariant()
-    
+
     return (
       <div className="space-y-2">
         <div className={cn(
@@ -132,8 +140,11 @@ const EnhancedCheckbox = React.forwardRef<HTMLInputElement, EnhancedCheckboxProp
                 className
               )}
               ref={(node) => {
-                if (typeof ref === 'function') ref(node)
-                else if (ref) ref.current = node
+                if (typeof ref === 'function') {
+                  ref(node)
+                } else if (ref) {
+                  ref.current = node
+                }
                 checkboxRef.current = node
               }}
               checked={checked}
@@ -141,7 +152,7 @@ const EnhancedCheckbox = React.forwardRef<HTMLInputElement, EnhancedCheckboxProp
               onBlur={handleCheckboxBlur}
               {...props}
             />
-            
+
             {/* Custom Checkbox */}
             <div
               className={cn(
@@ -162,7 +173,7 @@ const EnhancedCheckbox = React.forwardRef<HTMLInputElement, EnhancedCheckboxProp
               )}
             </div>
           </div>
-          
+
           {/* Label */}
           {label && (
             <label
@@ -180,17 +191,17 @@ const EnhancedCheckbox = React.forwardRef<HTMLInputElement, EnhancedCheckboxProp
             </label>
           )}
         </div>
-        
+
         {/* Helper Text */}
         {(helperText || errorText || successText || warningText || validationState.message) && (
           <div className={cn(
             'text-xs',
-            errorText || (validationState.message && !validationState.isValid) 
-              ? 'text-destructive' 
-              : successText || validationState.isValid 
-                ? 'text-success' 
-                : warningText 
-                  ? 'text-warning' 
+            errorText || (validationState.message && !validationState.isValid)
+              ? 'text-destructive'
+              : successText || validationState.isValid
+                ? 'text-success'
+                : warningText
+                  ? 'text-warning'
                   : 'text-muted-foreground'
           )}>
             {errorText || successText || warningText || validationState.message || helperText}

@@ -1,6 +1,6 @@
 /**
  * Transparency Report API Endpoint
- * 
+ *
  * This endpoint handles requests for transparency reports,
  * allowing users to access detailed information about data processing
  * and system-wide transparency metrics.
@@ -9,12 +9,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { generateTransparencyReport } from '@/lib/privacy/transparency'
-import { 
-  PrivacyAuditLog, 
-  LegalRequest, 
+import {
+  PrivacyAuditLog,
+  LegalRequest,
   DataProcessingPurpose,
   GranularDataPermissions,
-  PrivacyZone 
+  PrivacyZone
 } from '@/hooks/usePrivacy'
 
 // Mock databases for demonstration
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
   try {
     // Get user session
     const session = await getServerSession()
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: 'Authentication required' },
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
 
     // Log report generation for transparency
     await logTransparencyAccess(
-      session.user.id, 
+      session.user.id,
       'report_generation',
       periodDays,
       format,
@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
     } else if (format === 'csv') {
       // Convert to CSV and return as text
       const csvReport = convertToCSV(report)
-      
+
       return new NextResponse(csvReport, {
         headers: {
           'Content-Type': 'text/csv',
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
   try {
     // Get user session
     const session = await getServerSession()
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: 'Authentication required' },
@@ -151,13 +151,13 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json()
-    const { 
-      startDate, 
-      endDate, 
-      dataTypes, 
+    const {
+      startDate,
+      endDate,
+      dataTypes,
       includePersonalData,
       anonymizeSensitiveInfo,
-      format 
+      format
     } = body
 
     // Validate required fields
@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
     // Validate dates
     const start = new Date(startDate)
     const end = new Date(endDate)
-    
+
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       return NextResponse.json(
         { error: 'Invalid date format' },
@@ -205,8 +205,8 @@ export async function POST(request: NextRequest) {
     const filteredLogs = auditLogs.filter(log => {
       const logDate = new Date(log.timestamp)
       const inDateRange = logDate >= start && logDate <= end
-      const inDataTypes = !dataTypes || dataTypes.length === 0 || 
-                          dataTypes.includes(log.dataType)
+      const inDataTypes = !dataTypes || dataTypes.length === 0
+                          || dataTypes.includes(log.dataType)
       return inDateRange && inDataTypes
     })
 
@@ -231,7 +231,7 @@ export async function POST(request: NextRequest) {
 
     // Log custom report generation for transparency
     await logTransparencyAccess(
-      session.user.id, 
+      session.user.id,
       'custom_report_generation',
       Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)),
       format || 'json',
@@ -309,8 +309,8 @@ function convertToCSV(report: any): string {
 
 // Log transparency access for audit purposes
 async function logTransparencyAccess(
-  userId: string, 
-  action: string, 
+  userId: string,
+  action: string,
   periodDays: number,
   format: string,
   anonymized: boolean
@@ -338,7 +338,7 @@ async function logTransparencyAccess(
   }
 
   console.log('Transparency access logged:', logEntry)
-  
+
   // In a real implementation, save to audit database
   // await saveToAuditDatabase(logEntry)
 }

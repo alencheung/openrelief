@@ -1,6 +1,6 @@
 /**
  * Legal Requests Page for OpenRelief
- * 
+ *
  * This page allows users to exercise their GDPR rights including
  * data access, rectification, erasure, portability, and objection
  */
@@ -10,11 +10,11 @@
 import React, { useState } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { 
-  FileText, 
-  Download, 
-  Trash2, 
-  Edit, 
+import {
+  FileText,
+  Download,
+  Trash2,
+  Edit,
   AlertCircle,
   CheckCircle,
   Clock,
@@ -115,20 +115,20 @@ const LegalRequestsPage: React.FC = () => {
   }
 
   const filteredRequests = privacyContext.legalRequests.filter(request => {
-    const matchesSearch = request.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        request.description.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch = request.title.toLowerCase().includes(searchTerm.toLowerCase())
+                        || request.description.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === 'all' || request.status === statusFilter
     const matchesType = typeFilter === 'all' || request.type === typeFilter
-    
+
     return matchesSearch && matchesStatus && matchesType
   })
 
   const handleCreateRequest = () => {
     if (!newRequestDescription.trim()) {
       toast({
-        title: "Description Required",
-        description: "Please provide a description for your request.",
-        variant: "destructive"
+        title: 'Description Required',
+        description: 'Please provide a description for your request.',
+        variant: 'destructive'
       })
       return
     }
@@ -141,7 +141,7 @@ const LegalRequestsPage: React.FC = () => {
     })
 
     toast({
-      title: "Request Submitted",
+      title: 'Request Submitted',
       description: `Your ${requestTypes.find(rt => rt.type === newRequestType)?.title} request has been submitted successfully.`
     })
 
@@ -162,12 +162,14 @@ const LegalRequestsPage: React.FC = () => {
   }
 
   const getDaysRemaining = (deadline?: Date) => {
-    if (!deadline) return null
-    
+    if (!deadline) {
+      return null
+    }
+
     const now = new Date()
     const diffTime = deadline.getTime() - now.getTime()
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    
+
     return diffDays
   }
 
@@ -184,7 +186,7 @@ const LegalRequestsPage: React.FC = () => {
                 <p className="text-sm text-gray-600">Exercise your GDPR rights</p>
               </div>
             </div>
-            <Button 
+            <Button
               onClick={() => setActiveTab('new')}
               disabled={activeTab === 'new'}
             >
@@ -242,7 +244,7 @@ const LegalRequestsPage: React.FC = () => {
                     />
                   </div>
                 </div>
-                
+
                 <div className="flex gap-2">
                   <select
                     value={statusFilter}
@@ -256,7 +258,7 @@ const LegalRequestsPage: React.FC = () => {
                     <option value="rejected">Rejected</option>
                     <option value="appealed">Appealed</option>
                   </select>
-                  
+
                   <select
                     value={typeFilter}
                     onChange={(e) => setTypeFilter(e.target.value as RequestType | 'all')}
@@ -279,9 +281,9 @@ const LegalRequestsPage: React.FC = () => {
                 <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No requests found</h3>
                 <p className="text-gray-600 mb-6">
-                  {privacyContext.legalRequests.length === 0 
+                  {privacyContext.legalRequests.length === 0
                     ? "You haven't made any legal requests yet."
-                    : "No requests match your current filters."}
+                    : 'No requests match your current filters.'}
                 </p>
                 {privacyContext.legalRequests.length === 0 && (
                   <Button onClick={() => setActiveTab('new')}>
@@ -305,22 +307,22 @@ const LegalRequestsPage: React.FC = () => {
                             <span>{request.status}</span>
                           </span>
                         </div>
-                        
+
                         <p className="text-gray-600 mb-4">{request.description}</p>
-                        
+
                         <div className="flex items-center space-x-6 text-sm text-gray-500">
                           <div className="flex items-center space-x-1">
                             <Calendar className="h-4 w-4" />
                             <span>Created: {formatDate(request.createdAt)}</span>
                           </div>
-                          
+
                           {request.updatedAt.getTime() !== request.createdAt.getTime() && (
                             <div className="flex items-center space-x-1">
                               <Clock className="h-4 w-4" />
                               <span>Updated: {formatDate(request.updatedAt)}</span>
                             </div>
                           )}
-                          
+
                           {request.responseDeadline && (
                             <div className="flex items-center space-x-1">
                               <AlertCircle className="h-4 w-4" />
@@ -338,7 +340,7 @@ const LegalRequestsPage: React.FC = () => {
                           )}
                         </div>
                       </div>
-                      
+
                       <div className="ml-4">
                         <Button variant="outline" size="sm">
                           View Details
@@ -362,11 +364,11 @@ const LegalRequestsPage: React.FC = () => {
                     Select the type of legal request you would like to submit
                   </p>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {requestTypes.map((requestType) => (
-                    <Card 
-                      key={requestType.type} 
+                    <Card
+                      key={requestType.type}
                       className="p-6 cursor-pointer hover:shadow-md transition-shadow border-2 hover:border-blue-300"
                       onClick={() => {
                         setNewRequestType(requestType.type)
@@ -393,14 +395,14 @@ const LegalRequestsPage: React.FC = () => {
             ) : (
               <Card className="p-6">
                 <div className="mb-6">
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     onClick={() => setShowNewRequestForm(false)}
                     className="mb-4"
                   >
                     ← Back to request types
                   </Button>
-                  
+
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">
                     {requestTypes.find(rt => rt.type === newRequestType)?.title}
                   </h2>
@@ -408,7 +410,7 @@ const LegalRequestsPage: React.FC = () => {
                     {requestTypes.find(rt => rt.type === newRequestType)?.description}
                   </p>
                 </div>
-                
+
                 <div className="space-y-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -422,7 +424,7 @@ const LegalRequestsPage: React.FC = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
-                  
+
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <div className="flex items-start space-x-2">
                       <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
@@ -437,9 +439,9 @@ const LegalRequestsPage: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex justify-end space-x-4">
-                    <Button 
+                    <Button
                       variant="outline"
                       onClick={() => setShowNewRequestForm(false)}
                     >

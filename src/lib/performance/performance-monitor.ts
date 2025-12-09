@@ -1,6 +1,6 @@
 /**
  * Comprehensive Performance Monitoring System
- * 
+ *
  * This module provides real-time performance monitoring for:
  * - API response times and throughput
  * - Database query performance
@@ -85,7 +85,7 @@ export const PERFORMANCE_THRESHOLDS = {
     auth_operations: 500,
     general_api: 300
   },
-  
+
   // Database queries (ms)
   database: {
     select: 50,
@@ -95,7 +95,7 @@ export const PERFORMANCE_THRESHOLDS = {
     rpc: 200,
     spatial_query: 150 // Geo queries are more expensive
   },
-  
+
   // Core Web Vitals
   web_vitals: {
     lcp: 2500, // Largest Contentful Paint
@@ -105,7 +105,7 @@ export const PERFORMANCE_THRESHOLDS = {
     ttfb: 600, // Time to First Byte
     inp: 200   // Interaction to Next Paint
   },
-  
+
   // System resources (percentage)
   system: {
     cpu_usage: 80,
@@ -113,7 +113,7 @@ export const PERFORMANCE_THRESHOLDS = {
     disk_usage: 90,
     active_connections: 1000
   },
-  
+
   // Alert dispatch (ms)
   alert_dispatch: {
     push_notification: 100,
@@ -176,7 +176,9 @@ class PerformanceMonitor {
    * Start performance monitoring
    */
   private startMonitoring(): void {
-    if (this.monitoringActive) return
+    if (this.monitoringActive) {
+      return
+    }
 
     this.monitoringActive = true
     this.initializeMetricsCollection()
@@ -197,10 +199,10 @@ class PerformanceMonitor {
     }
 
     this.metrics.push(fullMetric)
-    
+
     // Check for performance thresholds
     this.checkPerformanceThresholds(fullMetric)
-    
+
     // Store in database for long-term analysis
     this.persistMetric(fullMetric)
   }
@@ -211,7 +213,7 @@ class PerformanceMonitor {
   startTimer(operationName: string, tags?: Record<string, string>): string {
     const timerId = this.generateTimerId()
     this.activeTimers.set(timerId, performance.now())
-    
+
     return timerId
   }
 
@@ -219,7 +221,7 @@ class PerformanceMonitor {
    * End timing an operation and record the duration
    */
   endTimer(
-    timerId: string, 
+    timerId: string,
     metricType: PerformanceMetric['type'],
     operationName: string,
     tags?: Record<string, string>
@@ -250,7 +252,7 @@ class PerformanceMonitor {
    */
   recordWebVitals(vitals: CoreWebVitals): void {
     this.webVitalsBuffer.push(vitals)
-    
+
     // Record individual metrics
     this.recordMetric({
       type: 'frontend',
@@ -311,7 +313,7 @@ class PerformanceMonitor {
    */
   recordAlertDispatch(metrics: AlertDispatchMetrics): void {
     this.alertDispatchMetrics.push(metrics)
-    
+
     this.recordMetric({
       type: 'alert',
       name: 'alert_dispatch_latency',
@@ -333,7 +335,7 @@ class PerformanceMonitor {
    */
   recordDatabaseQuery(metrics: DatabaseQueryMetrics): void {
     this.databaseQueryMetrics.push(metrics)
-    
+
     this.recordMetric({
       type: 'database',
       name: 'database_query_execution_time',
@@ -356,7 +358,7 @@ class PerformanceMonitor {
    */
   recordSystemResources(metrics: SystemResourceMetrics): void {
     this.systemResourceMetrics.push(metrics)
-    
+
     this.recordMetric({
       type: 'system',
       name: 'cpu_usage',
@@ -433,8 +435,8 @@ class PerformanceMonitor {
     // Calculate API metrics
     const apiMetrics = recentMetrics.filter(m => m.type === 'api')
     const apiResponseTimes = apiMetrics.filter(m => m.name.includes('response_time'))
-    const avgApiResponseTime = apiResponseTimes.length > 0 
-      ? apiResponseTimes.reduce((sum, m) => sum + m.value, 0) / apiResponseTimes.length 
+    const avgApiResponseTime = apiResponseTimes.length > 0
+      ? apiResponseTimes.reduce((sum, m) => sum + m.value, 0) / apiResponseTimes.length
       : 0
 
     // Calculate database metrics
@@ -576,7 +578,7 @@ class PerformanceMonitor {
 
   private checkPerformanceThresholds(metric: PerformanceMetric): void {
     const thresholds = this.getThresholdsForMetric(metric)
-    
+
     for (const threshold of thresholds) {
       if (metric.value > threshold.value) {
         this.createPerformanceAlert({
@@ -679,7 +681,7 @@ class PerformanceMonitor {
 
   private checkAlertDispatchThresholds(metrics: AlertDispatchMetrics): void {
     const threshold = PERFORMANCE_THRESHOLDS.alert_dispatch[metrics.deliveryMethod]
-    
+
     if (metrics.latency > threshold) {
       this.createPerformanceAlert({
         level: PerformanceAlertLevel.CRITICAL,
@@ -695,7 +697,7 @@ class PerformanceMonitor {
 
   private checkDatabaseQueryThresholds(metrics: DatabaseQueryMetrics): void {
     const threshold = PERFORMANCE_THRESHOLDS.database[metrics.queryType]
-    
+
     if (metrics.executionTime > threshold) {
       this.createPerformanceAlert({
         level: PerformanceAlertLevel.WARNING,
@@ -744,10 +746,10 @@ class PerformanceMonitor {
     }
 
     this.alerts.push(fullAlert)
-    
+
     // Store in database
     this.persistAlert(fullAlert)
-    
+
     // Send immediate notification for critical/emergency alerts
     if (alert.level === PerformanceAlertLevel.CRITICAL || alert.level === PerformanceAlertLevel.EMERGENCY) {
       this.sendPerformanceAlertNotification(fullAlert)
@@ -756,11 +758,11 @@ class PerformanceMonitor {
 
   private getMetricImpact(metric: PerformanceMetric): string {
     const impactMap: Record<string, string> = {
-      'emergency_alert_response_time': 'Critical impact on emergency response effectiveness',
-      'database_query_execution_time': 'Degraded API performance and user experience',
-      'largest_contentful_paint': 'Poor user experience, slow perceived load time',
-      'cpu_usage': 'System performance degradation, potential service disruption',
-      'alert_dispatch_latency': 'Delayed emergency notifications, potentially life-threatening'
+      emergency_alert_response_time: 'Critical impact on emergency response effectiveness',
+      database_query_execution_time: 'Degraded API performance and user experience',
+      largest_contentful_paint: 'Poor user experience, slow perceived load time',
+      cpu_usage: 'System performance degradation, potential service disruption',
+      alert_dispatch_latency: 'Delayed emergency notifications, potentially life-threatening'
     }
 
     return impactMap[metric.name] || 'Performance degradation'
@@ -768,27 +770,27 @@ class PerformanceMonitor {
 
   private getMetricRecommendations(metric: PerformanceMetric): string[] {
     const recommendationMap: Record<string, string[]> = {
-      'emergency_alert_response_time': [
+      emergency_alert_response_time: [
         'Optimize alert dispatch pipeline',
         'Implement connection pooling',
         'Add caching for frequently accessed data'
       ],
-      'database_query_execution_time': [
+      database_query_execution_time: [
         'Add appropriate database indexes',
         'Optimize query structure',
         'Implement query result caching'
       ],
-      'largest_contentful_paint': [
+      largest_contentful_paint: [
         'Optimize image loading',
         'Reduce server response time',
         'Eliminate render-blocking resources'
       ],
-      'cpu_usage': [
+      cpu_usage: [
         'Scale horizontally',
         'Optimize CPU-intensive operations',
         'Implement auto-scaling'
       ],
-      'alert_dispatch_latency': [
+      alert_dispatch_latency: [
         'Optimize notification service',
         'Implement queue-based processing',
         'Add redundant delivery channels'
@@ -802,7 +804,7 @@ class PerformanceMonitor {
     try {
       const usage = process.cpuUsage()
       const memUsage = process.memoryUsage()
-      
+
       const systemMetrics: SystemResourceMetrics = {
         timestamp: new Date(),
         cpuUsage: (usage.user + usage.system) / 1000000, // Convert to seconds
@@ -824,12 +826,12 @@ class PerformanceMonitor {
 
   private async cleanupOldMetrics(): Promise<void> {
     const cutoffTime = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // 7 days ago
-    
+
     try {
       // Clean up in-memory metrics
       this.metrics = this.metrics.filter(m => m.timestamp > cutoffTime)
       this.alerts = this.alerts.filter(a => a.timestamp > cutoffTime)
-      
+
       // Clean up database
       await this.supabase
         .from('performance_metrics')
@@ -847,13 +849,13 @@ class PerformanceMonitor {
 
   private async processPerformanceAlerts(): Promise<void> {
     const activeAlerts = this.getActiveAlerts()
-    
+
     for (const alert of activeAlerts) {
       // Check if alert should be escalated
       if (this.shouldEscalateAlert(alert)) {
         await this.escalateAlert(alert)
       }
-      
+
       // Check if alert should be auto-resolved
       if (this.shouldAutoResolveAlert(alert)) {
         await this.resolveAlert(alert.id)
@@ -863,49 +865,53 @@ class PerformanceMonitor {
 
   private shouldEscalateAlert(alert: PerformanceAlert): boolean {
     const timeSinceCreation = Date.now() - alert.timestamp.getTime()
-    
+
     // Escalate critical alerts after 5 minutes
     if (alert.level === PerformanceAlertLevel.CRITICAL && timeSinceCreation > 5 * 60 * 1000) {
       return true
     }
-    
+
     // Escalate emergency alerts immediately
     if (alert.level === PerformanceAlertLevel.EMERGENCY) {
       return true
     }
-    
+
     return false
   }
 
   private shouldAutoResolveAlert(alert: PerformanceAlert): boolean {
     // Auto-resolve if recent metrics show improvement
-    const recentMetrics = this.metrics.filter(m => 
-      m.name === alert.metric && 
-      m.timestamp > new Date(Date.now() - 10 * 60 * 1000) // Last 10 minutes
+    const recentMetrics = this.metrics.filter(m =>
+      m.name === alert.metric
+      && m.timestamp > new Date(Date.now() - 10 * 60 * 1000) // Last 10 minutes
     )
-    
-    if (recentMetrics.length === 0) return false
-    
+
+    if (recentMetrics.length === 0) {
+      return false
+    }
+
     const avgRecentValue = recentMetrics.reduce((sum, m) => sum + m.value, 0) / recentMetrics.length
-    
+
     return avgRecentValue <= alert.threshold * 0.9 // 90% of threshold
   }
 
   private async escalateAlert(alert: PerformanceAlert): Promise<void> {
     // Update alert level to emergency
     alert.level = PerformanceAlertLevel.EMERGENCY
-    
+
     await this.persistAlert(alert)
     await this.sendPerformanceAlertNotification(alert)
   }
 
   private async resolveAlert(alertId: string): Promise<void> {
     const alert = this.alerts.find(a => a.id === alertId)
-    if (!alert) return
-    
+    if (!alert) {
+      return
+    }
+
     alert.resolved = true
     alert.resolvedAt = new Date()
-    
+
     await this.persistAlert(alert)
   }
 

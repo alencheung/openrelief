@@ -1,6 +1,6 @@
 /**
  * iOS Background Strategy for Emergency Notifications
- * 
+ *
  * This module handles iOS-specific background tasks including:
  * - Silent push notifications for critical emergencies
  * - Background location verification
@@ -56,7 +56,7 @@ class iOSBackgroundManager {
       silentPushEnabled: false,
       backgroundLocationEnabled: false,
       batteryOptimizationHandled: false,
-      criticalAlertsEnabled: false,
+      criticalAlertsEnabled: false
     }
   }
 
@@ -111,37 +111,37 @@ class iOSBackgroundManager {
       // iOS specific settings
       popInitialNotification: true,
       requestPermissions: Platform.OS === 'ios',
-      
+
       // Critical alerts for emergencies
       criticalAlert: true,
-      
+
       // Silent notifications
       silent: true,
-      
+
       // Notification handler
       onNotification: (notification) => {
         this.handleNotification(notification)
       },
-      
+
       // Permission handler
       onRegister: (token) => {
         console.log('Push notification token registered:', token)
         this.handleTokenRegistration(token)
       },
-      
+
       // Action handlers
       onAction: (notification) => {
         console.log('Notification action received:', notification)
         this.handleNotificationAction(notification)
       },
-      
+
       // iOS specific permissions
       permissions: {
         alert: true,
         badge: true,
         sound: true,
-        criticalAlert: true,
-      },
+        criticalAlert: true
+      }
     })
 
     // Configure iOS specific settings
@@ -170,7 +170,6 @@ class iOSBackgroundManager {
 
       // Background app refresh
       await this.requestBackgroundAppRefresh()
-
     } catch (error) {
       console.error('Failed to request iOS permissions:', error)
     }
@@ -198,7 +197,7 @@ class iOSBackgroundManager {
       requiredNetworkType: BackgroundJob.NETWORK_TYPE_ANY,
       requiresCharging: false,
       requiresDeviceIdle: false,
-      requiresBatteryNotLow: true,
+      requiresBatteryNotLow: true
     }, async () => {
       await this.performLocationVerification()
     })
@@ -212,18 +211,18 @@ class iOSBackgroundManager {
       requiredNetworkType: BackgroundJob.NETWORK_TYPE_ANY,
       requiresCharging: false,
       requiresDeviceIdle: false,
-      requiresBatteryNotLow: false,
+      requiresBatteryNotLow: false
     }, async () => {
       await this.processEmergencyQueue()
     })
 
     // Start background jobs
     BackgroundJob.start({
-      jobKey: 'emergencyLocationCheck',
+      jobKey: 'emergencyLocationCheck'
     })
 
     BackgroundJob.start({
-      jobKey: 'emergencyQueueProcessor',
+      jobKey: 'emergencyQueueProcessor'
     })
   }
 
@@ -243,7 +242,7 @@ class iOSBackgroundManager {
         location: data.location ? JSON.parse(data.location) : undefined,
         requiresAction: data.requiresAction === 'true',
         timestamp: parseInt(data.timestamp) || Date.now(),
-        trustWeight: parseFloat(data.trustWeight) || 1.0,
+        trustWeight: parseFloat(data.trustWeight) || 1.0
       }
 
       if (foreground && !userInteraction) {
@@ -279,7 +278,7 @@ class iOSBackgroundManager {
    */
   private handleEmergencyInteraction(payload: EmergencyPushPayload): void {
     console.log('User interacted with emergency notification:', payload.eventId)
-    
+
     // Navigate to emergency details
     // This would integrate with your navigation system
     this.navigateToEmergency(payload.eventId)
@@ -302,8 +301,8 @@ class iOSBackgroundManager {
         severity: payload.severity,
         location: payload.location,
         requiresAction: payload.requiresAction,
-        timestamp: payload.timestamp,
-      },
+        timestamp: payload.timestamp
+      }
     }
 
     // Use critical alert for critical emergencies
@@ -352,10 +351,10 @@ class iOSBackgroundManager {
       return { success: true, executionTime }
     } catch (error) {
       console.error('Failed to process emergency queue:', error)
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
-        executionTime: Date.now() - startTime 
+        executionTime: Date.now() - startTime
       }
     } finally {
       this.isProcessingQueue = false
@@ -379,7 +378,6 @@ class iOSBackgroundManager {
       if (emergency.severity === 'critical') {
         this.triggerCriticalAlert(emergency)
       }
-
     } catch (error) {
       console.error('Failed to process emergency in background:', error)
     }
@@ -394,7 +392,7 @@ class iOSBackgroundManager {
     try {
       // Get current location
       const location = await this.getCurrentLocation()
-      
+
       if (location && this.config.backgroundLocationEnabled) {
         // Check proximity to active emergencies
         await this.checkEmergencyProximity(location)
@@ -403,10 +401,10 @@ class iOSBackgroundManager {
       return { success: true, executionTime: Date.now() - startTime }
     } catch (error) {
       console.error('Background location verification failed:', error)
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: error instanceof Error ? error.message : 'Location error',
-        executionTime: Date.now() - startTime 
+        executionTime: Date.now() - startTime
       }
     }
   }
@@ -415,10 +413,14 @@ class iOSBackgroundManager {
    * Verify emergency location
    */
   private async verifyEmergencyLocation(emergency: EmergencyPushPayload): Promise<void> {
-    if (!emergency.location) return
+    if (!emergency.location) {
+      return
+    }
 
     const currentLocation = await this.getCurrentLocation()
-    if (!currentLocation) return
+    if (!currentLocation) {
+      return
+    }
 
     const distance = this.calculateDistance(
       currentLocation.latitude,
@@ -440,7 +442,7 @@ class iOSBackgroundManager {
         (position) => {
           resolve({
             latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
+            longitude: position.coords.longitude
           })
         },
         (error) => {
@@ -450,7 +452,7 @@ class iOSBackgroundManager {
         {
           enableHighAccuracy: true,
           timeout: 10000,
-          maximumAge: 300000, // 5 minutes
+          maximumAge: 300000 // 5 minutes
         }
       )
     })
@@ -466,9 +468,9 @@ class iOSBackgroundManager {
     const Δφ = ((lat2 - lat1) * Math.PI) / 180
     const Δλ = ((lon2 - lon1) * Math.PI) / 180
 
-    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-      Math.cos(φ1) * Math.cos(φ2) *
-      Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2)
+      + Math.cos(φ1) * Math.cos(φ2)
+      * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 
     return R * c // Distance in meters
@@ -513,8 +515,8 @@ class iOSBackgroundManager {
       actions: ['VIEW', 'CONFIRM'],
       userInfo: {
         emergencyId: emergency.eventId,
-        critical: true,
-      },
+        critical: true
+      }
     })
   }
 
@@ -539,7 +541,7 @@ class iOSBackgroundManager {
    */
   private handleNotificationAction(notification: any): void {
     const { action, userInfo } = notification
-    
+
     if (userInfo?.emergencyId) {
       switch (action) {
         case 'VIEW':
@@ -606,7 +608,7 @@ class iOSBackgroundManager {
   getQueueStatus(): { queued: number; processing: boolean } {
     return {
       queued: this.emergencyQueue.length,
-      processing: this.isProcessingQueue,
+      processing: this.isProcessingQueue
     }
   }
 }

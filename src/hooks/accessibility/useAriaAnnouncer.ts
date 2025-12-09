@@ -3,22 +3,27 @@
 import { useEffect, useRef, useCallback } from 'react'
 
 export interface AriaAnnouncement {
+
   /**
    * The message to announce
    */
   message: string
+
   /**
    * Priority of the announcement
    */
   priority?: 'polite' | 'assertive' | 'off'
+
   /**
    * How long to wait before announcing (in milliseconds)
    */
   delay?: number
+
   /**
    * Whether to clear previous announcements
    */
   clear?: boolean
+
   /**
    * Unique identifier for the announcement
    */
@@ -26,22 +31,27 @@ export interface AriaAnnouncement {
 }
 
 export interface AriaAnnouncerOptions {
+
   /**
    * Default politeness level for announcements
    */
   defaultPriority?: 'polite' | 'assertive' | 'off'
+
   /**
    * Whether to create a live region automatically
    */
   createLiveRegion?: boolean
+
   /**
    * CSS selector for existing live region
    */
   liveRegionSelector?: string
+
   /**
    * Maximum number of announcements to keep in history
    */
   maxHistory?: number
+
   /**
    * Callback when announcement is made
    */
@@ -57,7 +67,7 @@ export function useAriaAnnouncer(options: AriaAnnouncerOptions = {}) {
     createLiveRegion = true,
     liveRegionSelector,
     maxHistory = 50,
-    onAnnounce,
+    onAnnounce
   } = options
 
   const liveRegionRef = useRef<HTMLElement | null>(null)
@@ -68,7 +78,9 @@ export function useAriaAnnouncer(options: AriaAnnouncerOptions = {}) {
    * Get or create the live region element
    */
   const getLiveRegion = useCallback((): HTMLElement => {
-    if (liveRegionRef.current) return liveRegionRef.current
+    if (liveRegionRef.current) {
+      return liveRegionRef.current
+    }
 
     // Try to find existing live region
     if (liveRegionSelector) {
@@ -91,7 +103,7 @@ export function useAriaAnnouncer(options: AriaAnnouncerOptions = {}) {
       liveRegion.style.width = '1px'
       liveRegion.style.height = '1px'
       liveRegion.style.overflow = 'hidden'
-      
+
       document.body.appendChild(liveRegion)
       liveRegionRef.current = liveRegion
       return liveRegion
@@ -106,7 +118,7 @@ export function useAriaAnnouncer(options: AriaAnnouncerOptions = {}) {
     temp.style.width = '1px'
     temp.style.height = '1px'
     temp.style.overflow = 'hidden'
-    
+
     document.body.appendChild(temp)
     liveRegionRef.current = temp
     return temp
@@ -121,7 +133,7 @@ export function useAriaAnnouncer(options: AriaAnnouncerOptions = {}) {
       priority = defaultPriority,
       delay = 0,
       clear = false,
-      id,
+      id
     } = announcement
 
     // Validate message
@@ -143,11 +155,11 @@ export function useAriaAnnouncer(options: AriaAnnouncerOptions = {}) {
       priority,
       delay,
       clear,
-      id,
+      id
     }
-    
+
     historyRef.current.push(announcementWithTimestamp)
-    
+
     // Trim history if it exceeds max size
     if (historyRef.current.length > maxHistory) {
       historyRef.current = historyRef.current.slice(-maxHistory)
@@ -156,7 +168,7 @@ export function useAriaAnnouncer(options: AriaAnnouncerOptions = {}) {
     // Schedule announcement
     const timeoutId = setTimeout(() => {
       const liveRegion = getLiveRegion()
-      
+
       // Update live region politeness if needed
       if (liveRegion.getAttribute('aria-live') !== priority) {
         liveRegion.setAttribute('aria-live', priority)
@@ -209,11 +221,11 @@ export function useAriaAnnouncer(options: AriaAnnouncerOptions = {}) {
   const clear = useCallback(() => {
     const liveRegion = getLiveRegion()
     liveRegion.textContent = ''
-    
+
     // Clear all pending timeouts
     timeoutRefs.current.forEach(timeoutId => clearTimeout(timeoutId))
     timeoutRefs.current.clear()
-    
+
     // Clear history
     historyRef.current = []
   }, [getLiveRegion])
@@ -245,12 +257,12 @@ export function useAriaAnnouncer(options: AriaAnnouncerOptions = {}) {
   const isScreenReaderActive = useCallback((): boolean => {
     // Check if user prefers reduced motion (often indicates screen reader usage)
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    
+
     // Check for common screen reader indicators
-    const hasScreenReaderIndicator = 
-      window.speechSynthesis !== undefined ||
-      document.querySelector('[aria-live]') !== null
-    
+    const hasScreenReaderIndicator
+      = window.speechSynthesis !== undefined
+      || document.querySelector('[aria-live]') !== null
+
     return prefersReducedMotion || hasScreenReaderIndicator
   }, [])
 
@@ -278,7 +290,7 @@ export function useAriaAnnouncer(options: AriaAnnouncerOptions = {}) {
     clearById,
     getHistory,
     isScreenReaderActive,
-    liveRegion: liveRegionRef.current,
+    liveRegion: liveRegionRef.current
   }
 }
 
@@ -289,7 +301,9 @@ export function usePageTitleAnnouncer() {
   const originalTitleRef = useRef<string>(typeof document !== 'undefined' ? document.title : '')
 
   const announcePageChange = useCallback((title: string, restoreAfter?: number) => {
-    if (typeof document === 'undefined') return
+    if (typeof document === 'undefined') {
+      return
+    }
 
     const originalTitle = originalTitleRef.current
     document.title = title
@@ -310,7 +324,7 @@ export function usePageTitleAnnouncer() {
   return {
     announcePageChange,
     restoreTitle,
-    currentTitle: typeof document !== 'undefined' ? document.title : '',
+    currentTitle: typeof document !== 'undefined' ? document.title : ''
   }
 }
 
@@ -319,7 +333,7 @@ export function usePageTitleAnnouncer() {
  */
 export function useStatusAnnouncer() {
   const { announcePolite, announceAssertive } = useAriaAnnouncer({
-    defaultPriority: 'polite',
+    defaultPriority: 'polite'
   })
 
   const announceStatus = useCallback((
@@ -327,13 +341,13 @@ export function useStatusAnnouncer() {
     options?: { type?: 'info' | 'success' | 'warning' | 'error'; priority?: 'polite' | 'assertive' }
   ) => {
     const { type = 'info', priority = 'polite' } = options || {}
-    
-    const prefix = type === 'error' ? 'Error: ' : 
-                   type === 'warning' ? 'Warning: ' : 
-                   type === 'success' ? 'Success: ' : ''
-    
+
+    const prefix = type === 'error' ? 'Error: '
+      : type === 'warning' ? 'Warning: '
+        : type === 'success' ? 'Success: ' : ''
+
     const message = `${prefix}${status}`
-    
+
     if (priority === 'assertive') {
       announceAssertive(message)
     } else {
@@ -362,7 +376,7 @@ export function useStatusAnnouncer() {
     announceError,
     announceSuccess,
     announceWarning,
-    announceInfo,
+    announceInfo
   }
 }
 
@@ -371,12 +385,12 @@ export function useStatusAnnouncer() {
  */
 export function useFormValidationAnnouncer() {
   const { announcePolite, announceAssertive } = useAriaAnnouncer({
-    defaultPriority: 'assertive',
+    defaultPriority: 'assertive'
   })
 
   const announceValidationErrors = useCallback((errors: Record<string, string>) => {
     const errorMessages = Object.values(errors).filter(Boolean)
-    
+
     if (errorMessages.length === 0) {
       announcePolite('Form is valid')
       return
@@ -397,6 +411,6 @@ export function useFormValidationAnnouncer() {
   return {
     announceValidationErrors,
     announceFieldError,
-    announceFieldSuccess,
+    announceFieldSuccess
   }
 }

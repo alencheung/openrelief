@@ -87,7 +87,7 @@ const emergencyTypes: EmergencyType[] = [
     icon: '🏗️',
     color: '#f97316',
     description: 'Infrastructure failure or utility outage'
-  },
+  }
 ]
 
 const severityLevels = [
@@ -95,7 +95,7 @@ const severityLevels = [
   { value: 2, label: 'Moderate', description: 'Some impact' },
   { value: 3, label: 'High', description: 'Significant impact' },
   { value: 4, label: 'Severe', description: 'Major impact' },
-  { value: 5, label: 'Critical', description: 'Life-threatening' },
+  { value: 5, label: 'Critical', description: 'Life-threatening' }
 ]
 
 export function MobileEmergencyReport({
@@ -104,7 +104,7 @@ export function MobileEmergencyReport({
   onSubmit,
   initialLocation,
   emergencyTypes = emergencyTypes,
-  className,
+  className
 }: MobileEmergencyReportProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const [selectedType, setSelectedType] = useState<EmergencyType | null>(null)
@@ -132,7 +132,7 @@ export function MobileEmergencyReport({
     { id: 'details', title: 'Details', icon: <FileText className="w-5 h-5" /> },
     { id: 'location', title: 'Location', icon: <MapPin className="w-5 h-5" /> },
     { id: 'media', title: 'Media', icon: <Camera className="w-5 h-5" /> },
-    { id: 'review', title: 'Review', icon: <Check className="w-5 h-5" /> },
+    { id: 'review', title: 'Review', icon: <Check className="w-5 h-5" /> }
   ]
 
   // Monitor online status
@@ -156,7 +156,7 @@ export function MobileEmergencyReport({
         (position) => {
           setLocation({
             lat: position.coords.latitude,
-            lng: position.coords.longitude,
+            lng: position.coords.longitude
           })
         },
         (error) => {
@@ -165,7 +165,7 @@ export function MobileEmergencyReport({
         {
           enableHighAccuracy: true,
           timeout: 10000,
-          maximumAge: 60000,
+          maximumAge: 60000
         }
       )
     }
@@ -181,7 +181,7 @@ export function MobileEmergencyReport({
           setCurrentStep(currentStep + 1)
         }
       }
-    },
+    }
   })
 
   // Validate current step
@@ -224,10 +224,10 @@ export function MobileEmergencyReport({
 
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || [])
-    const validImages = files.filter(file => 
+    const validImages = files.filter(file =>
       file.type.startsWith('image/') && file.size <= 5 * 1024 * 1024 // 5MB limit
     )
-    
+
     if (validImages.length !== files.length) {
       setErrors(prev => ({
         ...prev,
@@ -279,7 +279,9 @@ export function MobileEmergencyReport({
 
   // Handle form submission
   const handleSubmit = async () => {
-    if (!validateCurrentStep()) return
+    if (!validateCurrentStep()) {
+      return
+    }
 
     setIsSubmitting(true)
 
@@ -294,8 +296,8 @@ export function MobileEmergencyReport({
       metadata: {
         submittedAt: new Date().toISOString(),
         isOnline,
-        deviceInfo: navigator.userAgent,
-      },
+        deviceInfo: navigator.userAgent
+      }
     }
 
     try {
@@ -326,7 +328,9 @@ export function MobileEmergencyReport({
     onClose()
   }
 
-  if (!isOpen) return null
+  if (!isOpen) {
+    return null
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
@@ -339,12 +343,12 @@ export function MobileEmergencyReport({
         >
           <X className="w-5 h-5" />
         </button>
-        
+
         <div className="flex items-center gap-2">
           <EmergencyIndicator type="critical" size="sm" />
           <h1 className="text-lg font-semibold">Report Emergency</h1>
         </div>
-        
+
         <div className="w-9" /> {/* Spacer for centering */}
       </div>
 
@@ -377,7 +381,7 @@ export function MobileEmergencyReport({
       </div>
 
       {/* Content */}
-      <div 
+      <div
         ref={swipeRef.ref}
         className="flex-1 overflow-y-auto safe-area-inset-bottom"
       >
@@ -385,7 +389,7 @@ export function MobileEmergencyReport({
         {currentStep === 0 && (
           <div className="p-4 space-y-4">
             <h2 className="text-xl font-semibold text-center">What type of emergency?</h2>
-            
+
             <div className="grid grid-cols-2 gap-3">
               {emergencyTypes.map((type) => (
                 <button
@@ -409,7 +413,7 @@ export function MobileEmergencyReport({
                 </button>
               ))}
             </div>
-            
+
             {errors.type && (
               <FormFeedback type="error" message={errors.type} />
             )}
@@ -420,7 +424,7 @@ export function MobileEmergencyReport({
         {currentStep === 1 && (
           <div className="p-4 space-y-4">
             <h2 className="text-xl font-semibold">Emergency Details</h2>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="mobile-label">Title</label>
@@ -436,7 +440,7 @@ export function MobileEmergencyReport({
                   <FormFeedback type="error" message={errors.title} />
                 )}
               </div>
-              
+
               <div>
                 <label className="mobile-label">Description</label>
                 <textarea
@@ -450,7 +454,7 @@ export function MobileEmergencyReport({
                   <FormFeedback type="error" message={errors.description} />
                 )}
               </div>
-              
+
               <div>
                 <label className="mobile-label">Severity</label>
                 <div className="space-y-2">
@@ -480,7 +484,7 @@ export function MobileEmergencyReport({
         {currentStep === 2 && (
           <div className="p-4 space-y-4">
             <h2 className="text-xl font-semibold">Location</h2>
-            
+
             <div className="mobile-card">
               <div className="flex items-center gap-3">
                 <MapPin className="w-5 h-5 text-primary" />
@@ -500,7 +504,7 @@ export function MobileEmergencyReport({
                 </div>
               </div>
             </div>
-            
+
             {errors.location && (
               <FormFeedback type="error" message={errors.location} />
             )}
@@ -511,7 +515,7 @@ export function MobileEmergencyReport({
         {currentStep === 3 && (
           <div className="p-4 space-y-4">
             <h2 className="text-xl font-semibold">Add Evidence</h2>
-            
+
             {/* Photos */}
             <div>
               <label className="mobile-label">Photos</label>
@@ -531,7 +535,7 @@ export function MobileEmergencyReport({
                     </button>
                   </div>
                 ))}
-                
+
                 {images.length < 5 && (
                   <button
                     className="aspect-square border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors"
@@ -542,7 +546,7 @@ export function MobileEmergencyReport({
                   </button>
                 )}
               </div>
-              
+
               <input
                 ref={fileInputRef}
                 type="file"
@@ -553,7 +557,7 @@ export function MobileEmergencyReport({
                 onChange={handleImageSelect}
               />
             </div>
-            
+
             {/* Audio Recording */}
             <div>
               <label className="mobile-label">Audio Recording</label>
@@ -586,7 +590,7 @@ export function MobileEmergencyReport({
                 )}
               </div>
             </div>
-            
+
             {errors.images && (
               <FormFeedback type="error" message={errors.images} />
             )}
@@ -600,7 +604,7 @@ export function MobileEmergencyReport({
         {currentStep === 4 && (
           <div className="p-4 space-y-4">
             <h2 className="text-xl font-semibold">Review Report</h2>
-            
+
             <div className="space-y-4">
               <div className="mobile-card">
                 <div className="flex items-center gap-3">
@@ -611,14 +615,14 @@ export function MobileEmergencyReport({
                   </div>
                 </div>
               </div>
-              
+
               <div className="mobile-card">
                 <div>
                   <div className="font-medium">{title}</div>
                   <div className="text-sm text-muted-foreground">Title</div>
                 </div>
               </div>
-              
+
               <div className="mobile-card">
                 <div>
                   <div className="font-medium">Severity: {severity}/5</div>
@@ -627,7 +631,7 @@ export function MobileEmergencyReport({
                   </div>
                 </div>
               </div>
-              
+
               <div className="mobile-card">
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-primary" />
@@ -636,7 +640,7 @@ export function MobileEmergencyReport({
                   </div>
                 </div>
               </div>
-              
+
               {(images.length > 0 || audioRecording) && (
                 <div className="mobile-card">
                   <div className="text-sm font-medium">Evidence</div>
@@ -657,11 +661,11 @@ export function MobileEmergencyReport({
                 </div>
               )}
             </div>
-            
+
             <div className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg">
               <AlertCircle className="w-4 h-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">
-                {isOnline 
+                {isOnline
                   ? 'Your report will be submitted immediately.'
                   : 'Your report will be saved locally and submitted when you\'re back online.'
                 }
@@ -680,7 +684,7 @@ export function MobileEmergencyReport({
         >
           Cancel
         </button>
-        
+
         <div className="flex items-center gap-2">
           {currentStep > 0 && (
             <button
@@ -691,7 +695,7 @@ export function MobileEmergencyReport({
               <ChevronLeft className="w-5 h-5" />
             </button>
           )}
-          
+
           {currentStep < steps.length - 1 ? (
             <button
               className="touch-target p-2"

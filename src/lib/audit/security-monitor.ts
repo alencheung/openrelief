@@ -1,12 +1,12 @@
 /**
  * Security Incident Monitoring System
- * 
+ *
  * This module provides security event detection and classification, incident response workflow,
  * forensic data collection capabilities, and incident impact assessment tools.
  */
 
-import { auditLogger, AuditEventType, AuditSeverity } from './audit-logger';
-import { supabaseAdmin } from '@/lib/supabase';
+import { auditLogger, AuditEventType, AuditSeverity } from './audit-logger'
+import { supabaseAdmin } from '@/lib/supabase'
 
 // Security incident types
 export enum SecurityIncidentType {
@@ -55,13 +55,13 @@ export interface SecurityIncident {
   severity: IncidentSeverity;
   status: IncidentStatus;
   impact: IncidentImpact;
-  
+
   // Basic information
   title: string;
   description: string;
   detectedAt: Date;
   reportedBy?: string;
-  
+
   // Technical details
   sourceIpAddress?: string;
   targetSystem?: string;
@@ -69,34 +69,34 @@ export interface SecurityIncident {
   affectedData?: string[];
   attackVector?: string;
   indicators?: string[];
-  
+
   // Investigation details
   assignedTo?: string;
   investigatedBy?: string;
   investigationNotes?: string[];
   evidence?: SecurityEvidence[];
-  
+
   // Resolution details
   resolvedAt?: Date;
   resolvedBy?: string;
   resolution?: string;
   lessonsLearned?: string;
-  
+
   // Impact assessment
   dataBreach?: boolean;
   recordsAffected?: number;
   financialImpact?: number;
   reputationalImpact?: 'none' | 'low' | 'medium' | 'high';
-  
+
   // Notifications
   notificationsSent: boolean;
   stakeholdersNotified: boolean[];
-  
+
   // Metadata
   tags?: string[];
   relatedIncidents?: string[];
   metadata?: Record<string, any>;
-  
+
   // Timestamps
   createdAt: Date;
   updatedAt: Date;
@@ -173,35 +173,37 @@ export interface SecurityMetrics {
 }
 
 class SecurityMonitor {
-  private activeIncidents: Map<string, SecurityIncident> = new Map();
-  private securityAlerts: Map<string, SecurityAlert> = new Map();
-  private threatIntelligence: Map<string, ThreatIntelligence> = new Map();
-  private monitoringActive = false;
+  private activeIncidents: Map<string, SecurityIncident> = new Map()
+  private securityAlerts: Map<string, SecurityAlert> = new Map()
+  private threatIntelligence: Map<string, ThreatIntelligence> = new Map()
+  private monitoringActive = false
 
   constructor() {
-    this.startMonitoring();
+    this.startMonitoring()
   }
 
   /**
    * Start security monitoring
    */
   startMonitoring(): void {
-    if (this.monitoringActive) return;
+    if (this.monitoringActive) {
+      return
+    }
 
-    this.monitoringActive = true;
-    this.loadActiveIncidents();
-    this.loadThreatIntelligence();
-    this.startRealTimeMonitoring();
+    this.monitoringActive = true
+    this.loadActiveIncidents()
+    this.loadThreatIntelligence()
+    this.startRealTimeMonitoring()
 
-    console.log('Security monitoring started');
+    console.log('Security monitoring started')
   }
 
   /**
    * Stop security monitoring
    */
   stopMonitoring(): void {
-    this.monitoringActive = false;
-    console.log('Security monitoring stopped');
+    this.monitoringActive = false
+    console.log('Security monitoring stopped')
   }
 
   /**
@@ -229,11 +231,11 @@ class SecurityMonitor {
         createdAt: new Date(),
         updatedAt: new Date(),
         ...details
-      };
+      }
 
       // Save incident
-      await this.saveIncident(incident);
-      this.activeIncidents.set(incident.id, incident);
+      await this.saveIncident(incident)
+      this.activeIncidents.set(incident.id, incident)
 
       // Log the detection
       await auditLogger.logEvent({
@@ -249,21 +251,21 @@ class SecurityMonitor {
           title,
           description
         }
-      });
+      })
 
       // Send immediate notifications for critical incidents
       if (severity === IncidentSeverity.CRITICAL) {
-        await this.sendCriticalIncidentAlert(incident);
+        await this.sendCriticalIncidentAlert(incident)
       }
 
       // Auto-assign incident if possible
-      await this.autoAssignIncident(incident);
+      await this.autoAssignIncident(incident)
 
-      console.log(`Security incident detected: ${incident.id} - ${title}`);
-      return incident.id;
+      console.log(`Security incident detected: ${incident.id} - ${title}`)
+      return incident.id
     } catch (error) {
-      console.error('Error detecting security incident:', error);
-      throw error;
+      console.error('Error detecting security incident:', error)
+      throw error
     }
   }
 
@@ -291,21 +293,21 @@ class SecurityMonitor {
         falsePositive: false,
         resolved: false,
         ...details
-      };
+      }
 
       // Save alert
-      await this.saveAlert(alert);
-      this.securityAlerts.set(alert.id, alert);
+      await this.saveAlert(alert)
+      this.securityAlerts.set(alert.id, alert)
 
       // Check if this should escalate to an incident
       if (await this.shouldEscalateToIncident(alert)) {
-        await this.escalateAlertToIncident(alert);
+        await this.escalateAlertToIncident(alert)
       }
 
-      return alert.id;
+      return alert.id
     } catch (error) {
-      console.error('Error creating security alert:', error);
-      throw error;
+      console.error('Error creating security alert:', error)
+      throw error
     }
   }
 
@@ -319,35 +321,35 @@ class SecurityMonitor {
     notes?: string
   ): Promise<void> {
     try {
-      const incident = this.activeIncidents.get(incidentId);
+      const incident = this.activeIncidents.get(incidentId)
       if (!incident) {
-        throw new Error(`Incident ${incidentId} not found`);
+        throw new Error(`Incident ${incidentId} not found`)
       }
 
-      const previousStatus = incident.status;
-      incident.status = status;
-      incident.updatedAt = new Date();
+      const previousStatus = incident.status
+      incident.status = status
+      incident.updatedAt = new Date()
 
       if (notes) {
         if (!incident.investigationNotes) {
-          incident.investigationNotes = [];
+          incident.investigationNotes = []
         }
         incident.investigationNotes.push({
           timestamp: new Date(),
           userId,
           notes,
           statusChange: `${previousStatus} -> ${status}`
-        } as any);
+        } as any)
       }
 
       // Set resolution details if resolved
       if (status === IncidentStatus.RESOLVED) {
-        incident.resolvedAt = new Date();
-        incident.resolvedBy = userId;
+        incident.resolvedAt = new Date()
+        incident.resolvedBy = userId
       }
 
       // Save updated incident
-      await this.saveIncident(incident);
+      await this.saveIncident(incident)
 
       // Log the status change
       await auditLogger.logEvent({
@@ -363,11 +365,10 @@ class SecurityMonitor {
           newStatus: status,
           notes
         }
-      });
-
+      })
     } catch (error) {
-      console.error('Error updating incident status:', error);
-      throw error;
+      console.error('Error updating incident status:', error)
+      throw error
     }
   }
 
@@ -380,33 +381,33 @@ class SecurityMonitor {
     collectedBy: string
   ): Promise<string> {
     try {
-      const evidenceId = this.generateEvidenceId();
+      const evidenceId = this.generateEvidenceId()
       const securityEvidence: SecurityEvidence = {
         id: evidenceId,
         incidentId,
         timestamp: new Date(),
         collectedBy,
         ...evidence
-      };
-
-      // Save evidence
-      await this.saveEvidence(securityEvidence);
-
-      // Update incident
-      const incident = this.activeIncidents.get(incidentId);
-      if (incident) {
-        if (!incident.evidence) {
-          incident.evidence = [];
-        }
-        incident.evidence.push(securityEvidence);
-        incident.updatedAt = new Date();
-        await this.saveIncident(incident);
       }
 
-      return evidenceId;
+      // Save evidence
+      await this.saveEvidence(securityEvidence)
+
+      // Update incident
+      const incident = this.activeIncidents.get(incidentId)
+      if (incident) {
+        if (!incident.evidence) {
+          incident.evidence = []
+        }
+        incident.evidence.push(securityEvidence)
+        incident.updatedAt = new Date()
+        await this.saveIncident(incident)
+      }
+
+      return evidenceId
     } catch (error) {
-      console.error('Error adding evidence:', error);
-      throw error;
+      console.error('Error adding evidence:', error)
+      throw error
     }
   }
 
@@ -424,28 +425,28 @@ class SecurityMonitor {
     recommendations: string[];
   }> {
     try {
-      const incident = this.activeIncidents.get(incidentId);
+      const incident = this.activeIncidents.get(incidentId)
       if (!incident) {
-        throw new Error(`Incident ${incidentId} not found`);
+        throw new Error(`Incident ${incidentId} not found`)
       }
 
       // Analyze affected systems and data
-      const assessment = await this.analyzeIncidentImpact(incident);
+      const assessment = await this.analyzeIncidentImpact(incident)
 
       // Update incident with assessment results
-      incident.impact = assessment.impact;
-      incident.dataBreach = assessment.dataBreach;
-      incident.recordsAffected = assessment.recordsAffected;
-      incident.financialImpact = assessment.financialImpact;
-      incident.reputationalImpact = assessment.reputationalImpact;
-      incident.updatedAt = new Date();
+      incident.impact = assessment.impact
+      incident.dataBreach = assessment.dataBreach
+      incident.recordsAffected = assessment.recordsAffected
+      incident.financialImpact = assessment.financialImpact
+      incident.reputationalImpact = assessment.reputationalImpact
+      incident.updatedAt = new Date()
 
-      await this.saveIncident(incident);
+      await this.saveIncident(incident)
 
-      return assessment;
+      return assessment
     } catch (error) {
-      console.error('Error performing impact assessment:', error);
-      throw error;
+      console.error('Error performing impact assessment:', error)
+      throw error
     }
   }
 
@@ -458,10 +459,12 @@ class SecurityMonitor {
         .from('security_incidents')
         .select('*')
         .gte('detected_at', (startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)).toISOString())
-        .lte('detected_at', (endDate || new Date()).toISOString());
+        .lte('detected_at', (endDate || new Date()).toISOString())
 
-      const { data: incidents, error } = await query;
-      if (error) throw error;
+      const { data: incidents, error } = await query
+      if (error) {
+        throw error
+      }
 
       const metrics: SecurityMetrics = {
         timeRange: {
@@ -479,49 +482,49 @@ class SecurityMonitor {
         systemsAffected: 0,
         threatsBlocked: 0,
         falsePositiveRate: 0
-      };
+      }
 
       // Aggregate metrics
-      let totalResolutionTime = 0;
-      let resolvedCount = 0;
+      let totalResolutionTime = 0
+      let resolvedCount = 0
 
       for (const incident of incidents || []) {
         // Count by type
-        metrics.incidentsByType[incident.type] = (metrics.incidentsByType[incident.type] || 0) + 1;
+        metrics.incidentsByType[incident.type] = (metrics.incidentsByType[incident.type] || 0) + 1
 
         // Count by severity
-        metrics.incidentsBySeverity[incident.severity] = (metrics.incidentsBySeverity[incident.severity] || 0) + 1;
+        metrics.incidentsBySeverity[incident.severity] = (metrics.incidentsBySeverity[incident.severity] || 0) + 1
 
         // Count critical incidents
         if (incident.severity === IncidentSeverity.CRITICAL) {
-          metrics.criticalIncidents++;
+          metrics.criticalIncidents++
         }
 
         // Count unresolved
         if (incident.status !== IncidentStatus.RESOLVED && incident.status !== IncidentStatus.FALSE_POSITIVE) {
-          metrics.unresolvedIncidents++;
+          metrics.unresolvedIncidents++
         }
 
         // Count data breaches
         if (incident.data_breach) {
-          metrics.dataBreaches++;
+          metrics.dataBreaches++
         }
 
         // Sum affected counts
-        metrics.usersAffected += incident.affected_users?.length || 0;
-        metrics.systemsAffected += incident.affected_systems?.length || 0;
+        metrics.usersAffected += incident.affected_users?.length || 0
+        metrics.systemsAffected += incident.affected_systems?.length || 0
 
         // Calculate resolution time
         if (incident.resolved_at) {
-          const resolutionTime = (new Date(incident.resolved_at).getTime() - new Date(incident.detected_at).getTime()) / (1000 * 60 * 60);
-          totalResolutionTime += resolutionTime;
-          resolvedCount++;
+          const resolutionTime = (new Date(incident.resolved_at).getTime() - new Date(incident.detected_at).getTime()) / (1000 * 60 * 60)
+          totalResolutionTime += resolutionTime
+          resolvedCount++
         }
       }
 
       // Calculate average resolution time
       if (resolvedCount > 0) {
-        metrics.averageResolutionTime = totalResolutionTime / resolvedCount;
+        metrics.averageResolutionTime = totalResolutionTime / resolvedCount
       }
 
       // Calculate false positive rate
@@ -529,17 +532,17 @@ class SecurityMonitor {
         .from('security_alerts')
         .select('*')
         .gte('timestamp', metrics.timeRange.start.toISOString())
-        .lte('timestamp', metrics.timeRange.end.toISOString());
+        .lte('timestamp', metrics.timeRange.end.toISOString())
 
       if (alerts && alerts.length > 0) {
-        const falsePositives = alerts.filter(alert => alert.false_positive).length;
-        metrics.falsePositiveRate = (falsePositives / alerts.length) * 100;
+        const falsePositives = alerts.filter(alert => alert.false_positive).length
+        metrics.falsePositiveRate = (falsePositives / alerts.length) * 100
       }
 
-      return metrics;
+      return metrics
     } catch (error) {
-      console.error('Error getting security metrics:', error);
-      throw error;
+      console.error('Error getting security metrics:', error)
+      throw error
     }
   }
 
@@ -557,14 +560,16 @@ class SecurityMonitor {
         .eq('indicator', indicator)
         .eq('indicator_type', type)
         .eq('active', true)
-        .single();
+        .single()
 
-      if (error || !data) return null;
+      if (error || !data) {
+        return null
+      }
 
-      return data as ThreatIntelligence;
+      return data as ThreatIntelligence
     } catch (error) {
-      console.error('Error checking threat intelligence:', error);
-      return null;
+      console.error('Error checking threat intelligence:', error)
+      return null
     }
   }
 
@@ -573,22 +578,22 @@ class SecurityMonitor {
    */
   async addThreatIntelligence(intelligence: Omit<ThreatIntelligence, 'id'>): Promise<string> {
     try {
-      const id = this.generateThreatId();
+      const id = this.generateThreatId()
       const threatIntelligence: ThreatIntelligence = {
         id,
         ...intelligence
-      };
+      }
 
       await supabaseAdmin
         .from('threat_intelligence')
-        .insert(threatIntelligence);
+        .insert(threatIntelligence)
 
-      this.threatIntelligence.set(id, threatIntelligence);
+      this.threatIntelligence.set(id, threatIntelligence)
 
-      return id;
+      return id
     } catch (error) {
-      console.error('Error adding threat intelligence:', error);
-      throw error;
+      console.error('Error adding threat intelligence:', error)
+      throw error
     }
   }
 
@@ -597,47 +602,53 @@ class SecurityMonitor {
    */
 
   private generateIncidentId(): string {
-    return `inc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `inc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   }
 
   private generateAlertId(): string {
-    return `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   }
 
   private generateEvidenceId(): string {
-    return `ev_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `ev_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   }
 
   private generateThreatId(): string {
-    return `threat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `threat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   }
 
   private assessInitialImpact(type: SecurityIncidentType, severity: IncidentSeverity): IncidentImpact {
-    if (severity === IncidentSeverity.CRITICAL) return IncidentImpact.SEVERE;
-    if (severity === IncidentSeverity.HIGH) return IncidentImpact.SIGNIFICANT;
-    if (severity === IncidentSeverity.MEDIUM) return IncidentImpact.MODERATE;
-    return IncidentImpact.MINIMAL;
+    if (severity === IncidentSeverity.CRITICAL) {
+      return IncidentImpact.SEVERE
+    }
+    if (severity === IncidentSeverity.HIGH) {
+      return IncidentImpact.SIGNIFICANT
+    }
+    if (severity === IncidentSeverity.MEDIUM) {
+      return IncidentImpact.MODERATE
+    }
+    return IncidentImpact.MINIMAL
   }
 
   private mapSeverityToAuditSeverity(severity: IncidentSeverity): AuditSeverity {
     switch (severity) {
       case IncidentSeverity.LOW:
-        return AuditSeverity.LOW;
+        return AuditSeverity.LOW
       case IncidentSeverity.MEDIUM:
-        return AuditSeverity.MEDIUM;
+        return AuditSeverity.MEDIUM
       case IncidentSeverity.HIGH:
-        return AuditSeverity.HIGH;
+        return AuditSeverity.HIGH
       case IncidentSeverity.CRITICAL:
-        return AuditSeverity.CRITICAL;
+        return AuditSeverity.CRITICAL
       default:
-        return AuditSeverity.MEDIUM;
+        return AuditSeverity.MEDIUM
     }
   }
 
   private async sendCriticalIncidentAlert(incident: SecurityIncident): Promise<void> {
     // In a real implementation, this would send notifications to security team
-    console.error('CRITICAL SECURITY INCIDENT:', incident);
-    
+    console.error('CRITICAL SECURITY INCIDENT:', incident)
+
     await auditLogger.logEvent({
       eventType: AuditEventType.SECURITY_INCIDENT,
       severity: AuditSeverity.CRITICAL,
@@ -649,44 +660,44 @@ class SecurityMonitor {
         title: incident.title,
         severity: incident.severity
       }
-    });
+    })
   }
 
   private async autoAssignIncident(incident: SecurityIncident): Promise<void> {
     // Auto-assign based on incident type and severity
-    let assignTo = '';
-    
+    let assignTo = ''
+
     switch (incident.type) {
       case SecurityIncidentType.DATA_BREACH:
-        assignTo = 'security-team-lead';
-        break;
+        assignTo = 'security-team-lead'
+        break
       case SecurityIncidentType.UNAUTHORIZED_ACCESS:
-        assignTo = 'incident-response-team';
-        break;
+        assignTo = 'incident-response-team'
+        break
       case SecurityIncidentType.SYSTEM_COMPROMISE:
-        assignTo = 'security-engineering';
-        break;
+        assignTo = 'security-engineering'
+        break
       default:
-        assignTo = 'security-analyst';
+        assignTo = 'security-analyst'
     }
 
-    incident.assignedTo = assignTo;
-    await this.saveIncident(incident);
+    incident.assignedTo = assignTo
+    await this.saveIncident(incident)
   }
 
   private async shouldEscalateToIncident(alert: SecurityAlert): Promise<boolean> {
     // Escalate if severity is high or critical
     if (alert.severity === IncidentSeverity.HIGH || alert.severity === IncidentSeverity.CRITICAL) {
-      return true;
+      return true
     }
 
     // Check for multiple similar alerts
     const recentAlerts = Array.from(this.securityAlerts.values()).filter(a =>
-      a.type === alert.type &&
-      a.timestamp > new Date(Date.now() - 60 * 60 * 1000) // Last hour
-    );
+      a.type === alert.type
+      && a.timestamp > new Date(Date.now() - 60 * 60 * 1000) // Last hour
+    )
 
-    return recentAlerts.length >= 3;
+    return recentAlerts.length >= 3
   }
 
   private async escalateAlertToIncident(alert: SecurityAlert): Promise<void> {
@@ -699,12 +710,12 @@ class SecurityMonitor {
         sourceIpAddress: alert.ipAddress,
         reportedBy: alert.userId
       }
-    );
+    )
 
     // Mark alert as escalated
-    alert.resolved = true;
-    alert.resolvedAt = new Date();
-    await this.saveAlert(alert);
+    alert.resolved = true
+    alert.resolvedAt = new Date()
+    await this.saveAlert(alert)
   }
 
   private async analyzeIncidentImpact(incident: SecurityIncident): Promise<{
@@ -719,38 +730,38 @@ class SecurityMonitor {
   }> {
     // This is a simplified impact assessment
     // In a real implementation, this would be much more sophisticated
-    const usersAffected = incident.affectedUsers?.length || 0;
-    const systemsAffected = 1; // Simplified
-    
-    let impact = IncidentImpact.MINIMAL;
-    let dataBreach = false;
-    let recordsAffected = 0;
-    let financialImpact = 0;
-    let reputationalImpact: 'none' | 'low' | 'medium' | 'high' = 'none';
-    const recommendations: string[] = [];
+    const usersAffected = incident.affectedUsers?.length || 0
+    const systemsAffected = 1 // Simplified
+
+    let impact = IncidentImpact.MINIMAL
+    let dataBreach = false
+    let recordsAffected = 0
+    let financialImpact = 0
+    let reputationalImpact: 'none' | 'low' | 'medium' | 'high' = 'none'
+    const recommendations: string[] = []
 
     // Assess based on incident type and severity
     if (incident.type === SecurityIncidentType.DATA_BREACH) {
-      dataBreach = true;
-      recordsAffected = 1000; // Estimated
-      impact = IncidentImpact.SEVERE;
-      financialImpact = 100000; // Estimated
-      reputationalImpact = 'high';
-      recommendations.push('Notify affected users immediately');
-      recommendations.push('Engage legal counsel');
-      recommendations.push('Prepare regulatory notifications');
+      dataBreach = true
+      recordsAffected = 1000 // Estimated
+      impact = IncidentImpact.SEVERE
+      financialImpact = 100000 // Estimated
+      reputationalImpact = 'high'
+      recommendations.push('Notify affected users immediately')
+      recommendations.push('Engage legal counsel')
+      recommendations.push('Prepare regulatory notifications')
     } else if (incident.severity === IncidentSeverity.CRITICAL) {
-      impact = IncidentImpact.SEVERE;
-      financialImpact = 50000;
-      reputationalImpact = 'medium';
-      recommendations.push('Activate incident response team');
-      recommendations.push('Isolate affected systems');
+      impact = IncidentImpact.SEVERE
+      financialImpact = 50000
+      reputationalImpact = 'medium'
+      recommendations.push('Activate incident response team')
+      recommendations.push('Isolate affected systems')
     } else if (incident.severity === IncidentSeverity.HIGH) {
-      impact = IncidentImpact.SIGNIFICANT;
-      financialImpact = 10000;
-      reputationalImpact = 'low';
-      recommendations.push('Investigate root cause');
-      recommendations.push('Monitor for additional compromise');
+      impact = IncidentImpact.SIGNIFICANT
+      financialImpact = 10000
+      reputationalImpact = 'low'
+      recommendations.push('Investigate root cause')
+      recommendations.push('Monitor for additional compromise')
     }
 
     return {
@@ -762,7 +773,7 @@ class SecurityMonitor {
       financialImpact,
       reputationalImpact,
       recommendations
-    };
+    }
   }
 
   private async loadActiveIncidents(): Promise<void> {
@@ -770,15 +781,17 @@ class SecurityMonitor {
       const { data, error } = await supabaseAdmin
         .from('security_incidents')
         .select('*')
-        .in('status', [IncidentStatus.DETECTED, IncidentStatus.INVESTIGATING, IncidentStatus.CONTAINED]);
+        .in('status', [IncidentStatus.DETECTED, IncidentStatus.INVESTIGATING, IncidentStatus.CONTAINED])
 
-      if (error) throw error;
+      if (error) {
+        throw error
+      }
 
       for (const incident of data || []) {
-        this.activeIncidents.set(incident.id, incident as SecurityIncident);
+        this.activeIncidents.set(incident.id, incident as SecurityIncident)
       }
     } catch (error) {
-      console.error('Error loading active incidents:', error);
+      console.error('Error loading active incidents:', error)
     }
   }
 
@@ -787,23 +800,25 @@ class SecurityMonitor {
       const { data, error } = await supabaseAdmin
         .from('threat_intelligence')
         .select('*')
-        .eq('active', true);
+        .eq('active', true)
 
-      if (error) throw error;
+      if (error) {
+        throw error
+      }
 
       for (const threat of data || []) {
-        this.threatIntelligence.set(threat.id, threat as ThreatIntelligence);
+        this.threatIntelligence.set(threat.id, threat as ThreatIntelligence)
       }
     } catch (error) {
-      console.error('Error loading threat intelligence:', error);
+      console.error('Error loading threat intelligence:', error)
     }
   }
 
   private startRealTimeMonitoring(): void {
     // Monitor for suspicious patterns
     setInterval(async () => {
-      await this.checkSuspiciousPatterns();
-    }, 5 * 60 * 1000); // Every 5 minutes
+      await this.checkSuspiciousPatterns()
+    }, 5 * 60 * 1000) // Every 5 minutes
   }
 
   private async checkSuspiciousPatterns(): Promise<void> {
@@ -813,13 +828,13 @@ class SecurityMonitor {
         .from('audit_log')
         .select('ip_address, user_id, timestamp')
         .eq('action', 'login_failure')
-        .gte('timestamp', new Date(Date.now() - 15 * 60 * 1000).toISOString());
+        .gte('timestamp', new Date(Date.now() - 15 * 60 * 1000).toISOString())
 
       if (failedLogins) {
-        const attemptsByIP = new Map<string, number>();
+        const attemptsByIP = new Map<string, number>()
         for (const login of failedLogins) {
-          const ip = login.ip_address || 'unknown';
-          attemptsByIP.set(ip, (attemptsByIP.get(ip) || 0) + 1);
+          const ip = login.ip_address || 'unknown'
+          attemptsByIP.set(ip, (attemptsByIP.get(ip) || 0) + 1)
         }
 
         for (const [ip, count] of attemptsByIP.entries()) {
@@ -831,7 +846,7 @@ class SecurityMonitor {
               `${count} failed login attempts detected in the last 15 minutes`,
               'security_monitor',
               { ipAddress: ip }
-            );
+            )
           }
         }
       }
@@ -841,13 +856,13 @@ class SecurityMonitor {
         .from('audit_log')
         .select('user_id, action, timestamp')
         .eq('action', 'data_access')
-        .gte('timestamp', new Date(Date.now() - 60 * 60 * 1000).toISOString());
+        .gte('timestamp', new Date(Date.now() - 60 * 60 * 1000).toISOString())
 
       if (dataAccess) {
-        const accessByUser = new Map<string, number>();
+        const accessByUser = new Map<string, number>()
         for (const access of dataAccess) {
-          const userId = access.user_id || 'unknown';
-          accessByUser.set(userId, (accessByUser.get(userId) || 0) + 1);
+          const userId = access.user_id || 'unknown'
+          accessByUser.set(userId, (accessByUser.get(userId) || 0) + 1)
         }
 
         for (const [userId, count] of accessByUser.entries()) {
@@ -859,12 +874,12 @@ class SecurityMonitor {
               `${count} data access events detected in the last hour`,
               'security_monitor',
               { userId }
-            );
+            )
           }
         }
       }
     } catch (error) {
-      console.error('Error checking suspicious patterns:', error);
+      console.error('Error checking suspicious patterns:', error)
     }
   }
 
@@ -906,9 +921,9 @@ class SecurityMonitor {
           metadata: incident.metadata,
           created_at: incident.createdAt.toISOString(),
           updated_at: incident.updatedAt.toISOString()
-        });
+        })
     } catch (error) {
-      console.error('Error saving incident:', error);
+      console.error('Error saving incident:', error)
     }
   }
 
@@ -934,9 +949,9 @@ class SecurityMonitor {
           false_positive: alert.falsePositive,
           resolved: alert.resolved,
           resolved_at: alert.resolvedAt?.toISOString()
-        });
+        })
     } catch (error) {
-      console.error('Error saving alert:', error);
+      console.error('Error saving alert:', error)
     }
   }
 
@@ -955,14 +970,14 @@ class SecurityMonitor {
           timestamp: evidence.timestamp.toISOString(),
           collected_by: evidence.collectedBy,
           preserved: evidence.preserved
-        });
+        })
     } catch (error) {
-      console.error('Error saving evidence:', error);
+      console.error('Error saving evidence:', error)
     }
   }
 }
 
 // Global security monitor instance
-export const securityMonitor = new SecurityMonitor();
+export const securityMonitor = new SecurityMonitor()
 
-export default securityMonitor;
+export default securityMonitor

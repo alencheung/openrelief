@@ -1,6 +1,6 @@
 /**
  * Tests for TransparencyReport Component
- * 
+ *
  * These tests verify the functionality of the transparency reporting interface,
  * including report generation, filtering, and export capabilities.
  */
@@ -80,7 +80,7 @@ describe('TransparencyReport Component', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
-    
+
     mockUsePrivacy.mockReturnValue({
       privacyContext: mockPrivacyContext,
       privacyBudget: 0.8,
@@ -471,7 +471,7 @@ describe('TransparencyReport Component', () => {
       // This would typically be checked with accessibility testing tools
       // For now, we just ensure the component renders without errors
       render(<TransparencyReport />)
-      
+
       // If it renders without throwing errors, basic accessibility is likely met
       expect(screen.getByText('Transparency Report')).toBeInTheDocument()
     })

@@ -1,12 +1,12 @@
 /**
  * Legal Request Tracking System
- * 
+ *
  * This module provides government request lifecycle monitoring, legal compliance verification,
  * user notification tracking, challenge and appeal process logging, and transparency report data collection.
  */
 
-import { auditLogger, AuditEventType, AuditSeverity } from './audit-logger';
-import { supabaseAdmin } from '@/lib/supabase';
+import { auditLogger, AuditEventType, AuditSeverity } from './audit-logger'
+import { supabaseAdmin } from '@/lib/supabase'
 
 // Legal request types
 export enum LegalRequestType {
@@ -61,7 +61,7 @@ export interface LegalRequest {
   type: LegalRequestType;
   status: LegalRequestStatus;
   priority: LegalRequestPriority;
-  
+
   // Request details
   title: string;
   description: string;
@@ -70,7 +70,7 @@ export interface LegalRequest {
   referenceNumber?: string;
   jurisdiction?: string;
   legalBasis?: string;
-  
+
   // Data scope
   dataTypes: string[];
   dataSubjects: string[];
@@ -79,42 +79,42 @@ export interface LegalRequest {
     end: Date;
   };
   specificRecords?: string[];
-  
+
   // Processing details
   assignedTo?: string;
   reviewedBy?: string;
   approvedBy?: string;
   processingSteps: ProcessingStep[];
-  
+
   // Timeline
   receivedAt: Date;
   validatedAt?: Date;
   processingStartedAt?: Date;
   completedAt?: Date;
   responseDeadline: Date;
-  
+
   // User notifications
   userNotified: boolean;
   userNotificationAttempts: number;
   lastUserNotificationAt?: Date;
-  
+
   // Compliance details
   complianceChecks: ComplianceCheck[];
   redactionsApplied: RedactionInfo[];
   dataShared: boolean;
   shareMethod?: string;
   shareRecipient?: string;
-  
+
   // Appeal information
   appealDeadline?: Date;
   appealInfo?: AppealInfo;
-  
+
   // Metadata
   tags?: string[];
   relatedRequests?: string[];
   attachments?: AttachmentInfo[];
   metadata?: Record<string, any>;
-  
+
   // Timestamps
   createdAt: Date;
   updatedAt: Date;
@@ -223,13 +223,13 @@ export interface TransparencyReportData {
 }
 
 class LegalRequestTracker {
-  private activeRequests: Map<string, LegalRequest> = new Map();
-  private processingWorkflows: Map<LegalRequestType, ProcessingStep[]> = new Map();
-  private isMonitoring = false;
+  private activeRequests: Map<string, LegalRequest> = new Map()
+  private processingWorkflows: Map<LegalRequestType, ProcessingStep[]> = new Map()
+  private isMonitoring = false
 
   constructor() {
-    this.initializeWorkflows();
-    this.startMonitoring();
+    this.initializeWorkflows()
+    this.startMonitoring()
   }
 
   /**
@@ -280,7 +280,7 @@ class LegalRequestTracker {
         completed: false,
         required: true
       }
-    ]);
+    ])
 
     // Law enforcement request workflow
     this.processingWorkflows.set(LegalRequestType.LAW_ENFORCEMENT_REQUEST, [
@@ -326,20 +326,22 @@ class LegalRequestTracker {
         completed: false,
         required: true
       }
-    ]);
+    ])
   }
 
   /**
    * Start monitoring
    */
   private startMonitoring(): void {
-    if (this.isMonitoring) return;
+    if (this.isMonitoring) {
+      return
+    }
 
-    this.isMonitoring = true;
-    this.loadActiveRequests();
-    this.startDeadlineMonitoring();
+    this.isMonitoring = true
+    this.loadActiveRequests()
+    this.startDeadlineMonitoring()
 
-    console.log('Legal request tracking started');
+    console.log('Legal request tracking started')
   }
 
   /**
@@ -365,10 +367,10 @@ class LegalRequestTracker {
     }
   ): Promise<string> {
     try {
-      const requestId = this.generateRequestId();
-      
+      const requestId = this.generateRequestId()
+
       // Calculate response deadline based on request type
-      const responseDeadline = this.calculateResponseDeadline(type);
+      const responseDeadline = this.calculateResponseDeadline(type)
 
       const request: LegalRequest = {
         id: requestId,
@@ -398,11 +400,11 @@ class LegalRequestTracker {
         attachments: options?.attachments,
         createdAt: new Date(),
         updatedAt: new Date()
-      };
+      }
 
       // Save request
-      await this.saveRequest(request);
-      this.activeRequests.set(requestId, request);
+      await this.saveRequest(request)
+      this.activeRequests.set(requestId, request)
 
       // Log request creation
       await auditLogger.logEvent({
@@ -420,19 +422,19 @@ class LegalRequestTracker {
           dataSubjectsCount: dataSubjects.length,
           responseDeadline: responseDeadline.toISOString()
         }
-      });
+      })
 
       // Auto-assign request if possible
-      await this.autoAssignRequest(request);
+      await this.autoAssignRequest(request)
 
       // Start initial validation
-      await this.startValidation(request);
+      await this.startValidation(request)
 
-      console.log(`Legal request created: ${requestId} - ${title}`);
-      return requestId;
+      console.log(`Legal request created: ${requestId} - ${title}`)
+      return requestId
     } catch (error) {
-      console.error('Error creating legal request:', error);
-      throw error;
+      console.error('Error creating legal request:', error)
+      throw error
     }
   }
 
@@ -446,37 +448,37 @@ class LegalRequestTracker {
     notes?: string
   ): Promise<void> {
     try {
-      const request = this.activeRequests.get(requestId);
+      const request = this.activeRequests.get(requestId)
       if (!request) {
-        throw new Error(`Request ${requestId} not found`);
+        throw new Error(`Request ${requestId} not found`)
       }
 
-      const previousStatus = request.status;
-      request.status = status;
-      request.updatedAt = new Date();
+      const previousStatus = request.status
+      request.status = status
+      request.updatedAt = new Date()
 
       // Update timestamps based on status
       if (status === LegalRequestStatus.VALIDATED && !request.validatedAt) {
-        request.validatedAt = new Date();
+        request.validatedAt = new Date()
       } else if (status === LegalRequestStatus.PROCESSING && !request.processingStartedAt) {
-        request.processingStartedAt = new Date();
+        request.processingStartedAt = new Date()
       } else if (
-        (status === LegalRequestStatus.FULFILLED || status === LegalRequestStatus.PARTIALLY_FULFILLED) &&
-        !request.completedAt
+        (status === LegalRequestStatus.FULFILLED || status === LegalRequestStatus.PARTIALLY_FULFILLED)
+        && !request.completedAt
       ) {
-        request.completedAt = new Date();
+        request.completedAt = new Date()
       }
 
       // Add processing step note if provided
       if (notes) {
-        const currentStep = request.processingSteps.find(step => !step.completed);
+        const currentStep = request.processingSteps.find(step => !step.completed)
         if (currentStep) {
-          currentStep.notes = notes;
+          currentStep.notes = notes
         }
       }
 
       // Save updated request
-      await this.saveRequest(request);
+      await this.saveRequest(request)
 
       // Log status change
       await auditLogger.logEvent({
@@ -492,14 +494,13 @@ class LegalRequestTracker {
           newStatus: status,
           notes
         }
-      });
+      })
 
       // Handle status-specific actions
-      await this.handleStatusChange(request, previousStatus, status);
-
+      await this.handleStatusChange(request, previousStatus, status)
     } catch (error) {
-      console.error('Error updating request status:', error);
-      throw error;
+      console.error('Error updating request status:', error)
+      throw error
     }
   }
 
@@ -513,30 +514,32 @@ class LegalRequestTracker {
     notes?: string
   ): Promise<void> {
     try {
-      const request = this.activeRequests.get(requestId);
+      const request = this.activeRequests.get(requestId)
       if (!request) {
-        throw new Error(`Request ${requestId} not found`);
+        throw new Error(`Request ${requestId} not found`)
       }
 
-      const step = request.processingSteps.find(s => s.id === stepId);
+      const step = request.processingSteps.find(s => s.id === stepId)
       if (!step) {
-        throw new Error(`Processing step ${stepId} not found`);
+        throw new Error(`Processing step ${stepId} not found`)
       }
 
-      step.completed = true;
-      step.completedAt = new Date();
-      step.completedBy = userId;
-      if (notes) step.notes = notes;
+      step.completed = true
+      step.completedAt = new Date()
+      step.completedBy = userId
+      if (notes) {
+        step.notes = notes
+      }
 
       // Calculate step duration
       if (request.processingStartedAt) {
         step.duration = Math.floor(
           (new Date().getTime() - request.processingStartedAt.getTime()) / (1000 * 60)
-        );
+        )
       }
 
       // Save updated request
-      await this.saveRequest(request);
+      await this.saveRequest(request)
 
       // Log step completion
       await auditLogger.logEvent({
@@ -553,24 +556,23 @@ class LegalRequestTracker {
           duration: step.duration,
           notes
         }
-      });
+      })
 
       // Check if all required steps are completed
-      const requiredSteps = request.processingSteps.filter(s => s.required);
-      const completedRequiredSteps = requiredSteps.filter(s => s.completed);
-      
+      const requiredSteps = request.processingSteps.filter(s => s.required)
+      const completedRequiredSteps = requiredSteps.filter(s => s.completed)
+
       if (completedRequiredSteps.length === requiredSteps.length) {
         await this.updateRequestStatus(
           requestId,
           LegalRequestStatus.PENDING_REVIEW,
           userId,
           'All required processing steps completed'
-        );
+        )
       }
-
     } catch (error) {
-      console.error('Error completing processing step:', error);
-      throw error;
+      console.error('Error completing processing step:', error)
+      throw error
     }
   }
 
@@ -586,8 +588,8 @@ class LegalRequestTracker {
     notes?: string
   ): Promise<string> {
     try {
-      const checkId = this.generateCheckId();
-      
+      const checkId = this.generateCheckId()
+
       const complianceCheck: ComplianceCheck = {
         id: checkId,
         checkType,
@@ -597,19 +599,19 @@ class LegalRequestTracker {
         checkedAt: new Date(),
         checkedBy: userId,
         notes
-      };
-
-      const request = this.activeRequests.get(requestId);
-      if (request) {
-        request.complianceChecks.push(complianceCheck);
-        request.updatedAt = new Date();
-        await this.saveRequest(request);
       }
 
-      return checkId;
+      const request = this.activeRequests.get(requestId)
+      if (request) {
+        request.complianceChecks.push(complianceCheck)
+        request.updatedAt = new Date()
+        await this.saveRequest(request)
+      }
+
+      return checkId
     } catch (error) {
-      console.error('Error adding compliance check:', error);
-      throw error;
+      console.error('Error adding compliance check:', error)
+      throw error
     }
   }
 
@@ -625,24 +627,28 @@ class LegalRequestTracker {
     evidence?: string[]
   ): Promise<void> {
     try {
-      const request = this.activeRequests.get(requestId);
+      const request = this.activeRequests.get(requestId)
       if (!request) {
-        throw new Error(`Request ${requestId} not found`);
+        throw new Error(`Request ${requestId} not found`)
       }
 
-      const check = request.complianceChecks.find(c => c.id === checkId);
+      const check = request.complianceChecks.find(c => c.id === checkId)
       if (!check) {
-        throw new Error(`Compliance check ${checkId} not found`);
+        throw new Error(`Compliance check ${checkId} not found`)
       }
 
-      check.passed = passed;
-      check.checkedAt = new Date();
-      check.checkedBy = userId;
-      if (notes) check.notes = notes;
-      if (evidence) check.evidence = evidence;
+      check.passed = passed
+      check.checkedAt = new Date()
+      check.checkedBy = userId
+      if (notes) {
+        check.notes = notes
+      }
+      if (evidence) {
+        check.evidence = evidence
+      }
 
       // Save updated request
-      await this.saveRequest(request);
+      await this.saveRequest(request)
 
       // Log compliance check
       await auditLogger.logEvent({
@@ -659,12 +665,12 @@ class LegalRequestTracker {
           passed,
           notes
         }
-      });
+      })
 
       // Check if all required compliance checks are passed
-      const requiredChecks = request.complianceChecks.filter(c => c.required);
-      const passedRequiredChecks = requiredChecks.filter(c => c.passed);
-      
+      const requiredChecks = request.complianceChecks.filter(c => c.required)
+      const passedRequiredChecks = requiredChecks.filter(c => c.passed)
+
       if (passedRequiredChecks.length === requiredChecks.length) {
         // All required checks passed, can proceed
         await this.updateRequestStatus(
@@ -672,7 +678,7 @@ class LegalRequestTracker {
           LegalRequestStatus.APPROVED,
           userId,
           'All required compliance checks passed'
-        );
+        )
       } else if (!passed && requiredChecks.some(c => !c.passed)) {
         // Required check failed
         await this.updateRequestStatus(
@@ -680,12 +686,11 @@ class LegalRequestTracker {
           LegalRequestStatus.REJECTED,
           userId,
           `Required compliance check failed: ${checkType}`
-        );
+        )
       }
-
     } catch (error) {
-      console.error('Error completing compliance check:', error);
-      throw error;
+      console.error('Error completing compliance check:', error)
+      throw error
     }
   }
 
@@ -699,24 +704,24 @@ class LegalRequestTracker {
     userId: string
   ): Promise<void> {
     try {
-      const request = this.activeRequests.get(requestId);
+      const request = this.activeRequests.get(requestId)
       if (!request) {
-        throw new Error(`Request ${requestId} not found`);
+        throw new Error(`Request ${requestId} not found`)
       }
 
       // In a real implementation, this would send actual notifications
       // For now, we'll just log the notification attempt
-      
-      request.userNotificationAttempts++;
-      request.lastUserNotificationAt = new Date();
-      request.updatedAt = new Date();
+
+      request.userNotificationAttempts++
+      request.lastUserNotificationAt = new Date()
+      request.updatedAt = new Date()
 
       // Mark as notified if this is a completion notification
       if (notificationType === 'completion') {
-        request.userNotified = true;
+        request.userNotified = true
       }
 
-      await this.saveRequest(request);
+      await this.saveRequest(request)
 
       // Log notification
       await auditLogger.logEvent({
@@ -732,12 +737,12 @@ class LegalRequestTracker {
           message,
           attempts: request.userNotificationAttempts
         }
-      });
+      })
 
-      console.log(`User notification sent for request ${requestId}: ${message}`);
+      console.log(`User notification sent for request ${requestId}: ${message}`)
     } catch (error) {
-      console.error('Error notifying user:', error);
-      throw error;
+      console.error('Error notifying user:', error)
+      throw error
     }
   }
 
@@ -751,18 +756,18 @@ class LegalRequestTracker {
     userId: string
   ): Promise<string> {
     try {
-      const request = this.activeRequests.get(requestId);
+      const request = this.activeRequests.get(requestId)
       if (!request) {
-        throw new Error(`Request ${requestId} not found`);
+        throw new Error(`Request ${requestId} not found`)
       }
 
       // Check if appeal deadline has passed
       if (request.appealDeadline && new Date() > request.appealDeadline) {
-        throw new Error('Appeal deadline has passed');
+        throw new Error('Appeal deadline has passed')
       }
 
-      const appealId = this.generateAppealId();
-      
+      const appealId = this.generateAppealId()
+
       const appealInfo: AppealInfo = {
         id: appealId,
         reason,
@@ -770,13 +775,13 @@ class LegalRequestTracker {
         filedAt: new Date(),
         filedBy: userId,
         status: 'pending'
-      };
+      }
 
-      request.appealInfo = appealInfo;
-      request.status = LegalRequestStatus.APPEALED;
-      request.updatedAt = new Date();
+      request.appealInfo = appealInfo
+      request.status = LegalRequestStatus.APPEALED
+      request.updatedAt = new Date()
 
-      await this.saveRequest(request);
+      await this.saveRequest(request)
 
       // Log appeal
       await auditLogger.logEvent({
@@ -792,15 +797,15 @@ class LegalRequestTracker {
           reason,
           description
         }
-      });
+      })
 
       // Auto-assign appeal review
-      await this.autoAssignAppeal(request, appealInfo);
+      await this.autoAssignAppeal(request, appealInfo)
 
-      return appealId;
+      return appealId
     } catch (error) {
-      console.error('Error filing appeal:', error);
-      throw error;
+      console.error('Error filing appeal:', error)
+      throw error
     }
   }
 
@@ -817,9 +822,11 @@ class LegalRequestTracker {
         .from('legal_requests')
         .select('*')
         .gte('received_at', startDate.toISOString())
-        .lte('received_at', endDate.toISOString());
+        .lte('received_at', endDate.toISOString())
 
-      if (error) throw error;
+      if (error) {
+        throw error
+      }
 
       const reportData: TransparencyReportData = {
         period: { start: startDate, end: endDate },
@@ -844,85 +851,85 @@ class LegalRequestTracker {
           granted: 0,
           denied: 0
         }
-      };
+      }
 
-      let totalResponseTime = 0;
-      let responseCount = 0;
+      let totalResponseTime = 0
+      let responseCount = 0
 
       // Aggregate data
       for (const request of requests || []) {
         // Count by type
-        reportData.requestsByType[request.type] = (reportData.requestsByType[request.type] || 0) + 1;
+        reportData.requestsByType[request.type] = (reportData.requestsByType[request.type] || 0) + 1
 
         // Count by source
-        reportData.requestsBySource[request.source_type] = (reportData.requestsBySource[request.source_type] || 0) + 1;
+        reportData.requestsBySource[request.source_type] = (reportData.requestsBySource[request.source_type] || 0) + 1
 
         // Count by status
-        reportData.requestsByStatus[request.status] = (reportData.requestsByStatus[request.status] || 0) + 1;
+        reportData.requestsByStatus[request.status] = (reportData.requestsByStatus[request.status] || 0) + 1
 
         // Count data subjects
-        reportData.dataSubjectsAffected += request.data_subjects?.length || 0;
+        reportData.dataSubjectsAffected += request.data_subjects?.length || 0
 
         // Count user notifications
         if (request.user_notified) {
-          reportData.userNotifications.sent++;
+          reportData.userNotifications.sent++
         }
-        reportData.userNotifications.sent += request.user_notification_attempts || 0;
+        reportData.userNotifications.sent += request.user_notification_attempts || 0
 
         // Count special request types
         if (request.type === LegalRequestType.LAW_ENFORCEMENT_REQUEST) {
-          reportData.warrantsReceived++;
+          reportData.warrantsReceived++
           if (request.data_shared) {
-            reportData.warrantsExecuted++;
+            reportData.warrantsExecuted++
           }
         }
 
         if (request.type === LegalRequestType.NATIONAL_SECURITY_REQUEST) {
-          reportData.nationalSecurityRequests++;
+          reportData.nationalSecurityRequests++
         }
 
         // Count appeals
         if (request.appeal_info) {
-          reportData.appeals.received++;
+          reportData.appeals.received++
           if (request.appeal_info.status === 'approved') {
-            reportData.appeals.granted++;
+            reportData.appeals.granted++
           } else if (request.appeal_info.status === 'rejected') {
-            reportData.appeals.denied++;
+            reportData.appeals.denied++
           }
         }
 
         // Calculate response times
         if (request.completed_at && request.received_at) {
-          const responseTime = (new Date(request.completed_at).getTime() - new Date(request.received_at).getTime()) / (1000 * 60 * 60 * 24);
-          totalResponseTime += responseTime;
-          responseCount++;
+          const responseTime = (new Date(request.completed_at).getTime() - new Date(request.received_at).getTime()) / (1000 * 60 * 60 * 24)
+          totalResponseTime += responseTime
+          responseCount++
         }
 
         // Check if any data was shared
         if (request.data_shared) {
-          reportData.dataShared = true;
+          reportData.dataShared = true
         }
       }
 
       // Calculate averages and rates
       if (responseCount > 0) {
-        reportData.averageResponseTime = totalResponseTime / responseCount;
+        reportData.averageResponseTime = totalResponseTime / responseCount
       }
 
-      const approvedRequests = (reportData.requestsByStatus[LegalRequestStatus.APPROVED] || 0) +
-                           (reportData.requestsByStatus[LegalRequestStatus.FULFILLED] || 0) +
-                           (reportData.requestsByStatus[LegalRequestStatus.PARTIALLY_FULFILLED] || 0);
-      
-      const totalProcessedRequests = approvedRequests + (reportData.requestsByStatus[LegalRequestStatus.REJECTED] || 0);
-      
+      const approvedRequests = (reportData.requestsByStatus[LegalRequestStatus.APPROVED] || 0)
+                           + (reportData.requestsByStatus[LegalRequestStatus.FULFILLED] || 0)
+                           + (reportData.requestsByStatus[LegalRequestStatus.PARTIALLY_FULFILLED] || 0)
+
+      const totalProcessedRequests = approvedRequests + (reportData.requestsByStatus[LegalRequestStatus.REJECTED] || 0)
+
       if (totalProcessedRequests > 0) {
-        reportData.complianceRate = (approvedRequests / totalProcessedRequests) * 100;
+        reportData.complianceRate = (approvedRequests / totalProcessedRequests) * 100
       }
 
-      return reportData;
+      return reportData
     } catch (error) {
-      console.error('Error getting transparency report data:', error);
-      throw error;
+      console.error('Error getting transparency report data:', error)
+      throw error
     }
   }
 
@@ -931,44 +938,44 @@ class LegalRequestTracker {
    */
 
   private generateRequestId(): string {
-    return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   }
 
   private generateCheckId(): string {
-    return `check_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `check_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   }
 
   private generateAppealId(): string {
-    return `appeal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `appeal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   }
 
   private calculateResponseDeadline(type: LegalRequestType): Date {
-    const deadline = new Date();
-    
+    const deadline = new Date()
+
     switch (type) {
       case LegalRequestType.DATA_ACCESS:
-        deadline.setDate(deadline.getDate() + 30); // GDPR: 30 days
-        break;
+        deadline.setDate(deadline.getDate() + 30) // GDPR: 30 days
+        break
       case LegalRequestType.DATA_DELETION:
-        deadline.setDate(deadline.getDate() + 30); // GDPR: 30 days
-        break;
+        deadline.setDate(deadline.getDate() + 30) // GDPR: 30 days
+        break
       case LegalRequestType.DATA_CORRECTION:
-        deadline.setDate(deadline.getDate() + 30); // GDPR: 30 days
-        break;
+        deadline.setDate(deadline.getDate() + 30) // GDPR: 30 days
+        break
       case LegalRequestType.DATA_PORTABILITY:
-        deadline.setDate(deadline.getDate() + 30); // GDPR: 30 days
-        break;
+        deadline.setDate(deadline.getDate() + 30) // GDPR: 30 days
+        break
       case LegalRequestType.LAW_ENFORCEMENT_REQUEST:
-        deadline.setDate(deadline.getDate() + 14); // Typically shorter for law enforcement
-        break;
+        deadline.setDate(deadline.getDate() + 14) // Typically shorter for law enforcement
+        break
       case LegalRequestType.COURT_ORDER:
-        deadline.setDate(deadline.getDate() + 7); // Court orders are time-sensitive
-        break;
+        deadline.setDate(deadline.getDate() + 7) // Court orders are time-sensitive
+        break
       default:
-        deadline.setDate(deadline.getDate() + 30); // Default 30 days
+        deadline.setDate(deadline.getDate() + 30) // Default 30 days
     }
 
-    return deadline;
+    return deadline
   }
 
   private mapTypeToSeverity(type: LegalRequestType): AuditSeverity {
@@ -976,53 +983,53 @@ class LegalRequestTracker {
       case LegalRequestType.LAW_ENFORCEMENT_REQUEST:
       case LegalRequestType.NATIONAL_SECURITY_REQUEST:
       case LegalRequestType.COURT_ORDER:
-        return AuditSeverity.CRITICAL;
+        return AuditSeverity.CRITICAL
       case LegalRequestType.DATA_DELETION:
       case LegalRequestType.DATA_ACCESS:
-        return AuditSeverity.HIGH;
+        return AuditSeverity.HIGH
       case LegalRequestType.DATA_CORRECTION:
       case LegalRequestType.DATA_PORTABILITY:
-        return AuditSeverity.MEDIUM;
+        return AuditSeverity.MEDIUM
       default:
-        return AuditSeverity.LOW;
+        return AuditSeverity.LOW
     }
   }
 
   private initializeProcessingSteps(type: LegalRequestType): ProcessingStep[] {
-    const workflow = this.processingWorkflows.get(type);
-    return workflow ? workflow.map(step => ({ ...step })) : [];
+    const workflow = this.processingWorkflows.get(type)
+    return workflow ? workflow.map(step => ({ ...step })) : []
   }
 
   private async autoAssignRequest(request: LegalRequest): Promise<void> {
     // Auto-assign based on request type and priority
-    let assignTo = '';
-    
+    let assignTo = ''
+
     switch (request.type) {
       case LegalRequestType.LAW_ENFORCEMENT_REQUEST:
       case LegalRequestType.NATIONAL_SECURITY_REQUEST:
-        assignTo = 'legal-team-lead';
-        break;
+        assignTo = 'legal-team-lead'
+        break
       case LegalRequestType.DATA_ACCESS:
       case LegalRequestType.DATA_DELETION:
-        assignTo = 'privacy-officer';
-        break;
+        assignTo = 'privacy-officer'
+        break
       default:
-        assignTo = 'legal-analyst';
+        assignTo = 'legal-analyst'
     }
 
     if (request.priority === LegalRequestPriority.URGENT) {
-      assignTo = 'legal-team-lead'; // Urgent requests go to lead
+      assignTo = 'legal-team-lead' // Urgent requests go to lead
     }
 
-    request.assignedTo = assignTo;
-    await this.saveRequest(request);
+    request.assignedTo = assignTo
+    await this.saveRequest(request)
   }
 
   private async autoAssignAppeal(request: LegalRequest, appeal: AppealInfo): Promise<void> {
     // Appeals should be reviewed by senior legal staff
-    request.reviewedBy = 'legal-counsel';
-    appeal.status = 'under_review';
-    await this.saveRequest(request);
+    request.reviewedBy = 'legal-counsel'
+    appeal.status = 'under_review'
+    await this.saveRequest(request)
   }
 
   private async startValidation(request: LegalRequest): Promise<void> {
@@ -1032,7 +1039,7 @@ class LegalRequestTracker {
       LegalRequestStatus.VALIDATED,
       'system',
       'Initial validation completed'
-    );
+    )
   }
 
   private async handleStatusChange(
@@ -1041,12 +1048,12 @@ class LegalRequestTracker {
     newStatus: LegalRequestStatus
   ): Promise<void> {
     // Handle status-specific logic
-    
+
     if (newStatus === LegalRequestStatus.APPROVED) {
       // Set appeal deadline (typically 30 days)
-      const appealDeadline = new Date();
-      appealDeadline.setDate(appealDeadline.getDate() + 30);
-      request.appealDeadline = appealDeadline;
+      const appealDeadline = new Date()
+      appealDeadline.setDate(appealDeadline.getDate() + 30)
+      request.appealDeadline = appealDeadline
     }
 
     if (newStatus === LegalRequestStatus.FULFILLED || newStatus === LegalRequestStatus.PARTIALLY_FULFILLED) {
@@ -1056,7 +1063,7 @@ class LegalRequestTracker {
         'completion',
         `Your legal request has been ${newStatus === LegalRequestStatus.FULFILLED ? 'fully' : 'partially'} fulfilled`,
         'system'
-      );
+      )
     }
   }
 
@@ -1071,34 +1078,36 @@ class LegalRequestTracker {
           LegalRequestStatus.PROCESSING,
           LegalRequestStatus.ADDITIONAL_INFO_REQUIRED,
           LegalRequestStatus.PENDING_REVIEW
-        ]);
+        ])
 
-      if (error) throw error;
+      if (error) {
+        throw error
+      }
 
       for (const request of data || []) {
-        this.activeRequests.set(request.id, request as LegalRequest);
+        this.activeRequests.set(request.id, request as LegalRequest)
       }
     } catch (error) {
-      console.error('Error loading active requests:', error);
+      console.error('Error loading active requests:', error)
     }
   }
 
   private startDeadlineMonitoring(): void {
     // Check for approaching deadlines every hour
     setInterval(async () => {
-      await this.checkDeadlines();
-    }, 60 * 60 * 1000);
+      await this.checkDeadlines()
+    }, 60 * 60 * 1000)
   }
 
   private async checkDeadlines(): Promise<void> {
     try {
-      const now = new Date();
-      const warningThreshold = 3 * 24 * 60 * 60 * 1000; // 3 days
+      const now = new Date()
+      const warningThreshold = 3 * 24 * 60 * 60 * 1000 // 3 days
 
       for (const request of this.activeRequests.values()) {
         // Check response deadline
-        const timeToDeadline = request.responseDeadline.getTime() - now.getTime();
-        
+        const timeToDeadline = request.responseDeadline.getTime() - now.getTime()
+
         if (timeToDeadline <= 0 && request.status !== LegalRequestStatus.FULFILLED) {
           // Deadline passed
           await this.updateRequestStatus(
@@ -1106,7 +1115,7 @@ class LegalRequestTracker {
             LegalRequestStatus.EXPIRED,
             'system',
             'Response deadline exceeded'
-          );
+          )
         } else if (timeToDeadline <= warningThreshold && timeToDeadline > 0) {
           // Approaching deadline - send warning
           await auditLogger.logEvent({
@@ -1120,23 +1129,23 @@ class LegalRequestTracker {
               deadline: request.responseDeadline.toISOString(),
               hoursRemaining: Math.floor(timeToDeadline / (1000 * 60 * 60))
             }
-          });
+          })
         }
 
         // Check appeal deadline
         if (request.appealDeadline) {
-          const timeToAppealDeadline = request.appealDeadline.getTime() - now.getTime();
-          
+          const timeToAppealDeadline = request.appealDeadline.getTime() - now.getTime()
+
           if (timeToAppealDeadline <= 0 && request.appealInfo?.status === 'pending') {
-            request.appealInfo.status = 'rejected';
-            request.appealInfo.reviewedAt = new Date();
-            request.appealInfo.decision = 'Appeal deadline passed';
-            await this.saveRequest(request);
+            request.appealInfo.status = 'rejected'
+            request.appealInfo.reviewedAt = new Date()
+            request.appealInfo.decision = 'Appeal deadline passed'
+            await this.saveRequest(request)
           }
         }
       }
     } catch (error) {
-      console.error('Error checking deadlines:', error);
+      console.error('Error checking deadlines:', error)
     }
   }
 
@@ -1185,14 +1194,14 @@ class LegalRequestTracker {
           metadata: request.metadata,
           created_at: request.createdAt.toISOString(),
           updated_at: request.updatedAt.toISOString()
-        });
+        })
     } catch (error) {
-      console.error('Error saving request:', error);
+      console.error('Error saving request:', error)
     }
   }
 }
 
 // Global legal request tracker instance
-export const legalRequestTracker = new LegalRequestTracker();
+export const legalRequestTracker = new LegalRequestTracker()
 
-export default legalRequestTracker;
+export default legalRequestTracker

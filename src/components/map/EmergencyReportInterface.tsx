@@ -7,7 +7,7 @@ import { useEmergencyStore, useLocationStore, useOfflineStore } from '@/store'
 import { EmergencyEvent } from '@/types'
 import { Database } from '@/types/database'
 import { useFocusManagement, useAriaAnnouncer, useFormValidationAnnouncer } from '@/hooks/accessibility'
-import { 
+import {
   EnhancedCard,
   EnhancedCardHeader,
   EnhancedCardTitle,
@@ -54,7 +54,7 @@ const emergencyTypes: EmergencyType[] = [
     description: 'Fire emergency including building fires, wildfires, etc.',
     icon: '🔥',
     color: '#ff4444',
-    default_radius: 500,
+    default_radius: 500
   },
   {
     id: 2,
@@ -62,7 +62,7 @@ const emergencyTypes: EmergencyType[] = [
     description: 'Medical emergencies requiring immediate attention',
     icon: '🏥',
     color: '#ff1493',
-    default_radius: 200,
+    default_radius: 200
   },
   {
     id: 3,
@@ -70,7 +70,7 @@ const emergencyTypes: EmergencyType[] = [
     description: 'Security threats, criminal activity, public safety',
     icon: '🚨',
     color: '#ffaa00',
-    default_radius: 300,
+    default_radius: 300
   },
   {
     id: 4,
@@ -78,7 +78,7 @@ const emergencyTypes: EmergencyType[] = [
     description: 'Natural disasters, weather events, earthquakes',
     icon: '🌊',
     color: '#4444ff',
-    default_radius: 1000,
+    default_radius: 1000
   },
   {
     id: 5,
@@ -86,8 +86,8 @@ const emergencyTypes: EmergencyType[] = [
     description: 'Infrastructure failures, utility outages, road closures',
     icon: '🏗️',
     color: '#ff8800',
-    default_radius: 400,
-  },
+    default_radius: 400
+  }
 ]
 
 const formSteps = [
@@ -95,7 +95,7 @@ const formSteps = [
   { id: 'details', title: 'Emergency Details', description: 'Provide details about the emergency' },
   { id: 'location', title: 'Location', description: 'Specify the affected area' },
   { id: 'evidence', title: 'Evidence', description: 'Add photos or audio recordings' },
-  { id: 'review', title: 'Review', description: 'Review your report before submitting' },
+  { id: 'review', title: 'Review', description: 'Review your report before submitting' }
 ]
 
 export default function EmergencyReportInterface({
@@ -103,7 +103,7 @@ export default function EmergencyReportInterface({
   onClose,
   onReportSubmitted,
   initialLocation,
-  mapInstance,
+  mapInstance
 }: EmergencyReportInterfaceProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const [selectedType, setSelectedType] = useState<EmergencyType | null>(null)
@@ -121,12 +121,12 @@ export default function EmergencyReportInterface({
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
 
   const fileInputRef = useRef<HTMLInputElement>(null)
-  
+
   // Accessibility hooks
   const { containerRef, getFocusableElements, focusFirstElement } = useFocusManagement({
     trapFocus: true,
     autoFocus: true,
-    restoreFocus: true,
+    restoreFocus: true
   })
   const { announcePolite, announceAssertive } = useAriaAnnouncer()
   const { announceValidationErrors, announceFieldError, announceFieldSuccess } = useFormValidationAnnouncer()
@@ -140,7 +140,7 @@ export default function EmergencyReportInterface({
     if (!initialLocation && currentLocation) {
       setLocation({
         lat: currentLocation.lat,
-        lng: currentLocation.lng,
+        lng: currentLocation.lng
       })
     }
   }, [initialLocation, currentLocation])
@@ -188,7 +188,7 @@ export default function EmergencyReportInterface({
   // Validate current step
   const validateStep = (stepIndex: number): boolean => {
     const errors: Record<string, string> = {}
-    
+
     switch (stepIndex) {
       case 0: // Emergency Type
         if (!selectedType) {
@@ -211,7 +211,7 @@ export default function EmergencyReportInterface({
         } else {
           announceFieldSuccess('Title', 'Title is valid')
         }
-        
+
         if (!description.trim()) {
           errors.description = 'Description is required'
           announceFieldError('Description', 'Description is required')
@@ -234,7 +234,7 @@ export default function EmergencyReportInterface({
         }
         break
     }
-    
+
     setFormErrors(errors)
     const isValid = Object.keys(errors).length === 0
     announceValidationErrors(errors)
@@ -272,7 +272,9 @@ export default function EmergencyReportInterface({
 
   // Handle location selection
   const handleLocationSelect = () => {
-    if (!mapInstance) return
+    if (!mapInstance) {
+      return
+    }
 
     // Enable map interaction mode for location selection
     mapInstance.getCanvas().style.cursor = 'crosshair'
@@ -282,7 +284,7 @@ export default function EmergencyReportInterface({
       const coords = e.lngLat
       setLocation({
         lat: coords.lat,
-        lng: coords.lng,
+        lng: coords.lng
       })
       mapInstance.getCanvas().style.cursor = ''
       mapInstance.off('click', handleMapClick)
@@ -315,11 +317,11 @@ export default function EmergencyReportInterface({
   // Validate entire form
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {}
-    
+
     if (!selectedType) {
       errors.type = 'Please select an emergency type'
     }
-    
+
     if (!title.trim()) {
       errors.title = 'Title is required'
     } else if (title.length < 5) {
@@ -327,7 +329,7 @@ export default function EmergencyReportInterface({
     } else if (title.length > 100) {
       errors.title = 'Title must be less than 100 characters'
     }
-    
+
     if (!description.trim()) {
       errors.description = 'Description is required'
     } else if (description.length < 10) {
@@ -335,11 +337,11 @@ export default function EmergencyReportInterface({
     } else if (description.length > 500) {
       errors.description = 'Description must be less than 500 characters'
     }
-    
+
     if (!location) {
       errors.location = 'Please select a location on the map'
     }
-    
+
     setFormErrors(errors)
     return Object.keys(errors).length === 0
   }
@@ -370,11 +372,11 @@ export default function EmergencyReportInterface({
         images: images.map(img => img.url),
         audio: audioRecording ? audioRecording.url : null,
         reported_at: new Date().toISOString(),
-        device_info: navigator.userAgent,
+        device_info: navigator.userAgent
       },
       expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
       resolved_at: null,
-      resolved_by: null,
+      resolved_by: null
     }
 
     try {
@@ -388,13 +390,13 @@ export default function EmergencyReportInterface({
           table: 'emergency_events',
           data: emergencyReport,
           priority: 'critical',
-          maxRetries: 5,
+          maxRetries: 5
         })
 
         // Also add to emergency store for UI
         addOfflineAction({
           type: 'create',
-          data: emergencyReport,
+          data: emergencyReport
         })
       }
 
@@ -410,16 +412,18 @@ export default function EmergencyReportInterface({
       onClose()
     } catch (error) {
       console.error('Failed to submit emergency report:', error)
-      setFormErrors(prev => ({ 
-        ...prev, 
-        submit: 'Failed to submit report. Please try again.' 
+      setFormErrors(prev => ({
+        ...prev,
+        submit: 'Failed to submit report. Please try again.'
       }))
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  if (!isOpen) return null
+  if (!isOpen) {
+    return null
+  }
 
   return (
     <div
@@ -544,9 +548,15 @@ export default function EmergencyReportInterface({
                     floatingLabel
                     validateOnChange
                     validator={(value) => {
-                      if (!value.trim()) return 'Title is required'
-                      if (value.length < 5) return 'Title must be at least 5 characters'
-                      if (value.length > 100) return 'Title must be less than 100 characters'
+                      if (!value.trim()) {
+                        return 'Title is required'
+                      }
+                      if (value.length < 5) {
+                        return 'Title must be at least 5 characters'
+                      }
+                      if (value.length > 100) {
+                        return 'Title must be less than 100 characters'
+                      }
                       return null
                     }}
                   />
@@ -563,9 +573,15 @@ export default function EmergencyReportInterface({
                     floatingLabel
                     validateOnChange
                     validator={(value) => {
-                      if (!value.trim()) return 'Description is required'
-                      if (value.length < 10) return 'Description must be at least 10 characters'
-                      if (value.length > 500) return 'Description must be less than 500 characters'
+                      if (!value.trim()) {
+                        return 'Description is required'
+                      }
+                      if (value.length < 10) {
+                        return 'Description must be at least 10 characters'
+                      }
+                      if (value.length > 500) {
+                        return 'Description must be less than 500 characters'
+                      }
                       return null
                     }}
                   />
@@ -577,7 +593,7 @@ export default function EmergencyReportInterface({
                       { value: '2', label: 'Moderate - Some impact' },
                       { value: '3', label: 'High - Significant impact' },
                       { value: '4', label: 'Severe - Major impact' },
-                      { value: '5', label: 'Critical - Life-threatening' },
+                      { value: '5', label: 'Critical - Life-threatening' }
                     ]}
                     value={severity.toString()}
                     onChange={(value) => setSeverity(parseInt(value))}
@@ -629,7 +645,7 @@ export default function EmergencyReportInterface({
                         { value: 200, label: '200m' },
                         { value: 500, label: '500m' },
                         { value: 1000, label: '1km' },
-                        { value: 2000, label: '2km' },
+                        { value: 2000, label: '2km' }
                       ]}
                     />
                   )}
@@ -698,7 +714,7 @@ export default function EmergencyReportInterface({
                         <div><span className="font-medium">Severity:</span> {severity}/5</div>
                       </div>
                     </div>
-                    
+
                     <div className="space-y-4">
                       <h3 className="text-lg font-medium text-foreground">Location</h3>
                       <div className="space-y-2 text-sm">
@@ -707,14 +723,14 @@ export default function EmergencyReportInterface({
                       </div>
                     </div>
                   </div>
-                  
+
                   <div>
                     <h3 className="text-lg font-medium text-foreground mb-2">Description</h3>
                     <p className="text-sm text-muted-foreground bg-muted/30 p-4 rounded-lg">
                       {description}
                     </p>
                   </div>
-                  
+
                   <div>
                     <h3 className="text-lg font-medium text-foreground mb-2">Evidence</h3>
                     <div className="flex gap-4">
@@ -752,7 +768,7 @@ export default function EmergencyReportInterface({
             >
               Cancel
             </EnhancedButton>
-            
+
             {currentStep > 0 && (
               <EnhancedButton
                 variant="outline"
@@ -763,7 +779,7 @@ export default function EmergencyReportInterface({
                 Previous
               </EnhancedButton>
             )}
-            
+
             {currentStep < formSteps.length - 1 ? (
               <EnhancedButton
                 onClick={handleNextStep}
@@ -784,7 +800,7 @@ export default function EmergencyReportInterface({
               </EnhancedButton>
             )}
           </div>
-          
+
           <FormProgressSummary
             currentStep={currentStep}
             totalSteps={formSteps.length}

@@ -1,6 +1,6 @@
 /**
  * Emergency scenario test fixtures for OpenRelief emergency coordination system
- * 
+ *
  * This file provides realistic test data for various emergency scenarios,
  * including medical emergencies, natural disasters, fires, and other critical events.
  */
@@ -130,7 +130,7 @@ export const emergencyScenarios = {
       latitude: 40.7589,
       longitude: -73.9851,
       address: '123 Main St, New York, NY 10001',
-      description: 'Main entrance of City Mall, near food court',
+      description: 'Main entrance of City Mall, near food court'
     },
     reportedBy: 'user-citizen-001',
     reportedAt: '2024-01-15T10:30:00Z',
@@ -145,7 +145,7 @@ export const emergencyScenarios = {
         userId: 'user-paramedic-001',
         timestamp: '2024-01-15T10:45:00Z',
         type: 'status_change',
-        message: 'Paramedics on scene, assessing patient condition',
+        message: 'Paramedics on scene, assessing patient condition'
       },
       {
         id: 'update-002',
@@ -154,8 +154,8 @@ export const emergencyScenarios = {
         timestamp: '2024-01-15T11:00:00Z',
         type: 'resource_update',
         message: 'Patient stabilized, preparing for transport',
-        data: { vitals: { heartRate: 85, bloodPressure: '120/80', oxygenSaturation: 95 } },
-      },
+        data: { vitals: { heartRate: 85, bloodPressure: '120/80', oxygenSaturation: 95 } }
+      }
     ],
     estimatedResponseTime: 8,
     requiredResources: ['ambulance', 'paramedic', 'medical_kit'],
@@ -165,15 +165,15 @@ export const emergencyScenarios = {
       temperature: 15,
       humidity: 65,
       windSpeed: 10,
-      conditions: 'clear',
+      conditions: 'clear'
     },
     accessibility: {
       wheelchairAccessible: true,
       languageSupport: ['en', 'es'],
       visualAids: true,
-      hearingAssistance: true,
+      hearingAssistance: true
     },
-    priority: 'urgent',
+    priority: 'urgent'
   } as EmergencyEvent,
 
   buildingFire: {
@@ -186,7 +186,7 @@ export const emergencyScenarios = {
       latitude: 40.7489,
       longitude: -73.9680,
       address: '456 Oak Ave, Brooklyn, NY 11201',
-      description: 'Corner of Oak Ave and Pine St, near subway entrance',
+      description: 'Corner of Oak Ave and Pine St, near subway entrance'
     },
     reportedBy: 'user-citizen-002',
     reportedAt: '2024-01-15T14:20:00Z',
@@ -201,7 +201,7 @@ export const emergencyScenarios = {
         userId: 'user-firefighter-001',
         timestamp: '2024-01-15T14:35:00Z',
         type: 'status_change',
-        message: 'Fire department on scene, establishing command post',
+        message: 'Fire department on scene, establishing command post'
       },
       {
         id: 'update-004',
@@ -210,8 +210,8 @@ export const emergencyScenarios = {
         timestamp: '2024-01-15T14:50:00Z',
         type: 'casualty_update',
         message: '2 residents rescued, 3 still unaccounted for',
-        data: { rescued: 2, missing: 3, injuries: 1 },
-      },
+        data: { rescued: 2, missing: 3, injuries: 1 }
+      }
     ],
     estimatedResponseTime: 5,
     requiredResources: ['fire_truck', 'ladder_truck', 'firefighters', 'ambulance', 'rescue_equipment'],
@@ -221,15 +221,15 @@ export const emergencyScenarios = {
       temperature: 12,
       humidity: 70,
       windSpeed: 15,
-      conditions: 'partly_cloudy',
+      conditions: 'partly_cloudy'
     },
     accessibility: {
       wheelchairAccessible: false,
       languageSupport: ['en'],
       visualAids: false,
-      hearingAssistance: false,
+      hearingAssistance: false
     },
-    priority: 'critical',
+    priority: 'critical'
   } as EmergencyEvent,
 
   naturalDisaster: {
@@ -242,7 +242,7 @@ export const emergencyScenarios = {
       latitude: 40.7282,
       longitude: -74.0776,
       address: 'Riverside District, Hoboken, NJ',
-      description: 'Area along Hudson River, near waterfront promenade',
+      description: 'Area along Hudson River, near waterfront promenade'
     },
     reportedBy: 'user-citizen-003',
     reportedAt: '2024-01-15T06:00:00Z',
@@ -257,7 +257,7 @@ export const emergencyScenarios = {
         userId: 'user-coordinator-001',
         timestamp: '2024-01-15T06:30:00Z',
         type: 'status_change',
-        message: 'Emergency operations center activated, coordinating evacuation',
+        message: 'Emergency operations center activated, coordinating evacuation'
       },
       {
         id: 'update-006',
@@ -266,8 +266,8 @@ export const emergencyScenarios = {
         timestamp: '2024-01-15T07:00:00Z',
         type: 'resource_update',
         message: 'Water levels rising, additional resources requested',
-        data: { waterLevel: 2.5, evacuationZones: ['A', 'B', 'C'] },
-      },
+        data: { waterLevel: 2.5, evacuationZones: ['A', 'B', 'C'] }
+      }
     ],
     estimatedResponseTime: 15,
     requiredResources: ['rescue_boats', 'helicopters', 'emergency_shelters', 'evacuation_teams'],
@@ -277,15 +277,15 @@ export const emergencyScenarios = {
       temperature: 8,
       humidity: 90,
       windSpeed: 25,
-      conditions: 'heavy_rain',
+      conditions: 'heavy_rain'
     },
     accessibility: {
       wheelchairAccessible: false,
       languageSupport: ['en', 'es', 'zh'],
       visualAids: true,
-      hearingAssistance: true,
+      hearingAssistance: true
     },
-    priority: 'critical',
+    priority: 'critical'
   } as EmergencyEvent,
 
   trafficAccident: {
@@ -298,7 +298,7 @@ export const emergencyScenarios = {
       latitude: 40.7580,
       longitude: -73.9855,
       address: 'Highway 95 & Route 1 Junction, New York, NY',
-      description: 'Northbound lanes of Highway 95',
+      description: 'Northbound lanes of Highway 95'
     },
     reportedBy: 'user-citizen-004',
     reportedAt: '2024-01-15T17:45:00Z',
@@ -313,8 +313,8 @@ export const emergencyScenarios = {
         userId: 'user-police-001',
         timestamp: '2024-01-15T18:00:00Z',
         type: 'status_change',
-        message: 'Police on scene, securing area and redirecting traffic',
-      },
+        message: 'Police on scene, securing area and redirecting traffic'
+      }
     ],
     estimatedResponseTime: 12,
     requiredResources: ['police', 'ambulance', 'tow_trucks', 'traffic_diversion'],
@@ -324,15 +324,15 @@ export const emergencyScenarios = {
       temperature: 18,
       humidity: 55,
       windSpeed: 12,
-      conditions: 'clear',
+      conditions: 'clear'
     },
     accessibility: {
       wheelchairAccessible: true,
       languageSupport: ['en', 'es'],
       visualAids: false,
-      hearingAssistance: false,
+      hearingAssistance: false
     },
-    priority: 'urgent',
+    priority: 'urgent'
   } as EmergencyEvent,
 
   securityThreat: {
@@ -345,7 +345,7 @@ export const emergencyScenarios = {
       latitude: 40.7614,
       longitude: -73.9776,
       address: 'Central Park, New York, NY',
-      description: 'Near main stage area of public concert',
+      description: 'Near main stage area of public concert'
     },
     reportedBy: 'user-security-001',
     reportedAt: '2024-01-15T20:00:00Z',
@@ -360,8 +360,8 @@ export const emergencyScenarios = {
         userId: 'user-police-002',
         timestamp: '2024-01-15T20:15:00Z',
         type: 'status_change',
-        message: 'Perimeter established, bomb squad en route',
-      },
+        message: 'Perimeter established, bomb squad en route'
+      }
     ],
     estimatedResponseTime: 10,
     requiredResources: ['bomb_squad', 'police', 'security_teams', 'evacuation_support'],
@@ -371,16 +371,16 @@ export const emergencyScenarios = {
       temperature: 20,
       humidity: 50,
       windSpeed: 8,
-      conditions: 'clear',
+      conditions: 'clear'
     },
     accessibility: {
       wheelchairAccessible: true,
       languageSupport: ['en'],
       visualAids: true,
-      hearingAssistance: true,
+      hearingAssistance: true
     },
-    priority: 'urgent',
-  } as EmergencyEvent,
+    priority: 'urgent'
+  } as EmergencyEvent
 }
 
 // User Test Data
@@ -401,11 +401,11 @@ export const testUsers = {
     contactInfo: {
       phone: '+1-555-0101',
       email: 'citizen@example.com',
-      emergencyContact: '+1-555-0102',
+      emergencyContact: '+1-555-0102'
     },
     equipment: ['first_aid_kit'],
     maxTravelDistance: 25,
-    preferredCommunication: 'app',
+    preferredCommunication: 'app'
   } as User,
 
   paramedicUser: {
@@ -424,11 +424,11 @@ export const testUsers = {
     contactInfo: {
       phone: '+1-555-0201',
       email: 'paramedic@example.com',
-      emergencyContact: '+1-555-0202',
+      emergencyContact: '+1-555-0202'
     },
     equipment: ['defibrillator', 'oxygen_tank', 'medical_kit', 'stretcher'],
     maxTravelDistance: 50,
-    preferredCommunication: 'call',
+    preferredCommunication: 'call'
   } as User,
 
   firefighterUser: {
@@ -447,11 +447,11 @@ export const testUsers = {
     contactInfo: {
       phone: '+1-555-0301',
       email: 'firefighter@example.com',
-      emergencyContact: '+1-555-0302',
+      emergencyContact: '+1-555-0302'
     },
     equipment: ['fire_gear', 'rescue_tools', 'breathing_apparatus'],
     maxTravelDistance: 30,
-    preferredCommunication: 'call',
+    preferredCommunication: 'call'
   } as User,
 
   coordinatorUser: {
@@ -470,12 +470,12 @@ export const testUsers = {
     contactInfo: {
       phone: '+1-555-0401',
       email: 'coordinator@example.com',
-      emergencyContact: '+1-555-0402',
+      emergencyContact: '+1-555-0402'
     },
     equipment: ['command_vehicle', 'communication_system'],
     maxTravelDistance: 100,
-    preferredCommunication: 'app',
-  } as User,
+    preferredCommunication: 'app'
+  } as User
 }
 
 // Trust Score Test Data
@@ -488,7 +488,7 @@ export const trustScoreData = {
       accuracy: 0.90,
       responseTime: 0.88,
       communityFeedback: 0.92,
-      skillVerification: 0.95,
+      skillVerification: 0.95
     },
     history: [
       {
@@ -498,8 +498,8 @@ export const trustScoreData = {
         reason: 'successful_report',
         details: 'Accurate medical emergency report, quick response',
         previousScore: 0.90,
-        newScore: 0.92,
-      },
+        newScore: 0.92
+      }
     ],
     lastUpdated: '2024-01-15T10:30:00Z',
     factors: {
@@ -507,8 +507,8 @@ export const trustScoreData = {
       accurateReports: 42,
       responseTime: 8.5,
       communityEndorsements: 28,
-      verifiedSkills: 5,
-    },
+      verifiedSkills: 5
+    }
   } as TrustScore,
 
   mediumTrust: {
@@ -519,7 +519,7 @@ export const trustScoreData = {
       accuracy: 0.75,
       responseTime: 0.82,
       communityFeedback: 0.76,
-      skillVerification: 0.77,
+      skillVerification: 0.77
     },
     history: [
       {
@@ -529,8 +529,8 @@ export const trustScoreData = {
         reason: 'penalty',
         details: 'False alarm report',
         previousScore: 0.79,
-        newScore: 0.78,
-      },
+        newScore: 0.78
+      }
     ],
     lastUpdated: '2024-01-15T09:00:00Z',
     factors: {
@@ -538,9 +538,9 @@ export const trustScoreData = {
       accurateReports: 10,
       responseTime: 15.2,
       communityEndorsements: 8,
-      verifiedSkills: 2,
-    },
-  } as TrustScore,
+      verifiedSkills: 2
+    }
+  } as TrustScore
 }
 
 // Helper functions for creating test data
@@ -553,7 +553,7 @@ export const createEmergencyEvent = (overrides: Partial<EmergencyEvent> = {}): E
     description: 'Test emergency description',
     location: {
       latitude: 40.7128,
-      longitude: -74.0060,
+      longitude: -74.0060
     },
     reportedBy: 'test-user',
     reportedAt: new Date().toISOString(),
@@ -562,7 +562,7 @@ export const createEmergencyEvent = (overrides: Partial<EmergencyEvent> = {}): E
     responders: [],
     resources: [],
     updates: [],
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -583,7 +583,7 @@ export const createUser = (overrides: Partial<User> = {}): User => {
     equipment: [],
     maxTravelDistance: 25,
     preferredCommunication: 'app',
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -596,7 +596,7 @@ export const createTrustScore = (overrides: Partial<TrustScore> = {}): TrustScor
       accuracy: 0.8,
       responseTime: 0.8,
       communityFeedback: 0.8,
-      skillVerification: 0.8,
+      skillVerification: 0.8
     },
     history: [],
     lastUpdated: new Date().toISOString(),
@@ -605,9 +605,9 @@ export const createTrustScore = (overrides: Partial<TrustScore> = {}): TrustScor
       accurateReports: 0,
       responseTime: 0,
       communityEndorsements: 0,
-      verifiedSkills: 0,
+      verifiedSkills: 0
     },
-    ...overrides,
+    ...overrides
   }
 }
 
@@ -617,5 +617,5 @@ export default {
   trustScoreData,
   createEmergencyEvent,
   createUser,
-  createTrustScore,
+  createTrustScore
 }

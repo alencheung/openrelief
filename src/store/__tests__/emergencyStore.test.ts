@@ -1,6 +1,6 @@
 /**
  * Tests for Emergency Store
- * 
+ *
  * These tests verify the functionality of the emergency state management,
  * including event handling, filtering, map state, and offline actions.
  */
@@ -63,7 +63,7 @@ describe('Emergency Store', () => {
 
       it('should filter events based on current filters', () => {
         const { result } = renderHook(() => useEmergencyStore())
-        
+
         // Set filter to only show active events
         act(() => {
           result.current.setFilters({ status: ['active'] })
@@ -71,7 +71,7 @@ describe('Emergency Store', () => {
 
         const events = [
           emergencyScenarios.medicalEmergency, // active
-          { ...emergencyScenarios.buildingFire, status: 'resolved' }, // resolved
+          { ...emergencyScenarios.buildingFire, status: 'resolved' } // resolved
         ]
 
         act(() => {
@@ -102,7 +102,7 @@ describe('Emergency Store', () => {
 
       it('should apply filters after adding event', () => {
         const { result } = renderHook(() => useEmergencyStore())
-        
+
         act(() => {
           result.current.setFilters({ status: ['active'] })
         })
@@ -299,7 +299,7 @@ describe('Emergency Store', () => {
         const { result } = renderHook(() => useEmergencyStore())
         const events = [
           emergencyScenarios.medicalEmergency, // Contains "medical"
-          emergencyScenarios.buildingFire, // Does not contain "medical"
+          emergencyScenarios.buildingFire // Does not contain "medical"
         ]
 
         act(() => {
@@ -320,7 +320,7 @@ describe('Emergency Store', () => {
         const newMapState = {
           center: { lat: 40.7128, lng: -74.0060 },
           zoom: 15,
-          showHeatmap: true,
+          showHeatmap: true
         }
 
         act(() => {
@@ -380,7 +380,7 @@ describe('Emergency Store', () => {
         const action = {
           type: 'create' as const,
           eventId: 'emergency-1',
-          data: { title: 'Test Emergency' },
+          data: { title: 'Test Emergency' }
         }
 
         act(() => {
@@ -585,7 +585,7 @@ describe('Emergency Store', () => {
       const { result } = renderHook(() => useEmergencyStore())
       const events = [
         emergencyScenarios.medicalEmergency, // active
-        { ...emergencyScenarios.buildingFire, status: 'resolved' }, // resolved
+        { ...emergencyScenarios.buildingFire, status: 'resolved' } // resolved
       ]
 
       act(() => {
@@ -601,7 +601,7 @@ describe('Emergency Store', () => {
       const { result } = renderHook(() => useEmergencyStore())
       const events = [
         { ...emergencyScenarios.medicalEmergency, severity: 3 }, // high
-        { ...emergencyScenarios.buildingFire, severity: 5 }, // critical
+        { ...emergencyScenarios.buildingFire, severity: 5 } // critical
       ]
 
       act(() => {
@@ -617,7 +617,7 @@ describe('Emergency Store', () => {
       const { result } = renderHook(() => useEmergencyStore())
       const events = [
         emergencyScenarios.medicalEmergency,
-        emergencyScenarios.buildingFire,
+        emergencyScenarios.buildingFire
       ]
 
       act(() => {
@@ -634,7 +634,7 @@ describe('Emergency Store', () => {
       const center = { lat: 40.7128, lng: -74.0060 }
       const events = [
         { ...emergencyScenarios.medicalEmergency, location: 'POINT(-74.006 40.7128)' }, // Close
-        { ...emergencyScenarios.buildingFire, location: 'POINT(-73.968 40.748)' }, // Far
+        { ...emergencyScenarios.buildingFire, location: 'POINT(-73.968 40.748)' } // Far
       ]
 
       act(() => {
@@ -653,14 +653,14 @@ describe('Emergency Store', () => {
       const events = [
         emergencyScenarios.medicalEmergency, // active, high, medical
         emergencyScenarios.buildingFire, // active, critical, fire
-        { ...emergencyScenarios.trafficAccident, status: 'resolved' }, // resolved, medium
+        { ...emergencyScenarios.trafficAccident, status: 'resolved' } // resolved, medium
       ]
 
       act(() => {
         result.current.setEvents(events)
         result.current.setFilters({
           status: ['active'],
-          severity: [5], // Only critical
+          severity: [5] // Only critical
         })
       })
 
@@ -687,7 +687,7 @@ describe('Emergency Store', () => {
       const actions = [
         { type: 'create' as const, data: emergencyScenarios.medicalEmergency },
         { type: 'update' as const, eventId: 'emergency-1', data: { status: 'resolved' } },
-        { type: 'confirm' as const, eventId: 'emergency-1', data: { confirmed: true } },
+        { type: 'confirm' as const, eventId: 'emergency-1', data: { confirmed: true } }
       ]
 
       act(() => {

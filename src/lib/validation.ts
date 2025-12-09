@@ -31,7 +31,9 @@ export const validators = {
   email: (message = 'Please enter a valid email address'): ValidationRule => ({
     name: 'email',
     validator: (value: string) => {
-      if (!value) return null
+      if (!value) {
+        return null
+      }
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       if (!emailRegex.test(value)) {
         return message
@@ -45,7 +47,9 @@ export const validators = {
   minLength: (min: number, message?: string): ValidationRule => ({
     name: 'minLength',
     validator: (value: string) => {
-      if (!value) return null
+      if (!value) {
+        return null
+      }
       if (value.length < min) {
         return message || `Must be at least ${min} characters`
       }
@@ -58,7 +62,9 @@ export const validators = {
   maxLength: (max: number, message?: string): ValidationRule => ({
     name: 'maxLength',
     validator: (value: string) => {
-      if (!value) return null
+      if (!value) {
+        return null
+      }
       if (value.length > max) {
         return message || `Must be no more than ${max} characters`
       }
@@ -71,7 +77,9 @@ export const validators = {
   min: (min: number, message?: string): ValidationRule => ({
     name: 'min',
     validator: (value: number) => {
-      if (value === null || value === undefined) return null
+      if (value === null || value === undefined) {
+        return null
+      }
       if (value < min) {
         return message || `Must be at least ${min}`
       }
@@ -84,7 +92,9 @@ export const validators = {
   max: (max: number, message?: string): ValidationRule => ({
     name: 'max',
     validator: (value: number) => {
-      if (value === null || value === undefined) return null
+      if (value === null || value === undefined) {
+        return null
+      }
       if (value > max) {
         return message || `Must be no more than ${max}`
       }
@@ -97,7 +107,9 @@ export const validators = {
   pattern: (regex: RegExp, message: string): ValidationRule => ({
     name: 'pattern',
     validator: (value: string) => {
-      if (!value) return null
+      if (!value) {
+        return null
+      }
       if (!regex.test(value)) {
         return message
       }
@@ -110,7 +122,9 @@ export const validators = {
   phone: (message = 'Please enter a valid phone number'): ValidationRule => ({
     name: 'phone',
     validator: (value: string) => {
-      if (!value) return null
+      if (!value) {
+        return null
+      }
       const phoneRegex = /^\+?[\d\s-()]+$/
       if (!phoneRegex.test(value)) {
         return message
@@ -124,7 +138,9 @@ export const validators = {
   url: (message = 'Please enter a valid URL'): ValidationRule => ({
     name: 'url',
     validator: (value: string) => {
-      if (!value) return null
+      if (!value) {
+        return null
+      }
       try {
         new URL(value)
         return null
@@ -139,7 +155,9 @@ export const validators = {
   number: (message = 'Please enter a valid number'): ValidationRule => ({
     name: 'number',
     validator: (value: any) => {
-      if (value === null || value === undefined || value === '') return null
+      if (value === null || value === undefined || value === '') {
+        return null
+      }
       if (isNaN(Number(value))) {
         return message
       }
@@ -152,7 +170,9 @@ export const validators = {
   integer: (message = 'Please enter a whole number'): ValidationRule => ({
     name: 'integer',
     validator: (value: any) => {
-      if (value === null || value === undefined || value === '') return null
+      if (value === null || value === undefined || value === '') {
+        return null
+      }
       if (!Number.isInteger(Number(value))) {
         return message
       }
@@ -171,8 +191,10 @@ export const validators = {
   }): ValidationRule => ({
     name: 'passwordStrength',
     validator: (value: string) => {
-      if (!value) return null
-      
+      if (!value) {
+        return null
+      }
+
       const {
         minLength = 8,
         requireUppercase = true,
@@ -180,29 +202,29 @@ export const validators = {
         requireNumbers = true,
         requireSpecial = true
       } = requirements || {}
-      
+
       const errors: string[] = []
-      
+
       if (value.length < minLength) {
         errors.push(`At least ${minLength} characters`)
       }
-      
+
       if (requireUppercase && !/[A-Z]/.test(value)) {
         errors.push('One uppercase letter')
       }
-      
+
       if (requireLowercase && !/[a-z]/.test(value)) {
         errors.push('One lowercase letter')
       }
-      
+
       if (requireNumbers && !/[0-9]/.test(value)) {
         errors.push('One number')
       }
-      
+
       if (requireSpecial && !/[^A-Za-z0-9]/.test(value)) {
         errors.push('One special character')
       }
-      
+
       return errors.length > 0 ? errors.join(', ') : null
     },
     message: 'Password does not meet requirements'
@@ -216,27 +238,29 @@ export const validators = {
   }): ValidationRule => ({
     name: 'file',
     validator: (files: File[] | FileList) => {
-      if (!files || files.length === 0) return null
-      
+      if (!files || files.length === 0) {
+        return null
+      }
+
       const fileArray = Array.from(files)
       const {
         maxSize = 10 * 1024 * 1024, // 10MB default
         allowedTypes,
         maxCount = 5
       } = requirements || {}
-      
+
       // Check file count
       if (fileArray.length > maxCount) {
         return `Maximum ${maxCount} files allowed`
       }
-      
+
       // Check each file
       for (const file of fileArray) {
         // Check file size
         if (file.size > maxSize) {
           return `File "${file.name}" exceeds maximum size of ${Math.round(maxSize / 1024 / 1024)}MB`
         }
-        
+
         // Check file type
         if (allowedTypes && allowedTypes.length > 0) {
           const isAllowedType = allowedTypes.some(type => {
@@ -245,13 +269,13 @@ export const validators = {
             }
             return file.type.match(type.replace('*', '.*'))
           })
-          
+
           if (!isAllowedType) {
             return `File "${file.name}" is not an allowed type`
           }
         }
       }
-      
+
       return null
     },
     message: 'File validation failed'
@@ -276,7 +300,7 @@ export const validateForm = (data: Record<string, any>, fieldRules: Record<strin
 
   for (const [fieldName, rules] of Object.entries(fieldRules)) {
     const fieldValue = data[fieldName]
-    
+
     for (const rule of rules) {
       const error = rule.validator(fieldValue)
       if (error) {
@@ -324,13 +348,13 @@ export const useValidation = (
     validate,
     clearErrors: () => setValidationResult(prev => ({ ...prev, errors: {} })),
     clearWarnings: () => setValidationResult(prev => ({ ...prev, warnings: {} })),
-    setFieldError: (fieldName: string, error: string) => 
+    setFieldError: (fieldName: string, error: string) =>
       setValidationResult(prev => ({
         ...prev,
         errors: { ...prev.errors, [fieldName]: error },
         isValid: false
       })),
-    clearFieldError: (fieldName: string) => 
+    clearFieldError: (fieldName: string) =>
       setValidationResult(prev => {
         const newErrors = { ...prev.errors }
         delete newErrors[fieldName]
@@ -389,7 +413,9 @@ export const validationSchemas = {
       {
         name: 'passwordMatch',
         validator: (value, formData) => {
-          if (!value || !formData?.password) return null
+          if (!value || !formData?.password) {
+            return null
+          }
           if (value !== formData.password) {
             return 'Passwords do not match'
           }
@@ -442,7 +468,7 @@ export const accessibilityHelpers = {
   // Announce validation changes to screen readers
   announceValidation: (message: string, type: 'error' | 'warning' | 'success') => {
     const announcement = `${type}: ${message}`
-    
+
     // Create a live region for announcements
     let liveRegion = document.getElementById('validation-announcements')
     if (!liveRegion) {
@@ -453,9 +479,9 @@ export const accessibilityHelpers = {
       liveRegion.className = 'sr-only'
       document.body.appendChild(liveRegion)
     }
-    
+
     liveRegion.textContent = announcement
-    
+
     // Clear after a delay
     setTimeout(() => {
       if (liveRegion) {

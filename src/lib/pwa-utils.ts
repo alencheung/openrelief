@@ -132,7 +132,9 @@ export class OfflineStorage {
   }
 
   async initDB(): Promise<void> {
-    if (this.db) return
+    if (this.db) {
+      return
+    }
 
     return new Promise((resolve, reject) => {
       const request = indexedDB.open('OpenReliefOffline', 2)
@@ -317,9 +319,9 @@ export class NetworkUtils {
 export class PWAInstallUtils {
   static isInstalled(): boolean {
     return (
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as any).standalone ||
-      document.referrer.includes('android-app://')
+      window.matchMedia('(display-mode: standalone)').matches
+      || (window.navigator as any).standalone
+      || document.referrer.includes('android-app://')
     )
   }
 
@@ -403,8 +405,12 @@ export class PWAPerformance {
       const transferSize = navigation.transferSize || 0
       const encodedBodySize = navigation.encodedBodySize || 0
 
-      if (transferSize === 0 && encodedBodySize === 0) return 100
-      if (encodedBodySize === 0) return 0
+      if (transferSize === 0 && encodedBodySize === 0) {
+        return 100
+      }
+      if (encodedBodySize === 0) {
+        return 0
+      }
 
       return Math.max(0, 100 - (transferSize / encodedBodySize) * 100)
     } catch {
@@ -419,7 +425,9 @@ export function generateId(): string {
 }
 
 export function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 Bytes'
+  if (bytes === 0) {
+    return '0 Bytes'
+  }
 
   const k = 1024
   const sizes = ['Bytes', 'KB', 'MB', 'GB']

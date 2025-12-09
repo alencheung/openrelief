@@ -55,23 +55,23 @@ export const accessibilityTests: AccessibilityTest[] = [
       const interactiveElements = element.querySelectorAll(
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
       )
-      
+
       for (const el of interactiveElements) {
         if (el instanceof HTMLElement) {
           const tabIndex = el.tabIndex
           if (tabIndex < 0 || el.getAttribute('aria-hidden') === 'true') {
             continue // Skip hidden or non-focusable elements
           }
-          
+
           // Check if element has keyboard event handlers or is natively keyboard accessible
-          const hasKeyboardHandler = 
-            el.onkeydown || el.onkeyup || el.onkeypress ||
-            el.tagName === 'BUTTON' ||
-            el.tagName === 'INPUT' ||
-            el.tagName === 'SELECT' ||
-            el.tagName === 'TEXTAREA' ||
-            el.tagName === 'A'
-          
+          const hasKeyboardHandler
+            = el.onkeydown || el.onkeyup || el.onkeypress
+            || el.tagName === 'BUTTON'
+            || el.tagName === 'INPUT'
+            || el.tagName === 'SELECT'
+            || el.tagName === 'TEXTAREA'
+            || el.tagName === 'A'
+
           if (!hasKeyboardHandler) {
             return {
               passed: false,
@@ -82,7 +82,7 @@ export const accessibilityTests: AccessibilityTest[] = [
           }
         }
       }
-      
+
       return { passed: true }
     }
   },
@@ -96,11 +96,11 @@ export const accessibilityTests: AccessibilityTest[] = [
     test: (element: HTMLElement): AccessibilityTestResult => {
       // Check for visible focus indicators
       const style = window.getComputedStyle(element)
-      const hasFocusStyles = 
-        style.outline !== 'none' && style.outline !== '' ||
-        style.boxShadow !== 'none' && style.boxShadow !== '' ||
-        element.getAttribute('data-focus-visible') !== null
-      
+      const hasFocusStyles
+        = style.outline !== 'none' && style.outline !== ''
+        || style.boxShadow !== 'none' && style.boxShadow !== ''
+        || element.getAttribute('data-focus-visible') !== null
+
       if (!hasFocusStyles) {
         return {
           passed: false,
@@ -109,7 +109,7 @@ export const accessibilityTests: AccessibilityTest[] = [
           suggestion: 'Add :focus styles with outline, box-shadow, or data-focus-visible attribute'
         }
       }
-      
+
       return { passed: true }
     }
   },
@@ -124,11 +124,11 @@ export const accessibilityTests: AccessibilityTest[] = [
       const interactiveElements = element.querySelectorAll(
         'button, input, select, textarea, [role="button"], [role="link"], [role="menuitem"]'
       )
-      
+
       for (const el of interactiveElements) {
         if (el instanceof HTMLElement) {
           const accessibleName = getAccessibleName(el)
-          
+
           if (!accessibleName || accessibleName.trim() === '') {
             return {
               passed: false,
@@ -139,7 +139,7 @@ export const accessibilityTests: AccessibilityTest[] = [
           }
         }
       }
-      
+
       return { passed: true }
     }
   },
@@ -152,20 +152,20 @@ export const accessibilityTests: AccessibilityTest[] = [
     level: 'AA',
     test: (element: HTMLElement): AccessibilityTestResult => {
       const textElements = element.querySelectorAll('p, h1, h2, h3, h4, h5, h6, span, div, label')
-      
+
       for (const el of textElements) {
         if (el instanceof HTMLElement && el.textContent?.trim()) {
           const style = window.getComputedStyle(el)
           const color = style.color
           const backgroundColor = style.backgroundColor
-          
+
           // Skip if colors are not explicitly set
           if (color === 'rgb(0, 0, 0)' && backgroundColor === 'rgba(0, 0, 0, 0)') {
             continue
           }
-          
+
           const contrast = calculateContrastRatio(color, backgroundColor)
-          
+
           if (contrast < 4.5) { // WCAG AA standard
             return {
               passed: false,
@@ -176,7 +176,7 @@ export const accessibilityTests: AccessibilityTest[] = [
           }
         }
       }
-      
+
       return { passed: true }
     }
   },
@@ -190,12 +190,12 @@ export const accessibilityTests: AccessibilityTest[] = [
     test: (element: HTMLElement): AccessibilityTestResult => {
       const headings = element.querySelectorAll('h1, h2, h3, h4, h5, h6')
       const levels: number[] = []
-      
+
       for (const heading of headings) {
         const level = parseInt(heading.tagName.charAt(1))
         levels.push(level)
       }
-      
+
       // Check for skipped heading levels
       for (let i = 1; i < levels.length; i++) {
         if (levels[i] - levels[i - 1] > 1) {
@@ -207,7 +207,7 @@ export const accessibilityTests: AccessibilityTest[] = [
           }
         }
       }
-      
+
       // Check for multiple h1 elements
       const h1Count = levels.filter(level => level === 1).length
       if (h1Count > 1) {
@@ -217,7 +217,7 @@ export const accessibilityTests: AccessibilityTest[] = [
           suggestion: 'Use only one h1 element per page'
         }
       }
-      
+
       return { passed: true }
     }
   },
@@ -230,16 +230,16 @@ export const accessibilityTests: AccessibilityTest[] = [
     level: 'A',
     test: (element: HTMLElement): AccessibilityTestResult => {
       const images = element.querySelectorAll('img')
-      
+
       for (const img of images) {
         const alt = img.getAttribute('alt')
         const role = img.getAttribute('role')
-        
+
         // Skip decorative images with role="presentation" or alt=""
         if (role === 'presentation' || alt === '') {
           continue
         }
-        
+
         if (!alt) {
           return {
             passed: false,
@@ -249,7 +249,7 @@ export const accessibilityTests: AccessibilityTest[] = [
           }
         }
       }
-      
+
       return { passed: true }
     }
   },
@@ -262,33 +262,33 @@ export const accessibilityTests: AccessibilityTest[] = [
     level: 'A',
     test: (element: HTMLElement): AccessibilityTestResult => {
       const inputs = element.querySelectorAll('input, select, textarea')
-      
+
       for (const input of inputs) {
         if (input instanceof HTMLElement) {
           const type = input.getAttribute('type')
-          
+
           // Skip hidden inputs and submit buttons
           if (type === 'hidden' || type === 'submit' || type === 'button') {
             continue
           }
-          
-          const hasLabel = 
-            input.getAttribute('aria-label') ||
-            input.getAttribute('aria-labelledby') ||
-            input.labels?.length ||
-            input.getAttribute('title')
-          
+
+          const hasLabel
+            = input.getAttribute('aria-label')
+            || input.getAttribute('aria-labelledby')
+            || input.labels?.length
+            || input.getAttribute('title')
+
           if (!hasLabel) {
             return {
               passed: false,
               element: input,
-              message: `Form input missing associated label`,
+              message: 'Form input missing associated label',
               suggestion: 'Add label element, aria-label, or aria-labelledby'
             }
           }
         }
       }
-      
+
       return { passed: true }
     }
   },
@@ -301,13 +301,13 @@ export const accessibilityTests: AccessibilityTest[] = [
     level: 'AA',
     test: (element: HTMLElement): AccessibilityTestResult => {
       const links = element.querySelectorAll('a[href]')
-      
+
       for (const link of links) {
         if (link instanceof HTMLElement) {
           const text = link.textContent?.trim()
           const ariaLabel = link.getAttribute('aria-label')
           const accessibleName = ariaLabel || text || ''
-          
+
           // Check for generic link text
           const genericTexts = ['click here', 'read more', 'learn more', 'here', 'link']
           if (genericTexts.includes(accessibleName.toLowerCase())) {
@@ -320,7 +320,7 @@ export const accessibilityTests: AccessibilityTest[] = [
           }
         }
       }
-      
+
       return { passed: true }
     }
   }
@@ -332,13 +332,13 @@ export const accessibilityTests: AccessibilityTest[] = [
 export function calculateContrastRatio(color1: string, color2: string): number {
   const rgb1 = parseColor(color1)
   const rgb2 = parseColor(color2)
-  
+
   const l1 = calculateLuminance(rgb1)
   const l2 = calculateLuminance(rgb2)
-  
+
   const lighter = Math.max(l1, l2)
   const darker = Math.min(l1, l2)
-  
+
   return (lighter + 0.05) / (darker + 0.05)
 }
 
@@ -353,37 +353,37 @@ function parseColor(color: string): { r: number; g: number; b: number } {
       return {
         r: parseInt(hex[0] + hex[0], 16),
         g: parseInt(hex[1] + hex[1], 16),
-        b: parseInt(hex[2] + hex[2], 16),
+        b: parseInt(hex[2] + hex[2], 16)
       }
     } else {
       return {
         r: parseInt(hex.slice(0, 2), 16),
         g: parseInt(hex.slice(2, 4), 16),
-        b: parseInt(hex.slice(4, 6), 16),
+        b: parseInt(hex.slice(4, 6), 16)
       }
     }
   }
-  
+
   // Handle rgb colors
   const rgbMatch = color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/)
   if (rgbMatch) {
     return {
       r: parseInt(rgbMatch[1]),
       g: parseInt(rgbMatch[2]),
-      b: parseInt(rgbMatch[3]),
+      b: parseInt(rgbMatch[3])
     }
   }
-  
+
   // Handle rgba colors
   const rgbaMatch = color.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*[\d.]+\)/)
   if (rgbaMatch) {
     return {
       r: parseInt(rgbaMatch[1]),
       g: parseInt(rgbaMatch[2]),
-      b: parseInt(rgbaMatch[3]),
+      b: parseInt(rgbaMatch[3])
     }
   }
-  
+
   // Default to black for unsupported formats
   return { r: 0, g: 0, b: 0 }
 }
@@ -395,11 +395,11 @@ function calculateLuminance(rgb: { r: number; g: number; b: number }): number {
   const rsRGB = rgb.r / 255
   const gsRGB = rgb.g / 255
   const bsRGB = rgb.b / 255
-  
+
   const r = rsRGB <= 0.03928 ? rsRGB / 12.92 : Math.pow((rsRGB + 0.055) / 1.055, 2.4)
   const g = gsRGB <= 0.03928 ? gsRGB / 12.92 : Math.pow((gsRGB + 0.055) / 1.055, 2.4)
   const b = bsRGB <= 0.03928 ? bsRGB / 12.92 : Math.pow((bsRGB + 0.055) / 1.055, 2.4)
-  
+
   return 0.2126 * r + 0.7152 * g + 0.0722 * b
 }
 
@@ -412,7 +412,7 @@ function getAccessibleName(element: HTMLElement): string {
   if (ariaLabel) {
     return ariaLabel
   }
-  
+
   // Check for aria-labelledby
   const ariaLabelledby = element.getAttribute('aria-labelledby')
   if (ariaLabelledby) {
@@ -421,28 +421,28 @@ function getAccessibleName(element: HTMLElement): string {
       const labelElement = document.getElementById(id)
       return labelElement?.textContent || ''
     }).filter(Boolean)
-    
+
     if (labels.length > 0) {
       return labels.join(' ')
     }
   }
-  
+
   // Check for form labels
   if (element.labels && element.labels.length > 0) {
     return Array.from(element.labels).map(label => label.textContent || '').join(' ')
   }
-  
+
   // Check for alt text on images
   if (element.tagName === 'IMG') {
     return element.getAttribute('alt') || ''
   }
-  
+
   // Check for title attribute
   const title = element.getAttribute('title')
   if (title) {
     return title
   }
-  
+
   // Use text content as fallback
   return element.textContent || ''
 }
@@ -453,11 +453,11 @@ function getAccessibleName(element: HTMLElement): string {
 export function runAccessibilityTests(element: HTMLElement = document.body): AccessibilityReport {
   const results: AccessibilityTestResult[] = []
   const violations: AccessibilityViolation[] = []
-  
+
   for (const test of accessibilityTests) {
     const result = test.test(element)
     results.push(result)
-    
+
     if (!result.passed && result.element) {
       violations.push({
         rule: test.name,
@@ -465,16 +465,16 @@ export function runAccessibilityTests(element: HTMLElement = document.body): Acc
         element: result.element,
         message: result.message || 'Test failed',
         suggestion: result.suggestion || 'Fix the accessibility issue',
-        wcagLevel: test.level,
+        wcagLevel: test.level
       })
     }
   }
-  
+
   const passed = results.filter(r => r.passed).length
   const failed = results.filter(r => !r.passed).length
   const total = results.length
   const score = total > 0 ? (passed / total) * 100 : 100
-  
+
   return {
     url: window.location.href,
     timestamp: new Date(),
@@ -483,9 +483,9 @@ export function runAccessibilityTests(element: HTMLElement = document.body): Acc
       total,
       passed,
       failed,
-      score,
+      score
     },
-    violations,
+    violations
   }
 }
 
@@ -496,10 +496,16 @@ function getImpactLevel(testName: string): 'minor' | 'moderate' | 'serious' | 'c
   const criticalTests = ['keyboard-navigation', 'aria-labels', 'form-labels']
   const seriousTests = ['color-contrast', 'image-alt-text']
   const moderateTests = ['focus-management', 'link-purpose']
-  
-  if (criticalTests.includes(testName)) return 'critical'
-  if (seriousTests.includes(testName)) return 'serious'
-  if (moderateTests.includes(testName)) return 'moderate'
+
+  if (criticalTests.includes(testName)) {
+    return 'critical'
+  }
+  if (seriousTests.includes(testName)) {
+    return 'serious'
+  }
+  if (moderateTests.includes(testName)) {
+    return 'moderate'
+  }
   return 'minor'
 }
 
@@ -516,16 +522,16 @@ export function generateAccessibilityReport(element?: HTMLElement): string {
  */
 export function logAccessibilityViolations(element?: HTMLElement): void {
   const report = runAccessibilityTests(element)
-  
+
   if (report.violations.length === 0) {
     console.log('✅ No accessibility violations found!')
     return
   }
-  
+
   console.group(`🚨 Accessibility Violations (${report.violations.length} found)`)
   console.log(`Score: ${report.summary.score.toFixed(1)}%`)
   console.log(`Passed: ${report.summary.passed}/${report.summary.total}`)
-  
+
   report.violations.forEach((violation, index) => {
     console.group(`${index + 1}. ${violation.rule} (${violation.impact})`)
     console.log('Element:', violation.element)
@@ -534,7 +540,7 @@ export function logAccessibilityViolations(element?: HTMLElement): void {
     console.log('WCAG Level:', violation.wcagLevel)
     console.groupEnd()
   })
-  
+
   console.groupEnd()
 }
 
@@ -545,40 +551,40 @@ export function isKeyboardAccessible(element: HTMLElement): boolean {
   const tagName = element.tagName.toLowerCase()
   const tabIndex = element.tabIndex
   const ariaHidden = element.getAttribute('aria-hidden')
-  
+
   // Check if element is hidden
   if (ariaHidden === 'true' || tabIndex < 0) {
     return false
   }
-  
+
   // Check if element is natively keyboard accessible
   const nativelyAccessible = [
     'button', 'input', 'select', 'textarea', 'a', 'area',
     'summary', 'details', 'iframe', 'object', 'embed',
     'audio', 'video', 'menuitem'
   ].includes(tagName)
-  
+
   if (nativelyAccessible) {
     return true
   }
-  
+
   // Check if element has ARIA role that makes it accessible
   const accessibleRoles = [
     'button', 'link', 'checkbox', 'radio', 'combobox',
     'listbox', 'textbox', 'slider', 'spinbutton', 'switch',
     'tab', 'tabpanel', 'menuitem', 'option', 'treeitem'
   ]
-  
+
   const role = element.getAttribute('role')
   if (role && accessibleRoles.includes(role.toLowerCase())) {
     return true
   }
-  
+
   // Check if element has tabindex > 0
   if (tabIndex > 0) {
     return true
   }
-  
+
   return false
 }
 
@@ -601,9 +607,9 @@ export function getFocusableElements(container: HTMLElement): HTMLElement[] {
     'object',
     'embed',
     'audio[controls]',
-    'video[controls]',
+    'video[controls]'
   ].join(', ')
-  
+
   return Array.from(container.querySelectorAll(selector)) as HTMLElement[]
 }
 
@@ -614,13 +620,13 @@ export function hasSufficientContrast(element: HTMLElement, level: 'AA' | 'AAA' 
   const style = window.getComputedStyle(element)
   const color = style.color
   const backgroundColor = style.backgroundColor
-  
+
   if (color === 'rgb(0, 0, 0)' && backgroundColor === 'rgba(0, 0, 0, 0)') {
     return true // Skip if colors are not explicitly set
   }
-  
+
   const contrast = calculateContrastRatio(color, backgroundColor)
   const minimumContrast = level === 'AAA' ? 7 : 4.5
-  
+
   return contrast >= minimumContrast
 }

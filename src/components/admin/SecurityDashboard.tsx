@@ -1,6 +1,6 @@
 /**
  * Security Dashboard for Administrators
- * 
+ *
  * Provides real-time security monitoring, threat detection,
  * and administrative controls for the OpenRelief system.
  */
@@ -12,12 +12,12 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Progress } from '@/components/ui/progress'
-import { 
-  Shield, 
-  AlertTriangle, 
-  Users, 
-  Activity, 
-  TrendingUp, 
+import {
+  Shield,
+  AlertTriangle,
+  Users,
+  Activity,
+  TrendingUp,
   Lock,
   Unlock,
   Eye,
@@ -131,7 +131,7 @@ export default function SecurityDashboard() {
   const fetchSecurityData = async () => {
     try {
       setLoading(true)
-      
+
       // Fetch all security data in parallel
       const [
         metricsResponse,
@@ -166,7 +166,7 @@ export default function SecurityDashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enabled: !emergencyMode })
       })
-      
+
       if (response.ok) {
         setEmergencyMode(!emergencyMode)
       }
@@ -182,7 +182,7 @@ export default function SecurityDashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action })
       })
-      
+
       // Refresh alerts
       fetchSecurityData()
     } catch (error) {
@@ -210,8 +210,12 @@ export default function SecurityDashboard() {
   }
 
   const getHealthColor = (health: number) => {
-    if (health >= 90) return 'text-green-600'
-    if (health >= 70) return 'text-yellow-600'
+    if (health >= 90) {
+      return 'text-green-600'
+    }
+    if (health >= 70) {
+      return 'text-yellow-600'
+    }
     return 'text-red-600'
   }
 
@@ -231,7 +235,7 @@ export default function SecurityDashboard() {
           <h1 className="text-3xl font-bold text-gray-900">Security Dashboard</h1>
           <p className="text-gray-600">Real-time security monitoring and threat detection</p>
         </div>
-        
+
         <div className="flex items-center space-x-4">
           <select
             value={selectedTimeRange}
@@ -243,10 +247,10 @@ export default function SecurityDashboard() {
             <option value="7d">Last 7 Days</option>
             <option value="30d">Last 30 Days</option>
           </select>
-          
+
           <Button
             onClick={handleEmergencyModeToggle}
-            variant={emergencyMode ? "destructive" : "outline"}
+            variant={emergencyMode ? 'destructive' : 'outline'}
             className="flex items-center space-x-2"
           >
             {emergencyMode ? <AlertTriangle className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
@@ -538,15 +542,15 @@ export default function SecurityDashboard() {
                     </div>
                     <div className={`flex items-center space-x-2 ${getStatusColor(systemStatus?.services.api)}`}>
                       <div className={`w-2 h-2 rounded-full ${
-                        systemStatus?.services.api === 'operational' ? 'bg-green-500' :
-                        systemStatus?.services.api === 'degraded' ? 'bg-yellow-500' : 'bg-red-500'
+                        systemStatus?.services.api === 'operational' ? 'bg-green-500'
+                          : systemStatus?.services.api === 'degraded' ? 'bg-yellow-500' : 'bg-red-500'
                       }`}></div>
                       <span className="text-sm font-medium">
                         {systemStatus?.services.api || 'Unknown'}
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <Database className="h-4 w-4" />
@@ -554,15 +558,15 @@ export default function SecurityDashboard() {
                     </div>
                     <div className={`flex items-center space-x-2 ${getStatusColor(systemStatus?.services.database)}`}>
                       <div className={`w-2 h-2 rounded-full ${
-                        systemStatus?.services.database === 'operational' ? 'bg-green-500' :
-                        systemStatus?.services.database === 'degraded' ? 'bg-yellow-500' : 'bg-red-500'
+                        systemStatus?.services.database === 'operational' ? 'bg-green-500'
+                          : systemStatus?.services.database === 'degraded' ? 'bg-yellow-500' : 'bg-red-500'
                       }`}></div>
                       <span className="text-sm font-medium">
                         {systemStatus?.services.database || 'Unknown'}
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <Lock className="h-4 w-4" />
@@ -570,15 +574,15 @@ export default function SecurityDashboard() {
                     </div>
                     <div className={`flex items-center space-x-2 ${getStatusColor(systemStatus?.services.authentication)}`}>
                       <div className={`w-2 h-2 rounded-full ${
-                        systemStatus?.services.authentication === 'operational' ? 'bg-green-500' :
-                        systemStatus?.services.authentication === 'degraded' ? 'bg-yellow-500' : 'bg-red-500'
+                        systemStatus?.services.authentication === 'operational' ? 'bg-green-500'
+                          : systemStatus?.services.authentication === 'degraded' ? 'bg-yellow-500' : 'bg-red-500'
                       }`}></div>
                       <span className="text-sm font-medium">
                         {systemStatus?.services.authentication || 'Unknown'}
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <Eye className="h-4 w-4" />
@@ -586,8 +590,8 @@ export default function SecurityDashboard() {
                     </div>
                     <div className={`flex items-center space-x-2 ${getStatusColor(systemStatus?.services.monitoring)}`}>
                       <div className={`w-2 h-2 rounded-full ${
-                        systemStatus?.services.monitoring === 'operational' ? 'bg-green-500' :
-                        systemStatus?.services.monitoring === 'degraded' ? 'bg-yellow-500' : 'bg-red-500'
+                        systemStatus?.services.monitoring === 'operational' ? 'bg-green-500'
+                          : systemStatus?.services.monitoring === 'degraded' ? 'bg-yellow-500' : 'bg-red-500'
                       }`}></div>
                       <span className="text-sm font-medium">
                         {systemStatus?.services.monitoring || 'Unknown'}
@@ -614,12 +618,12 @@ export default function SecurityDashboard() {
                         {systemStatus?.performance.responseTime || 0}ms
                       </span>
                     </div>
-                    <Progress 
-                      value={Math.min(100, (systemStatus?.performance.responseTime || 0) / 10)} 
+                    <Progress
+                      value={Math.min(100, (systemStatus?.performance.responseTime || 0) / 10)}
                       className="h-2"
                     />
                   </div>
-                  
+
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm">CPU Usage</span>
@@ -627,12 +631,12 @@ export default function SecurityDashboard() {
                         {systemStatus?.performance.cpuUsage || 0}%
                       </span>
                     </div>
-                    <Progress 
-                      value={systemStatus?.performance.cpuUsage || 0} 
+                    <Progress
+                      value={systemStatus?.performance.cpuUsage || 0}
                       className="h-2"
                     />
                   </div>
-                  
+
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm">Memory Usage</span>
@@ -640,12 +644,12 @@ export default function SecurityDashboard() {
                         {systemStatus?.performance.memoryUsage || 0}%
                       </span>
                     </div>
-                    <Progress 
-                      value={systemStatus?.performance.memoryUsage || 0} 
+                    <Progress
+                      value={systemStatus?.performance.memoryUsage || 0}
                       className="h-2"
                     />
                   </div>
-                  
+
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm">Error Rate</span>
@@ -653,8 +657,8 @@ export default function SecurityDashboard() {
                         {systemStatus?.performance.errorRate || 0}%
                       </span>
                     </div>
-                    <Progress 
-                      value={systemStatus?.performance.errorRate || 0} 
+                    <Progress
+                      value={systemStatus?.performance.errorRate || 0}
                       className="h-2"
                     />
                   </div>

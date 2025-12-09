@@ -1,6 +1,6 @@
 /**
  * Reduced Motion Hook for OpenRelief
- * 
+ *
  * Provides comprehensive reduced motion support for users with vestibular
  * disorders or those who prefer reduced motion for better accessibility.
  */
@@ -8,26 +8,32 @@
 import { useEffect, useState, useCallback } from 'react'
 
 export interface ReducedMotionOptions {
+
   /**
    * Whether to respect system preference
    */
   respectSystemPreference?: boolean
+
   /**
    * Whether to enable motion controls
    */
   enableControls?: boolean
+
   /**
    * Default reduced motion state
    */
   defaultReduced?: boolean
+
   /**
    * Callback when reduced motion changes
    */
   onReducedMotionChange?: (reduced: boolean) => void
+
   /**
    * Animation duration override
    */
   animationDuration?: number
+
   /**
    * Transition duration override
    */
@@ -35,26 +41,32 @@ export interface ReducedMotionOptions {
 }
 
 export interface ReducedMotionState {
+
   /**
    * Whether reduced motion is currently active
    */
   isReduced: boolean
+
   /**
    * Whether system prefers reduced motion
    */
   systemPrefersReduced: boolean
+
   /**
    * Whether user has manually set reduced motion
    */
   userReduced: boolean
+
   /**
    * Current animation duration
    */
   animationDuration: number
+
   /**
    * Current transition duration
    */
   transitionDuration: number
+
   /**
    * Available motion controls
    */
@@ -62,22 +74,27 @@ export interface ReducedMotionState {
 }
 
 export interface ReducedMotionControls {
+
   /**
    * Toggle reduced motion
    */
   toggleReducedMotion: () => void
+
   /**
    * Set reduced motion state
    */
   setReducedMotion: (reduced: boolean) => void
+
   /**
    * Set animation duration
    */
   setAnimationDuration: (duration: number) => void
+
   /**
    * Set transition duration
    */
   setTransitionDuration: (duration: number) => void
+
   /**
    * Reset to system preference
    */
@@ -94,7 +111,7 @@ export function useReducedMotion(options: ReducedMotionOptions = {}): ReducedMot
     defaultReduced = false,
     onReducedMotionChange,
     animationDuration = 0,
-    transitionDuration = 0,
+    transitionDuration = 0
   } = options
 
   const [userReduced, setUserReduced] = useState(defaultReduced)
@@ -106,18 +123,20 @@ export function useReducedMotion(options: ReducedMotionOptions = {}): ReducedMot
    * Check system preference for reduced motion
    */
   const checkSystemPreference = useCallback(() => {
-    if (typeof window === 'undefined') return false
-    
+    if (typeof window === 'undefined') {
+      return false
+    }
+
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
     setSystemPrefersReduced(mediaQuery.matches)
-    
+
     return mediaQuery.matches
   }, [])
 
   /**
    * Calculate effective reduced motion state
    */
-  const isReduced = respectSystemPreference 
+  const isReduced = respectSystemPreference
     ? systemPrefersReduced || userReduced
     : userReduced
 
@@ -165,24 +184,24 @@ export function useReducedMotion(options: ReducedMotionOptions = {}): ReducedMot
    */
   const applyReducedMotionStyles = useCallback(() => {
     const root = document.documentElement
-    
+
     if (isReduced) {
       root.classList.add('reduced-motion')
-      
+
       // Apply reduced motion CSS variables
       root.style.setProperty('--animation-duration-multiplier', '0.01')
       root.style.setProperty('--transition-duration-multiplier', '0.01')
-      
+
       if (currentAnimationDuration > 0) {
         root.style.setProperty('--animation-duration', `${currentAnimationDuration}ms`)
       }
-      
+
       if (currentTransitionDuration > 0) {
         root.style.setProperty('--transition-duration', `${currentTransitionDuration}ms`)
       }
     } else {
       root.classList.remove('reduced-motion')
-      
+
       // Reset CSS variables
       root.style.removeProperty('--animation-duration-multiplier')
       root.style.removeProperty('--transition-duration-multiplier')
@@ -195,17 +214,19 @@ export function useReducedMotion(options: ReducedMotionOptions = {}): ReducedMot
    * Listen for system preference changes
    */
   useEffect(() => {
-    if (!respectSystemPreference) return
+    if (!respectSystemPreference) {
+      return
+    }
 
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
-    
+
     const handleChange = (e: MediaQueryListEvent) => {
       setSystemPrefersReduced(e.matches)
     }
-    
+
     // Initial check
     setSystemPrefersReduced(mediaQuery.matches)
-    
+
     // Listen for changes
     if (mediaQuery.addEventListener) {
       mediaQuery.addEventListener('change', handleChange)
@@ -213,7 +234,7 @@ export function useReducedMotion(options: ReducedMotionOptions = {}): ReducedMot
       // Fallback for older browsers
       mediaQuery.addListener(handleChange)
     }
-    
+
     return () => {
       if (mediaQuery.removeEventListener) {
         mediaQuery.removeEventListener('change', handleChange)
@@ -242,7 +263,7 @@ export function useReducedMotion(options: ReducedMotionOptions = {}): ReducedMot
       setReducedMotion,
       setAnimationDuration,
       setTransitionDuration,
-      resetToSystemPreference,
+      resetToSystemPreference
     }
   }
 }
@@ -262,13 +283,13 @@ export function useReducedMotionAnimation<T extends Record<string, any>>(
   } = {}
 ) {
   const { isReduced } = useReducedMotion()
-  
+
   const {
     duration = 300,
     easing = 'ease-in-out',
     fill = 'forwards',
     iterations = 1,
-    direction = 'normal',
+    direction = 'normal'
   } = options
 
   /**
@@ -282,24 +303,24 @@ export function useReducedMotionAnimation<T extends Record<string, any>>(
         easing: 'linear',
         fill: 'none',
         iterations: 0,
-        direction: 'normal',
+        direction: 'normal'
       }
     }
-    
+
     return {
       animationName,
       duration,
       easing,
       fill,
       iterations,
-      direction,
+      direction
     }
   }
 
   return {
     animationProps: getAnimationProps(),
     keyframes: isReduced ? {} : keyframes,
-    isReduced,
+    isReduced
   }
 }
 
@@ -313,12 +334,12 @@ export function useReducedMotionTransition(options: {
   property?: string | string[]
 } = {}) {
   const { isReduced } = useReducedMotion()
-  
+
   const {
     duration = 200,
     easing = 'ease-in-out',
     delay = 0,
-    property = 'all',
+    property = 'all'
   } = options
 
   /**
@@ -330,24 +351,24 @@ export function useReducedMotionTransition(options: {
         duration: 0,
         easing: 'linear',
         delay: 0,
-        property: 'none',
+        property: 'none'
       }
     }
-    
+
     return {
       duration,
       easing,
       delay,
-      property,
+      property
     }
   }
 
   return {
     transitionProps: getTransitionProps(),
-    transitionString: isReduced 
-      ? 'none' 
+    transitionString: isReduced
+      ? 'none'
       : `${property} ${duration}ms ${easing} ${delay}ms`,
-    isReduced,
+    isReduced
   }
 }
 
@@ -356,7 +377,7 @@ export function useReducedMotionTransition(options: {
  */
 export function useReducedMotionClass() {
   const { isReduced } = useReducedMotion()
-  
+
   /**
    * Get CSS classes respecting reduced motion
    */
@@ -364,13 +385,13 @@ export function useReducedMotionClass() {
     if (isReduced) {
       return `${baseClass} reduced-motion`
     }
-    
+
     return animatedClass ? `${baseClass} ${animatedClass}` : baseClass
   }
 
   return {
     getClasses,
-    isReduced,
+    isReduced
   }
 }
 
@@ -414,7 +435,7 @@ export function useReducedMotionAnimationFrame() {
   return {
     requestAnimationFrame,
     cancelAnimationFrame,
-    isReduced,
+    isReduced
   }
 }
 
@@ -423,7 +444,7 @@ export function useReducedMotionAnimationFrame() {
  */
 export function useReducedMotionScroll() {
   const { isReduced } = useReducedMotion()
-  
+
   /**
    * Get scroll behavior respecting reduced motion
    */
@@ -439,9 +460,9 @@ export function useReducedMotionScroll() {
       behavior: getScrollBehavior(),
       block: 'start',
       inline: 'nearest',
-      ...options,
+      ...options
     }
-    
+
     element.scrollIntoView(scrollOptions)
   }, [isReduced])
 
@@ -455,7 +476,7 @@ export function useReducedMotionScroll() {
       window.scrollTo({
         left: x,
         top: y,
-        behavior: 'smooth',
+        behavior: 'smooth'
       })
     }
   }, [isReduced])
@@ -464,7 +485,7 @@ export function useReducedMotionScroll() {
     getScrollBehavior,
     scrollToElement,
     scrollToPosition,
-    isReduced,
+    isReduced
   }
 }
 
@@ -477,11 +498,11 @@ export function useReducedMotionCarousel(options: {
   transitionDuration?: number
 } = {}) {
   const { isReduced } = useReducedMotion()
-  
+
   const {
     autoPlay = false,
     interval = 3000,
-    transitionDuration = 500,
+    transitionDuration = 500
   } = options
 
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -526,10 +547,8 @@ export function useReducedMotionCarousel(options: {
       intervalRef.current = setInterval(() => {
         next()
       }, interval)
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-      }
+    } else if (intervalRef.current) {
+      clearInterval(intervalRef.current)
     }
 
     return () => {
@@ -546,7 +565,7 @@ export function useReducedMotionCarousel(options: {
     goToSlide,
     isReduced,
     effectiveAutoPlay,
-    effectiveTransitionDuration,
+    effectiveTransitionDuration
   }
 }
 
@@ -555,7 +574,7 @@ export function useReducedMotionCarousel(options: {
  */
 export function useReducedMotionVideo() {
   const { isReduced } = useReducedMotion()
-  
+
   /**
    * Get video properties respecting reduced motion
    */
@@ -565,7 +584,7 @@ export function useReducedMotionVideo() {
       muted: isReduced, // Mute when auto-playing without user interaction
       playsInline: true,
       loop: false,
-      controls: true,
+      controls: true
     }
   }
 
@@ -578,7 +597,7 @@ export function useReducedMotionVideo() {
       video.poster = video.poster || ''
       return
     }
-    
+
     video.play().catch(error => {
       console.warn('Video playback failed:', error)
     })
@@ -587,7 +606,7 @@ export function useReducedMotionVideo() {
   return {
     getVideoProps,
     playVideo,
-    isReduced,
+    isReduced
   }
 }
 
@@ -596,7 +615,7 @@ export function useReducedMotionVideo() {
  */
 export function useReducedMotionCSSProperties() {
   const { isReduced } = useReducedMotion()
-  
+
   /**
    * Get CSS properties respecting reduced motion
    */
@@ -606,21 +625,21 @@ export function useReducedMotionCSSProperties() {
         animation: 'none',
         transition: 'none',
         transform: 'none',
-        opacity: 1,
+        opacity: 1
       }
     }
-    
+
     return {
       animation: '',
       transition: '',
       transform: '',
-      opacity: '',
+      opacity: ''
     }
   }
 
   return {
     getCSSProperties,
-    isReduced,
+    isReduced
   }
 }
 
@@ -628,8 +647,10 @@ export function useReducedMotionCSSProperties() {
  * Utility function to check if reduced motion is preferred
  */
 export function checkReducedMotionPreference(): boolean {
-  if (typeof window === 'undefined') return false
-  
+  if (typeof window === 'undefined') {
+    return false
+  }
+
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
@@ -637,24 +658,26 @@ export function checkReducedMotionPreference(): boolean {
  * Utility function to add reduced motion listener
  */
 export function addReducedMotionListener(callback: (prefersReduced: boolean) => void): () => void {
-  if (typeof window === 'undefined') return () => {}
-  
+  if (typeof window === 'undefined') {
+    return () => {}
+  }
+
   const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
-  
+
   const handleChange = (e: MediaQueryListEvent) => {
     callback(e.matches)
   }
-  
+
   // Initial check
   callback(mediaQuery.matches)
-  
+
   // Listen for changes
   if (mediaQuery.addEventListener) {
     mediaQuery.addEventListener('change', handleChange)
   } else {
     mediaQuery.addListener(handleChange)
   }
-  
+
   // Return cleanup function
   return () => {
     if (mediaQuery.removeEventListener) {

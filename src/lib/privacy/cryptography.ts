@@ -1,11 +1,11 @@
 /**
  * Cryptographic Protection Utilities for OpenRelief
- * 
+ *
  * This module implements cryptographic functions for end-to-end encryption,
  * secure key management, and identity verification using cryptographic hashes.
  */
 
-import { createHash, randomBytes, createCipheriv, createDecipheriv, scrypt } from 'crypto';
+import { createHash, randomBytes, createCipheriv, createDecipheriv, scrypt } from 'crypto'
 
 // Configuration for cryptographic operations
 export interface CryptoConfig {
@@ -23,7 +23,7 @@ export const DEFAULT_CRYPTO_CONFIG: CryptoConfig = {
   ivLength: 16, // 128 bits
   saltLength: 32, // 256 bits
   tagLength: 16 // 128 bits
-};
+}
 
 // Key storage interface
 export interface KeyStorage {
@@ -46,7 +46,7 @@ export interface EncryptedData {
 }
 
 // In-memory key storage (in production, use secure storage like Hashicorp Vault)
-const keyStorage = new Map<string, KeyStorage>();
+const keyStorage = new Map<string, KeyStorage>()
 
 /**
  * Generate a cryptographically secure random key
@@ -54,7 +54,7 @@ const keyStorage = new Map<string, KeyStorage>();
  * @returns Random key as base64 string
  */
 export function generateSecureRandom(length: number = DEFAULT_CRYPTO_CONFIG.keyLength): string {
-  return randomBytes(length).toString('base64');
+  return randomBytes(length).toString('base64')
 }
 
 /**
@@ -63,7 +63,7 @@ export function generateSecureRandom(length: number = DEFAULT_CRYPTO_CONFIG.keyL
  * @returns Random salt as base64 string
  */
 export function generateSalt(length: number = DEFAULT_CRYPTO_CONFIG.saltLength): string {
-  return randomBytes(length).toString('base64');
+  return randomBytes(length).toString('base64')
 }
 
 /**
@@ -80,10 +80,13 @@ export async function deriveKey(
 ): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     scrypt(password, salt, keyLength, (err, derivedKey) => {
-      if (err) reject(err);
-      else resolve(derivedKey);
-    });
-  });
+      if (err) {
+        reject(err)
+      } else {
+        resolve(derivedKey)
+      }
+    })
+  })
 }
 
 /**
@@ -98,21 +101,21 @@ export function encryptData(
   key: Buffer,
   config: CryptoConfig = DEFAULT_CRYPTO_CONFIG
 ): EncryptedData {
-  const iv = randomBytes(config.ivLength);
-  const cipher = createCipheriv(config.algorithm, key, iv);
-  
-  let encrypted = cipher.update(data, 'utf8', 'base64');
-  encrypted += cipher.final('base64');
-  
-  const tag = cipher.getAuthTag();
-  
+  const iv = randomBytes(config.ivLength)
+  const cipher = createCipheriv(config.algorithm, key, iv)
+
+  let encrypted = cipher.update(data, 'utf8', 'base64')
+  encrypted += cipher.final('base64')
+
+  const tag = cipher.getAuthTag()
+
   return {
     data: encrypted,
     iv: iv.toString('base64'),
     tag: tag.toString('base64'),
     keyId: '', // Will be set when storing the key
     algorithm: config.algorithm
-  };
+  }
 }
 
 /**
@@ -125,16 +128,16 @@ export function decryptData(
   encryptedData: EncryptedData,
   key: Buffer
 ): string {
-  const iv = Buffer.from(encryptedData.iv, 'base64');
-  const tag = Buffer.from(encryptedData.tag, 'base64');
-  
-  const decipher = createDecipheriv(encryptedData.algorithm, key, iv);
-  decipher.setAuthTag(tag);
-  
-  let decrypted = decipher.update(encryptedData.data, 'base64', 'utf8');
-  decrypted += decipher.final('utf8');
-  
-  return decrypted;
+  const iv = Buffer.from(encryptedData.iv, 'base64')
+  const tag = Buffer.from(encryptedData.tag, 'base64')
+
+  const decipher = createDecipheriv(encryptedData.algorithm, key, iv)
+  decipher.setAuthTag(tag)
+
+  let decrypted = decipher.update(encryptedData.data, 'base64', 'utf8')
+  decrypted += decipher.final('utf8')
+
+  return decrypted
 }
 
 /**
@@ -149,20 +152,20 @@ export async function storeUserKey(
   key: Buffer,
   masterKey: Buffer
 ): Promise<string> {
-  const keyId = generateSecureRandom(16);
-  const salt = randomBytes(DEFAULT_CRYPTO_CONFIG.saltLength);
-  const iv = randomBytes(DEFAULT_CRYPTO_CONFIG.ivLength);
-  
+  const keyId = generateSecureRandom(16)
+  const salt = randomBytes(DEFAULT_CRYPTO_CONFIG.saltLength)
+  const iv = randomBytes(DEFAULT_CRYPTO_CONFIG.ivLength)
+
   // Derive encryption key from master key and salt
-  const derivedKey = await deriveKey(masterKey.toString('base64'), salt);
-  
+  const derivedKey = await deriveKey(masterKey.toString('base64'), salt)
+
   // Encrypt the user key
-  const cipher = createCipheriv(DEFAULT_CRYPTO_CONFIG.algorithm, derivedKey, iv);
-  let encryptedKey = cipher.update(key.toString('base64'), 'utf8', 'base64');
-  encryptedKey += cipher.final('base64');
-  
-  const tag = cipher.getAuthTag();
-  
+  const cipher = createCipheriv(DEFAULT_CRYPTO_CONFIG.algorithm, derivedKey, iv)
+  let encryptedKey = cipher.update(key.toString('base64'), 'utf8', 'base64')
+  encryptedKey += cipher.final('base64')
+
+  const tag = cipher.getAuthTag()
+
   // Store key information
   const keyInfo: KeyStorage = {
     userId,
@@ -171,11 +174,11 @@ export async function storeUserKey(
     salt: salt.toString('base64'),
     iv: iv.toString('base64'),
     createdAt: new Date()
-  };
-  
-  keyStorage.set(`${userId}:${keyId}`, keyInfo);
-  
-  return keyId;
+  }
+
+  keyStorage.set(`${userId}:${keyId}`, keyInfo)
+
+  return keyId
 }
 
 /**
@@ -190,29 +193,31 @@ export async function retrieveUserKey(
   keyId: string,
   masterKey: Buffer
 ): Promise<Buffer | null> {
-  const keyInfo = keyStorage.get(`${userId}:${keyId}`);
-  if (!keyInfo) return null;
-  
-  const salt = Buffer.from(keyInfo.salt, 'base64');
-  const iv = Buffer.from(keyInfo.iv, 'base64');
-  
+  const keyInfo = keyStorage.get(`${userId}:${keyId}`)
+  if (!keyInfo) {
+    return null
+  }
+
+  const salt = Buffer.from(keyInfo.salt, 'base64')
+  const iv = Buffer.from(keyInfo.iv, 'base64')
+
   // Derive decryption key from master key and salt
-  const derivedKey = await deriveKey(masterKey.toString('base64'), salt);
-  
+  const derivedKey = await deriveKey(masterKey.toString('base64'), salt)
+
   // Decrypt the user key
-  const decipher = createDecipheriv(DEFAULT_CRYPTO_CONFIG.algorithm, derivedKey, iv);
-  
+  const decipher = createDecipheriv(DEFAULT_CRYPTO_CONFIG.algorithm, derivedKey, iv)
+
   // Note: In a real implementation, you would need to store and retrieve the auth tag
   // For this example, we're simplifying the process
-  
+
   try {
-    let decryptedKey = decipher.update(keyInfo.encryptedKey, 'base64', 'utf8');
-    decryptedKey += decipher.final('utf8');
-    
-    return Buffer.from(decryptedKey, 'base64');
+    let decryptedKey = decipher.update(keyInfo.encryptedKey, 'base64', 'utf8')
+    decryptedKey += decipher.final('utf8')
+
+    return Buffer.from(decryptedKey, 'base64')
   } catch (error) {
-    console.error('Failed to decrypt user key:', error);
-    return null;
+    console.error('Failed to decrypt user key:', error)
+    return null
   }
 }
 
@@ -226,7 +231,7 @@ export function createHashDigest(
   data: string,
   algorithm: string = 'sha256'
 ): string {
-  return createHash(algorithm).update(data).digest('hex');
+  return createHash(algorithm).update(data).digest('hex')
 }
 
 /**
@@ -241,7 +246,7 @@ export function createSaltedHash(
   salt: string,
   algorithm: string = 'sha256'
 ): string {
-  return createHash(algorithm).update(data + salt).digest('hex');
+  return createHash(algorithm).update(data + salt).digest('hex')
 }
 
 /**
@@ -258,8 +263,8 @@ export function verifySaltedHash(
   hash: string,
   algorithm: string = 'sha256'
 ): boolean {
-  const computedHash = createSaltedHash(data, salt, algorithm);
-  return computedHash === hash;
+  const computedHash = createSaltedHash(data, salt, algorithm)
+  return computedHash === hash
 }
 
 /**
@@ -278,26 +283,26 @@ export function createIdentityProof(
   publicData: Record<string, any>;
 } {
   // Create commitment (hash of secret)
-  const commitment = createHashDigest(secret);
-  
+  const commitment = createHashDigest(secret)
+
   // Generate challenge
-  const challenge = generateSecureRandom(32);
-  
+  const challenge = generateSecureRandom(32)
+
   // Create response (hash of secret + challenge)
-  const response = createHashDigest(secret + challenge);
-  
+  const response = createHashDigest(secret + challenge)
+
   // Return only non-sensitive data
-  const publicData = { ...identityData };
-  delete publicData.password;
-  delete publicData.ssn;
-  delete publicData.email;
-  
+  const publicData = { ...identityData }
+  delete publicData.password
+  delete publicData.ssn
+  delete publicData.email
+
   return {
     commitment,
     challenge,
     response,
     publicData
-  };
+  }
 }
 
 /**
@@ -316,14 +321,14 @@ export function verifyIdentityProof(
   secret: string
 ): boolean {
   // Verify commitment
-  const computedCommitment = createHashDigest(secret);
+  const computedCommitment = createHashDigest(secret)
   if (computedCommitment !== proof.commitment) {
-    return false;
+    return false
   }
-  
+
   // Verify response
-  const computedResponse = createHashDigest(secret + proof.challenge);
-  return computedResponse === proof.response;
+  const computedResponse = createHashDigest(secret + proof.challenge)
+  return computedResponse === proof.response
 }
 
 /**
@@ -339,19 +344,19 @@ export async function encryptUserData(
   masterKey: Buffer
 ): Promise<EncryptedData> {
   // Generate a new key for this data
-  const dataKey = randomBytes(DEFAULT_CRYPTO_CONFIG.keyLength);
-  
+  const dataKey = randomBytes(DEFAULT_CRYPTO_CONFIG.keyLength)
+
   // Store the key securely
-  const keyId = await storeUserKey(userId, dataKey, masterKey);
-  
+  const keyId = await storeUserKey(userId, dataKey, masterKey)
+
   // Encrypt the data
-  const jsonData = JSON.stringify(data);
-  const encryptedData = encryptData(jsonData, dataKey);
-  
+  const jsonData = JSON.stringify(data)
+  const encryptedData = encryptData(jsonData, dataKey)
+
   // Set the key ID
-  encryptedData.keyId = keyId;
-  
-  return encryptedData;
+  encryptedData.keyId = keyId
+
+  return encryptedData
 }
 
 /**
@@ -367,16 +372,18 @@ export async function decryptUserData(
   masterKey: Buffer
 ): Promise<Record<string, any> | null> {
   // Retrieve the data key
-  const dataKey = await retrieveUserKey(userId, encryptedData.keyId, masterKey);
-  if (!dataKey) return null;
-  
+  const dataKey = await retrieveUserKey(userId, encryptedData.keyId, masterKey)
+  if (!dataKey) {
+    return null
+  }
+
   // Decrypt the data
   try {
-    const decryptedJson = decryptData(encryptedData, dataKey);
-    return JSON.parse(decryptedJson);
+    const decryptedJson = decryptData(encryptedData, dataKey)
+    return JSON.parse(decryptedJson)
   } catch (error) {
-    console.error('Failed to decrypt user data:', error);
-    return null;
+    console.error('Failed to decrypt user data:', error)
+    return null
   }
 }
 
@@ -389,7 +396,7 @@ export async function decryptUserData(
 export function generateSignature(data: string, secretKey: string): string {
   // In a real implementation, use HMAC or digital signatures
   // This is a simplified version using a hash
-  return createHashDigest(data + secretKey);
+  return createHashDigest(data + secretKey)
 }
 
 /**
@@ -400,8 +407,8 @@ export function generateSignature(data: string, secretKey: string): string {
  * @returns True if signature is valid
  */
 export function verifySignature(data: string, signature: string, secretKey: string): boolean {
-  const computedSignature = generateSignature(data, secretKey);
-  return computedSignature === signature;
+  const computedSignature = generateSignature(data, secretKey)
+  return computedSignature === signature
 }
 
 /**
@@ -415,18 +422,18 @@ export function generateSessionToken(userId: string, expiresIn: number = 3600): 
   expiresAt: Date;
   userId: string;
 } {
-  const timestamp = Date.now();
-  const randomData = generateSecureRandom(32);
-  const tokenData = `${userId}:${timestamp}:${randomData}`;
-  const token = createHashDigest(tokenData);
-  
-  const expiresAt = new Date(timestamp + expiresIn * 1000);
-  
+  const timestamp = Date.now()
+  const randomData = generateSecureRandom(32)
+  const tokenData = `${userId}:${timestamp}:${randomData}`
+  const token = createHashDigest(tokenData)
+
+  const expiresAt = new Date(timestamp + expiresIn * 1000)
+
   return {
     token,
     expiresAt,
     userId
-  };
+  }
 }
 
 /**
@@ -437,7 +444,7 @@ export function generateSessionToken(userId: string, expiresIn: number = 3600): 
 export function verifySessionToken(token: string): boolean {
   // In a real implementation, you would store and check tokens against a database
   // This is a simplified version that only checks format
-  return /^[a-f0-9]{64}$/.test(token);
+  return /^[a-f0-9]{64}$/.test(token)
 }
 
 /**
@@ -447,14 +454,14 @@ export function verifySessionToken(token: string): boolean {
 export function generateKeyPair(): {
   publicKey: string;
   privateKey: string;
-} {
+  } {
   // In a real implementation, use proper asymmetric cryptography
   // This is a simplified version for demonstration
-  const privateKey = generateSecureRandom(64);
-  const publicKey = createHashDigest(privateKey);
-  
+  const privateKey = generateSecureRandom(64)
+  const publicKey = createHashDigest(privateKey)
+
   return {
     publicKey,
     privateKey
-  };
+  }
 }

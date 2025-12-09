@@ -75,8 +75,8 @@ interface PWAFeatures {
   vibration: boolean
 }
 
-export function EnhancedPWAManager({ 
-  children, 
+export function EnhancedPWAManager({
+  children,
   showNetworkStatus = true,
   showActionQueue = true,
   showSyncNotifications = true,
@@ -122,10 +122,10 @@ export function EnhancedPWAManager({
   useEffect(() => {
     const detectPWAStatus = () => {
       // Check if running as standalone PWA
-      const isStandalone = 
-        window.matchMedia('(display-mode: standalone)').matches ||
-        (window.navigator as any).standalone ||
-        document.referrer.includes('android-app://')
+      const isStandalone
+        = window.matchMedia('(display-mode: standalone)').matches
+        || (window.navigator as any).standalone
+        || document.referrer.includes('android-app://')
 
       // Detect platform
       const userAgent = navigator.userAgent.toLowerCase()
@@ -134,17 +134,27 @@ export function EnhancedPWAManager({
 
       if (/iphone|ipad|ipod/.test(userAgent)) {
         platform = 'ios'
-        if (/safari/.test(userAgent)) browser = 'safari'
+        if (/safari/.test(userAgent)) {
+          browser = 'safari'
+        }
       } else if (/android/.test(userAgent)) {
         platform = 'android'
-        if (/chrome/.test(userAgent)) browser = 'chrome'
-        else if (/firefox/.test(userAgent)) browser = 'firefox'
+        if (/chrome/.test(userAgent)) {
+          browser = 'chrome'
+        } else if (/firefox/.test(userAgent)) {
+          browser = 'firefox'
+        }
       } else {
         platform = 'desktop'
-        if (/chrome/.test(userAgent)) browser = 'chrome'
-        else if (/firefox/.test(userAgent)) browser = 'firefox'
-        else if (/edge/.test(userAgent)) browser = 'edge'
-        else if (/safari/.test(userAgent)) browser = 'safari'
+        if (/chrome/.test(userAgent)) {
+          browser = 'chrome'
+        } else if (/firefox/.test(userAgent)) {
+          browser = 'firefox'
+        } else if (/edge/.test(userAgent)) {
+          browser = 'edge'
+        } else if (/safari/.test(userAgent)) {
+          browser = 'safari'
+        }
       }
 
       // Check if installable
@@ -225,7 +235,7 @@ export function EnhancedPWAManager({
         ...prev,
         installPrompt: e as BeforeInstallPromptEvent
       }))
-      
+
       // Show install prompt after a delay
       setTimeout(() => {
         if (!pwaStatus.dismissed) {
@@ -235,7 +245,7 @@ export function EnhancedPWAManager({
     }
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-    
+
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
     }
@@ -254,13 +264,17 @@ export function EnhancedPWAManager({
     }
 
     return () => {
-      if (timer) clearTimeout(timer)
+      if (timer) {
+        clearTimeout(timer)
+      }
     }
   }, [isOffline])
 
   // Handle installation
   const handleInstall = async () => {
-    if (!pwaStatus.installPrompt) return
+    if (!pwaStatus.installPrompt) {
+      return
+    }
 
     setIsInstalling(true)
     setInstallProgress(0)
@@ -279,7 +293,7 @@ export function EnhancedPWAManager({
 
       await pwaStatus.installPrompt.prompt()
       const { outcome } = await pwaStatus.installPrompt.userChoice
-      
+
       clearInterval(progressInterval)
       setInstallProgress(100)
 
@@ -287,7 +301,7 @@ export function EnhancedPWAManager({
         announcePolite('OpenRelief installed successfully!')
         setPwaStatus(prev => ({ ...prev, isInstalled: true }))
         setShowInstallPrompt(false)
-        
+
         // Hide success message after delay
         setTimeout(() => {
           setIsInstalling(false)
@@ -369,13 +383,13 @@ export function EnhancedPWAManager({
               <div className="flex items-center justify-center w-12 h-12 bg-white/20 rounded-xl backdrop-blur-sm">
                 <DownloadIcon className="w-6 h-6" />
               </div>
-              
+
               <div className="flex-1">
                 <h3 className="font-semibold text-lg mb-1">Install OpenRelief</h3>
                 <p className="text-white/90 text-sm mb-3">
                   Get instant access to emergency features, work offline, and receive critical alerts.
                 </p>
-                
+
                 {/* Installation Progress */}
                 {isInstalling && (
                   <div className="mb-3">
@@ -384,14 +398,14 @@ export function EnhancedPWAManager({
                       <span className="text-xs text-white/80">{installProgress}%</span>
                     </div>
                     <div className="w-full bg-white/20 rounded-full h-2">
-                      <div 
+                      <div
                         className="bg-white h-2 rounded-full transition-all duration-300"
                         style={{ width: `${installProgress}%` }}
                       />
                     </div>
                   </div>
                 )}
-                
+
                 {/* Features */}
                 {!isInstalling && (
                   <div className="grid grid-cols-2 gap-2 mb-3">
@@ -413,7 +427,7 @@ export function EnhancedPWAManager({
                     </div>
                   </div>
                 )}
-                
+
                 {/* Actions */}
                 <div className="flex gap-2">
                   {!isInstalling ? (
@@ -459,13 +473,13 @@ export function EnhancedPWAManager({
               <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-full">
                 <CheckCircle2Icon className="w-5 h-5 text-green-600" />
               </div>
-              
+
               <div className="flex-1">
                 <h3 className="font-semibold text-green-900 mb-1">Welcome to OpenRelief!</h3>
                 <p className="text-green-700 text-sm mb-3">
                   You're using the installed app with full offline capabilities and instant access to emergency features.
                 </p>
-                
+
                 <Button
                   onClick={() => setShowWelcomeMessage(false)}
                   className="w-full bg-green-600 text-white hover:bg-green-700"
@@ -474,7 +488,7 @@ export function EnhancedPWAManager({
                   Get Started
                 </Button>
               </div>
-              
+
               <Button
                 onClick={() => setShowWelcomeMessage(false)}
                 variant="ghost"
@@ -510,7 +524,7 @@ export function EnhancedPWAManager({
                   </span>
                 )}
               </div>
-              
+
               <Button
                 onClick={() => setShowOfflineBanner(false)}
                 variant="ghost"
@@ -541,7 +555,7 @@ export function EnhancedPWAManager({
                   </span>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-2">
                 <Button
                   onClick={handleUpdate}

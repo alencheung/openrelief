@@ -9,7 +9,7 @@ export {
   useEventConfirmations,
   useEmergencyTypes,
   useNearbyEmergencyEvents,
-  useUserEmergencyEvents,
+  useUserEmergencyEvents
 } from './useEmergencyQueries'
 
 export {
@@ -26,7 +26,7 @@ export {
   useUpdateNotificationSettings,
   useUserStats,
   useNearbyUsers,
-  useUserExpertise,
+  useUserExpertise
 } from './useUserQueries'
 
 export {
@@ -40,7 +40,7 @@ export {
   useMultipleRealtimeSubscriptions,
   useRealtimeConnection,
   usePresenceTracking,
-  useEmergencyBroadcast,
+  useEmergencyBroadcast
 } from './useRealtimeSubscriptions'
 
 // Re-export types for convenience
@@ -50,7 +50,7 @@ export type {
   EmergencyEventUpdate,
   EmergencyType,
   EventConfirmation,
-  EventConfirmationInsert,
+  EventConfirmationInsert
 } from './useEmergencyQueries'
 
 export type {
@@ -59,12 +59,12 @@ export type {
   UserProfileUpdate,
   UserTrustHistory,
   UserSubscription,
-  UserNotificationSettings,
+  UserNotificationSettings
 } from './useUserQueries'
 
 export type {
   SubscriptionCallback,
-  SubscriptionConfig,
+  SubscriptionConfig
 } from './useRealtimeSubscriptions'
 
 // Utility functions for query management
@@ -80,7 +80,7 @@ export const prefetchCriticalData = async (queryClient: any, userId?: string) =>
       const { useEmergencyTypes } = await import('./useEmergencyQueries')
       // This would need to be implemented properly
       return []
-    },
+    }
   })
 
   // Prefetch user profile if userId is provided
@@ -91,7 +91,7 @@ export const prefetchCriticalData = async (queryClient: any, userId?: string) =>
         const { useUserProfile } = await import('./useUserQueries')
         // This would need to be implemented properly
         return null
-      },
+      }
     })
   }
 
@@ -102,7 +102,7 @@ export const prefetchCriticalData = async (queryClient: any, userId?: string) =>
       const { useEmergencyEvents } = await import('./useEmergencyQueries')
       // This would need to be implemented properly
       return []
-    },
+    }
   })
 }
 
@@ -116,12 +116,12 @@ export const checkQueryHealth = (queryClient: any) => {
     activeQueries: queries.filter((q: any) => q.state.fetchStatus === 'fetching').length,
     staleQueries: queries.filter((q: any) => q.isStale()).length,
     errorQueries: queries.filter((q: any) => q.state.status === 'error').length,
-    cacheSize: cache.size,
+    cacheSize: cache.size
   }
 
   return {
     overall: health.errorQueries === 0,
-    ...health,
+    ...health
   }
 }
 
@@ -154,7 +154,7 @@ export const trackQueryPerformance = (queryClient: any) => {
       console.log(`[Query] ${event.query.queryKey[0]} updated`, {
         fetchStatus: event.query.state.fetchStatus,
         status: event.query.state.status,
-        dataUpdatedAt: event.query.state.dataUpdatedAt,
+        dataUpdatedAt: event.query.state.dataUpdatedAt
       })
     }
   })

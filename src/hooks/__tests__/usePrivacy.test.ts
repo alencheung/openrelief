@@ -1,6 +1,6 @@
 /**
  * Tests for usePrivacy Hook
- * 
+ *
  * These tests verify the functionality of the privacy management hook,
  * including settings management, data protection, and transparency features.
  */
@@ -407,11 +407,11 @@ describe('usePrivacy Hook', () => {
 
       // First encrypt the data
       const encryptedData = await result.current.encryptSensitiveData(sensitiveData, 'test-user')
-      
+
       // Then decrypt it
       if (encryptedData) {
         const decryptedData = await result.current.decryptSensitiveData(encryptedData, 'test-user')
-        
+
         expect(decryptedData).toEqual(sensitiveData)
       }
     })
@@ -496,7 +496,7 @@ describe('usePrivacy Hook', () => {
 
       // First, we would need to add some alerts to the state
       // Then test clearing them
-      
+
       act(() => {
         result.current.clearAllPrivacyAlerts()
       })

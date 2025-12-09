@@ -57,7 +57,7 @@ const EMERGENCY_THRESHOLDS: PerformanceThresholds = {
   fcp: 1500, // 1.5 seconds first contentful paint
   lcp: 2500, // 2.5 seconds largest contentful paint
   cls: 0.25, // 0.25 cumulative layout shift
-  fid: 300, // 300ms first input delay
+  fid: 300 // 300ms first input delay
 }
 
 // Performance monitoring class
@@ -67,31 +67,31 @@ export class PerformanceMonitor {
       averageTime: 0,
       slowQueries: 0,
       errorRate: 0,
-      cacheHitRate: 0,
+      cacheHitRate: 0
     },
     storePerformance: {
       updateFrequency: 0,
       stateSize: 0,
-      memoryUsage: 0,
+      memoryUsage: 0
     },
     networkPerformance: {
       latency: 0,
       bandwidth: 0,
-      reliability: 0,
+      reliability: 0
     },
     userExperience: {
       firstContentfulPaint: 0,
       largestContentfulPaint: 0,
       cumulativeLayoutShift: 0,
-      firstInputDelay: 0,
-    },
+      firstInputDelay: 0
+    }
   }
 
   private observers: PerformanceObserver[] = []
   private config: OptimizationConfig = {
     emergencyMode: false,
     networkQuality: 'medium',
-    deviceCapabilities: 'medium',
+    deviceCapabilities: 'medium'
   }
 
   constructor(config?: Partial<OptimizationConfig>) {
@@ -364,7 +364,7 @@ export class EmergencyOptimizer {
       emergencyMode: false,
       networkQuality: 'medium',
       deviceCapabilities: 'medium',
-      ...config,
+      ...config
     }
 
     this.monitor = new PerformanceMonitor(this.config)
@@ -533,8 +533,8 @@ export const usePerformanceOptimization = () => {
     const metrics = monitor.getMetrics()
 
     // Check if emergency optimization is needed
-    if (metrics.queryPerformance.errorRate > EMERGENCY_THRESHOLDS.errorRate ||
-      metrics.userExperience.firstInputDelay > EMERGENCY_THRESHOLDS.fid) {
+    if (metrics.queryPerformance.errorRate > EMERGENCY_THRESHOLDS.errorRate
+      || metrics.userExperience.firstInputDelay > EMERGENCY_THRESHOLDS.fid) {
       optimizer.optimizeForEmergency()
     }
 

@@ -11,16 +11,16 @@ interface NoSSRProviderProps {
  * by delaying rendering until after client-side hydration
  */
 export function NoSSRProvider({ children }: NoSSRProviderProps) {
-    const [isMounted, setIsMounted] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
 
-    useEffect(() => {
-        setIsMounted(true)
-    }, [])
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
-    if (!isMounted) {
-        // Return a placeholder that matches the server-rendered HTML
-        return <div style={{ visibility: 'hidden' }}>{children}</div>
-    }
+  if (!isMounted) {
+    // Return a placeholder that matches the server-rendered HTML
+    return <div style={{ visibility: 'hidden' }}>{children}</div>
+  }
 
-    return <>{children}</>
+  return <>{children}</>
 }

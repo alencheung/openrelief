@@ -53,7 +53,7 @@ const createQueryClient = () => {
         },
         refetchOnWindowFocus: false,
         refetchOnReconnect: true,
-        networkMode: 'online',
+        networkMode: 'online'
       },
       mutations: {
         retry: (failureCount, error) => {
@@ -61,9 +61,9 @@ const createQueryClient = () => {
           return errorInfo.retryable && failureCount < (errorInfo.maxRetries || 3)
         },
         retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-        networkMode: 'online',
-      },
-    },
+        networkMode: 'online'
+      }
+    }
   })
 }
 
@@ -74,7 +74,7 @@ interface StateManagementProviderProps {
 
 export const StateManagementProvider: React.FC<StateManagementProviderProps> = ({
   children,
-  enableDevtools = process.env.NODE_ENV === 'development',
+  enableDevtools = process.env.NODE_ENV === 'development'
 }) => {
   const [queryClient] = useState(() => createQueryClient())
   const [isInitialized, setIsInitialized] = useState(false)
@@ -130,7 +130,9 @@ export const StateManagementProvider: React.FC<StateManagementProviderProps> = (
 
   // Initialize subscriptions in priority order with error handling
   useEffect(() => {
-    if (!isOnline || !isInitialized) return
+    if (!isOnline || !isInitialized) {
+      return
+    }
 
     console.log('[StateManagement] Initializing real-time subscriptions...')
 
@@ -207,7 +209,7 @@ export const StateManagementProvider: React.FC<StateManagementProviderProps> = (
           reportError(classifyError(new Error(error), {
             action: 'subscription_initialization',
             errorIndex: index,
-            totalErrors: errors.length,
+            totalErrors: errors.length
           }))
         })
       }
@@ -301,7 +303,7 @@ export const StateManagementProvider: React.FC<StateManagementProviderProps> = (
     isInitialized,
     storeHealth: checkStoreHealth(),
     error,
-    retry,
+    retry
   }), [isInitialized, error, retry])
 
   if (!isInitialized) {
@@ -375,7 +377,9 @@ export const useStateManagementPerformance = () => {
   const queryClient = useQueryClient()
 
   useEffect(() => {
-    if (!isOnline) return
+    if (!isOnline) {
+      return
+    }
 
     const monitorPerformance = () => {
       // Monitor query performance
@@ -387,7 +391,7 @@ export const useStateManagementPerformance = () => {
         activeQueries: queries.filter((q: any) => q.state.fetchStatus === 'fetching').length,
         staleQueries: queries.filter((q: any) => q.isStale()).length,
         errorQueries: queries.filter((q: any) => q.state.status === 'error').length,
-        averageQueryTime: queries.reduce((acc: number, q: any) => acc + (q.state.dataFetchTime || 0), 0) / queries.length,
+        averageQueryTime: queries.reduce((acc: number, q: any) => acc + (q.state.dataFetchTime || 0), 0) / queries.length
       }
 
       // Log performance metrics
@@ -428,7 +432,7 @@ export const useEmergencyMode = () => {
         message: `${criticalEvents.length} critical emergency event(s) detected. Emergency mode has been activated.`,
         severity: 'critical',
         priority: 'urgent',
-        channels: { inApp: true, push: true, email: true, sms: true },
+        channels: { inApp: true, push: true, email: true, sms: true }
       })
     } else {
       // Disable emergency mode

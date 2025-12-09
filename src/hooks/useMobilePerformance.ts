@@ -32,18 +32,18 @@ const defaultOptions: Required<PerformanceOptions> = {
   enableConnectionMonitoring: true,
   targetFPS: 60,
   lowEndThreshold: 30,
-  highEndThreshold: 55,
+  highEndThreshold: 55
 }
 
 export function useMobilePerformance(options: PerformanceOptions = {}) {
   const opts = { ...defaultOptions, ...options }
   const { deviceType, isMobile } = useMobileDetection()
-  
+
   const [metrics, setMetrics] = useState<PerformanceMetrics>({
     fps: 60,
     renderTime: 0,
     isLowEndDevice: false,
-    isHighEndDevice: true,
+    isHighEndDevice: true
   })
 
   const frameCountRef = useRef(0)
@@ -57,10 +57,10 @@ export function useMobilePerformance(options: PerformanceOptions = {}) {
     const now = performance.now()
     const delta = now - lastTimeRef.current
     const fps = Math.round(1000 / (delta / frameCountRef.current))
-    
+
     frameCountRef.current = 0
     lastTimeRef.current = now
-    
+
     return fps
   }, [])
 
@@ -69,13 +69,13 @@ export function useMobilePerformance(options: PerformanceOptions = {}) {
     if (!opts.enableMemoryMonitoring || !('memory' in performance)) {
       return undefined
     }
-    
+
     const memory = (performance as any).memory
     return {
       used: memory.usedJSHeapSize,
       total: memory.totalJSHeapSize,
       limit: memory.jsHeapSizeLimit,
-      percentage: (memory.usedJSHeapSize / memory.jsHeapSizeLimit) * 100,
+      percentage: (memory.usedJSHeapSize / memory.jsHeapSizeLimit) * 100
     }
   }, [opts.enableMemoryMonitoring])
 
@@ -89,7 +89,7 @@ export function useMobilePerformance(options: PerformanceOptions = {}) {
       const battery = await (navigator as any).getBattery()
       return {
         level: battery.level,
-        charging: battery.charging,
+        charging: battery.charging
       }
     } catch (error) {
       console.warn('Battery API not available:', error)
@@ -108,18 +108,20 @@ export function useMobilePerformance(options: PerformanceOptions = {}) {
       type: connection.type,
       effectiveType: connection.effectiveType,
       downlink: connection.downlink,
-      rtt: connection.rtt,
+      rtt: connection.rtt
     }
   }, [opts.enableConnectionMonitoring])
 
   // Performance monitoring loop
   const startMonitoring = useCallback(() => {
-    if (animationFrameRef.current) return
+    if (animationFrameRef.current) {
+      return
+    }
 
     const monitor = () => {
       frameCountRef.current++
       const startRender = performance.now()
-      
+
       animationFrameRef.current = requestAnimationFrame(() => {
         const endRender = performance.now()
         renderTimeRef.current = endRender - startRender
@@ -133,19 +135,19 @@ export function useMobilePerformance(options: PerformanceOptions = {}) {
     monitoringIntervalRef.current = setInterval(() => {
       const fps = calculateFPS()
       const memoryUsage = getMemoryUsage()
-      
+
       getBatteryStatus().then(battery => {
         const connection = getConnectionInfo()
-        
-        const isLowEnd = fps < opts.lowEndThreshold || 
-                         (memoryUsage && memoryUsage.percentage > 80) ||
-                         (battery.level !== undefined && battery.level < 0.2) ||
-                         (connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g')
-        
-        const isHighEnd = fps >= opts.highEndThreshold && 
-                          (!memoryUsage || memoryUsage.percentage < 50) &&
-                          (battery.level === undefined || battery.level > 0.5) &&
-                          (!connection.effectiveType || ['4g', '3g'].includes(connection.effectiveType))
+
+        const isLowEnd = fps < opts.lowEndThreshold
+                         || (memoryUsage && memoryUsage.percentage > 80)
+                         || (battery.level !== undefined && battery.level < 0.2)
+                         || (connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g')
+
+        const isHighEnd = fps >= opts.highEndThreshold
+                          && (!memoryUsage || memoryUsage.percentage < 50)
+                          && (battery.level === undefined || battery.level > 0.5)
+                          && (!connection.effectiveType || ['4g', '3g'].includes(connection.effectiveType))
 
         setMetrics(prev => ({
           ...prev,
@@ -157,7 +159,7 @@ export function useMobilePerformance(options: PerformanceOptions = {}) {
           batteryLevel: battery.level,
           isCharging: battery.charging,
           connectionType: connection.type,
-          effectiveConnectionType: connection.effectiveType,
+          effectiveConnectionType: connection.effectiveType
         }))
       })
     }, 1000)
@@ -168,7 +170,7 @@ export function useMobilePerformance(options: PerformanceOptions = {}) {
       cancelAnimationFrame(animationFrameRef.current)
       animationFrameRef.current = undefined
     }
-    
+
     if (monitoringIntervalRef.current) {
       clearInterval(monitoringIntervalRef.current)
       monitoringIntervalRef.current = undefined
@@ -183,15 +185,19 @@ export function useMobilePerformance(options: PerformanceOptions = {}) {
 
   // Adjust performance based on device capabilities
   const getPerformanceLevel = useCallback(() => {
-    if (metrics.isLowEndDevice) return 'low'
-    if (metrics.isHighEndDevice) return 'high'
+    if (metrics.isLowEndDevice) {
+      return 'low'
+    }
+    if (metrics.isHighEndDevice) {
+      return 'high'
+    }
     return 'medium'
   }, [metrics])
 
   // Get optimized settings based on performance
   const getOptimizedSettings = useCallback(() => {
     const level = getPerformanceLevel()
-    
+
     return {
       animationQuality: level === 'low' ? 'reduced' : level === 'medium' ? 'normal' : 'high',
       maxParticles: level === 'low' ? 10 : level === 'medium' ? 25 : 50,
@@ -200,7 +206,7 @@ export function useMobilePerformance(options: PerformanceOptions = {}) {
       enableTransitions: level !== 'low',
       updateInterval: level === 'low' ? 200 : level === 'medium' ? 100 : 50,
       maxConcurrentRequests: level === 'low' ? 2 : level === 'medium' ? 4 : 6,
-      imageQuality: level === 'low' ? 0.7 : level === 'medium' ? 0.8 : 0.9,
+      imageQuality: level === 'low' ? 0.7 : level === 'medium' ? 0.8 : 0.9
     }
   }, [getPerformanceLevel])
 
@@ -225,7 +231,7 @@ export function useMobilePerformance(options: PerformanceOptions = {}) {
     if ('gc' in window) {
       (window as any).gc()
     }
-    
+
     // Clear any cached data that might be large
     if (metrics.memoryUsage && metrics.memoryUsage > 80) {
       // Dispatch custom event for components to clear their caches
@@ -241,7 +247,7 @@ export function useMobilePerformance(options: PerformanceOptions = {}) {
     setTimeoutAdaptive,
     cleanupMemory,
     startMonitoring,
-    stopMonitoring,
+    stopMonitoring
   }
 }
 
@@ -257,38 +263,38 @@ export function useAdaptiveRendering<T>(
 ) {
   const { getPerformanceLevel } = useMobilePerformance()
   const performanceLevel = getPerformanceLevel()
-  
+
   const maxItems = options?.maxItems || 100
   const threshold = options?.threshold || 50
-  
+
   const [visibleItems, setVisibleItems] = useState<T[]>([])
   const [showMore, setShowMore] = useState(false)
-  
+
   useEffect(() => {
-    const itemCount = performanceLevel === 'low' 
+    const itemCount = performanceLevel === 'low'
       ? Math.min(threshold, items.length)
       : Math.min(maxItems, items.length)
-    
+
     setVisibleItems(items.slice(0, itemCount))
     setShowMore(items.length > itemCount)
   }, [items, performanceLevel, maxItems, threshold])
-  
+
   const handleShowMore = useCallback(() => {
     const currentLength = visibleItems.length
-    const nextBatch = performanceLevel === 'low' 
+    const nextBatch = performanceLevel === 'low'
       ? Math.min(threshold, items.length - currentLength)
       : Math.min(maxItems - currentLength, items.length - currentLength)
-    
+
     setVisibleItems(prev => [...prev, ...items.slice(currentLength, currentLength + nextBatch)])
     setShowMore(items.length > currentLength + nextBatch)
   }, [visibleItems.length, items, performanceLevel, threshold, maxItems])
-  
+
   return {
     visibleItems,
     showMore,
     handleShowMore,
     renderItem: (item: T, index: number) => renderItem(item, index),
-    placeholder: options?.placeholder,
+    placeholder: options?.placeholder
   }
 }
 
@@ -296,7 +302,7 @@ export function useAdaptiveRendering<T>(
 export function usePerformanceAwareLazyLoad() {
   const { getPerformanceLevel } = useMobilePerformance()
   const performanceLevel = getPerformanceLevel()
-  
+
   const getLoadDelay = useCallback(() => {
     switch (performanceLevel) {
       case 'low': return 500
@@ -305,7 +311,7 @@ export function usePerformanceAwareLazyLoad() {
       default: return 200
     }
   }, [performanceLevel])
-  
+
   const getRootMargin = useCallback(() => {
     switch (performanceLevel) {
       case 'low': return '200px'
@@ -314,10 +320,10 @@ export function usePerformanceAwareLazyLoad() {
       default: return '100px'
     }
   }, [performanceLevel])
-  
+
   return {
     loadDelay: getLoadDelay(),
     rootMargin: getRootMargin(),
-    shouldUseIntersection: performanceLevel !== 'low',
+    shouldUseIntersection: performanceLevel !== 'low'
   }
 }

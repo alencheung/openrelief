@@ -1,27 +1,32 @@
 /**
  * Accessibility Audit Tool for OpenRelief
- * 
+ *
  * This tool provides comprehensive WCAG 2.1 AA compliance checking
  * for the OpenRelief emergency coordination system.
  */
 
 export interface AccessibilityAuditResult {
+
   /**
    * Overall compliance score (0-100)
    */
   score: number
+
   /**
    * WCAG level achieved
    */
   level: 'A' | 'AA' | 'AAA' | 'Non-compliant'
+
   /**
    * Issues found during audit
    */
   issues: AccessibilityIssue[]
+
   /**
    * Recommendations for improvement
    */
   recommendations: AccessibilityRecommendation[]
+
   /**
    * Audit timestamp
    */
@@ -29,42 +34,52 @@ export interface AccessibilityAuditResult {
 }
 
 export interface AccessibilityIssue {
+
   /**
    * Unique identifier for the issue
    */
   id: string
+
   /**
    * WCAG guideline violated
    */
   guideline: string
+
   /**
    * WCAG success criterion
    */
   criterion: string
+
   /**
    * WCAG level (A, AA, AAA)
    */
   level: 'A' | 'AA' | 'AAA'
+
   /**
    * Issue severity
    */
   severity: 'critical' | 'serious' | 'moderate' | 'minor'
+
   /**
    * Issue description
    */
   description: string
+
   /**
    * Element or component where issue was found
    */
   element: string
+
   /**
    * CSS selector for the element
    */
   selector: string
+
   /**
    * How to fix the issue
    */
   fix: string
+
   /**
    * Whether issue is automatically detectable
    */
@@ -72,26 +87,32 @@ export interface AccessibilityIssue {
 }
 
 export interface AccessibilityRecommendation {
+
   /**
    * Recommendation category
    */
   category: 'color-contrast' | 'keyboard' | 'screen-reader' | 'focus' | 'motion' | 'touch' | 'emergency'
+
   /**
    * Priority level
    */
   priority: 'high' | 'medium' | 'low'
+
   /**
    * Recommendation description
    */
   description: string
+
   /**
    * Implementation steps
    */
   steps: string[]
+
   /**
    * Components affected
    */
   components: string[]
+
   /**
    * Estimated implementation time
    */
@@ -184,11 +205,11 @@ const WCAG_GUIDELINES = {
         const styles = window.getComputedStyle(element)
         const color = styles.color
         const backgroundColor = styles.backgroundColor
-        
+
         if (color === 'rgba(0, 0, 0, 0)' || backgroundColor === 'rgba(0, 0, 0, 0)') {
           return true // Assume default colors are compliant
         }
-        
+
         // Simplified contrast calculation - would need proper implementation
         return true // Placeholder
       }
@@ -221,7 +242,7 @@ const WCAG_GUIDELINES = {
         // Check for keyboard accessibility
         const interactiveTags = ['button', 'a', 'input', 'select', 'textarea', 'details']
         const tagName = element.tagName.toLowerCase()
-        
+
         if (interactiveTags.includes(tagName)) {
           return element.tabIndex >= 0 || element.tabIndex === -1
         }
@@ -312,7 +333,7 @@ const WCAG_GUIDELINES = {
       check: (element: Element) => {
         const headingTags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']
         const tagName = element.tagName.toLowerCase()
-        
+
         if (headingTags.includes(tagName)) {
           return element.textContent && element.textContent.trim().length > 0
         }
@@ -369,9 +390,9 @@ const WCAG_GUIDELINES = {
       level: 'A',
       check: (element: Element) => {
         // Check for error messages
-        const hasError = element.getAttribute('aria-invalid') === 'true' ||
-                         element.getAttribute('aria-describedby')?.includes('error') ||
-                         element.classList.contains('error')
+        const hasError = element.getAttribute('aria-invalid') === 'true'
+                         || element.getAttribute('aria-describedby')?.includes('error')
+                         || element.classList.contains('error')
         return true // Would need more sophisticated checking
       }
     },
@@ -381,9 +402,9 @@ const WCAG_GUIDELINES = {
       level: 'A',
       check: (element: Element) => {
         if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement || element instanceof HTMLSelectElement) {
-          return element.labels && element.labels.length > 0 ||
-                 element.getAttribute('aria-label') ||
-                 element.getAttribute('aria-labelledby')
+          return element.labels && element.labels.length > 0
+                 || element.getAttribute('aria-label')
+                 || element.getAttribute('aria-labelledby')
         }
         return true
       }
@@ -414,11 +435,11 @@ const WCAG_GUIDELINES = {
       level: 'A',
       check: (element: Element) => {
         // Check for proper ARIA attributes
-        const hasRole = element.getAttribute('role') || 
-                        ['button', 'link', 'input', 'select', 'textarea'].includes(element.tagName.toLowerCase())
-        const hasName = element.getAttribute('aria-label') ||
-                        element.getAttribute('aria-labelledby') ||
-                        element.textContent?.trim().length > 0
+        const hasRole = element.getAttribute('role')
+                        || ['button', 'link', 'input', 'select', 'textarea'].includes(element.tagName.toLowerCase())
+        const hasName = element.getAttribute('aria-label')
+                        || element.getAttribute('aria-labelledby')
+                        || element.textContent?.trim().length > 0
         return hasRole && hasName
       }
     },
@@ -469,7 +490,7 @@ export class AccessibilityAuditor {
    */
   private async checkPerceivable(): Promise<void> {
     const elements = document.querySelectorAll('*')
-    
+
     for (const element of elements) {
       // Check 1.1.1 Non-text Content
       if (!WCAG_GUIDELINES.perceivable['1.1.1'].check(element)) {
@@ -559,7 +580,7 @@ export class AccessibilityAuditor {
    */
   private async checkOperable(): Promise<void> {
     const elements = document.querySelectorAll('*')
-    
+
     for (const element of elements) {
       // Check 2.1.1 Keyboard
       if (!WCAG_GUIDELINES.operable['2.1.1'].check(element)) {
@@ -692,7 +713,7 @@ export class AccessibilityAuditor {
    */
   private async checkRobust(): Promise<void> {
     const elements = document.querySelectorAll('*')
-    
+
     for (const element of elements) {
       // Check 4.1.2 Name, Role, Value
       if (!WCAG_GUIDELINES.robust['4.1.2'].check(element)) {
@@ -744,11 +765,11 @@ export class AccessibilityAuditor {
     if (element.id) {
       return `#${element.id}`
     }
-    
+
     if (element.className) {
       return `.${element.className.split(' ').join('.')}`
     }
-    
+
     return element.tagName.toLowerCase()
   }
 
@@ -779,7 +800,7 @@ export class AccessibilityAuditor {
     // Calculate score (100 - weighted penalty)
     const maxPenalty = 100
     const score = Math.max(0, 100 - (totalWeight / maxPenalty) * 100)
-    
+
     return Math.round(score)
   }
 
@@ -787,9 +808,15 @@ export class AccessibilityAuditor {
    * Determine compliance level
    */
   private determineComplianceLevel(score: number): 'A' | 'AA' | 'AAA' | 'Non-compliant' {
-    if (score >= 90) return 'AAA'
-    if (score >= 80) return 'AA'
-    if (score >= 60) return 'A'
+    if (score >= 90) {
+      return 'AAA'
+    }
+    if (score >= 80) {
+      return 'AA'
+    }
+    if (score >= 60) {
+      return 'A'
+    }
     return 'Non-compliant'
   }
 
@@ -799,7 +826,7 @@ export class AccessibilityAuditor {
   generateReport(): string {
     const score = this.calculateScore()
     const level = this.determineComplianceLevel(score)
-    
+
     return `
 # OpenRelief Accessibility Audit Report
 
@@ -809,14 +836,14 @@ export class AccessibilityAuditor {
 **Issues Found:** ${this.issues.length}
 
 ## Critical Issues
-${this.issues.filter(i => i.severity === 'critical').map(issue => 
-  `- **${issue.criterion}**: ${issue.description} (${issue.selector})`
-).join('\n') || 'None'}
+${this.issues.filter(i => i.severity === 'critical').map(issue =>
+    `- **${issue.criterion}**: ${issue.description} (${issue.selector})`
+  ).join('\n') || 'None'}
 
 ## Serious Issues
-${this.issues.filter(i => i.severity === 'serious').map(issue => 
-  `- **${issue.criterion}**: ${issue.description} (${issue.selector})`
-).join('\n') || 'None'}
+${this.issues.filter(i => i.severity === 'serious').map(issue =>
+    `- **${issue.criterion}**: ${issue.description} (${issue.selector})`
+  ).join('\n') || 'None'}
 
 ## Recommendations
 

@@ -196,7 +196,7 @@ const defaultSettings: OfflineSettings = {
   cacheMaxAge: 7, // 7 days
   compressData: true,
   prioritySync: true,
-  backgroundSync: true,
+  backgroundSync: true
 }
 
 // Utility functions
@@ -223,7 +223,9 @@ const compressData = async (data: any): Promise<any> => {
     while (!done) {
       const { value, done: readerDone } = await reader.read()
       done = readerDone
-      if (value) chunks.push(value)
+      if (value) {
+        chunks.push(value)
+      }
     }
 
     const compressed = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0))
@@ -236,7 +238,7 @@ const compressData = async (data: any): Promise<any> => {
     return {
       compressed: true,
       data: Array.from(compressed),
-      originalSize: estimateDataSize(data),
+      originalSize: estimateDataSize(data)
     }
   }
 
@@ -259,7 +261,9 @@ const decompressData = async (compressedData: any): Promise<any> => {
       while (!done) {
         const { value, done: readerDone } = await reader.read()
         done = readerDone
-        if (value) chunks.push(value)
+        if (value) {
+          chunks.push(value)
+        }
       }
 
       const decompressed = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0))
@@ -290,7 +294,7 @@ export const useOfflineStore = create<OfflineStore>()(
         isSyncing: false,
         syncProgress: {
           current: 0,
-          total: 0,
+          total: 0
         },
         lastSyncTime: null,
         conflicts: [],
@@ -303,12 +307,12 @@ export const useOfflineStore = create<OfflineStore>()(
           cacheEntries: 0,
           lastSyncTime: null,
           averageSyncTime: 0,
-          successRate: 0,
+          successRate: 0
         },
         storageQuota: {
           used: 0,
           quota: 0,
-          percentage: 0,
+          percentage: 0
         },
         bgSyncSupported: false,
         bgSyncRegistered: false,
@@ -322,11 +326,11 @@ export const useOfflineStore = create<OfflineStore>()(
             id: generateId(),
             timestamp: Date.now(),
             synced: false,
-            retryCount: 0,
+            retryCount: 0
           }
 
           set((state) => ({
-            actions: [...state.actions, newAction],
+            actions: [...state.actions, newAction]
           }))
 
           // Schedule sync if online and auto-sync is enabled
@@ -339,7 +343,7 @@ export const useOfflineStore = create<OfflineStore>()(
 
         removeAction: (actionId) => {
           set((state) => ({
-            actions: state.actions.filter(a => a.id !== actionId),
+            actions: state.actions.filter(a => a.id !== actionId)
           }))
         },
 
@@ -347,7 +351,7 @@ export const useOfflineStore = create<OfflineStore>()(
           set((state) => ({
             actions: state.actions.map(a =>
               a.id === actionId ? { ...a, ...updates } : a
-            ),
+            )
           }))
         },
 
@@ -361,7 +365,7 @@ export const useOfflineStore = create<OfflineStore>()(
             synced: false,
             retryCount: get().getActionById(actionId)?.retryCount ? get().getActionById(actionId)!.retryCount + 1 : 1,
             error,
-            lastAttempt: Date.now(),
+            lastAttempt: Date.now()
           })
           get().updateMetrics()
         },
@@ -369,14 +373,14 @@ export const useOfflineStore = create<OfflineStore>()(
         retryAction: (actionId) => {
           const updates: Partial<OfflineAction> = {
             synced: false,
-            retryCount: 0,
+            retryCount: 0
           }
           get().updateAction(actionId, updates)
         },
 
         clearSyncedActions: () => {
           set((state) => ({
-            actions: state.actions.filter(a => !a.synced),
+            actions: state.actions.filter(a => !a.synced)
           }))
         },
 
@@ -387,11 +391,11 @@ export const useOfflineStore = create<OfflineStore>()(
             id: queueId,
             actions: actionIds.map(id => get().getActionById(id)!).filter(Boolean),
             status: 'pending',
-            retryCount: 0,
+            retryCount: 0
           }
 
           set((state) => ({
-            queue: [...state.queue, newQueue],
+            queue: [...state.queue, newQueue]
           }))
 
           return queueId
@@ -400,13 +404,17 @@ export const useOfflineStore = create<OfflineStore>()(
         processQueue: async (queueId) => {
           const { queue, isOnline, isSyncing } = get()
 
-          if (!isOnline || isSyncing) return
+          if (!isOnline || isSyncing) {
+            return
+          }
 
           const targetQueue = queueId
             ? queue.find(q => q.id === queueId)
             : queue.find(q => q.status === 'pending')
 
-          if (!targetQueue) return
+          if (!targetQueue) {
+            return
+          }
 
           set({ isSyncing: true, syncProgress: { current: 0, total: targetQueue.actions.length } })
 
@@ -415,7 +423,7 @@ export const useOfflineStore = create<OfflineStore>()(
             set((state) => ({
               queue: state.queue.map(q =>
                 q.id === targetQueue.id ? { ...q, status: 'processing', startTime: Date.now() } : q
-              ),
+              )
             }))
 
             // Process actions in order of priority
@@ -426,14 +434,16 @@ export const useOfflineStore = create<OfflineStore>()(
 
             for (let i = 0; i < sortedActions.length; i++) {
               const action = sortedActions[i]
-              if (!action) continue
+              if (!action) {
+                continue
+              }
 
               set((state) => ({
                 syncProgress: {
                   current: i + 1,
                   total: sortedActions.length,
-                  currentAction: action.id,
-                },
+                  currentAction: action.id
+                }
               }))
 
               // Simulate API call - replace with actual implementation
@@ -450,9 +460,8 @@ export const useOfflineStore = create<OfflineStore>()(
                   ? { ...q, status: 'completed', endTime: Date.now() }
                   : q
               ),
-              lastSyncTime: Date.now(),
+              lastSyncTime: Date.now()
             }))
-
           } catch (error) {
             console.error('Sync queue failed:', error)
 
@@ -461,7 +470,7 @@ export const useOfflineStore = create<OfflineStore>()(
                 q.id === targetQueue.id
                   ? { ...q, status: 'failed', error: error instanceof Error ? error.message : 'Unknown error' }
                   : q
-              ),
+              )
             }))
           } finally {
             set({ isSyncing: false, syncProgress: { current: 0, total: 0 } })
@@ -473,7 +482,7 @@ export const useOfflineStore = create<OfflineStore>()(
           set((state) => ({
             queue: state.queue.map(q =>
               q.id === queueId ? { ...q, status: 'failed', error: 'Cancelled' } : q
-            ),
+            )
           }))
         },
 
@@ -496,7 +505,7 @@ export const useOfflineStore = create<OfflineStore>()(
             timestamp: Date.now(),
             expiresAt,
             size: estimateDataSize(cacheData),
-            tags,
+            tags
           }
 
           set((state) => {
@@ -567,10 +576,14 @@ export const useOfflineStore = create<OfflineStore>()(
 
         // Sync management
         startSync: async () => {
-          if (!get().isOnline) return
+          if (!get().isOnline) {
+            return
+          }
 
           const pendingActions = get().getPendingActions()
-          if (pendingActions.length === 0) return
+          if (pendingActions.length === 0) {
+            return
+          }
 
           const queueId = get().createSyncQueue(pendingActions.map(a => a.id))
           await get().processQueue(queueId)
@@ -595,7 +608,7 @@ export const useOfflineStore = create<OfflineStore>()(
         // Conflict management
         addConflict: (conflict) => {
           set((state) => ({
-            conflicts: [...state.conflicts, conflict],
+            conflicts: [...state.conflicts, conflict]
           }))
         },
 
@@ -605,20 +618,20 @@ export const useOfflineStore = create<OfflineStore>()(
               c.actionId === actionId
                 ? { ...c, resolution, resolvedAt: Date.now(), mergedData }
                 : c
-            ),
+            )
           }))
         },
 
         clearResolvedConflicts: () => {
           set((state) => ({
-            conflicts: state.conflicts.filter(c => !c.resolvedAt),
+            conflicts: state.conflicts.filter(c => !c.resolvedAt)
           }))
         },
 
         // Settings management
         updateSettings: (settings) => {
           set((state) => ({
-            settings: { ...state.settings, ...settings },
+            settings: { ...state.settings, ...settings }
           }))
         },
 
@@ -650,8 +663,8 @@ export const useOfflineStore = create<OfflineStore>()(
               cacheEntries,
               lastSyncTime,
               averageSyncTime: get().metrics.averageSyncTime, // Would need actual calculation
-              successRate,
-            },
+              successRate
+            }
           })
         },
 
@@ -662,8 +675,8 @@ export const useOfflineStore = create<OfflineStore>()(
               storageQuota: {
                 used: Number(estimate.usage) || 0,
                 quota: Number(estimate.quota) || 0,
-                percentage: ((Number(estimate.usage) || 0) / (Number(estimate.quota) || 1)) * 100,
-              },
+                percentage: ((Number(estimate.usage) || 0) / (Number(estimate.quota) || 1)) * 100
+              }
             })
           }
         },
@@ -681,7 +694,9 @@ export const useOfflineStore = create<OfflineStore>()(
 
           // If under limit, no need to optimize
           const maxSizeBytes = settings.cacheMaxSize * 1024 * 1024
-          if (totalSize <= maxSizeBytes) return
+          if (totalSize <= maxSizeBytes) {
+            return
+          }
 
           // Sort by timestamp (oldest first) and remove oldest entries
           entries.sort((a, b) => a.timestamp - b.timestamp)
@@ -690,7 +705,9 @@ export const useOfflineStore = create<OfflineStore>()(
           const targetSize = maxSizeBytes * 0.8 // Leave 20% buffer
 
           for (const entry of entries) {
-            if (currentSize <= targetSize) break
+            if (currentSize <= targetSize) {
+              break
+            }
 
             get().removeCache(entry.key)
             currentSize -= entry.size
@@ -735,17 +752,17 @@ export const useOfflineStore = create<OfflineStore>()(
         getPendingActions: (priority) => {
           const { actions } = get()
           return actions.filter(a =>
-            !a.synced &&
-            a.retryCount < a.maxRetries &&
-            (!priority || a.priority === priority)
+            !a.synced
+            && a.retryCount < a.maxRetries
+            && (!priority || a.priority === priority)
           )
         },
 
         getFailedActions: () => {
           const { actions } = get()
           return actions.filter(a =>
-            !a.synced &&
-            a.retryCount >= a.maxRetries
+            !a.synced
+            && a.retryCount >= a.maxRetries
           )
         },
 
@@ -772,14 +789,16 @@ export const useOfflineStore = create<OfflineStore>()(
 
         // Error handling
         setError: (error, actionId) => {
-          if (!error) return
+          if (!error) {
+            return
+          }
           const lastError: {
             message: string
             timestamp: number
             actionId?: string
           } = {
             message: error,
-            timestamp: Date.now(),
+            timestamp: Date.now()
           }
 
           if (actionId) {
@@ -788,7 +807,7 @@ export const useOfflineStore = create<OfflineStore>()(
 
           set({
             error,
-            lastError,
+            lastError
           })
         },
 
@@ -806,23 +825,23 @@ export const useOfflineStore = create<OfflineStore>()(
             syncProgress: { current: 0, total: 0 },
             lastSyncTime: null,
             error: null,
-            lastError: null,
+            lastError: null
           })
-        },
+        }
       }),
       {
         name: 'offline-storage',
         partialize: (state) => ({
           settings: state.settings,
           actions: state.actions.filter(a => !a.synced), // Only persist unsynced actions
-          cache: Array.from(state.cache.entries()), // Convert Map to array for serialization
+          cache: Array.from(state.cache.entries()) // Convert Map to array for serialization
         }),
         onRehydrateStorage: () => (state) => {
           if (state) {
             // Convert array back to Map
             state.cache = new Map(state.cache as any)
           }
-        },
+        }
       }
     )
   )
@@ -834,13 +853,13 @@ export const useOfflineState = () => useOfflineStore(state => ({
   pendingActions: state.getPendingActions(),
   failedActions: state.getFailedActions(),
   isSyncing: state.isSyncing,
-  syncProgress: state.syncProgress,
+  syncProgress: state.syncProgress
 }))
 
 export const useOfflineCache = () => useOfflineStore(state => ({
   cache: state.cache,
   cacheSize: state.metrics.cacheSize,
-  cacheEntries: state.metrics.cacheEntries,
+  cacheEntries: state.metrics.cacheEntries
 }))
 
 export const useOfflineMetrics = () => useOfflineStore(state => state.metrics)
@@ -856,7 +875,7 @@ export const useOfflineActions = () => useOfflineStore(state => ({
   forceSync: state.forceSync,
   setCache: state.setCache,
   getCache: state.getCache,
-  updateSettings: state.updateSettings,
+  updateSettings: state.updateSettings
 }))
 
 // Utility exports

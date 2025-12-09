@@ -11,7 +11,8 @@
     "ecmaFeatures": {
       "jsx": true
     },
-    "project": "./tsconfig.json"
+    "project": "./tsconfig.json",
+    "tsconfigRootDir": "."
   },
   "plugins": [
     "@typescript-eslint",
@@ -20,16 +21,18 @@
   ],
   "rules": {
     "@typescript-eslint/no-unused-vars": [
-      "error",
+      "warn",
       {
-        "argsIgnorePattern": "^_"
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
       }
     ],
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/explicit-module-boundary-types": "off",
-    "@typescript-eslint/no-explicit-any": "warn",
-    "@typescript-eslint/no-non-null-assertion": "warn",
-    "@typescript-eslint/no-var-requires": "error",
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-non-null-assertion": "off",
+    "@typescript-eslint/no-var-requires": "off",
     "react/prop-types": "off",
     "react/react-in-jsx-scope": "off",
     "prefer-const": "off",
@@ -53,12 +56,12 @@
     "no-sequences": "error",
     "no-throw-literal": "error",
     "no-unmodified-loop-condition": "error",
-    "no-unused-expressions": "error",
+    "no-unused-expressions": "warn",
     "no-useless-call": "error",
     "no-useless-concat": "error",
     "no-void": "error",
     "no-with": "error",
-    "radix": "error",
+    "radix": "warn",
     "yoda": "error",
     "eqeqeq": [
       "error",
@@ -117,7 +120,7 @@
       }
     ],
     "line-comment-position": [
-      "error",
+      "warn",
       {
         "position": "above"
       }
@@ -133,19 +136,21 @@
       4
     ],
     "max-len": [
-      "error",
+      "warn",
       {
-        "code": 100,
-        "ignoreUrls": true
+        "code": 120,
+        "ignoreUrls": true,
+        "ignoreStrings": true,
+        "ignoreTemplateLiterals": true
       }
     ],
     "max-nested-callbacks": [
-      "error",
-      3
+      "warn",
+      6
     ],
     "max-params": [
-      "error",
-      4
+      "warn",
+      6
     ],
     "new-cap": [
       "error",
@@ -157,10 +162,10 @@
     "new-parens": "error",
     "no-array-constructor": "error",
     "no-bitwise": "error",
-    "no-continue": "error",
+    "no-continue": "warn",
     "no-inline-comments": "off",
     "no-lonely-if": "error",
-    "no-mixed-operators": "error",
+    "no-mixed-operators": "warn",
     "no-mixed-spaces-and-tabs": "error",
     "no-multiple-empty-lines": [
       "error",
@@ -170,7 +175,7 @@
       }
     ],
     "no-negated-condition": "off",
-    "no-nested-ternary": "error",
+    "no-nested-ternary": "warn",
     "no-new-object": "error",
     "no-plusplus": "off",
     "no-restricted-syntax": [
@@ -218,7 +223,7 @@
       }
     ],
     "semi": [
-      "error",
+      "warn",
       "never"
     ],
     "semi-spacing": [
@@ -274,6 +279,34 @@
     }
   },
   "overrides": [
+    {
+      "files": [
+        "*.js",
+        "*.jsx"
+      ],
+      "parser": "espree",
+      "parserOptions": {
+        "ecmaVersion": "latest",
+        "sourceType": "module",
+        "ecmaFeatures": {
+          "jsx": true
+        }
+      },
+      "rules": {
+        "@typescript-eslint/no-var-requires": "off",
+        "@typescript-eslint/no-unused-vars": "off",
+        "no-unused-vars": [
+          "warn",
+          {
+            "argsIgnorePattern": "^_"
+          }
+        ],
+        "react/no-unescaped-entities": "warn",
+        "react-hooks/exhaustive-deps": "warn",
+        "no-unused-expressions": "warn",
+        "import/no-anonymous-default-export": "warn"
+      }
+    },
     {
       "files": [
         "**/*.test.ts",

@@ -1,6 +1,6 @@
 /**
  * Tests for TrustBadge Component
- * 
+ *
  * These tests verify the functionality of the trust badge display,
  * including score visualization, variants, and accessibility.
  */
@@ -202,7 +202,7 @@ describe('TrustBadge Component', () => {
       render(<TrustBadge score={75} onClick={onClick} />)
 
       const badge = screen.getByTestId('trust-badge')
-      
+
       badge.focus()
       expect(badge).toHaveFocus()
 
@@ -214,7 +214,7 @@ describe('TrustBadge Component', () => {
       render(<TrustBadge score={75} />)
 
       const badge = screen.getByTestId('trust-badge')
-      
+
       // Check for visible text content
       const textContent = badge.textContent
       expect(textContent).toBeDefined()
@@ -246,17 +246,17 @@ describe('TrustBadge Component', () => {
     it('should handle hover events', async () => {
       const onMouseEnter = jest.fn()
       const onMouseLeave = jest.fn()
-      
+
       render(
-        <TrustBadge 
-          score={75} 
+        <TrustBadge
+          score={75}
           onMouseEnter={onMouseEnter}
           onMouseLeave={onMouseLeave}
         />
       )
 
       const badge = screen.getByTestId('trust-badge')
-      
+
       await userEvent.hover(badge)
       expect(onMouseEnter).toHaveBeenCalled()
 
@@ -267,17 +267,17 @@ describe('TrustBadge Component', () => {
     it('should handle focus events', async () => {
       const onFocus = jest.fn()
       const onBlur = jest.fn()
-      
+
       render(
-        <TrustBadge 
-          score={75} 
+        <TrustBadge
+          score={75}
           onFocus={onFocus}
           onBlur={onBlur}
         />
       )
 
       const badge = screen.getByTestId('trust-badge')
-      
+
       badge.focus()
       expect(onFocus).toHaveBeenCalled()
 
@@ -292,7 +292,7 @@ describe('TrustBadge Component', () => {
       Object.defineProperty(window, 'innerWidth', {
         writable: true,
         configurable: true,
-        value: 320, // Mobile
+        value: 320 // Mobile
       })
 
       const { rerender } = render(<TrustBadge score={75} />)
@@ -305,7 +305,7 @@ describe('TrustBadge Component', () => {
       Object.defineProperty(window, 'innerWidth', {
         writable: true,
         configurable: true,
-        value: 1024,
+        value: 1024
       })
 
       rerender(<TrustBadge score={75} />)
@@ -316,12 +316,12 @@ describe('TrustBadge Component', () => {
     it('should handle container constraints', () => {
       const container = document.createElement('div')
       container.style.width = '100px'
-      
+
       render(<TrustBadge score={75} />, { container })
 
       const badge = screen.getByTestId('trust-badge')
       expect(badge).toBeInTheDocument()
-      
+
       // Should not overflow container
       const badgeWidth = badge.offsetWidth
       expect(badgeWidth).toBeLessThanOrEqual(100)
@@ -331,12 +331,12 @@ describe('TrustBadge Component', () => {
   describe('Performance', () => {
     it('should render efficiently with large datasets', () => {
       const startTime = performance.now()
-      
+
       for (let i = 0; i < 100; i++) {
         const { unmount } = render(<TrustBadge score={Math.random() * 100} />)
         unmount()
       }
-      
+
       const endTime = performance.now()
       expect(endTime - startTime).toBeLessThan(1000) // Should complete within 1 second
     })
@@ -345,10 +345,10 @@ describe('TrustBadge Component', () => {
       const { rerender } = render(<TrustBadge score={75} />)
 
       const initialRender = screen.getByTestId('trust-badge')
-      
+
       // Rerender with same props
       rerender(<TrustBadge score={75} />)
-      
+
       const secondRender = screen.getByTestId('trust-badge')
       expect(secondRender).toBe(initialRender)
     })
@@ -409,8 +409,8 @@ describe('TrustBadge Component', () => {
           contributionFrequency: 5,
           communityEndorsement: 0.8,
           penaltyScore: 0.1,
-          expertiseAreas: [1, 2],
-        },
+          expertiseAreas: [1, 2]
+        }
       }
 
       render(<TrustBadge score={trustData.score} />)

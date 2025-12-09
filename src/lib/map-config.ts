@@ -34,48 +34,48 @@ export const OPENMAPTILES_URL = process.env.NEXT_PUBLIC_MAPTILER_API_KEY
 
 // Emergency-optimized map style configuration
 export const emergencyMapStyle = {
-  version: 8 as 8,
+  version: 8 as const,
   name: 'OpenRelief Emergency Style',
   glyphs: process.env.NEXT_PUBLIC_MAPTILER_API_KEY
     ? `https://api.maptiler.com/fonts/{fontstack}/{range}.pbf?key=${process.env.NEXT_PUBLIC_MAPTILER_API_KEY}`
     : 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
   sources: {
-    'openmaptiles': {
+    openmaptiles: {
       type: 'vector',
       // FIXED: Use environment variable for API key with fallback
       url: process.env.NEXT_PUBLIC_MAPTILER_API_KEY
         ? `https://api.maptiler.com/tiles/v3/tiles.json?key=${process.env.NEXT_PUBLIC_MAPTILER_API_KEY}`
         : 'https://api.maptiler.com/tiles/v3/tiles.json?key=FallbackKeyForDevelopment',
-      attribution: '© OpenMapTiles © OpenStreetMap contributors',
+      attribution: '© OpenMapTiles © OpenStreetMap contributors'
     },
     'emergency-events': {
       type: 'geojson',
       data: {
         type: 'FeatureCollection',
-        features: [],
-      },
+        features: []
+      }
     },
     'user-location': {
       type: 'geojson',
       data: {
         type: 'FeatureCollection',
-        features: [],
-      },
+        features: []
+      }
     },
-    'geofences': {
+    geofences: {
       type: 'geojson',
       data: {
         type: 'FeatureCollection',
-        features: [],
-      },
+        features: []
+      }
     },
     'emergency-heatmap': {
       type: 'geojson',
       data: {
         type: 'FeatureCollection',
-        features: [],
-      },
-    },
+        features: []
+      }
+    }
   },
   layers: [
     // Base layers - water and land
@@ -83,8 +83,8 @@ export const emergencyMapStyle = {
       id: 'background',
       type: 'background',
       paint: {
-        'background-color': '#f8f9fa',
-      },
+        'background-color': '#f8f9fa'
+      }
     },
     {
       id: 'water',
@@ -94,8 +94,8 @@ export const emergencyMapStyle = {
       filter: ['==', '$type', 'Polygon'],
       paint: {
         'fill-color': '#a0c8e0',
-        'fill-opacity': 0.8,
-      },
+        'fill-opacity': 0.8
+      }
     },
 
     // Administrative boundaries
@@ -108,8 +108,8 @@ export const emergencyMapStyle = {
       paint: {
         'line-color': '#e0e0e0',
         'line-width': 0.5,
-        'line-opacity': 0.7,
-      },
+        'line-opacity': 0.7
+      }
     },
 
     // Roads (simplified for performance)
@@ -122,8 +122,8 @@ export const emergencyMapStyle = {
       paint: {
         'line-color': '#ffffff',
         'line-width': ['interpolate', ['linear'], ['zoom'], 10, 1, 15, 3],
-        'line-opacity': 0.9,
-      },
+        'line-opacity': 0.9
+      }
     },
     {
       id: 'roads-minor',
@@ -134,8 +134,8 @@ export const emergencyMapStyle = {
       paint: {
         'line-color': '#f0f0f0',
         'line-width': ['interpolate', ['linear'], ['zoom'], 12, 0.5, 16, 2],
-        'line-opacity': 0.7,
-      },
+        'line-opacity': 0.7
+      }
     },
 
     // Buildings (simplified)
@@ -147,9 +147,9 @@ export const emergencyMapStyle = {
       filter: ['==', '$type', 'Polygon'],
       paint: {
         'fill-color': '#e8e8e8',
-        'fill-opacity': 0.6,
+        'fill-opacity': 0.6
       },
-      minzoom: 14,
+      minzoom: 14
     },
 
     // Points of interest (emergency relevant)
@@ -173,14 +173,14 @@ export const emergencyMapStyle = {
         'text-font': ['Open Sans Regular'],
         'text-size': 10,
         'text-offset': [0, 1.5],
-        'text-anchor': 'top',
+        'text-anchor': 'top'
       },
       paint: {
         'text-halo-color': '#ffffff',
         'text-halo-width': 1,
-        'text-color': '#333333',
+        'text-color': '#333333'
       },
-      minzoom: 12,
+      minzoom: 12
     },
 
     // Emergency event layers
@@ -195,8 +195,8 @@ export const emergencyMapStyle = {
           'restricted', '#ffaa00',
           '#ffaa00'
         ],
-        'fill-opacity': 0.2,
-      },
+        'fill-opacity': 0.2
+      }
     },
     {
       id: 'geofences-border',
@@ -210,8 +210,8 @@ export const emergencyMapStyle = {
           '#ff8800'
         ],
         'line-width': 2,
-        'line-opacity': 0.8,
-      },
+        'line-opacity': 0.8
+      }
     },
 
     // Emergency events clustered
@@ -230,7 +230,7 @@ export const emergencyMapStyle = {
           50,
           '#f28cb1', // 50-100
           100,
-          '#ff0000', // 100+
+          '#ff0000' // 100+
         ],
         'circle-radius': [
           'step',
@@ -241,11 +241,11 @@ export const emergencyMapStyle = {
           50,
           40,
           100,
-          50,
+          50
         ],
         'circle-stroke-width': 2,
-        'circle-stroke-color': '#ffffff',
-      },
+        'circle-stroke-color': '#ffffff'
+      }
     },
     {
       id: 'emergency-cluster-count',
@@ -255,11 +255,11 @@ export const emergencyMapStyle = {
       layout: {
         'text-field': '{point_count_abbreviated}',
         'text-font': ['Open Sans Bold'],
-        'text-size': 12,
+        'text-size': 12
       },
       paint: {
-        'text-color': '#ffffff',
-      },
+        'text-color': '#ffffff'
+      }
     },
 
     // Individual emergency events
@@ -285,12 +285,12 @@ export const emergencyMapStyle = {
           2, 12,
           3, 16,
           4, 20,
-          5, 24,
+          5, 24
         ],
         'circle-stroke-width': 2,
         'circle-stroke-color': '#ffffff',
-        'circle-opacity': 0.8,
-      },
+        'circle-opacity': 0.8
+      }
     },
 
     // User location
@@ -303,8 +303,8 @@ export const emergencyMapStyle = {
         'circle-radius': 8,
         'circle-stroke-width': 3,
         'circle-stroke-color': '#ffffff',
-        'circle-opacity': 0.9,
-      },
+        'circle-opacity': 0.9
+      }
     },
     {
       id: 'user-location-accuracy',
@@ -313,10 +313,10 @@ export const emergencyMapStyle = {
       paint: {
         'circle-color': '#0066cc',
         'circle-radius': ['get', 'accuracy'],
-        'circle-opacity': 0.2,
-      },
-    },
-  ],
+        'circle-opacity': 0.2
+      }
+    }
+  ]
 }
 
 // Default map configuration
@@ -328,7 +328,7 @@ export const defaultMapConfig: MapConfig = {
   center: [0, 0],
   zoom: 10,
   pitch: 0,
-  bearing: 0,
+  bearing: 0
 }
 
 // Emergency-specific layer configurations
@@ -349,11 +349,11 @@ export const emergencyLayers: EmergencyLayerConfig[] = [
         0.4, 'rgb(209,229,240)',
         0.6, 'rgb(253,219,199)',
         0.8, 'rgb(239,138,98)',
-        1, 'rgb(178,24,43)',
+        1, 'rgb(178,24,43)'
       ],
-      'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 2, 15, 20],
-    },
-  },
+      'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 2, 15, 20]
+    }
+  }
 ]
 
 // Map performance optimization settings
@@ -378,7 +378,7 @@ export const performanceConfig = {
   // Emergency-specific optimizations
   emergencyLayerUpdateThrottle: 100, // ms
   clusteringMaxZoom: 14,
-  clusteringRadius: 50,
+  clusteringRadius: 50
 }
 
 // Accessibility settings
@@ -388,27 +388,27 @@ export const accessibilityConfig = {
     background: '#000000',
     text: '#ffffff',
     emergency: '#ff0000',
-    safe: '#00ff00',
+    safe: '#00ff00'
   },
 
   // Large text mode
   largeText: {
     fontSize: 16,
-    iconSize: 1.5,
+    iconSize: 1.5
   },
 
   // Screen reader support
   screenReader: {
     enabled: true,
     announceEmergencies: true,
-    announceLocationChanges: true,
+    announceLocationChanges: true
   },
 
   // Keyboard navigation
   keyboardNavigation: {
     enabled: true,
-    stepSize: 0.001, // degrees
-  },
+    stepSize: 0.001 // degrees
+  }
 }
 
 // Offline configuration
@@ -428,7 +428,7 @@ export const offlineConfig = {
   // Preload critical areas
   preloadCriticalAreas: [
     // Add known high-risk areas or emergency response centers
-  ],
+  ]
 }
 
 // Export configuration object
@@ -438,5 +438,5 @@ export const mapConfiguration = {
   layers: emergencyLayers,
   performance: performanceConfig,
   accessibility: accessibilityConfig,
-  offline: offlineConfig,
+  offline: offlineConfig
 }

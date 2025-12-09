@@ -1,6 +1,6 @@
 /**
  * Consensus engine testing utilities for OpenRelief emergency coordination system
- * 
+ *
  * This file provides comprehensive testing utilities for the consensus engine,
  * including trust-weighted voting, Sybil attack prevention, and edge case scenarios.
  */
@@ -53,16 +53,16 @@ export class ConsensusTestUtils {
           id: 'event-high-trust',
           type: 'medical',
           severity: 'high',
-          title: 'Medical Emergency - High Trust Area',
+          title: 'Medical Emergency - High Trust Area'
         }),
         participants: [
           createUser({ id: 'user-1', trustScore: 0.95, role: 'responder' }),
           createUser({ id: 'user-2', trustScore: 0.92, role: 'responder' }),
-          createUser({ id: 'user-3', trustScore: 0.88, role: 'citizen' }),
+          createUser({ id: 'user-3', trustScore: 0.88, role: 'citizen' })
         ],
         expectedOutcome: 'confirm',
         trustDistribution: 'high',
-        attackVector: 'none',
+        attackVector: 'none'
       },
       {
         id: 'mixed-trust-dispute',
@@ -72,16 +72,16 @@ export class ConsensusTestUtils {
           id: 'event-mixed-trust',
           type: 'fire',
           severity: 'critical',
-          title: 'Building Fire - Disputed',
+          title: 'Building Fire - Disputed'
         }),
         participants: [
           createUser({ id: 'user-4', trustScore: 0.90, role: 'responder' }),
           createUser({ id: 'user-5', trustScore: 0.60, role: 'citizen' }),
-          createUser({ id: 'user-6', trustScore: 0.40, role: 'citizen' }),
+          createUser({ id: 'user-6', trustScore: 0.40, role: 'citizen' })
         ],
         expectedOutcome: 'confirm',
         trustDistribution: 'mixed',
-        attackVector: 'none',
+        attackVector: 'none'
       },
       {
         id: 'sybil-attack-scenario',
@@ -91,7 +91,7 @@ export class ConsensusTestUtils {
           id: 'event-sybil',
           type: 'security',
           severity: 'high',
-          title: 'Security Threat - Potential False Report',
+          title: 'Security Threat - Potential False Report'
         }),
         participants: [
           createUser({ id: 'user-legit-1', trustScore: 0.85, role: 'responder' }),
@@ -99,11 +99,11 @@ export class ConsensusTestUtils {
           createUser({ id: 'user-sybil-2', trustScore: 0.12, role: 'citizen' }),
           createUser({ id: 'user-sybil-3', trustScore: 0.10, role: 'citizen' }),
           createUser({ id: 'user-sybil-4', trustScore: 0.08, role: 'citizen' }),
-          createUser({ id: 'user-sybil-5', trustScore: 0.05, role: 'citizen' }),
+          createUser({ id: 'user-sybil-5', trustScore: 0.05, role: 'citizen' })
         ],
         expectedOutcome: 'confirm',
         trustDistribution: 'low',
-        attackVector: 'sybil',
+        attackVector: 'sybil'
       },
       {
         id: 'collusion-scenario',
@@ -113,17 +113,17 @@ export class ConsensusTestUtils {
           id: 'event-collusion',
           type: 'accident',
           severity: 'medium',
-          title: 'Traffic Accident - Potential Collusion',
+          title: 'Traffic Accident - Potential Collusion'
         }),
         participants: [
           createUser({ id: 'user-collusion-1', trustScore: 0.65, role: 'citizen' }),
           createUser({ id: 'user-collusion-2', trustScore: 0.62, role: 'citizen' }),
           createUser({ id: 'user-collusion-3', trustScore: 0.58, role: 'citizen' }),
-          createUser({ id: 'user-independent-1', trustScore: 0.90, role: 'responder' }),
+          createUser({ id: 'user-independent-1', trustScore: 0.90, role: 'responder' })
         ],
         expectedOutcome: 'dispute',
         trustDistribution: 'medium',
-        attackVector: 'collusion',
+        attackVector: 'collusion'
       },
       {
         id: 'insufficient-consensus',
@@ -133,25 +133,25 @@ export class ConsensusTestUtils {
           id: 'event-insufficient',
           type: 'utility',
           severity: 'low',
-          title: 'Utility Issue - Low Participation',
+          title: 'Utility Issue - Low Participation'
         }),
         participants: [
-          createUser({ id: 'user-single', trustScore: 0.75, role: 'citizen' }),
+          createUser({ id: 'user-single', trustScore: 0.75, role: 'citizen' })
         ],
         expectedOutcome: 'undecided',
         trustDistribution: 'medium',
-        attackVector: 'none',
-      },
+        attackVector: 'none'
+      }
     ]
   }
 
   // Simulate voting process
   static simulateVoting(scenario: ConsensusScenario, votingPattern?: 'random' | 'trust-based' | 'malicious'): VoteResult[] {
     const votes: VoteResult[] = []
-    
+
     scenario.participants.forEach(participant => {
       let voteType: 'confirm' | 'dispute'
-      
+
       switch (votingPattern) {
         case 'random':
           voteType = Math.random() > 0.5 ? 'confirm' : 'dispute'
@@ -159,8 +159,8 @@ export class ConsensusTestUtils {
         case 'trust-based':
           // Higher trust users are more likely to vote correctly
           const correctVoteProbability = participant.trustScore
-          voteType = Math.random() < correctVoteProbability ? scenario.expectedOutcome : 
-            (scenario.expectedOutcome === 'confirm' ? 'dispute' : 'confirm')
+          voteType = Math.random() < correctVoteProbability ? scenario.expectedOutcome
+            : (scenario.expectedOutcome === 'confirm' ? 'dispute' : 'confirm')
           break
         case 'malicious':
           // Low trust users vote maliciously
@@ -183,7 +183,7 @@ export class ConsensusTestUtils {
         distanceFromEvent: this.calculateDistance(
           participant.location,
           scenario.event.location
-        ),
+        )
       })
     })
 
@@ -245,7 +245,7 @@ export class ConsensusTestUtils {
       confidence,
       participants: votes.map(v => v.userId),
       votingHistory: votes,
-      anomalies,
+      anomalies
     }
   }
 
@@ -260,12 +260,12 @@ export class ConsensusTestUtils {
     // Check for low-trust users voting against high-trust consensus
     const highTrustVotes = votes.filter(v => v.trustWeight > 0.7)
     const lowTrustVotes = votes.filter(v => v.trustWeight < 0.3)
-    
+
     if (highTrustVotes.length > 0) {
-      const highTrustConsensus = highTrustVotes.filter(v => v.voteType === 'confirm').length > 
-        highTrustVotes.length / 2
-      
-      const lowTrustOpposition = lowTrustVotes.filter(v => 
+      const highTrustConsensus = highTrustVotes.filter(v => v.voteType === 'confirm').length
+        > highTrustVotes.length / 2
+
+      const lowTrustOpposition = lowTrustVotes.filter(v =>
         highTrustConsensus ? v.voteType === 'dispute' : v.voteType === 'confirm'
       ).length
 
@@ -279,7 +279,7 @@ export class ConsensusTestUtils {
     if (votesWithLocation.length > 0) {
       const avgDistance = votesWithLocation.reduce((sum, v) => sum + (v.distanceFromEvent || 0), 0) / votesWithLocation.length
       const distantVotes = votesWithLocation.filter(v => (v.distanceFromEvent || 0) > avgDistance * 3)
-      
+
       if (distantVotes.length > 0) {
         anomalies.push('Votes from unusually distant locations')
       }
@@ -293,7 +293,7 @@ export class ConsensusTestUtils {
         timeSpans.push(timestamps[i] - timestamps[i - 1])
       }
       const avgTimeSpan = timeSpans.reduce((sum, span) => sum + span, 0) / timeSpans.length
-      
+
       if (avgTimeSpan < 1000) { // Less than 1 second between votes
         anomalies.push('Suspiciously rapid voting pattern')
       }
@@ -313,7 +313,9 @@ export class ConsensusTestUtils {
     point1?: { latitude: number; longitude: number },
     point2?: { latitude: number; longitude: number }
   ): number {
-    if (!point1 || !point2) return Infinity
+    if (!point1 || !point2) {
+      return Infinity
+    }
 
     const R = 6371e3 // Earth's radius in meters
     const φ1 = (point1.latitude * Math.PI) / 180
@@ -321,9 +323,9 @@ export class ConsensusTestUtils {
     const Δφ = ((point2.latitude - point1.latitude) * Math.PI) / 180
     const Δλ = ((point2.longitude - point1.longitude) * Math.PI) / 180
 
-    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-      Math.cos(φ1) * Math.cos(φ2) *
-      Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2)
+      + Math.cos(φ1) * Math.cos(φ2)
+      * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 
     return R * c // Distance in meters
@@ -336,7 +338,7 @@ export class ConsensusTestUtils {
       createUser({
         id: `sybil-${i}`,
         trustScore: 0.1 + Math.random() * 0.1, // Very low trust scores
-        role: 'citizen',
+        role: 'citizen'
       })
     )
 
@@ -349,7 +351,7 @@ export class ConsensusTestUtils {
         userId: user.id,
         voteType: baseScenario.expectedOutcome,
         trustWeight: user.trustScore,
-        timestamp: new Date().toISOString(),
+        timestamp: new Date().toISOString()
       })
     })
 
@@ -359,12 +361,12 @@ export class ConsensusTestUtils {
         userId: user.id,
         voteType: baseScenario.expectedOutcome === 'confirm' ? 'dispute' : 'confirm',
         trustWeight: user.trustScore,
-        timestamp: new Date().toISOString(),
+        timestamp: new Date().toISOString()
       })
     })
 
     const consensus = this.calculateConsensus(votes, baseScenario.event)
-    
+
     return {
       scenario: baseScenario.id,
       legitimateVotes: legitimateUsers.length,
@@ -374,9 +376,9 @@ export class ConsensusTestUtils {
       attackSuccessful: consensus.consensus !== baseScenario.expectedOutcome,
       weightedInfluence: {
         legitimate: legitimateUsers.reduce((sum, u) => sum + u.trustScore, 0),
-        sybil: sybilUsers.reduce((sum, u) => sum + u.trustScore, 0),
+        sybil: sybilUsers.reduce((sum, u) => sum + u.trustScore, 0)
       },
-      anomalies: consensus.anomalies,
+      anomalies: consensus.anomalies
     }
   }
 
@@ -389,8 +391,8 @@ export class ConsensusTestUtils {
         parameters: {
           eventCount: 100,
           votesPerEvent: 1000,
-          concurrentUsers: 500,
-        },
+          concurrentUsers: 500
+        }
       },
       rapidFire: {
         name: 'Rapid Fire Voting',
@@ -398,8 +400,8 @@ export class ConsensusTestUtils {
         parameters: {
           eventCount: 10,
           votesPerEvent: 100,
-          voteInterval: 100, // milliseconds
-        },
+          voteInterval: 100 // milliseconds
+        }
       },
       mixedTrust: {
         name: 'Mixed Trust Distribution',
@@ -408,10 +410,10 @@ export class ConsensusTestUtils {
           distributions: [
             { name: 'mostly-high', high: 0.7, medium: 0.2, low: 0.1 },
             { name: 'mostly-low', high: 0.1, medium: 0.2, low: 0.7 },
-            { name: 'balanced', high: 0.33, medium: 0.34, low: 0.33 },
-          ],
-        },
-      },
+            { name: 'balanced', high: 0.33, medium: 0.34, low: 0.33 }
+          ]
+        }
+      }
     }
   }
 }

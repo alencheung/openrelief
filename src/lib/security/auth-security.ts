@@ -1,6 +1,6 @@
 /**
  * Enhanced Authentication and Session Security System
- * 
+ *
  * This module provides comprehensive authentication security including:
  * - Multi-factor authentication (MFA)
  * - Session management with security controls
@@ -108,9 +108,9 @@ const AUTH_SECURITY_CONFIG = {
     renewalThreshold: 60 * 60 * 1000, // 1 hour before expiry
     maxConcurrentSessions: 3,
     idleTimeout: 2 * 60 * 60 * 1000, // 2 hours
-    securityCheckInterval: 5 * 60 * 1000, // 5 minutes
+    securityCheckInterval: 5 * 60 * 1000 // 5 minutes
   },
-  
+
   // Login attempt protection
   loginProtection: {
     maxAttempts: 5,
@@ -119,9 +119,9 @@ const AUTH_SECURITY_CONFIG = {
     maxDelay: 30 * 1000, // 30 seconds
     ipTracking: true,
     deviceTracking: true,
-    geolocationTracking: true,
+    geolocationTracking: true
   },
-  
+
   // Password policy
   passwordPolicy: {
     minLength: 12,
@@ -133,9 +133,9 @@ const AUTH_SECURITY_CONFIG = {
     forbidUserInfo: true,
     maxAge: 90 * 24 * 60 * 60 * 1000, // 90 days
     historyCount: 12,
-    minUniqueChars: 8,
+    minUniqueChars: 8
   },
-  
+
   // MFA configuration
   mfa: {
     enabled: true,
@@ -144,15 +144,15 @@ const AUTH_SECURITY_CONFIG = {
     backupCodeLength: 8,
     totpWindow: 1,
     smsTemplate: 'Your verification code is: {code}',
-    emailTemplate: 'Your verification code is: {code}',
+    emailTemplate: 'Your verification code is: {code}'
   },
-  
+
   // Device fingerprinting
   deviceFingerprinting: {
     enabled: true,
     trustThreshold: 0.7,
     maxDevicesPerUser: 5,
-    deviceTrustDecay: 30 * 24 * 60 * 60 * 1000, // 30 days
+    deviceTrustDecay: 30 * 24 * 60 * 60 * 1000 // 30 days
   }
 }
 
@@ -165,12 +165,12 @@ export class AuthSecurityManager {
   private deviceFingerprints: Map<string, DeviceFingerprint> = new Map()
   private passwordHistory: Map<string, string[]> = new Map()
   private securityCheckInterval: NodeJS.Timeout | null = null
-  
+
   constructor() {
     this.startSecurityMonitoring()
     this.loadExistingSessions()
   }
-  
+
   /**
    * Authenticate user with enhanced security
    */
@@ -201,14 +201,14 @@ export class AuthSecurityManager {
           lockoutTime: attemptCheck.lockoutTime
         }
       }
-      
+
       // Get user from database
       const { data: user, error } = await supabaseAdmin
         .from('user_profiles')
         .select('*')
         .eq('email', email)
         .single()
-      
+
       if (error || !user) {
         await this.recordLoginAttempt({
           email,
@@ -216,16 +216,16 @@ export class AuthSecurityManager {
           success: false,
           failureReason: 'user_not_found'
         })
-        
+
         return {
           success: false,
           error: 'Invalid email or password'
         }
       }
-      
+
       // Verify password with timing attack protection
       const passwordValid = await this.verifyPasswordSecure(password, user.password_hash)
-      
+
       if (!passwordValid) {
         await this.recordLoginAttempt({
           email,
@@ -234,13 +234,13 @@ export class AuthSecurityManager {
           success: false,
           failureReason: 'invalid_password'
         })
-        
+
         return {
           success: false,
           error: 'Invalid email or password'
         }
       }
-      
+
       // Check if account is locked or suspended
       if (user.status === 'locked' || user.status === 'suspended') {
         await this.recordLoginAttempt({
@@ -250,16 +250,16 @@ export class AuthSecurityManager {
           success: false,
           failureReason: 'account_locked'
         })
-        
+
         return {
           success: false,
           error: 'Account is locked. Please contact support.'
         }
       }
-      
+
       // Check device fingerprint
       const deviceTrust = await this.checkDeviceFingerprint(user.user_id, deviceInfo.fingerprint)
-      
+
       // Create session
       const sessionId = await this.createSecureSession({
         userId: user.user_id,
@@ -267,7 +267,7 @@ export class AuthSecurityManager {
         ...deviceInfo,
         trustLevel: deviceTrust.trustLevel
       })
-      
+
       // Record successful login
       await this.recordLoginAttempt({
         email,
@@ -276,7 +276,7 @@ export class AuthSecurityManager {
         success: true,
         mfaRequired: user.mfa_enabled
       })
-      
+
       // Check if MFA is required
       if (user.mfa_enabled) {
         return {
@@ -286,7 +286,7 @@ export class AuthSecurityManager {
           mfaMethods: user.mfa_methods || ['totp']
         }
       }
-      
+
       return {
         success: true,
         sessionId
@@ -299,7 +299,7 @@ export class AuthSecurityManager {
       }
     }
   }
-  
+
   /**
    * Verify MFA token
    */
@@ -313,20 +313,20 @@ export class AuthSecurityManager {
       if (!session) {
         return { success: false, error: 'Invalid session' }
       }
-      
+
       // Get user MFA settings
       const { data: user, error } = await supabaseAdmin
         .from('user_profiles')
         .select('mfa_secret, mfa_backup_codes, mfa_methods')
         .eq('user_id', session.userId)
         .single()
-      
+
       if (error || !user) {
         return { success: false, error: 'User not found' }
       }
-      
+
       let isValid = false
-      
+
       switch (method) {
         case 'totp':
           isValid = await this.verifyTOTPToken(token, user.mfa_secret)
@@ -345,7 +345,7 @@ export class AuthSecurityManager {
         default:
           return { success: false, error: 'Unsupported MFA method' }
       }
-      
+
       if (!isValid) {
         await securityMonitor.createAlert(
           'unauthorized_access' as any,
@@ -354,22 +354,22 @@ export class AuthSecurityManager {
           `Method: ${method}, Session: ${sessionId}`,
           'auth_security'
         )
-        
+
         return { success: false, error: 'Invalid verification code' }
       }
-      
+
       // Mark session as MFA verified
       session.mfaVerified = true
       session.lastActivity = new Date()
       this.sessions.set(sessionId, session)
-      
+
       return { success: true }
     } catch (error) {
       console.error('MFA verification error:', error)
       return { success: false, error: 'MFA verification failed' }
     }
   }
-  
+
   /**
    * Validate session with security checks
    */
@@ -387,23 +387,23 @@ export class AuthSecurityManager {
       if (!session) {
         return { valid: false }
       }
-      
+
       // Check if session is expired
       if (new Date() > session.expiresAt) {
         await this.invalidateSession(sessionId, 'expired')
         return { valid: false }
       }
-      
+
       // Check idle timeout
       const idleTime = Date.now() - session.lastActivity.getTime()
       if (idleTime > AUTH_SECURITY_CONFIG.session.idleTimeout) {
         await this.invalidateSession(sessionId, 'idle_timeout')
         return { valid: false, requiresReauth: true }
       }
-      
+
       // Security checks
       const securityFlags: SessionSecurityFlag[] = []
-      
+
       // Check IP change
       if (session.ipAddress !== requestContext.ipAddress) {
         securityFlags.push({
@@ -413,7 +413,7 @@ export class AuthSecurityManager {
           description: `IP address changed from ${session.ipAddress} to ${requestContext.ipAddress}`
         })
       }
-      
+
       // Check device change
       if (session.deviceFingerprint !== this.generateDeviceFingerprint(requestContext.userAgent)) {
         securityFlags.push({
@@ -423,12 +423,12 @@ export class AuthSecurityManager {
           description: 'Device fingerprint changed'
         })
       }
-      
+
       // Update session
       session.lastActivity = new Date()
       session.securityFlags.push(...securityFlags)
       this.sessions.set(sessionId, session)
-      
+
       // Log security flags
       if (securityFlags.length > 0) {
         await securityMonitor.createAlert(
@@ -439,10 +439,10 @@ export class AuthSecurityManager {
           'auth_security'
         )
       }
-      
+
       // Require re-authentication for high-severity flags
       const requiresReauth = securityFlags.some(flag => flag.severity === 'high')
-      
+
       return {
         valid: true,
         session,
@@ -454,35 +454,39 @@ export class AuthSecurityManager {
       return { valid: false }
     }
   }
-  
+
   /**
    * Create secure password hash
    */
   async createSecurePassword(password: string, userId?: string): Promise<string> {
     const salt = randomBytes(32)
     const pepper = process.env.AUTH_PEPPER || ''
-    
+
     return new Promise((resolve, reject) => {
       scrypt(password + pepper, salt, 64, (err, derivedKey) => {
-        if (err) reject(err)
-        
+        if (err) {
+          reject(err)
+        }
+
         const hash = salt.toString('hex') + ':' + derivedKey.toString('hex')
         resolve(hash)
       })
     })
   }
-  
+
   /**
    * Verify password with timing attack protection
    */
   async verifyPasswordSecure(password: string, hash: string): Promise<boolean> {
     const [salt, key] = hash.split(':')
     const pepper = process.env.AUTH_PEPPER || ''
-    
+
     return new Promise((resolve) => {
       scrypt(password + pepper, Buffer.from(salt, 'hex'), 64, (err, derivedKey) => {
-        if (err) resolve(false)
-        
+        if (err) {
+          resolve(false)
+        }
+
         // Use timing-safe comparison
         const isValid = timingSafeEqual(
           Buffer.from(key, 'hex'),
@@ -492,7 +496,7 @@ export class AuthSecurityManager {
       })
     })
   }
-  
+
   /**
    * Generate device fingerprint
    */
@@ -505,13 +509,13 @@ export class AuthSecurityManager {
       cookieEnabled: navigator?.cookieEnabled || false,
       doNotTrack: navigator?.doNotTrack || 'unknown'
     }
-    
+
     return createHash('sha256')
       .update(JSON.stringify(fingerprintData))
       .digest('hex')
       .substring(0, 32)
   }
-  
+
   /**
    * Check login attempts and apply rate limiting
    */
@@ -523,21 +527,21 @@ export class AuthSecurityManager {
     const now = Date.now()
     const userAttempts = this.loginAttempts.get(email) || []
     const ipAttempts = this.loginAttempts.get(`ip:${ipAddress}`) || []
-    
+
     // Clean old attempts
-    const recentUserAttempts = userAttempts.filter(attempt => 
+    const recentUserAttempts = userAttempts.filter(attempt =>
       now - attempt.timestamp.getTime() < AUTH_SECURITY_CONFIG.loginProtection.lockoutDuration
     )
-    const recentIpAttempts = ipAttempts.filter(attempt => 
+    const recentIpAttempts = ipAttempts.filter(attempt =>
       now - attempt.timestamp.getTime() < AUTH_SECURITY_CONFIG.loginProtection.lockoutDuration
     )
-    
+
     // Check if user is locked out
     const failedUserAttempts = recentUserAttempts.filter(attempt => !attempt.success)
     if (failedUserAttempts.length >= AUTH_SECURITY_CONFIG.loginProtection.maxAttempts) {
       const lastAttempt = failedUserAttempts[failedUserAttempts.length - 1]
       const lockoutTime = lastAttempt.timestamp.getTime() + AUTH_SECURITY_CONFIG.loginProtection.lockoutDuration
-      
+
       if (now < lockoutTime) {
         return {
           allowed: false,
@@ -545,13 +549,13 @@ export class AuthSecurityManager {
         }
       }
     }
-    
+
     // Check if IP is locked out
     const failedIpAttempts = recentIpAttempts.filter(attempt => !attempt.success)
     if (failedIpAttempts.length >= AUTH_SECURITY_CONFIG.loginProtection.maxAttempts) {
       const lastAttempt = failedIpAttempts[failedIpAttempts.length - 1]
       const lockoutTime = lastAttempt.timestamp.getTime() + AUTH_SECURITY_CONFIG.loginProtection.lockoutDuration
-      
+
       if (now < lockoutTime) {
         return {
           allowed: false,
@@ -559,17 +563,17 @@ export class AuthSecurityManager {
         }
       }
     }
-    
+
     // Calculate progressive delay
     let delay = 0
     if (AUTH_SECURITY_CONFIG.loginProtection.progressiveDelay) {
       const delayMultiplier = Math.min(failedUserAttempts.length, 5)
       delay = Math.min(delayMultiplier * 1000, AUTH_SECURITY_CONFIG.loginProtection.maxDelay)
     }
-    
+
     return { allowed: true, delay }
   }
-  
+
   /**
    * Record login attempt
    */
@@ -597,17 +601,17 @@ export class AuthSecurityManager {
       mfaRequired: attempt.mfaRequired || false,
       geolocation: attempt.geolocation
     }
-    
+
     // Store attempt
     const userAttempts = this.loginAttempts.get(attempt.email) || []
     userAttempts.push(loginAttempt)
     this.loginAttempts.set(attempt.email, userAttempts)
-    
+
     // Store IP attempts
     const ipAttempts = this.loginAttempts.get(`ip:${attempt.ipAddress}`) || []
     ipAttempts.push(loginAttempt)
     this.loginAttempts.set(`ip:${attempt.ipAddress}`, ipAttempts)
-    
+
     // Log to audit system
     await securityMonitor.createAlert(
       attempt.success ? 'successful_login' : 'failed_login' as any,
@@ -617,7 +621,7 @@ export class AuthSecurityManager {
       'auth_security'
     )
   }
-  
+
   /**
    * Create secure session
    */
@@ -631,7 +635,7 @@ export class AuthSecurityManager {
   }): Promise<string> {
     const sessionId = randomBytes(32).toString('hex')
     const now = new Date()
-    
+
     const session: AuthSession = {
       sessionId,
       userId: sessionData.userId,
@@ -646,10 +650,10 @@ export class AuthSecurityManager {
       mfaVerified: false,
       trustLevel: sessionData.trustLevel
     }
-    
+
     // Store session
     this.sessions.set(sessionId, session)
-    
+
     // Store in database for persistence
     await supabaseAdmin
       .from('auth_sessions')
@@ -665,10 +669,10 @@ export class AuthSecurityManager {
         mfa_verified: false,
         trust_level: sessionData.trustLevel
       })
-    
+
     return sessionId
   }
-  
+
   /**
    * Check device fingerprint
    */
@@ -682,7 +686,7 @@ export class AuthSecurityManager {
       .eq('user_id', userId)
       .eq('fingerprint_id', fingerprint)
       .single()
-    
+
     if (error || !device) {
       // New device
       return {
@@ -690,17 +694,17 @@ export class AuthSecurityManager {
         isTrusted: false
       }
     }
-    
+
     // Check if device is trusted
     const isTrusted = device.is_trusted && device.trust_score > AUTH_SECURITY_CONFIG.deviceFingerprinting.trustThreshold
     const trustLevel = isTrusted ? 'high' : 'medium'
-    
+
     return {
       trustLevel,
       isTrusted
     }
   }
-  
+
   /**
    * Verify TOTP token
    */
@@ -715,25 +719,27 @@ export class AuthSecurityManager {
       return false
     }
   }
-  
+
   /**
    * Verify backup code
    */
   private async verifyBackupCode(token: string, backupCodes: string[]): Promise<boolean> {
     return backupCodes.includes(token)
   }
-  
+
   /**
    * Invalidate session
    */
   private async invalidateSession(sessionId: string, reason: string): Promise<void> {
     const session = this.sessions.get(sessionId)
-    if (!session) return
-    
+    if (!session) {
+      return
+    }
+
     // Mark as inactive
     session.isActive = false
     this.sessions.set(sessionId, session)
-    
+
     // Update database
     await supabaseAdmin
       .from('auth_sessions')
@@ -743,7 +749,7 @@ export class AuthSecurityManager {
         invalidation_reason: reason
       })
       .eq('session_id', sessionId)
-    
+
     // Log to audit
     await securityMonitor.createAlert(
       'session_invalidated' as any,
@@ -753,7 +759,7 @@ export class AuthSecurityManager {
       'auth_security'
     )
   }
-  
+
   /**
    * Start security monitoring
    */
@@ -762,7 +768,7 @@ export class AuthSecurityManager {
       await this.performSecurityChecks()
     }, AUTH_SECURITY_CONFIG.session.securityCheckInterval)
   }
-  
+
   /**
    * Perform periodic security checks
    */
@@ -775,23 +781,23 @@ export class AuthSecurityManager {
           await this.invalidateSession(sessionId, 'expired')
         }
       }
-      
+
       // Check for concurrent session violations
       await this.checkConcurrentSessions()
-      
+
       // Clean old login attempts
       this.cleanupOldLoginAttempts()
     } catch (error) {
       console.error('Security check error:', error)
     }
   }
-  
+
   /**
    * Check for concurrent session violations
    */
   private async checkConcurrentSessions(): Promise<void> {
     const userSessions = new Map<string, AuthSession[]>()
-    
+
     // Group sessions by user
     for (const session of this.sessions.values()) {
       if (session.isActive) {
@@ -800,32 +806,32 @@ export class AuthSecurityManager {
         userSessions.set(session.userId, userSessionList)
       }
     }
-    
+
     // Check for violations
     for (const [userId, sessions] of userSessions.entries()) {
       if (sessions.length > AUTH_SECURITY_CONFIG.session.maxConcurrentSessions) {
         // Mark oldest sessions as inactive
         const sortedSessions = sessions.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
         const sessionsToInvalidate = sortedSessions.slice(0, sessions.length - AUTH_SECURITY_CONFIG.session.maxConcurrentSessions)
-        
+
         for (const session of sessionsToInvalidate) {
           await this.invalidateSession(session.sessionId, 'concurrent_sessions')
         }
       }
     }
   }
-  
+
   /**
    * Clean old login attempts
    */
   private cleanupOldLoginAttempts(): void {
     const cutoffTime = Date.now() - AUTH_SECURITY_CONFIG.loginProtection.lockoutDuration
-    
+
     for (const [key, attempts] of this.loginAttempts.entries()) {
-      const recentAttempts = attempts.filter(attempt => 
+      const recentAttempts = attempts.filter(attempt =>
         attempt.timestamp.getTime() > cutoffTime
       )
-      
+
       if (recentAttempts.length === 0) {
         this.loginAttempts.delete(key)
       } else {
@@ -833,7 +839,7 @@ export class AuthSecurityManager {
       }
     }
   }
-  
+
   /**
    * Load existing sessions from database
    */
@@ -844,9 +850,11 @@ export class AuthSecurityManager {
         .select('*')
         .eq('is_active', true)
         .gte('expires_at', new Date().toISOString())
-      
-      if (error) throw error
-      
+
+      if (error) {
+        throw error
+      }
+
       for (const sessionData of data || []) {
         const session: AuthSession = {
           sessionId: sessionData.session_id,
@@ -862,7 +870,7 @@ export class AuthSecurityManager {
           mfaVerified: sessionData.mfa_verified,
           trustLevel: sessionData.trust_level
         }
-        
+
         this.sessions.set(session.sessionId, session)
       }
     } catch (error) {

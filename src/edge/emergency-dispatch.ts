@@ -1,6 +1,6 @@
 /**
  * Cloudflare Edge Function for Emergency Alert Dispatch
- * 
+ *
  * Provides low-latency emergency alert routing and geographic edge processing
  * Meets <100ms latency requirement for critical emergency communications
  */
@@ -70,7 +70,7 @@ const EDGE_REGIONS = {
   'eu-central': ['Frankfurt', 'Zurich', 'Prague'],
   'asia-east': ['Tokyo', 'Seoul', 'Hong Kong'],
   'asia-southeast': ['Singapore', 'Bangkok', 'Jakarta'],
-  'australia': ['Sydney', 'Melbourne', 'Brisbane'],
+  australia: ['Sydney', 'Melbourne', 'Brisbane']
 }
 
 // Distance calculation
@@ -81,9 +81,9 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   const Δφ = ((lat2 - lat1) * Math.PI) / 180
   const Δλ = ((lon2 - lon1) * Math.PI) / 180
 
-  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-    Math.cos(φ1) * Math.cos(φ2) *
-    Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
+  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2)
+    + Math.cos(φ1) * Math.cos(φ2)
+    * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 
   return R * c // Distance in meters
@@ -107,20 +107,22 @@ function getEdgeRegion(latitude: number, longitude: number): string {
   } else if (latitude < -10 && longitude > 110 && longitude < 160) {
     return 'australia'
   }
-  
+
   return 'us-east' // Default
 }
 
 // Check if user is in quiet hours
 function isInQuietHours(userPreferences: any, timestamp: number): boolean {
-  if (!userPreferences.quietHours.enabled) return false
+  if (!userPreferences.quietHours.enabled) {
+    return false
+  }
 
   const date = new Date(timestamp)
   const currentTime = date.getHours() * 60 + date.getMinutes()
-  
+
   const [startHour, startMin] = userPreferences.quietHours.start.split(':').map(Number)
   const [endHour, endMin] = userPreferences.quietHours.end.split(':').map(Number)
-  
+
   const startTime = startHour * 60 + startMin
   const endTime = endHour * 60 + endMin
 
@@ -161,7 +163,7 @@ function filterTargets(
     const severityLevels = ['low', 'medium', 'high', 'critical']
     const userMinLevel = severityLevels.indexOf(target.preferences.minSeverity)
     const emergencyLevel = severityLevels.indexOf(emergency.severity)
-    
+
     if (emergencyLevel < userMinLevel) {
       shouldSkip = true
       skipReason = 'severity_preference'
@@ -224,7 +226,7 @@ async function sendPushNotification(
         emergency.location.longitude,
         target.location.latitude,
         target.location.longitude
-      ),
+      )
     }
 
     // Use Cloudflare Workers to send push via appropriate service
@@ -233,14 +235,14 @@ async function sendPushNotification(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${env.PUSH_SERVICE_KEY}`,
+        Authorization: `Bearer ${env.PUSH_SERVICE_KEY}`
       },
       body: JSON.stringify({
         tokens: [target.pushToken],
         payload,
         priority: emergency.severity === 'critical' ? 'high' : 'normal',
-        ttl: emergency.severity === 'critical' ? 0 : 3600, // 0 for critical, 1 hour for others
-      }),
+        ttl: emergency.severity === 'critical' ? 0 : 3600 // 0 for critical, 1 hour for others
+      })
     })
 
     if (!response.ok) {
@@ -250,9 +252,9 @@ async function sendPushNotification(
     return { success: true }
   } catch (error) {
     console.error('Failed to send push notification:', error)
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
     }
   }
 }
@@ -261,7 +263,7 @@ async function sendPushNotification(
 export default {
   async fetch(request: Request, env: any, ctx: ExecutionContext): Promise<Response> {
     const startTime = Date.now()
-    
+
     try {
       // Only allow POST requests
       if (request.method !== 'POST') {
@@ -269,7 +271,7 @@ export default {
       }
 
       const emergency: EmergencyEvent = await request.json()
-      
+
       // Validate emergency data
       if (!emergency.id || !emergency.location || !emergency.severity) {
         return new Response('Invalid emergency data', { status: 400 })
@@ -277,24 +279,24 @@ export default {
 
       // Get edge region
       const region = getEdgeRegion(emergency.location.latitude, emergency.location.longitude)
-      
+
       // Get targets in region (from KV store)
       const targetsKey = `targets:${region}`
       const targetsData = await env.TARGETS_KV.get(targetsKey)
-      
+
       if (!targetsData) {
         return new Response('No targets found in region', { status: 404 })
       }
 
       const targets: AlertTarget[] = JSON.parse(targetsData)
-      
+
       // Filter eligible targets
       const { eligible, skipped } = filterTargets(targets, emergency, region)
-      
+
       // Batch process notifications
       const batchSize = 100 // Process in batches to avoid timeouts
       const batches = []
-      
+
       for (let i = 0; i < eligible.length; i += batchSize) {
         batches.push(eligible.slice(i, i + batchSize))
       }
@@ -333,7 +335,7 @@ export default {
         successCount,
         errorCount: errors.length,
         executionTime: Date.now() - startTime,
-        timestamp: Date.now(),
+        timestamp: Date.now()
       }
 
       // Store analytics in KV for monitoring
@@ -355,35 +357,34 @@ export default {
         targetsSkipped: skipped.length,
         errors,
         executionTime: Date.now() - startTime,
-        region,
+        region
       }
 
       return new Response(JSON.stringify(result), {
         headers: {
           'Content-Type': 'application/json',
           'X-Execution-Time': String(Date.now() - startTime),
-          'X-Region': region,
-        },
+          'X-Region': region
+        }
       })
-
     } catch (error) {
       console.error('Emergency dispatch error:', error)
-      
+
       const errorResult = {
         success: false,
         targetsReached: 0,
         targetsSkipped: 0,
         errors: [error instanceof Error ? error.message : 'Unknown error'],
         executionTime: Date.now() - startTime,
-        region: 'unknown',
+        region: 'unknown'
       }
 
       return new Response(JSON.stringify(errorResult), {
         status: 500,
         headers: {
           'Content-Type': 'application/json',
-          'X-Execution-Time': String(Date.now() - startTime),
-        },
+          'X-Execution-Time': String(Date.now() - startTime)
+        }
       })
     }
   },
@@ -394,7 +395,7 @@ export default {
       // Clean up old analytics data
       const cutoffTime = Date.now() - (30 * 24 * 60 * 60 * 1000) // 30 days ago
       const analyticsList = await env.ANALYTICS_KV.list({ prefix: 'analytics:' })
-      
+
       for (const key of analyticsList.keys) {
         const timestamp = parseInt(key.name.split(':')[1])
         if (timestamp < cutoffTime) {
@@ -407,16 +408,16 @@ export default {
       for (const region of regions) {
         const targetsKey = `targets:${region}`
         const targetsData = await env.TARGETS_KV.get(targetsKey)
-        
+
         if (targetsData) {
           const targets: AlertTarget[] = JSON.parse(targetsData)
           const now = Date.now()
-          
+
           // Remove inactive targets (30 days)
-          const activeTargets = targets.filter(target => 
+          const activeTargets = targets.filter(target =>
             now - target.lastActive < 30 * 24 * 60 * 60 * 1000
           )
-          
+
           await env.TARGETS_KV.put(targetsKey, JSON.stringify(activeTargets))
         }
       }
@@ -425,7 +426,7 @@ export default {
     } catch (error) {
       console.error('Scheduled maintenance error:', error)
     }
-  },
+  }
 }
 
 // Health check endpoint
@@ -435,11 +436,11 @@ export async function healthCheck(request: Request, env: any): Promise<Response>
     timestamp: Date.now(),
     region: request.cf?.colo || 'unknown',
     version: '1.0.0',
-    latency: '<100ms',
+    latency: '<100ms'
   }
 
   return new Response(JSON.stringify(health), {
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' }
   })
 }
 
@@ -448,10 +449,10 @@ export async function getMetrics(request: Request, env: any): Promise<Response> 
   try {
     const url = new URL(request.url)
     const timeRange = url.searchParams.get('range') || '1h' // Default to 1 hour
-    
-    const cutoffTime = Date.now() - (timeRange === '1h' ? 60 * 60 * 1000 : 
-                                   timeRange === '24h' ? 24 * 60 * 60 * 1000 :
-                                   7 * 24 * 60 * 60 * 1000) // 7 days
+
+    const cutoffTime = Date.now() - (timeRange === '1h' ? 60 * 60 * 1000
+      : timeRange === '24h' ? 24 * 60 * 60 * 1000
+        : 7 * 24 * 60 * 60 * 1000) // 7 days
 
     const metricsList = await env.DISPATCH_METRICS.list({ prefix: 'metrics:' })
     const relevantMetrics = []
@@ -481,11 +482,11 @@ export async function getMetrics(request: Request, env: any): Promise<Response> 
       regionBreakdown: relevantMetrics.reduce((acc, m) => {
         acc[m.region] = (acc[m.region] || 0) + 1
         return acc
-      }, {} as Record<string, number>),
+      }, {} as Record<string, number>)
     }
 
     return new Response(JSON.stringify(metrics), {
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' }
     })
   } catch (error) {
     return new Response('Failed to fetch metrics', { status: 500 })

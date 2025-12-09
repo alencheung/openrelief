@@ -14,12 +14,12 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   icons: {
     icon: '/icons/icon-192x192.png',
-    apple: '/icons/icon-192x192.png',
+    apple: '/icons/icon-192x192.png'
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'OpenRelief',
+    title: 'OpenRelief'
   },
   openGraph: {
     type: 'website',
@@ -27,12 +27,12 @@ export const metadata: Metadata = {
     url: 'https://openrelief.org',
     title: 'OpenRelief - Emergency Coordination Platform',
     description: 'Offline-first emergency coordination platform for decentralized disaster response',
-    siteName: 'OpenRelief',
+    siteName: 'OpenRelief'
   },
   twitter: {
     card: 'summary_large_image',
     title: 'OpenRelief - Emergency Coordination Platform',
-    description: 'Offline-first emergency coordination platform for decentralized disaster response',
+    description: 'Offline-first emergency coordination platform for decentralized disaster response'
   },
   other: {
     'mobile-web-app-capable': 'yes',
@@ -41,8 +41,8 @@ export const metadata: Metadata = {
     'apple-mobile-web-app-title': 'OpenRelief',
     'application-name': 'OpenRelief',
     'msapplication-TileColor': '#dc2626',
-    'msapplication-config': '/browserconfig.xml',
-  },
+    'msapplication-config': '/browserconfig.xml'
+  }
 }
 
 // Separate viewport export as required by Next.js 15+
@@ -52,11 +52,11 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
-  themeColor: '#dc2626',
+  themeColor: '#dc2626'
 }
 
 export default function RootLayout({
-  children,
+  children
 }: {
   children: React.ReactNode
 }) {

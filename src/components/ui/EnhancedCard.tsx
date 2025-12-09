@@ -12,29 +12,29 @@ const enhancedCardVariants = cva(
         outlined: 'border-2 shadow-none hover:shadow-sm',
         ghost: 'border-transparent shadow-none hover:bg-muted/50',
         glass: 'glass-effect border-white/20 shadow-lg hover:shadow-xl',
-        gradient: 'gradient-border shadow-md hover:shadow-lg',
+        gradient: 'gradient-border shadow-md hover:shadow-lg'
       },
       size: {
         sm: 'p-4',
         md: 'p-6',
         lg: 'p-8',
-        xl: 'p-10',
+        xl: 'p-10'
       },
       interactive: {
         true: 'cursor-pointer hover:-translate-y-1 active:translate-y-0',
-        false: '',
+        false: ''
       },
       animated: {
         true: 'animate-fade-in',
-        false: '',
+        false: ''
       }
     },
     defaultVariants: {
       variant: 'default',
       size: 'md',
       interactive: false,
-      animated: false,
-    },
+      animated: false
+    }
   }
 )
 
@@ -126,7 +126,7 @@ const EmergencyCard = React.forwardRef<
     2: 'border-l-4 border-l-yellow-400',
     3: 'border-l-4 border-l-orange-400',
     4: 'border-l-4 border-l-red-400',
-    5: 'border-l-4 border-l-red-600',
+    5: 'border-l-4 border-l-red-600'
   }
 
   return (
@@ -155,7 +155,7 @@ const TrustCard = React.forwardRef<
   }
 >(({ className, trustLevel, score, maxScore = 100, children, ...props }, ref) => {
   const percentage = Math.round((score / maxScore) * 100)
-  
+
   return (
     <div
       ref={ref}
@@ -170,9 +170,9 @@ const TrustCard = React.forwardRef<
         <div className="flex items-center gap-2">
           <div className={cn(
             'w-3 h-3 rounded-full',
-            trustLevel === 'excellent' || trustLevel === 'good' ? 'bg-green-500' :
-            trustLevel === 'moderate' ? 'bg-yellow-500' :
-            trustLevel === 'low' ? 'bg-orange-500' : 'bg-red-500'
+            trustLevel === 'excellent' || trustLevel === 'good' ? 'bg-green-500'
+              : trustLevel === 'moderate' ? 'bg-yellow-500'
+                : trustLevel === 'low' ? 'bg-orange-500' : 'bg-red-500'
           )} />
           <span className="text-sm font-medium capitalize">{trustLevel} Trust</span>
         </div>
@@ -184,14 +184,14 @@ const TrustCard = React.forwardRef<
 })
 TrustCard.displayName = 'TrustCard'
 
-export { 
-  EnhancedCard, 
-  EnhancedCardHeader, 
-  EnhancedCardTitle, 
-  EnhancedCardDescription, 
-  EnhancedCardContent, 
+export {
+  EnhancedCard,
+  EnhancedCardHeader,
+  EnhancedCardTitle,
+  EnhancedCardDescription,
+  EnhancedCardContent,
   EnhancedCardFooter,
   EmergencyCard,
   TrustCard,
-  enhancedCardVariants 
+  enhancedCardVariants
 }

@@ -53,7 +53,7 @@ export { customRender as render }
 export { default as userEvent } from '@testing-library/user-event'
 
 // Emergency-specific test utilities
-export const createMockEmergencyEvent = (overrides = {}) => ({
+export const createMockEmergencyEvent = (overrides: {}) => ({
   id: 'test-emergency-1',
   type: 'medical',
   severity: 'high',

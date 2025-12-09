@@ -4,38 +4,47 @@ import { forwardRef } from 'react'
 import { cn } from '@/lib/utils'
 
 export interface ScreenReaderOnlyProps {
+
   /**
    * Content to be read by screen readers only
    */
   children: React.ReactNode
+
   /**
    * CSS class name for the container
    */
   className?: string
+
   /**
    * Whether to make content focusable
    */
   focusable?: boolean
+
   /**
    * ARIA live region setting
    */
   live?: 'off' | 'polite' | 'assertive'
+
   /**
    * Whether content should be atomic (read as a whole)
    */
   atomic?: boolean
+
   /**
    * Whether to announce when content is relevant
    */
   relevant?: 'additions' | 'removals' | 'text' | 'all'
+
   /**
    * Whether to be busy (prevents interruptions)
    */
   busy?: boolean
+
   /**
    * Custom tag name
    */
   as?: keyof JSX.IntrinsicElements
+
   /**
    * Additional ARIA attributes
    */
@@ -44,7 +53,7 @@ export interface ScreenReaderOnlyProps {
 
 /**
  * ScreenReaderOnly component for content that should only be read by screen readers
- * 
+ *
  * Provides a way to include content that is visually hidden but
  * accessible to screen reader users. Common use cases include:
  * - Status messages
@@ -75,10 +84,10 @@ export const ScreenReaderOnly = forwardRef<HTMLElement, ScreenReaderOnlyProps>(
         className={cn(
           // Base screen reader only styles
           'sr-only',
-          
+
           // Make focusable if requested
           focusable && 'sr-only-focusable',
-          
+
           // Custom class
           className
         )}
@@ -103,18 +112,22 @@ ScreenReaderOnly.displayName = 'ScreenReaderOnly'
  * Component for status announcements to screen readers
  */
 export interface ScreenReaderStatusProps {
+
   /**
    * Status message to announce
    */
   message: string
+
   /**
    * Priority of announcement
    */
   priority?: 'polite' | 'assertive'
+
   /**
    * Whether to clear previous announcements
    */
   clear?: boolean
+
   /**
    * CSS class name
    */
@@ -125,7 +138,7 @@ export function ScreenReaderStatus({
   message,
   priority = 'polite',
   clear = false,
-  className,
+  className
 }: ScreenReaderStatusProps) {
   return (
     <ScreenReaderOnly
@@ -142,18 +155,22 @@ export function ScreenReaderStatus({
  * Component for providing context to screen readers
  */
 export interface ScreenReaderContextProps {
+
   /**
    * Contextual information
    */
   children: React.ReactNode
+
   /**
    * Type of context
    */
   context?: 'heading' | 'list' | 'navigation' | 'main' | 'complementary' | 'contentinfo'
+
   /**
    * Label for the context
    */
   label?: string
+
   /**
    * CSS class name
    */
@@ -164,7 +181,7 @@ export function ScreenReaderContext({
   children,
   context,
   label,
-  className,
+  className
 }: ScreenReaderContextProps) {
   const getAriaRole = () => {
     switch (context) {
@@ -201,14 +218,17 @@ export function ScreenReaderContext({
  * Component for hidden form field descriptions
  */
 export interface ScreenReaderFieldDescriptionProps {
+
   /**
    * Description text
    */
   children: React.ReactNode
+
   /**
    * ID of the form field this describes
    */
   htmlFor: string
+
   /**
    * CSS class name
    */
@@ -218,7 +238,7 @@ export interface ScreenReaderFieldDescriptionProps {
 export function ScreenReaderFieldDescription({
   children,
   htmlFor,
-  className,
+  className
 }: ScreenReaderFieldDescriptionProps) {
   return (
     <ScreenReaderOnly
@@ -235,14 +255,17 @@ export function ScreenReaderFieldDescription({
  * Component for hidden form field error messages
  */
 export interface ScreenReaderFieldErrorProps {
+
   /**
    * Error message
    */
   children: React.ReactNode
+
   /**
    * ID of the form field this error is for
    */
   htmlFor: string
+
   /**
    * CSS class name
    */
@@ -252,7 +275,7 @@ export interface ScreenReaderFieldErrorProps {
 export function ScreenReaderFieldError({
   children,
   htmlFor,
-  className,
+  className
 }: ScreenReaderFieldErrorProps) {
   return (
     <ScreenReaderOnly
@@ -271,14 +294,17 @@ export function ScreenReaderFieldError({
  * Component for hidden form field success messages
  */
 export interface ScreenReaderFieldSuccessProps {
+
   /**
    * Success message
    */
   children: React.ReactNode
+
   /**
    * ID of the form field this success message is for
    */
   htmlFor: string
+
   /**
    * CSS class name
    */
@@ -288,7 +314,7 @@ export interface ScreenReaderFieldSuccessProps {
 export function ScreenReaderFieldSuccess({
   children,
   htmlFor,
-  className,
+  className
 }: ScreenReaderFieldSuccessProps) {
   return (
     <ScreenReaderOnly
@@ -307,10 +333,12 @@ export function ScreenReaderFieldSuccess({
  * Component for providing table captions to screen readers
  */
 export interface ScreenReaderTableCaptionProps {
+
   /**
    * Caption text
    */
   children: React.ReactNode
+
   /**
    * CSS class name
    */
@@ -319,7 +347,7 @@ export interface ScreenReaderTableCaptionProps {
 
 export function ScreenReaderTableCaption({
   children,
-  className,
+  className
 }: ScreenReaderTableCaptionProps) {
   return (
     <ScreenReaderOnly
@@ -335,10 +363,12 @@ export function ScreenReaderTableCaption({
  * Component for providing figure descriptions to screen readers
  */
 export interface ScreenReaderFigureDescriptionProps {
+
   /**
    * Description text
    */
   children: React.ReactNode
+
   /**
    * CSS class name
    */
@@ -347,7 +377,7 @@ export interface ScreenReaderFigureDescriptionProps {
 
 export function ScreenReaderFigureDescription({
   children,
-  className,
+  className
 }: ScreenReaderFigureDescriptionProps) {
   return (
     <ScreenReaderOnly
@@ -368,16 +398,16 @@ export function useScreenReaderAnnouncer() {
     clear?: boolean
   } = {}) => {
     const { priority = 'polite', clear = false } = options
-    
+
     // Create temporary element for announcement
     const announcement = document.createElement('div')
     announcement.setAttribute('aria-live', priority)
     announcement.setAttribute('aria-atomic', 'true')
     announcement.className = 'sr-only'
     announcement.textContent = clear ? '\u00A0' : message
-    
+
     document.body.appendChild(announcement)
-    
+
     // Remove after announcement
     setTimeout(() => {
       if (announcement.parentNode) {
@@ -402,7 +432,7 @@ export function useScreenReaderAnnouncer() {
     announce,
     announcePolite,
     announceAssertive,
-    clear,
+    clear
   }
 }
 
@@ -412,7 +442,7 @@ export function useScreenReaderAnnouncer() {
 export function useScreenReaderFocus() {
   const focusElement = (element: HTMLElement, announcement?: string) => {
     element.focus()
-    
+
     if (announcement) {
       // Announce the focus change
       const announcer = document.createElement('div')
@@ -420,9 +450,9 @@ export function useScreenReaderFocus() {
       announcer.setAttribute('aria-atomic', 'true')
       announcer.className = 'sr-only'
       announcer.textContent = announcement
-      
+
       document.body.appendChild(announcer)
-      
+
       setTimeout(() => {
         if (announcer.parentNode) {
           announcer.parentNode.removeChild(announcer)
@@ -440,7 +470,7 @@ export function useScreenReaderFocus() {
 
   return {
     focusElement,
-    announceFocus,
+    announceFocus
   }
 }
 

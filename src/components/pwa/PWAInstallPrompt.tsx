@@ -27,22 +27,22 @@ export function PWAInstallPrompt() {
     // Check if app is already installed
     const checkInstalled = () => {
       // Check if running as standalone PWA
-      const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches ||
-        (window.navigator as any).standalone ||
-        document.referrer.includes('android-app://')
+      const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches
+        || (window.navigator as any).standalone
+        || document.referrer.includes('android-app://')
 
       setIsStandalone(isStandaloneMode)
 
       // Check if already installed (for iOS)
-      const isInStandaloneMode =
-        ('standalone' in window.navigator && (window.navigator as any).standalone) ||
-        window.matchMedia('(display-mode: standalone)').matches
+      const isInStandaloneMode
+        = ('standalone' in window.navigator && (window.navigator as any).standalone)
+        || window.matchMedia('(display-mode: standalone)').matches
 
       setIsInstalled(isInStandaloneMode)
 
       // Check if iOS device
-      const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-        (/Macintosh/.test(navigator.userAgent) && 'ontouchend' in document)
+      const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent)
+        || (/Macintosh/.test(navigator.userAgent) && 'ontouchend' in document)
       setIsIOS(isIOSDevice)
     }
 
@@ -85,7 +85,9 @@ export function PWAInstallPrompt() {
   }, [])
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return
+    if (!deferredPrompt) {
+      return
+    }
 
     try {
       // Show the install prompt
@@ -239,9 +241,9 @@ export function usePWAInstall() {
 
   useEffect(() => {
     const checkInstallStatus = () => {
-      const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches ||
-        (window.navigator as any).standalone ||
-        document.referrer.includes('android-app://')
+      const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches
+        || (window.navigator as any).standalone
+        || document.referrer.includes('android-app://')
       setIsInstalled(isStandaloneMode)
     }
 
@@ -268,7 +270,9 @@ export function usePWAInstall() {
   }, [])
 
   const install = async () => {
-    if (!deferredPrompt) return false
+    if (!deferredPrompt) {
+      return false
+    }
 
     try {
       await deferredPrompt.prompt()

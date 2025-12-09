@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  Smartphone, 
-  Bell, 
-  MapPin, 
-  Battery, 
-  Shield, 
+import {
+  Smartphone,
+  Bell,
+  MapPin,
+  Battery,
+  Shield,
   Settings,
   AlertTriangle,
   CheckCircle,
@@ -42,15 +42,15 @@ export function iOSBackgroundManager({ className }: iOSBackgroundManagerProps) {
     sendTestEmergency,
     requestPermissions,
     triggerLocationCheck,
-    triggerQueueProcessing,
+    triggerQueueProcessing
   } = useiOSBackground()
 
   const { notifications, activeEmergency, dismissEmergency } = useEmergencyNotifications()
-  const { 
-    batteryLevel, 
-    isCharging, 
-    isLowPowerMode, 
-    shouldThrottleBackgroundTasks 
+  const {
+    batteryLevel,
+    isCharging,
+    isLowPowerMode,
+    shouldThrottleBackgroundTasks
   } = useiOSSpecificFeatures()
 
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
@@ -58,7 +58,7 @@ export function iOSBackgroundManager({ className }: iOSBackgroundManagerProps) {
     title: 'Test Emergency',
     message: 'This is a test emergency notification',
     severity: 'high' as const,
-    requiresAction: true,
+    requiresAction: true
   })
 
   // Initialize on mount
@@ -106,7 +106,7 @@ export function iOSBackgroundManager({ className }: iOSBackgroundManagerProps) {
             <Smartphone className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <h3 className="text-lg font-medium mb-2">iOS Only Feature</h3>
             <p className="text-sm">
-              This component is only available on iOS devices for managing 
+              This component is only available on iOS devices for managing
               background notifications and location services.
             </p>
           </div>
@@ -178,7 +178,7 @@ export function iOSBackgroundManager({ className }: iOSBackgroundManagerProps) {
         {/* Silent Push Notifications */}
         <Card>
           <CardContent className="p-4">
-            <div 
+            <div
               className="flex items-center justify-between cursor-pointer"
               onClick={() => setExpandedSection(expandedSection === 'push' ? null : 'push')}
             >
@@ -233,7 +233,7 @@ export function iOSBackgroundManager({ className }: iOSBackgroundManagerProps) {
         {/* Background Location */}
         <Card>
           <CardContent className="p-4">
-            <div 
+            <div
               className="flex items-center justify-between cursor-pointer"
               onClick={() => setExpandedSection(expandedSection === 'location' ? null : 'location')}
             >
@@ -290,7 +290,7 @@ export function iOSBackgroundManager({ className }: iOSBackgroundManagerProps) {
         {/* Battery Optimization */}
         <Card>
           <CardContent className="p-4">
-            <div 
+            <div
               className="flex items-center justify-between cursor-pointer"
               onClick={() => setExpandedSection(expandedSection === 'battery' ? null : 'battery')}
             >
@@ -337,7 +337,7 @@ export function iOSBackgroundManager({ className }: iOSBackgroundManagerProps) {
                         </div>
                       </div>
                     )}
-                    
+
                     {shouldThrottleBackgroundTasks && (
                       <div className="bg-red-50 p-3 rounded-lg border border-red-200">
                         <div className="flex items-start gap-2">
@@ -434,9 +434,9 @@ export function iOSBackgroundManager({ className }: iOSBackgroundManagerProps) {
               <label className="text-sm font-medium">Severity</label>
               <select
                 value={testPayload.severity}
-                onChange={(e) => setTestPayload(prev => ({ 
-                  ...prev, 
-                  severity: e.target.value as 'low' | 'medium' | 'high' | 'critical' 
+                onChange={(e) => setTestPayload(prev => ({
+                  ...prev,
+                  severity: e.target.value as 'low' | 'medium' | 'high' | 'critical'
                 }))}
                 className="px-3 py-1 border rounded-md text-sm"
               >
@@ -452,7 +452,7 @@ export function iOSBackgroundManager({ className }: iOSBackgroundManagerProps) {
                 <Zap className="h-4 w-4 mr-2" />
                 Send Test Emergency
               </Button>
-              
+
               <Button
                 variant="outline"
                 onClick={triggerQueueProcessing}

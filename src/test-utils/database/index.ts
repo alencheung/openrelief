@@ -1,14 +1,14 @@
 /**
  * Advanced database testing utilities for OpenRelief emergency coordination system
- * 
+ *
  * This file provides comprehensive testing utilities for database operations,
  * including transaction testing, rollback scenarios, and performance testing.
  */
 
 import { createMockSupabaseClient } from '../mocks/supabase'
-import { 
-  createEmergencyEvent, 
-  createUser, 
+import {
+  createEmergencyEvent,
+  createUser,
   createTrustScore,
   emergencyScenarios,
   testUsers,
@@ -29,7 +29,7 @@ export class DatabaseTestUtils {
   // Initialize database with test data
   async initializeTestData() {
     this.resetDatabase()
-    
+
     // Insert test users
     Object.values(testUsers).forEach(user => {
       this.mockDatabase.user_profiles = this.mockDatabase.user_profiles || []
@@ -40,14 +40,14 @@ export class DatabaseTestUtils {
         role: user.role,
         trust_score: user.trustScore,
         verified: user.verified,
-        last_known_location: user.location ? 
-          `POINT(${user.location.longitude} ${user.location.latitude})` : null,
+        last_known_location: user.location
+          ? `POINT(${user.location.longitude} ${user.location.latitude})` : null,
         skills: user.skills,
         availability: user.availability,
         certifications: user.certifications,
         experience: user.experience,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       })
     })
 
@@ -59,7 +59,7 @@ export class DatabaseTestUtils {
       { id: 4, name: 'Accident', icon: 'accident', color: 'yellow', is_active: true },
       { id: 5, name: 'Security', icon: 'security', color: 'purple', is_active: true },
       { id: 6, name: 'Utility', icon: 'utility', color: 'gray', is_active: true },
-      { id: 7, name: 'Other', icon: 'other', color: 'green', is_active: true },
+      { id: 7, name: 'Other', icon: 'other', color: 'green', is_active: true }
     ]
 
     // Insert emergency events
@@ -78,7 +78,7 @@ export class DatabaseTestUtils {
         trust_weight: event.trustScore,
         created_at: event.reportedAt,
         updated_at: event.reportedAt,
-        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
       })
     })
 
@@ -99,7 +99,7 @@ export class DatabaseTestUtils {
         community_endorsements: trustScore.factors.communityEndorsements,
         verified_skills: trustScore.factors.verifiedSkills,
         last_updated: trustScore.lastUpdated,
-        created_at: trustScore.lastUpdated,
+        created_at: trustScore.lastUpdated
       })
     })
 
@@ -118,7 +118,7 @@ export class DatabaseTestUtils {
       id: `tx-${Date.now()}`,
       startTime: Date.now(),
       operations: [],
-      rollbackData: JSON.parse(JSON.stringify(this.mockDatabase)),
+      rollbackData: JSON.parse(JSON.stringify(this.mockDatabase))
     }
     this.transactions.push(transaction)
     return transaction.id
@@ -159,7 +159,7 @@ export class DatabaseTestUtils {
       accident: 4,
       security: 5,
       utility: 6,
-      other: 7,
+      other: 7
     }
     return typeMap[type] || 7
   }
@@ -169,7 +169,7 @@ export class DatabaseTestUtils {
       low: 1,
       medium: 2,
       high: 3,
-      critical: 4,
+      critical: 4
     }
     return severityMap[severity] || 2
   }
@@ -177,7 +177,7 @@ export class DatabaseTestUtils {
   // Performance testing utilities
   async measureQueryPerformance(queryFn: () => Promise<any>, iterations = 100) {
     const times: number[] = []
-    
+
     for (let i = 0; i < iterations; i++) {
       const start = performance.now()
       await queryFn()
@@ -191,7 +191,7 @@ export class DatabaseTestUtils {
       max: Math.max(...times),
       median: times.sort((a, b) => a - b)[Math.floor(times.length / 2)],
       p95: times.sort((a, b) => a - b)[Math.floor(times.length * 0.95)],
-      p99: times.sort((a, b) => a - b)[Math.floor(times.length * 0.99)],
+      p99: times.sort((a, b) => a - b)[Math.floor(times.length * 0.99)]
     }
   }
 
@@ -225,7 +225,7 @@ export class DatabaseTestUtils {
             })
         )
       }
-      
+
       if (promises.length >= concurrency) {
         await Promise.race(promises)
       }
@@ -238,7 +238,7 @@ export class DatabaseTestUtils {
       successful: results.length,
       failed: errors.length,
       errors,
-      successRate: (results.length / operations) * 100,
+      successRate: (results.length / operations) * 100
     }
   }
 
@@ -263,7 +263,7 @@ export class DatabaseTestUtils {
     confirmations.forEach((confirmation: any) => {
       const eventExists = events.some((event: any) => event.id === confirmation.event_id)
       const userExists = users.some((user: any) => user.user_id === confirmation.user_id)
-      
+
       if (!eventExists) {
         issues.push(`Confirmation ${confirmation.id} has non-existent event: ${confirmation.event_id}`)
       }
@@ -277,7 +277,7 @@ export class DatabaseTestUtils {
       if (event.severity < 1 || event.severity > 4) {
         issues.push(`Event ${event.id} has invalid severity: ${event.severity}`)
       }
-      
+
       if (!['pending', 'active', 'resolved', 'closed'].includes(event.status)) {
         issues.push(`Event ${event.id} has invalid status: ${event.status}`)
       }
@@ -285,7 +285,7 @@ export class DatabaseTestUtils {
 
     return {
       isValid: issues.length === 0,
-      issues,
+      issues
     }
   }
 
@@ -321,7 +321,7 @@ export class DatabaseTestUtils {
       events.push(createEmergencyEvent({
         id: `bulk-event-${i}`,
         title: `Bulk Event ${i}`,
-        description: `Description for bulk event ${i}`,
+        description: `Description for bulk event ${i}`
       }))
     }
 
@@ -338,7 +338,7 @@ export class DatabaseTestUtils {
       trust_weight: event.trustScore,
       created_at: event.reportedAt,
       updated_at: event.reportedAt,
-      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
     })))
 
     return events
@@ -350,7 +350,7 @@ export class DatabaseTestUtils {
     for (let i = 0; i < 10; i++) {
       concurrentEvents.push(createEmergencyEvent({
         id: `concurrent-event-${i}`,
-        title: `Concurrent Event ${i}`,
+        title: `Concurrent Event ${i}`
       }))
     }
 
@@ -371,7 +371,7 @@ export class DatabaseTestUtils {
       severity: 10, // Invalid severity
       trust_weight: -1, // Invalid trust weight
       created_at: 'invalid-date',
-      updated_at: null,
+      updated_at: null
     })
 
     return ['corrupted-event-1']
@@ -383,8 +383,8 @@ export class DatabaseTestUtils {
       delayedOperations: [
         { type: 'insert', table: 'emergency_events', delay: 5000 },
         { type: 'update', table: 'emergency_events', delay: 3000 },
-        { type: 'delete', table: 'emergency_events', delay: 1000 },
-      ],
+        { type: 'delete', table: 'emergency_events', delay: 1000 }
+      ]
     }
   }
 }

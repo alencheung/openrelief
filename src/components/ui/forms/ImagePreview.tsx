@@ -11,25 +11,25 @@ const imagePreviewVariants = cva(
         default: 'border-border bg-background',
         card: 'border-border bg-card shadow-sm',
         outlined: 'border-2 border-border bg-background',
-        ghost: 'border-transparent bg-background',
+        ghost: 'border-transparent bg-background'
       },
       size: {
         sm: 'w-16 h-16',
         default: 'w-24 h-24',
         lg: 'w-32 h-32',
-        xl: 'w-48 h-48',
+        xl: 'w-48 h-48'
       },
       shape: {
         square: 'aspect-square',
         rectangle: 'aspect-video',
-        circle: 'rounded-full',
-      },
+        circle: 'rounded-full'
+      }
     },
     defaultVariants: {
       variant: 'default',
       size: 'default',
-      shape: 'square',
-    },
+      shape: 'square'
+    }
   }
 )
 
@@ -68,9 +68,9 @@ export interface ImagePreviewProps
 }
 
 const ImagePreview = React.forwardRef<HTMLDivElement, ImagePreviewProps>(
-  ({ 
-    className, 
-    variant, 
+  ({
+    className,
+    variant,
     size,
     shape,
     images,
@@ -87,62 +87,64 @@ const ImagePreview = React.forwardRef<HTMLDivElement, ImagePreviewProps>(
     renderImage,
     renderOverlay,
     renderActions,
-    ...props 
+    ...props
   }, ref) => {
     const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null)
     const [dragOverIndex, setDragOverIndex] = React.useState<number | null>(null)
     const [selectedImage, setSelectedImage] = React.useState<ImagePreviewItem | null>(null)
     const [isLightboxOpen, setIsLightboxOpen] = React.useState(false)
-    
+
     // Handle drag start
     const handleDragStart = (index: number) => {
       setDraggedIndex(index)
     }
-    
+
     // Handle drag over
     const handleDragOver = (e: React.DragEvent, index: number) => {
       e.preventDefault()
       setDragOverIndex(index)
     }
-    
+
     // Handle drag leave
     const handleDragLeave = () => {
       setDragOverIndex(null)
     }
-    
+
     // Handle drop
     const handleDrop = (e: React.DragEvent, dropIndex: number) => {
       e.preventDefault()
       setDragOverIndex(null)
-      
+
       if (draggedIndex !== null && draggedIndex !== dropIndex && onReorder) {
         onReorder(draggedIndex, dropIndex)
       }
-      
+
       setDraggedIndex(null)
     }
-    
+
     // Handle image click
     const handleImageClick = (image: ImagePreviewItem, index: number) => {
       setSelectedImage(image)
       setIsLightboxOpen(true)
       onImageClick?.(image, index)
     }
-    
+
     // Handle image removal
     const handleRemove = (image: ImagePreviewItem) => {
       onRemove?.(image.id, image)
     }
-    
+
     // Format file size
     const formatFileSize = (bytes: number) => {
-      if (bytes === 0) return '0 Bytes'
+      if (bytes === 0) {
+        return '0 Bytes'
+      }
       const k = 1024
       const sizes = ['Bytes', 'KB', 'MB', 'GB']
       const i = Math.floor(Math.log(bytes) / Math.log(k))
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
     }
-    
+
     // Get status color
     const getStatusColor = (status?: string) => {
       switch (status) {
@@ -152,7 +154,7 @@ const ImagePreview = React.forwardRef<HTMLDivElement, ImagePreviewProps>(
         default: return 'text-muted-foreground'
       }
     }
-    
+
     // Get status icon
     const getStatusIcon = (status?: string) => {
       switch (status) {
@@ -161,17 +163,17 @@ const ImagePreview = React.forwardRef<HTMLDivElement, ImagePreviewProps>(
         default: return null
       }
     }
-    
+
     return (
       <div ref={ref} className={cn('space-y-4', className)} {...props}>
         {/* Images Grid */}
         <div className={cn(
           'grid gap-3',
-          size === 'sm' ? 'grid-cols-4 sm:grid-cols-6 md:grid-cols-8' :
-          size === 'default' ? 'grid-cols-3 sm:grid-cols-4 md:grid-cols-6' :
-          size === 'lg' ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4' :
-          size === 'xl' ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3' :
-          'grid-cols-3'
+          size === 'sm' ? 'grid-cols-4 sm:grid-cols-6 md:grid-cols-8'
+            : size === 'default' ? 'grid-cols-3 sm:grid-cols-4 md:grid-cols-6'
+              : size === 'lg' ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4'
+                : size === 'xl' ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3'
+                  : 'grid-cols-3'
         )}>
           {images.map((image, index) => (
             <div
@@ -202,7 +204,7 @@ const ImagePreview = React.forwardRef<HTMLDivElement, ImagePreviewProps>(
                   onClick={() => editable && handleImageClick(image, index)}
                 />
               )}
-              
+
               {/* Overlay */}
               {renderOverlay ? (
                 renderOverlay(image, index)
@@ -216,17 +218,17 @@ const ImagePreview = React.forwardRef<HTMLDivElement, ImagePreviewProps>(
                   </button>
                 </div>
               )}
-              
+
               {/* Progress Bar */}
               {showProgress && image.status === 'uploading' && image.progress !== undefined && (
                 <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/20">
-                  <div 
+                  <div
                     className="h-full bg-primary transition-all duration-normal"
                     style={{ width: `${image.progress}%` }}
                   />
                 </div>
               )}
-              
+
               {/* Actions */}
               {renderActions ? (
                 renderActions(image, index)
@@ -245,7 +247,7 @@ const ImagePreview = React.forwardRef<HTMLDivElement, ImagePreviewProps>(
               )}
             </div>
           ))}
-          
+
           {/* Add More Indicator */}
           {maxImages && images.length < maxImages && (
             <div className={cn(
@@ -261,7 +263,7 @@ const ImagePreview = React.forwardRef<HTMLDivElement, ImagePreviewProps>(
             </div>
           )}
         </div>
-        
+
         {/* Image Details */}
         {showCaption && (
           <div className="space-y-2">
@@ -295,10 +297,10 @@ const ImagePreview = React.forwardRef<HTMLDivElement, ImagePreviewProps>(
             ))}
           </div>
         )}
-        
+
         {/* Lightbox */}
         {isLightboxOpen && selectedImage && (
-          <div 
+          <div
             className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
             onClick={() => setIsLightboxOpen(false)}
           >
@@ -308,7 +310,7 @@ const ImagePreview = React.forwardRef<HTMLDivElement, ImagePreviewProps>(
                 alt={selectedImage.name}
                 className="max-w-full max-h-full object-contain"
               />
-              
+
               {/* Close Button */}
               <button
                 onClick={() => setIsLightboxOpen(false)}
@@ -316,7 +318,7 @@ const ImagePreview = React.forwardRef<HTMLDivElement, ImagePreviewProps>(
               >
                 <X className="h-4 w-4" />
               </button>
-              
+
               {/* Image Info */}
               <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white p-4">
                 <div className="text-lg font-medium">{selectedImage.name}</div>

@@ -1,6 +1,6 @@
 /**
  * Tests for Privacy Settings API Endpoint
- * 
+ *
  * These tests verify the functionality of the privacy settings API,
  * including authentication, validation, and data handling.
  */
@@ -143,7 +143,7 @@ describe('/api/privacy/settings Endpoint', () => {
       const request = {
         json: async () => ({
           settings: {
-            locationSharing: true,
+            locationSharing: true
             // Missing other required fields
           }
         })
@@ -254,11 +254,11 @@ describe('/api/privacy/settings Endpoint', () => {
       expect(response.status).toBe(200)
       const json = await response.json()
       expect(json.success).toBe(true)
-      
+
       // Check that only specified fields changed
       expect(json.data.settings.locationSharing).toBe(false)
       expect(json.data.settings.researchParticipation).toBe(true)
-      
+
       // Check that other fields remained unchanged
       expect(json.data.settings.locationPrecision).toBe(3)
       expect(json.data.settings.dataRetentionDays).toBe(30)

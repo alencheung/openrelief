@@ -4,18 +4,22 @@ import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 
 export interface SkipLink {
+
   /**
    * Unique identifier for the link
    */
   id: string
+
   /**
    * Text to display for the link
    */
   label: string
+
   /**
    * CSS selector for the target element
    */
   target: string
+
   /**
    * Whether to show the link by default
    */
@@ -23,22 +27,27 @@ export interface SkipLink {
 }
 
 export interface SkipLinksProps {
+
   /**
    * Array of skip links to display
    */
   links: SkipLink[]
+
   /**
    * CSS class name for the container
    */
   className?: string
+
   /**
    * Whether to show links on focus only (default behavior)
    */
   focusOnly?: boolean
+
   /**
    * Position of the skip links container
    */
   position?: 'top' | 'bottom' | 'left' | 'right'
+
   /**
    * Callback when a skip link is activated
    */
@@ -47,7 +56,7 @@ export interface SkipLinksProps {
 
 /**
  * SkipLinks component for keyboard navigation accessibility
- * 
+ *
  * Provides links that allow keyboard users to skip to main content areas,
  * bypassing repetitive navigation elements.
  */
@@ -56,7 +65,7 @@ export function SkipLinks({
   className,
   focusOnly = true,
   position = 'top',
-  onSkip,
+  onSkip
 }: SkipLinksProps) {
   const [isFocused, setIsFocused] = useState(false)
 
@@ -65,21 +74,21 @@ export function SkipLinks({
    */
   const handleSkip = (link: SkipLink) => {
     const targetElement = document.querySelector(link.target) as HTMLElement
-    
+
     if (targetElement) {
       // Set focus to target element
       targetElement.focus()
-      
+
       // Scroll element into view
       targetElement.scrollIntoView({
         behavior: 'smooth',
-        block: 'start',
+        block: 'start'
       })
-      
+
       // Announce to screen readers
       const announcement = `Skipped to ${link.label}`
       announceToScreenReader(announcement)
-      
+
       // Call callback
       onSkip?.(link.id, link.target)
     } else {
@@ -96,9 +105,9 @@ export function SkipLinks({
     announcement.setAttribute('aria-atomic', 'true')
     announcement.className = 'sr-only'
     announcement.textContent = message
-    
+
     document.body.appendChild(announcement)
-    
+
     // Remove after announcement
     setTimeout(() => {
       if (announcement.parentNode) {
@@ -113,14 +122,14 @@ export function SkipLinks({
   useEffect(() => {
     const handleFocusIn = () => setIsFocused(true)
     const handleFocusOut = () => setIsFocused(false)
-    
+
     // Add focus event listeners to the skip links container
     const container = document.getElementById('skip-links')
     if (container) {
       container.addEventListener('focusin', handleFocusIn)
       container.addEventListener('focusout', handleFocusOut)
     }
-    
+
     return () => {
       if (container) {
         container.removeEventListener('focusin', handleFocusIn)
@@ -173,19 +182,19 @@ export function SkipLinks({
         // Base styles
         'fixed z-50 bg-background border border-border shadow-lg',
         'transition-all duration-200 ease-in-out',
-        
+
         // Position styles
         getPositionStyles(),
-        
+
         // Orientation
         getOrientation(),
-        
+
         // Visibility
         isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full',
-        
+
         // Focus only behavior
         focusOnly && 'focus-within:opacity-100 focus-within:translate-y-0',
-        
+
         // Custom class
         className
       )}
@@ -201,10 +210,10 @@ export function SkipLinks({
             'bg-background hover:bg-accent hover:text-accent-foreground',
             'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
             'border-r border-border last:border-r-0',
-            
+
             // Responsive
             'whitespace-nowrap',
-            
+
             // Accessibility
             'transition-colors duration-150'
           )}
@@ -226,28 +235,28 @@ export const defaultSkipLinks: SkipLink[] = [
   {
     id: 'skip-to-main',
     label: 'Skip to main content',
-    target: '#main-content',
+    target: '#main-content'
   },
   {
     id: 'skip-to-navigation',
     label: 'Skip to navigation',
-    target: '#main-navigation',
+    target: '#main-navigation'
   },
   {
     id: 'skip-to-emergency-report',
     label: 'Skip to emergency report',
-    target: '#emergency-report',
+    target: '#emergency-report'
   },
   {
     id: 'skip-to-map',
     label: 'Skip to map',
-    target: '#emergency-map',
+    target: '#emergency-map'
   },
   {
     id: 'skip-to-search',
     label: 'Skip to search',
-    target: '#search-input',
-  },
+    target: '#search-input'
+  }
 ]
 
 /**
@@ -307,6 +316,6 @@ export function useSkipLinks() {
     addSkipLink,
     removeSkipLink,
     focusFirstSkipLink,
-    hasSkipLinks,
+    hasSkipLinks
   }
 }

@@ -7,8 +7,8 @@ console.log('🔍 DEBUG: NEXT_PUBLIC_SUPABASE_ANON_KEY:', process.env.NEXT_PUBLI
 
 // Check if Supabase environment variables are configured
 const isSupabaseConfigured = !!(
-  process.env.NEXT_PUBLIC_SUPABASE_URL &&
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  process.env.NEXT_PUBLIC_SUPABASE_URL
+  && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
 
 if (!isSupabaseConfigured) {
@@ -26,13 +26,13 @@ export const supabase = isSupabaseConfigured
     auth: {
       autoRefreshToken: true,
       persistSession: true,
-      detectSessionInUrl: true,
+      detectSessionInUrl: true
     },
     realtime: {
       params: {
-        eventsPerSecond: 10,
-      },
-    },
+        eventsPerSecond: 10
+      }
+    }
   })
   : createMockSupabaseClient()
 
@@ -43,8 +43,8 @@ export const supabaseAdmin = isSupabaseConfigured ? createClient(
   {
     auth: {
       autoRefreshToken: false,
-      persistSession: false,
-    },
+      persistSession: false
+    }
   }
 ) : createMockSupabaseClient()
 
@@ -64,12 +64,12 @@ function createMockSupabaseClient() {
               user: {
                 id: 'mock-user-id',
                 email,
-                email_confirmed_at: new Date().toISOString(),
+                email_confirmed_at: new Date().toISOString()
               },
               session: {
                 access_token: 'mock-access-token',
                 refresh_token: 'mock-refresh-token',
-                expires_at: Date.now() + 3600000,
+                expires_at: Date.now() + 3600000
               }
             },
             error: null
@@ -91,12 +91,12 @@ function createMockSupabaseClient() {
             user: {
               id: `mock-user-${Date.now()}`,
               email,
-              email_confirmed_at: new Date().toISOString(),
+              email_confirmed_at: new Date().toISOString()
             },
             session: {
               access_token: 'mock-access-token',
               refresh_token: 'mock-refresh-token',
-              expires_at: Date.now() + 3600000,
+              expires_at: Date.now() + 3600000
             }
           },
           error: null
@@ -107,7 +107,7 @@ function createMockSupabaseClient() {
         console.log('🔧 DEBUG: Mock signOut')
         await new Promise(resolve => setTimeout(resolve, 500))
         return { error: null }
-      },
+      }
     },
 
     from: (table: string) => ({
@@ -118,7 +118,7 @@ function createMockSupabaseClient() {
               user_id: 'mock-user-id',
               trust_score: 0.5,
               created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
             } : null,
             error: null
           }),
@@ -180,7 +180,9 @@ export const supabaseHelpers = {
       .eq('user_id', userId)
       .single()
 
-    if (error) throw error
+    if (error) {
+      throw error
+    }
     return data
   },
 
@@ -192,7 +194,9 @@ export const supabaseHelpers = {
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      throw error
+    }
     return data
   },
 
@@ -203,7 +207,9 @@ export const supabaseHelpers = {
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      throw error
+    }
     return data
   },
 
@@ -236,7 +242,9 @@ export const supabaseHelpers = {
     }
 
     const { data, error } = await query
-    if (error) throw error
+    if (error) {
+      throw error
+    }
     return data
   },
 
@@ -254,7 +262,9 @@ export const supabaseHelpers = {
       `)
       .single()
 
-    if (error) throw error
+    if (error) {
+      throw error
+    }
     return data
   },
 
@@ -269,7 +279,9 @@ export const supabaseHelpers = {
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      throw error
+    }
     return data
   },
 
@@ -287,12 +299,14 @@ export const supabaseHelpers = {
         user_id: userId,
         confirmation_type: confirmationType,
         location: location ? `POINT(${location.lng} ${location.lat})` : null,
-        trust_weight: 0.1, // Will be updated by trigger
+        trust_weight: 0.1 // Will be updated by trigger
       })
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      throw error
+    }
     return data
   },
 
@@ -308,7 +322,9 @@ export const supabaseHelpers = {
       `)
       .eq('event_id', eventId)
 
-    if (error) throw error
+    if (error) {
+      throw error
+    }
     return data
   },
 
@@ -323,7 +339,9 @@ export const supabaseHelpers = {
       .eq('user_id', userId)
       .eq('is_active', true)
 
-    if (error) throw error
+    if (error) {
+      throw error
+    }
     return data
   },
 
@@ -333,12 +351,14 @@ export const supabaseHelpers = {
       .upsert({
         user_id: userId,
         topic_id: topicId,
-        is_active: true,
+        is_active: true
       })
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      throw error
+    }
     return data
   },
 
@@ -351,7 +371,9 @@ export const supabaseHelpers = {
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      throw error
+    }
     return data
   },
 
@@ -363,7 +385,9 @@ export const supabaseHelpers = {
       .eq('is_active', true)
       .order('name')
 
-    if (error) throw error
+    if (error) {
+      throw error
+    }
     return data
   },
 
@@ -376,7 +400,7 @@ export const supabaseHelpers = {
         {
           event: '*',
           schema: 'public',
-          table: 'emergency_events',
+          table: 'emergency_events'
         },
         callback
       )
@@ -392,12 +416,12 @@ export const supabaseHelpers = {
           event: 'UPDATE',
           schema: 'public',
           table: 'user_profiles',
-          filter: 'last_known_location=not.null',
+          filter: 'last_known_location=not.null'
         },
         callback
       )
       .subscribe()
-  },
+  }
 }
 
 export default supabase

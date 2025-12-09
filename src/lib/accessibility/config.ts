@@ -1,36 +1,37 @@
 /**
  * Accessibility configuration for OpenRelief
- * 
+ *
  * Defines WCAG compliance levels, testing rules,
  * and accessibility preferences for the application.
  */
 
 export interface AccessibilityConfig {
+
   /**
    * WCAG compliance level target
    */
   wcagLevel: 'A' | 'AA' | 'AAA'
-  
+
   /**
    * Whether to enable accessibility testing in development
    */
   enableTesting: boolean
-  
+
   /**
    * Whether to enable accessibility linting
    */
   enableLinting: boolean
-  
+
   /**
    * Accessibility testing rules to apply
    */
   testRules: string[]
-  
+
   /**
    * Custom accessibility rules
    */
   customRules: AccessibilityRule[]
-  
+
   /**
    * Default accessibility settings
    */
@@ -48,41 +49,42 @@ export interface AccessibilityConfig {
 }
 
 export interface AccessibilityRule {
+
   /**
    * Unique identifier for the rule
    */
   id: string
-  
+
   /**
    * Human-readable name for the rule
    */
   name: string
-  
+
   /**
    * Description of what the rule checks
    */
   description: string
-  
+
   /**
    * WCAG guideline reference
    */
   wcagGuideline: string
-  
+
   /**
    * Severity level for violations
    */
   severity: 'error' | 'warning' | 'info'
-  
+
   /**
    * Selector for elements to test
    */
   selector: string
-  
+
   /**
    * Test function that returns violation details
    */
   test: (element: HTMLElement) => AccessibilityViolation | null
-  
+
   /**
    * Whether the rule is enabled
    */
@@ -90,31 +92,32 @@ export interface AccessibilityRule {
 }
 
 export interface AccessibilityViolation {
+
   /**
    * Rule that was violated
    */
   rule: string
-  
+
   /**
    * Element that violated the rule
    */
   element: HTMLElement
-  
+
   /**
    * Message describing the violation
    */
   message: string
-  
+
   /**
    * Suggestion for fixing the violation
    */
   suggestion: string
-  
+
   /**
    * Severity of the violation
    */
   severity: 'error' | 'warning' | 'info'
-  
+
   /**
    * WCAG guideline reference
    */
@@ -144,7 +147,7 @@ export const defaultAccessibilityConfig: AccessibilityConfig = {
     'button-states',
     'form-validation',
     'error-handling',
-    'timing-adjustments',
+    'timing-adjustments'
   ],
   customRules: [],
   defaultSettings: {
@@ -156,8 +159,8 @@ export const defaultAccessibilityConfig: AccessibilityConfig = {
     textSize: 'medium',
     colorScheme: 'light',
     showFocusIndicators: true,
-    audioAnnouncements: false,
-  },
+    audioAnnouncements: false
+  }
 }
 
 /**
@@ -219,7 +222,7 @@ export const wcagGuidelines = {
   '3.3.4': 'Error Recovery: Error recovery is possible',
   '4.1.1': 'Parsing: Content can be parsed by assistive technologies',
   '4.1.2': 'Name, Role, Value: Name, role, and value can be programmatically set',
-  '4.1.3': 'Status Messages: Status messages can be programmatically determined',
+  '4.1.3': 'Status Messages: Status messages can be programmatically determined'
 }
 
 /**
@@ -236,7 +239,7 @@ export const accessibilityTestCategories = {
   media: 'Media Accessibility',
   timing: 'Timing and Animations',
   error: 'Error Handling',
-  semantic: 'Semantic HTML',
+  semantic: 'Semantic HTML'
 }
 
 /**
@@ -245,7 +248,7 @@ export const accessibilityTestCategories = {
 export const accessibilitySeverity = {
   error: 'Error - WCAG A violation',
   warning: 'Warning - WCAG AA violation',
-  info: 'Info - Best practice recommendation',
+  info: 'Info - Best practice recommendation'
 }
 
 /**
@@ -258,7 +261,7 @@ export const screenReaderPatterns = [
   /\bVoiceOver\b/,
   /\bTalkBack\b/,
   /\bOrca\b/,
-  /\bChromeVox\b/,
+  /\bChromeVox\b/
 ]
 
 /**
@@ -271,7 +274,7 @@ export const accessibilityAPISupport = {
   customElements: 'customElements' in window,
   intersectionObserver: 'IntersectionObserver' in window,
   mutationObserver: 'MutationObserver' in window,
-  resizeObserver: 'ResizeObserver' in window,
+  resizeObserver: 'ResizeObserver' in window
 }
 
 /**
@@ -281,24 +284,24 @@ export const accessibilityThresholds = {
   contrastRatio: {
     minimum: 3.0, // WCAG A
     enhanced: 4.5, // WCAG AA
-    maximum: 7.0, // WCAG AAA
+    maximum: 7.0 // WCAG AAA
   },
   tapTargetSize: {
     minimum: 44, // WCAG AA
-    recommended: 48, // iOS HIG
+    recommended: 48 // iOS HIG
   },
   fontSize: {
     minimum: 16, // WCAG AA
-    recommended: 18, // Better readability
+    recommended: 18 // Better readability
   },
   lineHeight: {
     minimum: 1.5, // WCAG AA
-    recommended: 1.8, // Better readability
+    recommended: 1.8 // Better readability
   },
   spacing: {
     minimum: 0.04, // 4% of font size
-    recommended: 0.06, // 6% of font size
-  },
+    recommended: 0.06 // 6% of font size
+  }
 }
 
 /**
@@ -310,22 +313,22 @@ export const accessibilityColorSchemes = {
     background: '#ffffff',
     foreground: '#000000',
     primary: '#007bff',
-    secondary: '#6c757d',
+    secondary: '#6c757d'
   },
   dark: {
     name: 'Dark',
     background: '#1a1a1a',
     foreground: '#ffffff',
     primary: '#0d6efd',
-    secondary: '#6c757d',
+    secondary: '#6c757d'
   },
   highContrast: {
     name: 'High Contrast',
     background: '#000000',
     foreground: '#ffffff',
     primary: '#ffff00',
-    secondary: '#808080',
-  },
+    secondary: '#808080'
+  }
 }
 
 /**
@@ -338,20 +341,20 @@ export const accessibilityFonts = {
     'Open Sans',
     'Helvetica Neue',
     'Arial',
-    'sans-serif',
+    'sans-serif'
   ],
   serif: [
     'Georgia',
     'Times New Roman',
-    'serif',
+    'serif'
   ],
   mono: [
     'JetBrains Mono',
     'Fira Code',
     'Consolas',
     'Monaco',
-    'monospace',
-  ],
+    'monospace'
+  ]
 }
 
 /**
@@ -360,23 +363,23 @@ export const accessibilityFonts = {
 export const accessibilityBreakpoints = {
   mobile: {
     max: 767,
-    description: 'Mobile devices',
+    description: 'Mobile devices'
   },
   tablet: {
     min: 768,
     max: 1023,
-    description: 'Tablet devices',
+    description: 'Tablet devices'
   },
   desktop: {
     min: 1024,
-    description: 'Desktop devices',
+    description: 'Desktop devices'
   },
   large: {
     min: 1440,
-    description: 'Large screens',
+    description: 'Large screens'
   },
   xlarge: {
     min: 1920,
-    description: 'Extra large screens',
-  },
+    description: 'Extra large screens'
+  }
 }

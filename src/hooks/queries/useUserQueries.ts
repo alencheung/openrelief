@@ -43,7 +43,7 @@ export const useUserProfile = (userId: string, options: { applyPrivacy?: boolean
             applyDifferentialPrivacy: privacyContext.settings.differentialPrivacy,
             clusterUsers: false // Don't cluster single user profiles
           })
-          
+
           protectedData = protectedResult.data[0]
 
           // Encrypt sensitive fields if encryption is enabled
@@ -53,7 +53,7 @@ export const useUserProfile = (userId: string, options: { applyPrivacy?: boolean
               phone: data.phone,
               address: data.address
             }
-            
+
             const encryptedData = await encryptSensitiveData(sensitiveFields, userId)
             if (encryptedData) {
               protectedData.encrypted_fields = encryptedData
@@ -81,14 +81,14 @@ export const useUserProfile = (userId: string, options: { applyPrivacy?: boolean
             contributionFrequency: 0,
             communityEndorsement: 0.5,
             penaltyScore: 0,
-            expertiseAreas: [],
-          },
+            expertiseAreas: []
+          }
         })
 
         // Cache for offline use
         useOfflineStore.getState().setCache(`user-profile-${userId}`, protectedData, {
           tags: ['user', 'profile'],
-          expiresAt: Date.now() + (10 * 60 * 1000), // 10 minutes
+          expiresAt: Date.now() + (10 * 60 * 1000) // 10 minutes
         })
 
         return protectedData
@@ -104,7 +104,7 @@ export const useUserProfile = (userId: string, options: { applyPrivacy?: boolean
     },
     enabled: !!userId,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: 2,
+    retry: 2
   })
 }
 
@@ -122,7 +122,7 @@ export const useCreateUserProfile = () => {
             table: 'user_profiles',
             data: profile,
             priority: 'high',
-            maxRetries: 5,
+            maxRetries: 5
           })
 
           addNotification({
@@ -131,7 +131,7 @@ export const useCreateUserProfile = () => {
             message: 'Your profile will be created when you\'re back online.',
             severity: 'info',
             priority: 'medium',
-            channels: { inApp: true, push: false, email: false, sms: false },
+            channels: { inApp: true, push: false, email: false, sms: false }
           })
 
           return profile
@@ -145,7 +145,7 @@ export const useCreateUserProfile = () => {
           message: 'Your profile has been successfully created.',
           severity: 'success',
           priority: 'medium',
-          channels: { inApp: true, push: true, email: false, sms: false },
+          channels: { inApp: true, push: true, email: false, sms: false }
         })
 
         return data
@@ -157,7 +157,7 @@ export const useCreateUserProfile = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['user-profile'] })
       queryClient.setQueryData(['user-profile', data.user_id], data)
-    },
+    }
   })
 }
 
@@ -180,7 +180,7 @@ export const useUpdateUserProfile = () => {
             table: 'user_profiles',
             data: { userId, updates },
             priority: 'medium',
-            maxRetries: 3,
+            maxRetries: 3
           })
 
           addNotification({
@@ -189,7 +189,7 @@ export const useUpdateUserProfile = () => {
             message: 'Your profile update will be synced when you\'re back online.',
             severity: 'info',
             priority: 'medium',
-            channels: { inApp: true, push: false, email: false, sms: false },
+            channels: { inApp: true, push: false, email: false, sms: false }
           })
 
           return { userId, updates }
@@ -203,7 +203,7 @@ export const useUpdateUserProfile = () => {
           message: 'Your profile has been successfully updated.',
           severity: 'success',
           priority: 'medium',
-          channels: { inApp: true, push: false, email: false, sms: false },
+          channels: { inApp: true, push: false, email: false, sms: false }
         })
 
         return data
@@ -218,7 +218,7 @@ export const useUpdateUserProfile = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['user-profile', variables.userId] })
-    },
+    }
   })
 }
 
@@ -229,10 +229,12 @@ export const useTrustScore = (userId: string) => {
     queryFn: async () => {
       try {
         const { data, error } = await (supabase.rpc as any)('calculate_trust_score', {
-          p_user_id: userId,
+          p_user_id: userId
         })
 
-        if (error) throw error
+        if (error) {
+          throw error
+        }
 
         // Update trust store
         const currentScore = useTrustStore.getState().getUserScore(userId)
@@ -240,7 +242,7 @@ export const useTrustScore = (userId: string) => {
           useTrustStore.getState().updateUserScore({
             score: data,
             previousScore: currentScore.score,
-            lastUpdated: new Date(),
+            lastUpdated: new Date()
           })
         }
 
@@ -257,7 +259,7 @@ export const useTrustScore = (userId: string) => {
     },
     enabled: !!userId,
     staleTime: 2 * 60 * 1000, // 2 minutes
-    refetchInterval: 5 * 60 * 1000, // 5 minutes
+    refetchInterval: 5 * 60 * 1000 // 5 minutes
   })
 }
 
@@ -276,7 +278,9 @@ export const useTrustHistory = (userId?: string, limit: number = 50) => {
       }
 
       const { data, error } = await query
-      if (error) throw error
+      if (error) {
+        throw error
+      }
 
       // Update trust store
       if (userId) {
@@ -285,7 +289,7 @@ export const useTrustHistory = (userId?: string, limit: number = 50) => {
 
       return data
     },
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 30 * 1000 // 30 seconds
   })
 }
 
@@ -299,7 +303,7 @@ export const useUpdateTrustScore = () => {
       eventId,
       actionType,
       outcome,
-      metadata,
+      metadata
     }: {
       userId: string
       eventId: string
@@ -323,10 +327,10 @@ export const useUpdateTrustScore = () => {
               trust_change: 0, // Will be calculated server-side
               previous_score: 0, // Will be filled server-side
               new_score: 0, // Will be filled server-side
-              reason: `${actionType} ${outcome}`,
+              reason: `${actionType} ${outcome}`
             },
             priority: 'medium',
-            maxRetries: 3,
+            maxRetries: 3
           })
 
           return { userId, eventId, actionType, outcome }
@@ -342,12 +346,14 @@ export const useUpdateTrustScore = () => {
             trust_change: 0, // Will be calculated by trigger
             previous_score: 0, // Will be filled by trigger
             new_score: 0, // Will be filled by trigger
-            reason: `${actionType} ${outcome}`,
+            reason: `${actionType} ${outcome}`
           } as any)
           .select()
           .single()
 
-        if (error) throw error
+        if (error) {
+          throw error
+        }
 
         return data
       } catch (error) {
@@ -358,7 +364,7 @@ export const useUpdateTrustScore = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['trust-score', variables.userId] })
       queryClient.invalidateQueries({ queryKey: ['trust-history', variables.userId] })
-    },
+    }
   })
 }
 
@@ -373,7 +379,7 @@ export const useUserSubscriptions = (userId: string) => {
         // Cache for offline use
         useOfflineStore.getState().setCache(`user-subscriptions-${userId}`, data, {
           tags: ['user', 'subscriptions'],
-          expiresAt: Date.now() + (15 * 60 * 1000), // 15 minutes
+          expiresAt: Date.now() + (15 * 60 * 1000) // 15 minutes
         })
 
         return data
@@ -388,7 +394,7 @@ export const useUserSubscriptions = (userId: string) => {
       }
     },
     enabled: !!userId,
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 10 * 60 * 1000 // 10 minutes
   })
 }
 
@@ -406,7 +412,7 @@ export const useSubscribeToTopic = () => {
             table: 'user_subscriptions',
             data: { user_id: userId, topic_id: topicId, is_active: true },
             priority: 'low',
-            maxRetries: 3,
+            maxRetries: 3
           })
 
           return { userId, topicId }
@@ -420,7 +426,7 @@ export const useSubscribeToTopic = () => {
           message: 'You have successfully subscribed to this emergency type.',
           severity: 'success',
           priority: 'low',
-          channels: { inApp: true, push: false, email: false, sms: false },
+          channels: { inApp: true, push: false, email: false, sms: false }
         })
 
         return data
@@ -431,7 +437,7 @@ export const useSubscribeToTopic = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['user-subscriptions', variables.userId] })
-    },
+    }
   })
 }
 
@@ -453,7 +459,7 @@ export const useUnsubscribeFromTopic = () => {
               updates: { is_active: false }
             },
             priority: 'low',
-            maxRetries: 3,
+            maxRetries: 3
           })
 
           return { userId, topicId }
@@ -467,7 +473,7 @@ export const useUnsubscribeFromTopic = () => {
           message: 'You have successfully unsubscribed from this emergency type.',
           severity: 'info',
           priority: 'low',
-          channels: { inApp: true, push: false, email: false, sms: false },
+          channels: { inApp: true, push: false, email: false, sms: false }
         })
 
         return data
@@ -478,7 +484,7 @@ export const useUnsubscribeFromTopic = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['user-subscriptions', variables.userId] })
-    },
+    }
   })
 }
 
@@ -492,11 +498,13 @@ export const useUserNotificationSettings = (userId: string) => {
         .select('*')
         .eq('user_id', userId)
 
-      if (error) throw error
+      if (error) {
+        throw error
+      }
       return data
     },
     enabled: !!userId,
-    staleTime: 15 * 60 * 1000, // 15 minutes
+    staleTime: 15 * 60 * 1000 // 15 minutes
   })
 }
 
@@ -508,7 +516,7 @@ export const useUpdateNotificationSettings = () => {
     mutationFn: async ({
       userId,
       topicId,
-      settings,
+      settings
     }: {
       userId: string
       topicId: number
@@ -520,12 +528,14 @@ export const useUpdateNotificationSettings = () => {
           .upsert({
             user_id: userId,
             topic_id: topicId,
-            ...settings,
+            ...settings
           } as any)
           .select()
           .single()
 
-        if (error) throw error
+        if (error) {
+          throw error
+        }
 
         addNotification({
           type: 'system',
@@ -533,7 +543,7 @@ export const useUpdateNotificationSettings = () => {
           message: 'Your notification preferences have been saved.',
           severity: 'success',
           priority: 'low',
-          channels: { inApp: true, push: false, email: false, sms: false },
+          channels: { inApp: true, push: false, email: false, sms: false }
         })
 
         return data
@@ -544,7 +554,7 @@ export const useUpdateNotificationSettings = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['user-notification-settings', variables.userId] })
-    },
+    }
   })
 }
 
@@ -554,14 +564,16 @@ export const useUserStats = (userId: string) => {
     queryKey: ['user-stats', userId],
     queryFn: async () => {
       const { data, error } = await (supabase.rpc as any)('get_user_stats', {
-        p_user_id: userId,
+        p_user_id: userId
       })
 
-      if (error) throw error
+      if (error) {
+        throw error
+      }
       return data
     },
     enabled: !!userId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000 // 5 minutes
   })
 }
 
@@ -588,10 +600,12 @@ export const useNearbyUsers = (
         p_lat: protectedCenter.data.lat,
         p_lng: protectedCenter.data.lng,
         p_radius_meters: radius,
-        p_limit: limit,
+        p_limit: limit
       })
 
-      if (error) throw error
+      if (error) {
+        throw error
+      }
 
       // Apply privacy protection to results
       if (options.applyPrivacy && data) {
@@ -599,7 +613,7 @@ export const useNearbyUsers = (
           applyKAnonymity: privacyContext.settings.kAnonymity,
           applyDifferentialPrivacy: false // Already applied to location
         })
-        
+
         return protectedResult.data
       }
 
@@ -607,7 +621,7 @@ export const useNearbyUsers = (
     },
     enabled: !!(center.lat && center.lng),
     staleTime: 30 * 1000, // 30 seconds
-    refetchInterval: 60 * 1000, // 1 minute
+    refetchInterval: 60 * 1000 // 1 minute
   })
 }
 
@@ -616,13 +630,15 @@ export const useUserExpertise = (userId: string) => {
     queryKey: ['user-expertise', userId],
     queryFn: async () => {
       const { data, error } = await (supabase.rpc as any)('get_user_expertise', {
-        p_user_id: userId,
+        p_user_id: userId
       })
 
-      if (error) throw error
+      if (error) {
+        throw error
+      }
       return data
     },
     enabled: !!userId,
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 10 * 60 * 1000 // 10 minutes
   })
 }

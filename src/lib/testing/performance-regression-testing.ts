@@ -1,6 +1,6 @@
 /**
  * Performance Regression Testing for CI/CD Pipeline
- * 
+ *
  * This module provides automated performance regression testing that integrates
  * with CI/CD pipelines to detect performance degradations before they reach production.
  * It includes baseline comparison, threshold enforcement, and automated reporting.
@@ -296,7 +296,7 @@ class PerformanceRegressionTesting {
       this.activeTests.set(testId, results)
 
       console.log(`[PerformanceRegression] Test ${testId} completed: ${results.status}`)
-      
+
       return results
     } catch (error) {
       const results = this.activeTests.get(testId)
@@ -307,7 +307,7 @@ class PerformanceRegressionTesting {
       }
 
       console.error(`[PerformanceRegression] Test ${testId} failed:`, error)
-      
+
       throw error
     }
   }
@@ -331,7 +331,7 @@ class PerformanceRegressionTesting {
     }
 
     this.baselineStorage.set(version, baseline)
-    
+
     // Store baseline to persistent storage
     await this.persistBaseline(version, baseline)
 
@@ -348,7 +348,9 @@ class PerformanceRegressionTesting {
 
     // Get latest baseline
     const versions = Array.from(this.baselineStorage.keys())
-    if (versions.length === 0) return null
+    if (versions.length === 0) {
+      return null
+    }
 
     const latestVersion = versions.sort().pop()
     return this.baselineStorage.get(latestVersion!) || null
@@ -367,7 +369,7 @@ class PerformanceRegressionTesting {
   getTestHistory(limit: number = 10): PerformanceRegressionResults[] {
     const allTests = Array.from(this.activeTests.values())
       .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-    
+
     return allTests.slice(0, limit)
   }
 
@@ -387,11 +389,11 @@ class PerformanceRegressionTesting {
           '/api/users/nearby': { p50: 200, p95: 400, p99: 600, mean: 250, max: 1000, min: 100 }
         },
         databaseQueries: {
-          'emergency_spatial_query': {
+          emergency_spatial_query: {
             queryTime: { p50: 100, p95: 200, p99: 300, mean: 120, max: 400, min: 50 },
             connectionPoolUtilization: 70,
             cacheHitRate: 85,
-            indexUsage: { 'emergency_location_idx': 95, 'emergency_severity_idx': 88 }
+            indexUsage: { emergency_location_idx: 95, emergency_severity_idx: 88 }
           }
         },
         frontendMetrics: {
@@ -412,16 +414,16 @@ class PerformanceRegressionTesting {
             }
           },
           resourceLoadTimes: {
-            'css': 300,
-            'js': 500,
-            'images': 800
+            css: 300,
+            js: 500,
+            images: 800
           }
         },
         alertDispatchMetrics: {
           dispatchLatency: { p50: 50, p95: 100, p99: 200, mean: 70, max: 300, min: 20 },
           throughput: 1000, // alerts per second
           errorRate: 0.5, // percentage
-          deliveryRate: { 'push': 98, 'email': 95, 'sms': 92 }
+          deliveryRate: { push: 98, email: 95, sms: 92 }
         },
         edgePerformanceMetrics: {
           cacheHitRate: 90,
@@ -450,7 +452,9 @@ class PerformanceRegressionTesting {
 
   private async executeTestSuite(testId: string, suite: PerformanceTestSuite): Promise<void> {
     const results = this.activeTests.get(testId)
-    if (!results) return
+    if (!results) {
+      return
+    }
 
     console.log(`[PerformanceRegression] Executing test suite: ${suite.name}`)
 
@@ -468,7 +472,9 @@ class PerformanceRegressionTesting {
 
   private async executeTest(testId: string, test: PerformanceTest): Promise<void> {
     const results = this.activeTests.get(testId)
-    if (!results) return
+    if (!results) {
+      return
+    }
 
     results.summary.totalTests++
 
@@ -499,13 +505,12 @@ class PerformanceRegressionTesting {
       this.storeTestMetrics(testId, test.type, testMetrics)
 
       results.summary.passedTests++
-      
     } catch (error) {
       console.error(`[PerformanceRegression] Test ${test.name} failed:`, error)
-      
+
       if (!test.skipOnFailure) {
         results.summary.failedTests++
-        
+
         // Add violation for test failure
         results.violations.push({
           category: test.type,
@@ -531,21 +536,21 @@ class PerformanceRegressionTesting {
 
     for (const endpoint of endpoints) {
       const responseTimes = []
-      
+
       // Execute multiple requests to get statistical data
       for (let i = 0; i < 50; i++) {
         const startTime = performance.now()
-        
+
         // Make actual API call
         const response = await fetch(endpoint)
-        
+
         const endTime = performance.now()
         responseTimes.push(endTime - startTime)
       }
 
       // Calculate metrics
       responseTimes.sort((a, b) => a - b)
-      
+
       metrics[endpoint] = {
         min: responseTimes[0],
         max: responseTimes[responseTimes.length - 1],
@@ -567,19 +572,19 @@ class PerformanceRegressionTesting {
     for (const query of queries) {
       // Simulate query execution
       const queryTimes = []
-      
+
       for (let i = 0; i < 100; i++) {
         const startTime = performance.now()
-        
+
         // Execute database query (simulated)
         await this.simulateDatabaseQuery(query)
-        
+
         const endTime = performance.now()
         queryTimes.push(endTime - startTime)
       }
 
       queryTimes.sort((a, b) => a - b)
-      
+
       metrics[query] = {
         queryTime: {
           min: queryTimes[0],
@@ -592,8 +597,8 @@ class PerformanceRegressionTesting {
         connectionPoolUtilization: 60 + Math.random() * 30, // 60-90%
         cacheHitRate: 80 + Math.random() * 15, // 80-95%
         indexUsage: {
-          'emergency_location_idx': 90 + Math.random() * 10,
-          'emergency_severity_idx': 85 + Math.random() * 10
+          emergency_location_idx: 90 + Math.random() * 10,
+          emergency_severity_idx: 85 + Math.random() * 10
         }
       }
     }
@@ -624,9 +629,9 @@ class PerformanceRegressionTesting {
             }
           },
           resourceLoadTimes: {
-            'css': 250 + Math.random() * 100,
-            'js': 400 + Math.random() * 200,
-            'images': 600 + Math.random() * 400
+            css: 250 + Math.random() * 100,
+            js: 400 + Math.random() * 200,
+            images: 600 + Math.random() * 400
           }
         })
       }, 2000)
@@ -636,19 +641,19 @@ class PerformanceRegressionTesting {
   private async executeAlertTest(test: PerformanceTest): Promise<any> {
     // Simulate alert dispatch performance test
     const dispatchTimes = []
-    
+
     for (let i = 0; i < 200; i++) {
       const startTime = performance.now()
-      
+
       // Simulate alert dispatch
       await this.simulateAlertDispatch()
-      
+
       const endTime = performance.now()
       dispatchTimes.push(endTime - startTime)
     }
 
     dispatchTimes.sort((a, b) => a - b)
-    
+
     return {
       dispatchLatency: {
         min: dispatchTimes[0],
@@ -661,9 +666,9 @@ class PerformanceRegressionTesting {
       throughput: 900 + Math.random() * 200, // 900-1100 alerts/sec
       errorRate: Math.random() * 2, // 0-2%
       deliveryRate: {
-        'push': 95 + Math.random() * 5,
-        'email': 92 + Math.random() * 6,
-        'sms': 88 + Math.random() * 8
+        push: 95 + Math.random() * 5,
+        email: 92 + Math.random() * 6,
+        sms: 88 + Math.random() * 8
       }
     }
   }
@@ -671,19 +676,19 @@ class PerformanceRegressionTesting {
   private async executeEdgeTest(test: PerformanceTest): Promise<any> {
     // Simulate edge performance test
     const ttfbTimes = []
-    
+
     for (let i = 0; i < 100; i++) {
       const startTime = performance.now()
-      
+
       // Simulate edge request
       await this.simulateEdgeRequest()
-      
+
       const endTime = performance.now()
       ttfbTimes.push(endTime - startTime)
     }
 
     ttfbTimes.sort((a, b) => a - b)
-    
+
     return {
       cacheHitRate: 85 + Math.random() * 10, // 85-95%
       timeToFirstByte: {
@@ -708,7 +713,9 @@ class PerformanceRegressionTesting {
 
   private storeTestMetrics(testId: string, testType: string, metrics: any): void {
     const results = this.activeTests.get(testId)
-    if (!results) return
+    if (!results) {
+      return
+    }
 
     // Store metrics in current baseline
     switch (testType) {
@@ -749,7 +756,9 @@ class PerformanceRegressionTesting {
 
   private async compareWithBaseline(testId: string): Promise<void> {
     const results = this.activeTests.get(testId)
-    if (!results) return
+    if (!results) {
+      return
+    }
 
     const baseline = results.baseline
     const current = results.current
@@ -778,13 +787,17 @@ class PerformanceRegressionTesting {
     thresholds: any
   ): void {
     const results = this.activeTests.get(testId)
-    if (!results) return
+    if (!results) {
+      return
+    }
 
     for (const endpoint in current) {
       const baselineMetrics = baseline[endpoint]
       const currentMetrics = current[endpoint]
 
-      if (!baselineMetrics) continue
+      if (!baselineMetrics) {
+        continue
+      }
 
       // Compare P95 response time
       const baselineP95 = baselineMetrics.p95
@@ -843,13 +856,17 @@ class PerformanceRegressionTesting {
     thresholds: any
   ): void {
     const results = this.activeTests.get(testId)
-    if (!results) return
+    if (!results) {
+      return
+    }
 
     for (const query in current) {
       const baselineMetrics = baseline[query]
       const currentMetrics = current[query]
 
-      if (!baselineMetrics) continue
+      if (!baselineMetrics) {
+        continue
+      }
 
       // Compare query time
       const baselineP95 = baselineMetrics.queryTime.p95
@@ -908,19 +925,21 @@ class PerformanceRegressionTesting {
     thresholds: any
   ): void {
     const results = this.activeTests.get(testId)
-    if (!results) return
+    if (!results) {
+      return
+    }
 
     // Compare Core Web Vitals
     const vitals = ['lcp', 'fid', 'cls', 'fcp', 'ttfb'] as const
-    
+
     for (const vital of vitals) {
       const baselineValue = baseline.coreWebVitals[vital]
       const currentValue = current.coreWebVitals[vital]
       const threshold = thresholds.coreWebVitals[vital]
-      
+
       let status: 'pass' | 'warn' | 'fail' = 'pass'
       let severity: 'low' | 'medium' | 'high' | 'critical' = 'low'
-      
+
       if (currentValue > threshold * 1.5) {
         status = 'fail'
         severity = 'critical'
@@ -931,7 +950,7 @@ class PerformanceRegressionTesting {
         status = 'warn'
         severity = 'medium'
       }
-      
+
       if (status !== 'pass') {
         results.violations.push({
           category: 'frontend',
@@ -945,7 +964,7 @@ class PerformanceRegressionTesting {
           recommendation: 'Optimize resource loading, reduce JavaScript execution time, or improve server response'
         })
       }
-      
+
       results.comparisons.push({
         category: 'frontend',
         metric: `core_web_vital_${vital}`,
@@ -973,7 +992,7 @@ class PerformanceRegressionTesting {
         threshold: sizeThreshold,
         actual: currentSize,
         severity: 'high',
-        description: `Bundle size exceeded threshold`,
+        description: 'Bundle size exceeded threshold',
         impact: 'Slower page load times, especially on mobile networks',
         recommendation: 'Implement code splitting, tree shaking, and remove unused dependencies'
       })
@@ -999,19 +1018,21 @@ class PerformanceRegressionTesting {
     thresholds: any
   ): void {
     const results = this.activeTests.get(testId)
-    if (!results) return
+    if (!results) {
+      return
+    }
 
     // Compare dispatch latency
     const latencyMetrics = ['p95', 'p99'] as const
-    
+
     for (const metric of latencyMetrics) {
       const baselineValue = baseline.dispatchLatency[metric]
       const currentValue = current.dispatchLatency[metric]
       const threshold = thresholds.dispatchLatency[metric]
-      
+
       let status: 'pass' | 'warn' | 'fail' = 'pass'
       let severity: 'low' | 'medium' | 'high' | 'critical' = 'low'
-      
+
       if (currentValue > threshold * 1.5) {
         status = 'fail'
         severity = 'critical'
@@ -1022,7 +1043,7 @@ class PerformanceRegressionTesting {
         status = 'warn'
         severity = 'medium'
       }
-      
+
       if (status !== 'pass') {
         results.violations.push({
           category: 'alert',
@@ -1036,7 +1057,7 @@ class PerformanceRegressionTesting {
           recommendation: 'Optimize alert processing, improve connection pooling, or scale alert infrastructure'
         })
       }
-      
+
       results.comparisons.push({
         category: 'alert',
         metric: `dispatch_latency_${metric}`,
@@ -1064,7 +1085,7 @@ class PerformanceRegressionTesting {
         threshold: throughputThreshold,
         actual: throughputChangePercent,
         severity: throughputChangePercent > throughputThreshold * 2 ? 'critical' : 'high',
-        description: `Alert throughput decreased significantly`,
+        description: 'Alert throughput decreased significantly',
         impact: 'Reduced capacity to handle emergency alerts during high-load scenarios',
         recommendation: 'Optimize alert processing pipeline and scale alert infrastructure'
       })
@@ -1090,7 +1111,9 @@ class PerformanceRegressionTesting {
     thresholds: any
   ): void {
     const results = this.activeTests.get(testId)
-    if (!results) return
+    if (!results) {
+      return
+    }
 
     // Compare cache hit rate
     const baselineCacheHitRate = baseline.cacheHitRate
@@ -1106,7 +1129,7 @@ class PerformanceRegressionTesting {
         threshold: cacheHitRateThreshold,
         actual: cacheHitRateChangePercent,
         severity: cacheHitRateChangePercent > cacheHitRateThreshold * 2 ? 'critical' : 'high',
-        description: `Edge cache hit rate decreased significantly`,
+        description: 'Edge cache hit rate decreased significantly',
         impact: 'Increased origin server load and slower response times',
         recommendation: 'Optimize cache keys, increase cache TTL, or review cache invalidation strategy'
       })
@@ -1138,7 +1161,7 @@ class PerformanceRegressionTesting {
         threshold: ttfbThreshold,
         actual: ttfbChangePercent,
         severity: ttfbChangePercent > ttfbThreshold * 2 ? 'critical' : 'high',
-        description: `Edge TTFB increased significantly`,
+        description: 'Edge TTFB increased significantly',
         impact: 'Slower page load times for users globally',
         recommendation: 'Optimize edge routing, improve server response time, or enable compression'
       })
@@ -1159,7 +1182,9 @@ class PerformanceRegressionTesting {
 
   private generateRecommendations(testId: string): void {
     const results = this.activeTests.get(testId)
-    if (!results) return
+    if (!results) {
+      return
+    }
 
     const recommendations = new Set<string>()
 
@@ -1202,7 +1227,9 @@ class PerformanceRegressionTesting {
 
   private async generateReports(testId: string): Promise<void> {
     const results = this.activeTests.get(testId)
-    if (!results) return
+    if (!results) {
+      return
+    }
 
     const config = results.config.reporting
 
@@ -1391,9 +1418,9 @@ ${results.violations.map(violation => `
 ## Performance Comparisons
 | Category | Metric | Baseline | Current | Change | Threshold | Status |
 |----------|--------|----------|---------|--------|-----------|--------|
-${results.comparisons.map(comparison => 
-  `| ${comparison.category} | ${comparison.metric} | ${comparison.baseline.toFixed(2)} | ${comparison.actual.toFixed(2)} | ${comparison.changePercent > 0 ? '+' : ''}${comparison.changePercent.toFixed(2)}% | ${comparison.threshold.toFixed(2)} | ${comparison.status.toUpperCase()} |`
-).join('\n')}
+${results.comparisons.map(comparison =>
+    `| ${comparison.category} | ${comparison.metric} | ${comparison.baseline.toFixed(2)} | ${comparison.actual.toFixed(2)} | ${comparison.changePercent > 0 ? '+' : ''}${comparison.changePercent.toFixed(2)}% | ${comparison.threshold.toFixed(2)} | ${comparison.status.toUpperCase()} |`
+  ).join('\n')}
 
 ## Recommendations
 ${results.recommendations.map(rec => `- ${rec}`).join('\n')}
@@ -1402,7 +1429,9 @@ ${results.recommendations.map(rec => `- ${rec}`).join('\n')}
 
   private async sendReportToDestination(testId: string, destination: string): Promise<void> {
     const results = this.activeTests.get(testId)
-    if (!results) return
+    if (!results) {
+      return
+    }
 
     switch (destination) {
       case 'console':
@@ -1425,7 +1454,9 @@ ${results.recommendations.map(rec => `- ${rec}`).join('\n')}
 
   private determineTestStatus(testId: string): void {
     const results = this.activeTests.get(testId)
-    if (!results) return
+    if (!results) {
+      return
+    }
 
     const enforcement = results.config.enforcement
     const criticalViolations = results.violations.filter(v => v.severity === 'critical')
@@ -1491,7 +1522,7 @@ ${results.recommendations.map(rec => `- ${rec}`).join('\n')}
         },
         databaseQueries: {
           absolute: {
-            'emergency_spatial_query': 400
+            emergency_spatial_query: 400
           },
           relative: 25
         },

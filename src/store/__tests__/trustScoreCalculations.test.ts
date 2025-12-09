@@ -1,6 +1,6 @@
 /**
  * Comprehensive tests for Trust Score Calculations
- * 
+ *
  * These tests verify trust score calculation algorithms, including
  * various scenarios, edge cases, and performance under different conditions.
  */
@@ -27,10 +27,10 @@ describe('Trust Score Calculations', () => {
         contributionFrequency: 8, // 8 per week
         communityEndorsement: 0.75,
         penaltyScore: 0.05,
-        expertiseAreas: [1, 2],
+        expertiseAreas: [1, 2]
       }
 
-      const calculation = await act(async () => 
+      const calculation = await act(async () =>
         result.current.calculateTrustScore('user-1', factors)
       )
 
@@ -54,10 +54,10 @@ describe('Trust Score Calculations', () => {
         penaltyScore: 1.5, // Should be clamped to 1
         disputeAccuracy: 0.5,
         locationAccuracy: 0.7,
-        expertiseAreas: [],
+        expertiseAreas: []
       }
 
-      const calculation = await act(async () => 
+      const calculation = await act(async () =>
         result.current.calculateTrustScore('user-1', factors)
       )
 
@@ -83,7 +83,7 @@ describe('Trust Score Calculations', () => {
         contributionFrequency: 5,
         communityEndorsement: 0.8,
         penaltyScore: 0.1,
-        expertiseAreas: [1],
+        expertiseAreas: [1]
       }
 
       // Incomplete data set
@@ -96,14 +96,14 @@ describe('Trust Score Calculations', () => {
         contributionFrequency: 0, // Missing
         communityEndorsement: 0, // Missing
         penaltyScore: 0.1,
-        expertiseAreas: [],
+        expertiseAreas: []
       }
 
-      const completeCalculation = await act(async () => 
+      const completeCalculation = await act(async () =>
         result.current.calculateTrustScore('user-1', completeFactors)
       )
 
-      const incompleteCalculation = await act(async () => 
+      const incompleteCalculation = await act(async () =>
         result.current.calculateTrustScore('user-2', incompleteFactors)
       )
 
@@ -127,8 +127,8 @@ describe('Trust Score Calculations', () => {
           contributionFrequency: 1,
           communityEndorsement: 0.5,
           penaltyScore: 0,
-          expertiseAreas: [],
-        },
+          expertiseAreas: []
+        }
       })
 
       act(() => {
@@ -162,8 +162,8 @@ describe('Trust Score Calculations', () => {
           contributionFrequency: 3,
           communityEndorsement: 0.7,
           penaltyScore: 0,
-          expertiseAreas: [1],
-        },
+          expertiseAreas: [1]
+        }
       })
 
       act(() => {
@@ -188,13 +188,13 @@ describe('Trust Score Calculations', () => {
       // High trust user (harder to gain)
       const highTrustUser = createTrustScore({
         userId: 'high-trust-user',
-        overall: 0.9,
+        overall: 0.9
       })
 
       // Low trust user (easier to gain)
       const lowTrustUser = createTrustScore({
         userId: 'low-trust-user',
-        overall: 0.2,
+        overall: 0.2
       })
 
       act(() => {
@@ -234,8 +234,8 @@ describe('Trust Score Calculations', () => {
           responseTime: 15,
           locationAccuracy: 0.8,
           communityEndorsement: 0.6,
-          penaltyScore: 0,
-        },
+          penaltyScore: 0
+        }
       })
 
       const generalUser = createTrustScore({
@@ -250,8 +250,8 @@ describe('Trust Score Calculations', () => {
           responseTime: 15,
           locationAccuracy: 0.8,
           communityEndorsement: 0.6,
-          penaltyScore: 0,
-        },
+          penaltyScore: 0
+        }
       })
 
       act(() => {
@@ -286,8 +286,8 @@ describe('Trust Score Calculations', () => {
           responseTime: 15,
           locationAccuracy: 0.8,
           communityEndorsement: 0.6,
-          penaltyScore: 0,
-        },
+          penaltyScore: 0
+        }
       })
 
       const generalUser = createTrustScore({
@@ -302,8 +302,8 @@ describe('Trust Score Calculations', () => {
           responseTime: 15,
           locationAccuracy: 0.8,
           communityEndorsement: 0.6,
-          penaltyScore: 0,
-        },
+          penaltyScore: 0
+        }
       })
 
       act(() => {
@@ -340,8 +340,8 @@ describe('Trust Score Calculations', () => {
           contributionFrequency: 2,
           communityEndorsement: 0.6,
           penaltyScore: 0,
-          expertiseAreas: [],
-        },
+          expertiseAreas: []
+        }
       })
 
       const slowResponder = createTrustScore({
@@ -356,8 +356,8 @@ describe('Trust Score Calculations', () => {
           contributionFrequency: 2,
           communityEndorsement: 0.6,
           penaltyScore: 0,
-          expertiseAreas: [],
-        },
+          expertiseAreas: []
+        }
       })
 
       act(() => {
@@ -365,11 +365,11 @@ describe('Trust Score Calculations', () => {
         result.current.setUserScore('slow-responder', slowResponder)
       })
 
-      const fastCalculation = await act(async () => 
+      const fastCalculation = await act(async () =>
         result.current.calculateTrustScore('fast-responder', fastResponder.factors)
       )
 
-      const slowCalculation = await act(async () => 
+      const slowCalculation = await act(async () =>
         result.current.calculateTrustScore('slow-responder', slowResponder.factors)
       )
 
@@ -394,8 +394,8 @@ describe('Trust Score Calculations', () => {
           contributionFrequency: 3,
           communityEndorsement: 0.9, // High community endorsement
           penaltyScore: 0,
-          expertiseAreas: [],
-        },
+          expertiseAreas: []
+        }
       })
 
       const nonEndorsedUser = createTrustScore({
@@ -410,8 +410,8 @@ describe('Trust Score Calculations', () => {
           contributionFrequency: 3,
           communityEndorsement: 0.1, // Low community endorsement
           penaltyScore: 0,
-          expertiseAreas: [],
-        },
+          expertiseAreas: []
+        }
       })
 
       act(() => {
@@ -419,11 +419,11 @@ describe('Trust Score Calculations', () => {
         result.current.setUserScore('non-endorsed-user', nonEndorsedUser)
       })
 
-      const endorsedCalculation = await act(async () => 
+      const endorsedCalculation = await act(async () =>
         result.current.calculateTrustScore('endorsed-user', endorsedUser.factors)
       )
 
-      const nonEndorsedCalculation = await act(async () => 
+      const nonEndorsedCalculation = await act(async () =>
         result.current.calculateTrustScore('non-endorsed-user', nonEndorsedUser.factors)
       )
 
@@ -448,15 +448,15 @@ describe('Trust Score Calculations', () => {
           contributionFrequency: 3,
           communityEndorsement: 0.6,
           penaltyScore: 0.3, // Already has some penalties
-          expertiseAreas: [],
-        },
+          expertiseAreas: []
+        }
       })
 
       act(() => {
         result.current.setUserScore('penalty-user', userWithPenalties)
       })
 
-      const calculationWithPenalties = await act(async () => 
+      const calculationWithPenalties = await act(async () =>
         result.current.calculateTrustScore('penalty-user', userWithPenalties.factors)
       )
 
@@ -464,11 +464,11 @@ describe('Trust Score Calculations', () => {
         ...userWithPenalties,
         factors: {
           ...userWithPenalties.factors,
-          penaltyScore: 0,
-        },
+          penaltyScore: 0
+        }
       }
 
-      const calculationWithoutPenalties = await act(async () => 
+      const calculationWithoutPenalties = await act(async () =>
         result.current.calculateTrustScore('penalty-user', userWithoutPenalties.factors)
       )
 
@@ -491,8 +491,8 @@ describe('Trust Score Calculations', () => {
           contributionFrequency: 4,
           communityEndorsement: 0.7,
           penaltyScore: 0,
-          expertiseAreas: [1, 2],
-        },
+          expertiseAreas: [1, 2]
+        }
       })
 
       act(() => {
@@ -528,8 +528,8 @@ describe('Trust Score Calculations', () => {
           contributionFrequency: 10, // High contribution frequency
           communityEndorsement: 0.6,
           penaltyScore: 0,
-          expertiseAreas: [],
-        },
+          expertiseAreas: []
+        }
       })
 
       const inactiveContributor = createTrustScore({
@@ -544,8 +544,8 @@ describe('Trust Score Calculations', () => {
           contributionFrequency: 0.5, // Low contribution frequency
           communityEndorsement: 0.6,
           penaltyScore: 0,
-          expertiseAreas: [],
-        },
+          expertiseAreas: []
+        }
       })
 
       act(() => {
@@ -553,11 +553,11 @@ describe('Trust Score Calculations', () => {
         result.current.setUserScore('inactive-contributor', inactiveContributor)
       })
 
-      const activeCalculation = await act(async () => 
+      const activeCalculation = await act(async () =>
         result.current.calculateTrustScore('active-contributor', activeContributor.factors)
       )
 
-      const inactiveCalculation = await act(async () => 
+      const inactiveCalculation = await act(async () =>
         result.current.calculateTrustScore('inactive-contributor', inactiveContributor.factors)
       )
 
@@ -593,11 +593,11 @@ describe('Trust Score Calculations', () => {
         contributionFrequency: null as any,
         communityEndorsement: undefined as any,
         penaltyScore: 'invalid' as any,
-        expertiseAreas: null as any,
+        expertiseAreas: null as any
       }
 
       // Should not crash and should handle gracefully
-      const calculation = await act(async () => 
+      const calculation = await act(async () =>
         result.current.calculateTrustScore('extreme-user', extremeFactors)
       )
 
@@ -618,7 +618,7 @@ describe('Trust Score Calculations', () => {
         contributionFrequency: 10,
         communityEndorsement: 1,
         penaltyScore: 0,
-        expertiseAreas: [1, 2, 3, 4, 5],
+        expertiseAreas: [1, 2, 3, 4, 5]
       }
 
       const worstFactors = {
@@ -630,14 +630,14 @@ describe('Trust Score Calculations', () => {
         contributionFrequency: 0,
         communityEndorsement: 0,
         penaltyScore: 1,
-        expertiseAreas: [],
+        expertiseAreas: []
       }
 
-      const perfectCalculation = await act(async () => 
+      const perfectCalculation = await act(async () =>
         result.current.calculateTrustScore('perfect-user', perfectFactors)
       )
 
-      const worstCalculation = await act(async () => 
+      const worstCalculation = await act(async () =>
         result.current.calculateTrustScore('worst-user', worstFactors)
       )
 
@@ -661,7 +661,7 @@ describe('Trust Score Calculations', () => {
         contributionFrequency: 5,
         communityEndorsement: 0.7,
         penaltyScore: 0.1,
-        expertiseAreas: [1],
+        expertiseAreas: [1]
       }
 
       // Calculate trust scores for many users
@@ -691,7 +691,7 @@ describe('Trust Score Calculations', () => {
         contributionFrequency: 4,
         communityEndorsement: 0.65,
         penaltyScore: 0.05,
-        expertiseAreas: [1, 2],
+        expertiseAreas: [1, 2]
       }
 
       // Calculate same score multiple times
@@ -705,7 +705,7 @@ describe('Trust Score Calculations', () => {
       // All calculations should yield the same result
       const scores = calculations.map(c => c.weightedScore)
       const uniqueScores = [...new Set(scores)]
-      
+
       expect(uniqueScores).toHaveLength(1)
       expect(scores[0]).toBeGreaterThan(0)
       expect(scores[0]).toBeLessThan(1)

@@ -1,6 +1,6 @@
 /**
  * Service Worker and PWA Performance Optimizer
- * 
+ *
  * This module provides comprehensive optimization for service workers and Progressive Web App
  * performance, focusing on caching strategies, background sync, offline functionality,
  * and resource management for emergency scenarios.
@@ -181,7 +181,7 @@ class ServiceWorkerOptimizer {
     this.pushNotificationManager = new PushNotificationManager(this.config.pushNotifications)
     this.emergencyModeManager = new EmergencyModeManager(this.config.emergencyMode)
     this.performanceMonitor = new SWPerformanceMonitor()
-    
+
     this.initializeServiceWorker()
   }
 
@@ -307,11 +307,11 @@ class ServiceWorkerOptimizer {
   async cacheApiResponse(url: string, response: Response, strategy: RuntimeCacheConfig['strategy'] = 'staleWhileRevalidate'): Promise<void> {
     try {
       await this.cacheManager.cacheResponse(url, response, strategy)
-      
+
       // Update metrics
       this.metrics.cache.entries++
       this.metrics.cache.totalSize += this.getResponseSize(response)
-      
+
       // Record performance metric
       performanceMonitor.recordMetric('service_worker_cache_api_response', {
         url,
@@ -356,10 +356,10 @@ class ServiceWorkerOptimizer {
   async queueBackgroundSync(operation: any): Promise<void> {
     try {
       await this.backgroundSyncManager.queue(operation)
-      
+
       // Update metrics
       this.metrics.backgroundSync.queuedOperations++
-      
+
       console.log('[ServiceWorkerOptimizer] Background sync operation queued')
     } catch (error) {
       console.error('[ServiceWorkerOptimizer] Failed to queue background sync:', error)
@@ -373,10 +373,10 @@ class ServiceWorkerOptimizer {
   async sendPushNotification(notification: any): Promise<void> {
     try {
       await this.pushNotificationManager.send(notification)
-      
+
       // Update metrics
       this.metrics.pushNotifications.received++
-      
+
       console.log('[ServiceWorkerOptimizer] Push notification sent')
     } catch (error) {
       console.error('[ServiceWorkerOptimizer] Failed to send push notification:', error)
@@ -402,7 +402,7 @@ class ServiceWorkerOptimizer {
   async clearAllCaches(): Promise<void> {
     try {
       await this.cacheManager.clearAll()
-      
+
       // Reset metrics
       this.metrics.cache = {
         totalSize: 0,
@@ -411,7 +411,7 @@ class ServiceWorkerOptimizer {
         missRate: 0,
         evictionRate: 0
       }
-      
+
       console.log('[ServiceWorkerOptimizer] All caches cleared')
     } catch (error) {
       console.error('[ServiceWorkerOptimizer] Failed to clear caches:', error)
@@ -588,7 +588,9 @@ class ServiceWorkerOptimizer {
 
   private handleServiceWorkerUpdate(registration: ServiceWorkerRegistration): void {
     const newWorker = registration.installing
-    if (!newWorker) return
+    if (!newWorker) {
+      return
+    }
 
     newWorker.addEventListener('statechange', () => {
       if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
@@ -614,10 +616,10 @@ class ServiceWorkerOptimizer {
       try {
         await this.cacheManager.cleanup()
         await this.backgroundSyncManager.cleanup()
-        
+
         // Update metrics
         this.metrics = this.getMetrics()
-        
+
         console.log('[ServiceWorkerOptimizer] Periodic cleanup completed')
       } catch (error) {
         console.error('[ServiceWorkerOptimizer] Periodic cleanup failed:', error)
@@ -630,10 +632,10 @@ class ServiceWorkerOptimizer {
     if (this.config.emergencyMode.reducedFunctionality) {
       // Reduce background sync frequency
       this.backgroundSyncManager.reduceFrequency()
-      
+
       // Disable non-essential caching
       this.cacheManager.disableNonEssentialCaching()
-      
+
       // Optimize push notification delivery
       this.pushNotificationManager.optimizeForEmergency()
     }
@@ -644,7 +646,7 @@ class ServiceWorkerOptimizer {
     if (contentLength) {
       return parseInt(contentLength, 10)
     }
-    
+
     // Estimate size if content-length not available
     return 1024 // 1KB estimate
   }
@@ -680,13 +682,13 @@ class CacheManager {
 
   async precache(resources: string[]): Promise<void> {
     const cache = await caches.open(this.config.cacheName)
-    
+
     for (const resource of resources) {
       try {
         const response = await fetch(resource)
         if (response.ok) {
           await cache.put(resource, response)
-          
+
           // Store metadata
           this.metadata.set(resource, {
             url: resource,
@@ -708,15 +710,19 @@ class CacheManager {
 
   async cacheResponse(url: string, response: Response, strategy: RuntimeCacheConfig['strategy']): Promise<void> {
     const cacheConfig = this.findCacheConfig(url)
-    if (!cacheConfig) return
+    if (!cacheConfig) {
+      return
+    }
 
     const cache = this.caches.get(cacheConfig.name)
-    if (!cache) return
+    if (!cache) {
+      return
+    }
 
     try {
       // Clone response for caching
       const responseToCache = response.clone()
-      
+
       // Apply compression if enabled
       if (this.config.performance.compressionEnabled) {
         // In a real implementation, this would compress the response
@@ -749,14 +755,18 @@ class CacheManager {
 
   async getResponse(url: string): Promise<Response | null> {
     const cacheConfig = this.findCacheConfig(url)
-    if (!cacheConfig) return null
+    if (!cacheConfig) {
+      return null
+    }
 
     const cache = this.caches.get(cacheConfig.name)
-    if (!cache) return null
+    if (!cache) {
+      return null
+    }
 
     try {
       const response = await cache.match(url)
-      
+
       if (response) {
         // Update access metadata
         const metadata = this.metadata.get(url)
@@ -837,17 +847,23 @@ class CacheManager {
             // Priority order: critical > high > normal > low
             const priorityOrder = { critical: 4, high: 3, normal: 2, low: 1 }
             const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority]
-            
-            if (priorityDiff !== 0) return priorityDiff
-            
+
+            if (priorityDiff !== 0) {
+              return priorityDiff
+            }
+
             // If same priority, sort by last accessed (oldest first)
             return a.lastAccessed - b.lastAccessed
           })
 
         // Remove entries until under size limit
         for (const [url, metadata] of sortedEntries) {
-          if (totalSize <= maxSize) break
-          if (metadata.priority === 'critical') continue // Never remove critical entries
+          if (totalSize <= maxSize) {
+            break
+          }
+          if (metadata.priority === 'critical') {
+            continue
+          } // Never remove critical entries
 
           entriesToDelete.push(url)
           totalSize -= metadata.size
@@ -956,7 +972,7 @@ class CacheManager {
     try {
       // Keep only essential caches (emergency cache and static cache)
       const essentialCaches = [this.config.cacheName, this.config.emergencyCacheName, 'static-cache']
-      
+
       for (const cacheName of this.caches.keys()) {
         if (!essentialCaches.includes(cacheName)) {
           const cache = this.caches.get(cacheName)
@@ -1029,7 +1045,7 @@ class BackgroundSyncManager {
   async queue(operation: any): Promise<void> {
     try {
       const { type, data } = operation
-      
+
       if (!this.syncQueue.has(type)) {
         this.syncQueue.set(type, [])
       }
@@ -1056,10 +1072,14 @@ class BackgroundSyncManager {
 
   async attemptSync(type: string): Promise<void> {
     try {
-      if (!navigator.onLine) return
+      if (!navigator.onLine) {
+        return
+      }
 
       const operations = this.syncQueue.get(type) || []
-      if (operations.length === 0) return
+      if (operations.length === 0) {
+        return
+      }
 
       const successfulOperations: any[] = []
       const failedOperations: any[] = []
@@ -1070,7 +1090,7 @@ class BackgroundSyncManager {
           successfulOperations.push(operation)
         } catch (error) {
           operation.retryCount++
-          
+
           if (operation.retryCount < this.config.maxRetries) {
             failedOperations.push(operation)
           } else {
@@ -1112,7 +1132,7 @@ class BackgroundSyncManager {
       const maxAge = 24 * 60 * 60 * 1000 // 24 hours
 
       for (const [type, operations] of this.syncQueue.entries()) {
-        const filteredOperations = operations.filter(op => 
+        const filteredOperations = operations.filter(op =>
           (now - op.timestamp) < maxAge
         )
         this.syncQueue.set(type, filteredOperations)
@@ -1297,13 +1317,13 @@ class PushNotificationManager {
   private isInQuietHours(): boolean {
     const now = new Date()
     const currentTime = now.getHours() * 60 + now.getMinutes()
-    
+
     const [startHour, startMin] = this.config.quietHours.start.split(':').map(Number)
     const [endHour, endMin] = this.config.quietHours.end.split(':').map(Number)
-    
+
     const startTime = startHour * 60 + startMin
     const endTime = endHour * 60 + endMin
-    
+
     if (startTime <= endTime) {
       return currentTime >= startTime && currentTime <= endTime
     } else {
@@ -1329,11 +1349,11 @@ class PushNotificationManager {
     const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
     const rawData = window.atob(base64)
     const outputArray = new Uint8Array(rawData.length)
-    
+
     for (let i = 0; i < rawData.length; ++i) {
       outputArray[i] = rawData.charCodeAt(i)
     }
-    
+
     return outputArray
   }
 }
@@ -1364,7 +1384,9 @@ class EmergencyModeManager {
   }
 
   async activate(): Promise<void> {
-    if (this.active) return
+    if (this.active) {
+      return
+    }
 
     try {
       this.active = true
@@ -1384,7 +1406,9 @@ class EmergencyModeManager {
   }
 
   async deactivate(): Promise<void> {
-    if (!this.active) return
+    if (!this.active) {
+      return
+    }
 
     try {
       this.active = false
@@ -1435,8 +1459,8 @@ class EmergencyModeManager {
     // Listen for emergency push notifications
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.addEventListener('message', (event) => {
-        if (event.data.type === 'PUSH_RECEIVED' && 
-            event.data.priority === 'emergency') {
+        if (event.data.type === 'PUSH_RECEIVED'
+            && event.data.priority === 'emergency') {
           this.handleTrigger(trigger)
         }
       })

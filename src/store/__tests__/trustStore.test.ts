@@ -1,12 +1,12 @@
 /**
  * Tests for Trust Store
- * 
+ *
  * These tests verify the functionality of trust score management,
  * including score calculations, history tracking, and user permissions.
  */
 
 import { renderHook, act } from '@testing-library/react'
-import { 
+import {
   useTrustStore,
   useTrustScore,
   useTrustThresholds,
@@ -16,7 +16,7 @@ import {
   canUserConfirm,
   canUserDispute,
   isHighTrustUser,
-  isLowTrustUser,
+  isLowTrustUser
 } from '../trustStore'
 import { trustScoreData } from '@/test-utils/fixtures/emergencyScenarios'
 
@@ -183,7 +183,7 @@ describe('Trust Store', () => {
           contributionFrequency: 5, // 5 per week
           communityEndorsement: 0.6,
           penaltyScore: 0.1,
-          expertiseAreas: [1, 2], // Medical and fire expertise
+          expertiseAreas: [1, 2] // Medical and fire expertise
         }
 
         const calculation = await result.current.calculateTrustScore('user-1', factors)
@@ -206,7 +206,7 @@ describe('Trust Store', () => {
           contributionFrequency: 15, // Should be clamped to 1
           communityEndorsement: 2, // Should be clamped to 1
           penaltyScore: 1.5, // Should be clamped to 1
-          expertiseAreas: [1],
+          expertiseAreas: [1]
         }
 
         const calculation = await result.current.calculateTrustScore('user-1', factors)
@@ -230,7 +230,7 @@ describe('Trust Store', () => {
           contributionFrequency: 5,
           communityEndorsement: 0.6,
           penaltyScore: 0.1,
-          expertiseAreas: [1],
+          expertiseAreas: [1]
         }
 
         await result.current.calculateTrustScore('user-1', factors)
@@ -246,7 +246,7 @@ describe('Trust Store', () => {
         const initialScore = trustScoreData.highTrust
         const factorUpdates = {
           reportingAccuracy: 0.95,
-          responseTime: 10,
+          responseTime: 10
         }
 
         act(() => {
@@ -309,7 +309,7 @@ describe('Trust Store', () => {
           change: 0.05,
           previousScore: 0.8,
           newScore: 0.85,
-          timestamp: new Date(),
+          timestamp: new Date()
         }
 
         act(() => {
@@ -330,7 +330,7 @@ describe('Trust Store', () => {
           change: 0.05,
           previousScore: 0.8,
           newScore: 0.85,
-          timestamp: new Date(),
+          timestamp: new Date()
         }
         const newEntry = {
           id: 'history-2',
@@ -340,7 +340,7 @@ describe('Trust Store', () => {
           change: 0.03,
           previousScore: 0.85,
           newScore: 0.88,
-          timestamp: new Date(),
+          timestamp: new Date()
         }
 
         act(() => {
@@ -381,7 +381,7 @@ describe('Trust Store', () => {
         const { result } = renderHook(() => useTrustStore())
         const entries = [
           { id: 'history-1', userId: 'user-1', actionType: 'report' as const },
-          { id: 'history-2', userId: 'user-2', actionType: 'confirm' as const },
+          { id: 'history-2', userId: 'user-2', actionType: 'confirm' as const }
         ]
 
         act(() => {
@@ -396,7 +396,7 @@ describe('Trust Store', () => {
         const { result } = renderHook(() => useTrustStore())
         const entries = [
           { id: 'history-1', userId: 'user-1', actionType: 'report' as const },
-          { id: 'history-2', userId: 'user-2', actionType: 'confirm' as const },
+          { id: 'history-2', userId: 'user-2', actionType: 'confirm' as const }
         ]
 
         act(() => {
@@ -500,7 +500,7 @@ describe('Trust Store', () => {
         const initialFactors = {
           reportingAccuracy: 0.8,
           contributionFrequency: 2,
-          expertiseAreas: [1],
+          expertiseAreas: [1]
         }
 
         act(() => {
@@ -510,7 +510,7 @@ describe('Trust Store', () => {
             previousScore: 0.65,
             lastUpdated: new Date(),
             history: [],
-            factors: initialFactors,
+            factors: initialFactors
           })
         })
 
@@ -537,7 +537,7 @@ describe('Trust Store', () => {
         const newThresholds = {
           reporting: 0.4,
           confirming: 0.5,
-          highTrust: 0.9,
+          highTrust: 0.9
         }
 
         act(() => {
@@ -557,7 +557,7 @@ describe('Trust Store', () => {
         const newWeights = {
           reportingAccuracy: 0.30,
           confirmationAccuracy: 0.25,
-          responseTime: 0.15,
+          responseTime: 0.15
         }
 
         act(() => {
@@ -737,7 +737,7 @@ describe('Trust Store', () => {
         const { result } = renderHook(() => useTrustStore())
         const entries = [
           { id: 'history-1', userId: 'user-1', actionType: 'report' as const },
-          { id: 'history-2', userId: 'user-2', actionType: 'confirm' as const },
+          { id: 'history-2', userId: 'user-2', actionType: 'confirm' as const }
         ]
 
         act(() => {
@@ -752,7 +752,7 @@ describe('Trust Store', () => {
         const { result } = renderHook(() => useTrustStore())
         const entries = [
           { id: 'history-1', userId: 'user-1', actionType: 'report' as const },
-          { id: 'history-2', userId: 'user-2', actionType: 'confirm' as const },
+          { id: 'history-2', userId: 'user-2', actionType: 'confirm' as const }
         ]
 
         act(() => {
@@ -769,7 +769,7 @@ describe('Trust Store', () => {
   describe('Complex Scenarios', () => {
     it('should handle trust score evolution over time', async () => {
       const { result } = renderHook(() => useTrustStore())
-      
+
       // Initial score
       const initialScore = {
         userId: 'user-1',
@@ -786,8 +786,8 @@ describe('Trust Store', () => {
           contributionFrequency: 1,
           communityEndorsement: 0.5,
           penaltyScore: 0,
-          expertiseAreas: [1],
-        },
+          expertiseAreas: [1]
+        }
       }
 
       act(() => {
@@ -837,8 +837,8 @@ describe('Trust Store', () => {
           responseTime: 15,
           locationAccuracy: 0.8,
           communityEndorsement: 0.6,
-          penaltyScore: 0,
-        },
+          penaltyScore: 0
+        }
       }
 
       act(() => {

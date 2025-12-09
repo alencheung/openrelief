@@ -1,6 +1,6 @@
 /**
  * Performance Dashboard and Alerting System
- * 
+ *
  * This module provides a comprehensive performance monitoring dashboard with real-time
  * metrics, alerting, trend analysis, and actionable insights for emergency scenarios.
  * It integrates with all performance optimization components to provide unified visibility.
@@ -367,7 +367,9 @@ class PerformanceDashboard {
    */
   getWidgetData(widgetId: string): any {
     const widget = this.widgets.get(widgetId)
-    if (!widget) return null
+    if (!widget) {
+      return null
+    }
 
     return widget.getData(this.data)
   }
@@ -377,7 +379,7 @@ class PerformanceDashboard {
    */
   subscribe(callback: (data: DashboardData) => void): () => void {
     this.subscribers.add(callback)
-    
+
     // Return unsubscribe function
     return () => {
       this.subscribers.delete(callback)
@@ -465,7 +467,7 @@ class PerformanceDashboard {
    */
   updateConfig(config: Partial<DashboardConfig>): void {
     this.config = { ...this.config, ...config }
-    
+
     // Restart data collection if refresh interval changed
     if (config.refreshInterval) {
       this.restartDataCollection()
@@ -476,7 +478,9 @@ class PerformanceDashboard {
    * Activate emergency mode
    */
   async activateEmergencyMode(): Promise<void> {
-    if (!this.config.emergencyMode.enabled) return
+    if (!this.config.emergencyMode.enabled) {
+      return
+    }
 
     try {
       // Update configuration for emergency mode
@@ -806,7 +810,6 @@ class PerformanceDashboard {
 
       // Check for performance issues
       await this.checkPerformanceThresholds()
-
     } catch (error) {
       console.error('[PerformanceDashboard] Failed to collect data:', error)
     }
@@ -899,9 +902,9 @@ class PerformanceDashboard {
       },
       cacheHitRate: 80 + Math.random() * 15,
       indexUsage: {
-        'emergency_location_idx': 90 + Math.random() * 10,
-        'emergency_severity_idx': 85 + Math.random() * 10,
-        'user_location_idx': 88 + Math.random() * 8
+        emergency_location_idx: 90 + Math.random() * 10,
+        emergency_severity_idx: 85 + Math.random() * 10,
+        user_location_idx: 88 + Math.random() * 8
       },
       slowQueries: averageTime > 200 ? [{
         query: 'SELECT * FROM emergencies WHERE location && $1',
@@ -966,8 +969,8 @@ class PerformanceDashboard {
     const allTests = loadTestingFramework.getTestHistory(10)
     const completedTests = allTests.filter(t => t.status === 'completed').length
     const failedTests = allTests.filter(t => t.status === 'failed').length
-    const averageDuration = completedTests > 0 
-      ? allTests.reduce((sum, t) => sum + t.duration, 0) / completedTests 
+    const averageDuration = completedTests > 0
+      ? allTests.reduce((sum, t) => sum + t.duration, 0) / completedTests
       : 0
 
     return {
@@ -1100,10 +1103,10 @@ class PerformanceDashboard {
     })
 
     // Update resource utilization trend
-    const avgResourceUtilization = (this.data.system.resourceUtilization.cpu + 
-                                  this.data.system.resourceUtilization.memory + 
-                                  this.data.system.resourceUtilization.disk + 
-                                  this.data.system.resourceUtilization.network) / 4
+    const avgResourceUtilization = (this.data.system.resourceUtilization.cpu
+                                  + this.data.system.resourceUtilization.memory
+                                  + this.data.system.resourceUtilization.disk
+                                  + this.data.system.resourceUtilization.network) / 4
 
     this.data.trends.resourceUtilization.push({
       timestamp,
@@ -1121,10 +1124,14 @@ class PerformanceDashboard {
   }
 
   private calculateTrendChange(trend: TrendData[], currentValue: number): number {
-    if (trend.length < 2) return 0
+    if (trend.length < 2) {
+      return 0
+    }
 
     const previousValue = trend[trend.length - 1].value
-    if (previousValue === 0) return 0
+    if (previousValue === 0) {
+      return 0
+    }
 
     return ((currentValue - previousValue) / previousValue) * 100
   }
@@ -1225,7 +1232,9 @@ class PerformanceDashboard {
   }
 
   private startAlertProcessing(): void {
-    if (!this.config.alerting.enabled) return
+    if (!this.config.alerting.enabled) {
+      return
+    }
 
     this.alertTimer = setInterval(async () => {
       await this.processAlertEscalations()
@@ -1300,16 +1309,20 @@ class PerformanceDashboard {
   }
 
   private async processAlertEscalations(): Promise<void> {
-    if (!this.config.alerting.escalation.enabled) return
+    if (!this.config.alerting.escalation.enabled) {
+      return
+    }
 
     const now = Date.now()
     const escalationDelay = this.config.alerting.escalation.escalateAfter
 
     for (const alert of this.alerts.values()) {
-      if (alert.status !== 'active') continue
+      if (alert.status !== 'active') {
+        continue
+      }
 
       const alertAge = now - alert.timestamp.getTime()
-      
+
       if (alertAge > escalationDelay && !alert.escalatedAt) {
         await this.escalateAlert(alert)
       }
@@ -1322,7 +1335,7 @@ class PerformanceDashboard {
     this.alerts.set(alert.id, alert)
 
     // Send to escalation channels
-    const escalationLevel = this.config.alerting.escalation.levels.find(level => 
+    const escalationLevel = this.config.alerting.escalation.levels.find(level =>
       level.severity === alert.severity
     )
 
@@ -1345,7 +1358,7 @@ class PerformanceDashboard {
     // Remove old resolved alerts from active map
     for (const [id, alert] of this.alerts.entries()) {
       const alertAge = now - alert.timestamp.getTime()
-      
+
       if (alertAge > maxAge || (alert.status === 'resolved' && alertAge > 24 * 60 * 60 * 1000)) {
         this.alerts.delete(id)
       }
@@ -1358,7 +1371,9 @@ class PerformanceDashboard {
   }
 
   private notifySubscribers(): void {
-    if (!this.config.realTimeUpdates) return
+    if (!this.config.realTimeUpdates) {
+      return
+    }
 
     this.subscribers.forEach(callback => {
       try {
@@ -1371,7 +1386,7 @@ class PerformanceDashboard {
 
   private getDataForDateRange(dateRange: { start: Date; end: Date }): DashboardData {
     // Filter data history for date range
-    const filteredHistory = this.dataHistory.filter(data => 
+    const filteredHistory = this.dataHistory.filter(data =>
       data.timestamp >= dateRange.start && data.timestamp <= dateRange.end
     )
 
@@ -1382,7 +1397,7 @@ class PerformanceDashboard {
 
     // Aggregate metrics (simplified)
     const aggregated = { ...this.data }
-    
+
     // Calculate averages for the period
     aggregated.api.averageResponseTime = filteredHistory.reduce((sum, data) => sum + data.api.averageResponseTime, 0) / filteredHistory.length
     aggregated.api.requestsPerSecond = filteredHistory.reduce((sum, data) => sum + data.api.requestsPerSecond, 0) / filteredHistory.length
@@ -1467,7 +1482,7 @@ class Widget {
     const timeRange = this.config.config.timeRange
 
     let trendData: TrendData[] = []
-    
+
     switch (metric) {
       case 'responseTime':
         trendData = data.trends.responseTime
@@ -1500,7 +1515,7 @@ class Widget {
         timeRangeMs = 60 * 60 * 1000
     }
 
-    const filteredData = trendData.filter(point => 
+    const filteredData = trendData.filter(point =>
       (now - point.timestamp.getTime()) <= timeRangeMs
     )
 

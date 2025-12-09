@@ -12,12 +12,12 @@ const enhancedInputVariants = cva(
         default: 'border-input',
         error: 'border-destructive focus-visible:ring-destructive',
         success: 'border-success focus-visible:ring-success',
-        warning: 'border-warning focus-visible:ring-warning',
+        warning: 'border-warning focus-visible:ring-warning'
       },
       size: {
         sm: 'h-9 px-3 text-xs',
         default: 'h-10 px-3 py-2',
-        lg: 'h-11 px-4 py-3 text-base',
+        lg: 'h-11 px-4 py-3 text-base'
       },
       inputType: {
         text: '',
@@ -26,14 +26,14 @@ const enhancedInputVariants = cva(
         number: '',
         tel: '',
         url: '',
-        search: '',
+        search: ''
       }
     },
     defaultVariants: {
       variant: 'default',
       size: 'default',
-      inputType: 'text',
-    },
+      inputType: 'text'
+    }
   }
 )
 
@@ -88,22 +88,28 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, EnhancedInputProps>(
       isValid: boolean | null
       message: string | null
     }>({ isValid: null, message: null })
-    
+
     const inputId = id || `input-${React.useId()}`
     const hasValue = value !== undefined && value !== ''
     const isFloating = floatingLabel && (isFocused || hasValue)
-    
+
     // Accessibility hooks
     const { announcePolite } = useAriaAnnouncer()
-    
+
     // Determine the final variant based on props and validation state
     const getVariant = () => {
-      if (errorText || validationState.message && !validationState.isValid) return 'error'
-      if (successText || validationState.isValid) return 'success'
-      if (warningText) return 'warning'
+      if (errorText || validationState.message && !validationState.isValid) {
+        return 'error'
+      }
+      if (successText || validationState.isValid) {
+        return 'success'
+      }
+      if (warningText) {
+        return 'warning'
+      }
       return variant
     }
-    
+
     // Get the appropriate icon for the current state
     const getStateIcon = () => {
       if (errorText || (validationState.message && !validationState.isValid)) {
@@ -114,30 +120,32 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, EnhancedInputProps>(
       }
       return null
     }
-    
+
     // Handle validation
     const validateInput = (inputValue: string) => {
-      if (!validator || !validateOnChange) return
-      
+      if (!validator || !validateOnChange) {
+        return
+      }
+
       const validationResult = validator(inputValue)
       const isValid = validationResult === null
       const message = validationResult || null
-      
+
       setValidationState({ isValid, message })
       onValidationChange?.(isValid, message || undefined)
     }
-    
+
     // Handle input change
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       onChange?.(e)
       validateInput(e.target.value)
-      
+
       // Announce value change for screen readers if it's a password toggle
       if (type === 'password' && showPassword !== undefined) {
         announcePolite(showPassword ? 'Password shown' : 'Password hidden')
       }
     }
-    
+
     // Handle input blur
     const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
       setIsFocused(false)
@@ -146,18 +154,18 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, EnhancedInputProps>(
         validateInput(e.target.value)
       }
     }
-    
+
     // Handle input focus
     const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
       setIsFocused(true)
       onFocus?.(e)
-      
+
       // Announce field focus to screen readers
       if (label) {
         announcePolite(`Focused on ${label} field`)
       }
     }
-    
+
     // Determine the input type
     const getInputType = () => {
       if (type === 'password' && showPasswordToggle) {
@@ -165,10 +173,10 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, EnhancedInputProps>(
       }
       return type
     }
-    
+
     const currentVariant = getVariant()
     const stateIcon = getStateIcon()
-    
+
     return (
       <div className="relative w-full">
         {/* Floating Label */}
@@ -178,8 +186,8 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, EnhancedInputProps>(
             className={cn(
               'absolute left-3 transition-all duration-normal pointer-events-none z-10',
               'bg-background px-1',
-              isFloating 
-                ? 'text-xs text-muted-foreground -top-2 left-2' 
+              isFloating
+                ? 'text-xs text-muted-foreground -top-2 left-2'
                 : 'text-sm text-muted-foreground top-1/2 -translate-y-1/2',
               currentVariant === 'error' && 'text-destructive',
               currentVariant === 'success' && 'text-success',
@@ -191,10 +199,10 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, EnhancedInputProps>(
             {required && <span className="text-destructive ml-1">*</span>}
           </label>
         )}
-        
+
         {/* Standard Label */}
         {label && !floatingLabel && (
-          <label 
+          <label
             htmlFor={inputId}
             className={cn(
               'block text-sm font-medium mb-2 text-foreground',
@@ -207,7 +215,7 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, EnhancedInputProps>(
             {required && <span className="text-destructive ml-1">*</span>}
           </label>
         )}
-        
+
         {/* Input Container */}
         <div className="relative">
           {/* Left Icon */}
@@ -216,7 +224,7 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, EnhancedInputProps>(
               {leftIcon}
             </div>
           )}
-          
+
           {/* Input */}
           <input
             type={getInputType()}
@@ -238,7 +246,7 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, EnhancedInputProps>(
             aria-required={required}
             {...props}
           />
-          
+
           {/* Right Side Icons */}
           <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
             {stateIcon && (
@@ -246,13 +254,13 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, EnhancedInputProps>(
                 {stateIcon}
               </div>
             )}
-            
+
             {rightIcon && !stateIcon && (
               <div className="text-muted-foreground">
                 {rightIcon}
               </div>
             )}
-            
+
             {/* Password Toggle */}
             {showPasswordToggle && type === 'password' && (
               <button
@@ -267,7 +275,7 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, EnhancedInputProps>(
             )}
           </div>
         </div>
-        
+
         {/* Helper Text */}
         {(helperText || errorText || successText || warningText || validationState.message) && (
           <div

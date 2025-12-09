@@ -31,7 +31,7 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (request: Ne
       offset = '0',
       radius,
       center_lat,
-      center_lng,
+      center_lng
     } = Object.fromEntries(searchParams.entries())
 
     // Validate query parameters
@@ -101,11 +101,11 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (request: Ne
       const radiusMeters = parseFloat(sanitizedData.radius)
       const centerLat = parseFloat(sanitizedData.center_lat)
       const centerLng = parseFloat(sanitizedData.center_lng)
-      
+
       query = query.rpc('nearby_emergency_events', {
         center_lat: centerLat,
         center_lng: centerLng,
-        radius_meters: radiusMeters,
+        radius_meters: radiusMeters
       })
     }
 
@@ -129,7 +129,7 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (request: Ne
         `Error: ${error.message}`,
         'api_security'
       )
-      
+
       return NextResponse.json(
         { error: 'Failed to fetch emergency events', details: error.message },
         { status: 500 }
@@ -142,8 +142,8 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (request: Ne
         total: count || 0,
         limit: parseInt(sanitizedData.limit),
         offset: parseInt(sanitizedData.offset),
-        hasMore: (count || 0) > parseInt(sanitizedData.offset) + parseInt(sanitizedData.limit),
-      },
+        hasMore: (count || 0) > parseInt(sanitizedData.offset) + parseInt(sanitizedData.limit)
+      }
     })
   } catch (error) {
     console.error('Unexpected error in GET /api/emergency:', error)
@@ -154,7 +154,7 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (request: Ne
       `Error: ${error.message}`,
       'api_security'
     )
-    
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -165,7 +165,7 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (request: Ne
 export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (request: NextRequest, context) => {
   try {
     const body = await request.json()
-    
+
     // Validate and sanitize input
     const validationResult = inputValidator.validateAndSanitizeObject(
       body,
@@ -186,7 +186,7 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (reque
           securityFlags: validationResult.securityFlags
         }
       )
-      
+
       return NextResponse.json(
         {
           error: 'Invalid input data',
@@ -224,7 +224,7 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (reque
           `Risk score: ${userRisk.riskScore}, Flags: ${userRisk.flags.length}`,
           'sybil_prevention'
         )
-        
+
         return NextResponse.json(
           { error: 'Additional verification required' },
           { status: 401 }
@@ -251,7 +251,7 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (reque
         metadata: sanitizedData.metadata || {},
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
       })
       .select(`
         *,
@@ -276,7 +276,7 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (reque
           reporterId: sanitizedData.reporter_id
         }
       )
-      
+
       return NextResponse.json(
         { error: 'Failed to create emergency event', details: error.message },
         { status: 500 }
@@ -288,7 +288,7 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (reque
       // This would typically be handled by a background job
       // For now, we'll initiate immediate consensus check
       await supabase.rpc('initiate_consensus_check', {
-        event_id: data.id,
+        event_id: data.id
       })
     }
 
@@ -315,7 +315,7 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (reque
     return NextResponse.json({
       data,
       message: 'Emergency event created successfully',
-      trustWeight: calculatedTrustWeight,
+      trustWeight: calculatedTrustWeight
     }, { status: 201 })
   } catch (error) {
     console.error('Unexpected error in POST /api/emergency:', error)
@@ -326,7 +326,7 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (reque
       `Error: ${error.message}`,
       'api_security'
     )
-    
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -352,7 +352,7 @@ export const PUT = withAPISecurity(API_SECURITY_CONFIGS.user)(async (request: Ne
       severity,
       metadata,
       final_report,
-      resolved_at,
+      resolved_at
     } = body
 
     // Validate input
@@ -392,14 +392,24 @@ export const PUT = withAPISecurity(API_SECURITY_CONFIGS.user)(async (request: Ne
 
     // Build update object
     const updates: any = {
-      updated_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     }
 
-    if (sanitizedData.status) updates.status = sanitizedData.status
-    if (sanitizedData.severity) updates.severity = sanitizedData.severity
-    if (sanitizedData.metadata) updates.metadata = sanitizedData.metadata
-    if (sanitizedData.final_report) updates.final_report = sanitizedData.final_report
-    if (sanitizedData.resolved_at) updates.resolved_at = sanitizedData.resolved_at
+    if (sanitizedData.status) {
+      updates.status = sanitizedData.status
+    }
+    if (sanitizedData.severity) {
+      updates.severity = sanitizedData.severity
+    }
+    if (sanitizedData.metadata) {
+      updates.metadata = sanitizedData.metadata
+    }
+    if (sanitizedData.final_report) {
+      updates.final_report = sanitizedData.final_report
+    }
+    if (sanitizedData.resolved_at) {
+      updates.resolved_at = sanitizedData.resolved_at
+    }
 
     // Add expiration for resolved events
     if (sanitizedData.status === 'resolved') {
@@ -433,7 +443,7 @@ export const PUT = withAPISecurity(API_SECURITY_CONFIGS.user)(async (request: Ne
           eventId
         }
       )
-      
+
       return NextResponse.json(
         { error: 'Failed to update emergency event', details: error.message },
         { status: 500 }
@@ -449,7 +459,7 @@ export const PUT = withAPISecurity(API_SECURITY_CONFIGS.user)(async (request: Ne
 
     return NextResponse.json({
       data,
-      message: 'Emergency event updated successfully',
+      message: 'Emergency event updated successfully'
     })
   } catch (error) {
     console.error('Unexpected error in PUT /api/emergency:', error)
@@ -460,7 +470,7 @@ export const PUT = withAPISecurity(API_SECURITY_CONFIGS.user)(async (request: Ne
       `Error: ${error.message}`,
       'api_security'
     )
-    
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -507,7 +517,7 @@ export const DELETE = withAPISecurity(API_SECURITY_CONFIGS.user)(async (request:
       .insert({
         ...event,
         archived_at: new Date().toISOString(),
-        deleted_by: context.userId,
+        deleted_by: context.userId
       })
 
     if (archiveError) {
@@ -523,7 +533,7 @@ export const DELETE = withAPISecurity(API_SECURITY_CONFIGS.user)(async (request:
           eventId
         }
       )
-      
+
       return NextResponse.json(
         { error: 'Failed to archive emergency event' },
         { status: 500 }
@@ -549,7 +559,7 @@ export const DELETE = withAPISecurity(API_SECURITY_CONFIGS.user)(async (request:
           eventId
         }
       )
-      
+
       return NextResponse.json(
         { error: 'Failed to delete emergency event' },
         { status: 500 }
@@ -557,7 +567,7 @@ export const DELETE = withAPISecurity(API_SECURITY_CONFIGS.user)(async (request:
     }
 
     return NextResponse.json({
-      message: 'Emergency event deleted successfully',
+      message: 'Emergency event deleted successfully'
     })
   } catch (error) {
     console.error('Unexpected error in DELETE /api/emergency:', error)
@@ -568,7 +578,7 @@ export const DELETE = withAPISecurity(API_SECURITY_CONFIGS.user)(async (request:
       `Error: ${error.message}`,
       'api_security'
     )
-    
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

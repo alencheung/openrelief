@@ -9,14 +9,14 @@ import { createTestUtils } from '@/test-utils'
 global.ResizeObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
   unobserve: vi.fn(),
-  disconnect: vi.fn(),
+  disconnect: vi.fn()
 }))
 
 describe('ResponsiveMapContainer', () => {
   const { renderWithProviders } = createTestUtils()
-  
+
   const defaultProps = {
-    children: <div>Test Content</div>,
+    children: <div>Test Content</div>
   }
 
   beforeEach(() => {
@@ -29,14 +29,14 @@ describe('ResponsiveMapContainer', () => {
 
   it('renders container with children', () => {
     renderWithProviders(<ResponsiveMapContainer {...defaultProps} />)
-    
+
     expect(screen.getByText('Test Content')).toBeInTheDocument()
     expect(screen.getByText('Test Content').parentElement).toHaveClass('responsive-map-container')
   })
 
   it('applies default breakpoint and orientation', () => {
     renderWithProviders(<ResponsiveMapContainer {...defaultProps} />)
-    
+
     const container = screen.getByText('Test Content').parentElement
     expect(container).toHaveAttribute('data-breakpoint', 'desktop')
     expect(container).toHaveAttribute('data-orientation', 'landscape')
@@ -44,14 +44,14 @@ describe('ResponsiveMapContainer', () => {
 
   it('applies custom className', () => {
     renderWithProviders(<ResponsiveMapContainer {...defaultProps} className="custom-class" />)
-    
+
     const container = screen.getByText('Test Content').parentElement
     expect(container).toHaveClass('custom-class')
   })
 
   it('passes props to underlying div', () => {
     renderWithProviders(<ResponsiveMapContainer {...defaultProps} data-testid="custom-container" />)
-    
+
     expect(screen.getByTestId('custom-container')).toBeInTheDocument()
   })
 
@@ -64,13 +64,13 @@ describe('ResponsiveMapContainer', () => {
         </div>
       )
     }
-    
+
     renderWithProviders(
       <ResponsiveMapContainer {...defaultProps}>
         <TestChild />
       </ResponsiveMapContainer>
     )
-    
+
     const child = screen.getByTestId('test-child')
     expect(child).toHaveAttribute('data-breakpoint', 'desktop')
     expect(child).toHaveAttribute('data-orientation', 'landscape')
@@ -80,9 +80,9 @@ describe('ResponsiveMapContainer', () => {
     // Mock container width to simulate mobile
     const mockContainer = {
       clientWidth: 500,
-      clientHeight: 800,
+      clientHeight: 800
     }
-    
+
     vi.mocked(global.ResizeObserver).mockImplementation((callback) => ({
       observe: vi.fn((element) => {
         // Simulate mobile dimensions
@@ -91,9 +91,9 @@ describe('ResponsiveMapContainer', () => {
         callback([{ target: element }])
       }),
       unobserve: vi.fn(),
-      disconnect: vi.fn(),
+      disconnect: vi.fn()
     }))
-    
+
     const TestChild = () => {
       const responsive = useResponsive()
       return (
@@ -102,13 +102,13 @@ describe('ResponsiveMapContainer', () => {
         </div>
       )
     }
-    
+
     renderWithProviders(
       <ResponsiveMapContainer {...defaultProps}>
         <TestChild />
       </ResponsiveMapContainer>
     )
-    
+
     await waitFor(() => {
       const child = screen.getByTestId('test-child')
       expect(child).toHaveAttribute('data-breakpoint', 'mobile')
@@ -125,9 +125,9 @@ describe('ResponsiveMapContainer', () => {
         callback([{ target: element }])
       }),
       unobserve: vi.fn(),
-      disconnect: vi.fn(),
+      disconnect: vi.fn()
     }))
-    
+
     const TestChild = () => {
       const responsive = useResponsive()
       return (
@@ -136,13 +136,13 @@ describe('ResponsiveMapContainer', () => {
         </div>
       )
     }
-    
+
     renderWithProviders(
       <ResponsiveMapContainer {...defaultProps}>
         <TestChild />
       </ResponsiveMapContainer>
     )
-    
+
     await waitFor(() => {
       const child = screen.getByTestId('test-child')
       expect(child).toHaveAttribute('data-breakpoint', 'tablet')
@@ -159,9 +159,9 @@ describe('ResponsiveMapContainer', () => {
         callback([{ target: element }])
       }),
       unobserve: vi.fn(),
-      disconnect: vi.fn(),
+      disconnect: vi.fn()
     }))
-    
+
     const TestChild = () => {
       const responsive = useResponsive()
       return (
@@ -170,13 +170,13 @@ describe('ResponsiveMapContainer', () => {
         </div>
       )
     }
-    
+
     renderWithProviders(
       <ResponsiveMapContainer {...defaultProps}>
         <TestChild />
       </ResponsiveMapContainer>
     )
-    
+
     await waitFor(() => {
       const child = screen.getByTestId('test-child')
       expect(child).toHaveAttribute('data-orientation', 'portrait')
@@ -185,7 +185,7 @@ describe('ResponsiveMapContainer', () => {
 
   it('calls onBreakpointChange callback', async () => {
     const onBreakpointChange = vi.fn()
-    
+
     vi.mocked(global.ResizeObserver).mockImplementation((callback) => ({
       observe: vi.fn((element) => {
         // Simulate mobile dimensions
@@ -194,13 +194,13 @@ describe('ResponsiveMapContainer', () => {
         callback([{ target: element }])
       }),
       unobserve: vi.fn(),
-      disconnect: vi.fn(),
+      disconnect: vi.fn()
     }))
-    
+
     renderWithProviders(
       <ResponsiveMapContainer {...defaultProps} onBreakpointChange={onBreakpointChange} />
     )
-    
+
     await waitFor(() => {
       expect(onBreakpointChange).toHaveBeenCalledWith('mobile')
     })
@@ -208,7 +208,7 @@ describe('ResponsiveMapContainer', () => {
 
   it('calls onOrientationChange callback', async () => {
     const onOrientationChange = vi.fn()
-    
+
     vi.mocked(global.ResizeObserver).mockImplementation((callback) => ({
       observe: vi.fn((element) => {
         // Simulate portrait dimensions
@@ -217,13 +217,13 @@ describe('ResponsiveMapContainer', () => {
         callback([{ target: element }])
       }),
       unobserve: vi.fn(),
-      disconnect: vi.fn(),
+      disconnect: vi.fn()
     }))
-    
+
     renderWithProviders(
       <ResponsiveMapContainer {...defaultProps} onOrientationChange={onOrientationChange} />
     )
-    
+
     await waitFor(() => {
       expect(onOrientationChange).toHaveBeenCalledWith('portrait')
     })
@@ -231,14 +231,14 @@ describe('ResponsiveMapContainer', () => {
 
   it('handles orientation change events', async () => {
     const onOrientationChange = vi.fn()
-    
+
     renderWithProviders(
       <ResponsiveMapContainer {...defaultProps} onOrientationChange={onOrientationChange} />
     )
-    
+
     // Simulate orientation change event
     fireEvent(window, new Event('orientationchange'))
-    
+
     await waitFor(() => {
       // Should have been called (possibly with same value)
       expect(onOrientationChange).toHaveBeenCalled()
@@ -254,13 +254,13 @@ describe('ResponsiveMapContainer', () => {
         callback([{ target: element }])
       }),
       unobserve: vi.fn(),
-      disconnect: vi.fn(),
+      disconnect: vi.fn()
     }))
-    
+
     renderWithProviders(<ResponsiveMapContainer {...defaultProps} />)
-    
+
     const container = screen.getByText('Test Content').parentElement
-    
+
     await waitFor(() => {
       expect(container).toHaveStyle({
         '--map-legend-position': 'bottom-left',
@@ -268,58 +268,58 @@ describe('ResponsiveMapContainer', () => {
         '--map-spatial-position': 'bottom-right',
         '--map-controls-size': 'sm',
         '--map-popup-width': '100vw',
-        '--map-popup-position': 'bottom',
+        '--map-popup-position': 'bottom'
       })
     })
   })
 
   it('applies layout variant correctly', () => {
     renderWithProviders(<ResponsiveMapContainer {...defaultProps} layout="fullscreen" />)
-    
+
     const container = screen.getByText('Test Content').parentElement
     expect(container).toHaveClass('fixed', 'inset-0', 'z-50')
   })
 
   it('applies layout variant correctly', () => {
     renderWithProviders(<ResponsiveMapContainer {...defaultProps} layout="sidebar" />)
-    
+
     const container = screen.getByText('Test Content').parentElement
     expect(container).toHaveClass('flex')
   })
 
   it('throws error when useResponsive is used outside provider', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-    
+
     const TestChild = () => {
       useResponsive()
       return <div>Test Child</div>
     }
-    
+
     expect(() => {
       render(<TestChild />)
     }).toThrow('useResponsive must be used within a ResponsiveMapContainer')
-    
+
     consoleSpy.mockRestore()
   })
 
   it('cleans up ResizeObserver on unmount', () => {
     const { unmount } = renderWithProviders(<ResponsiveMapContainer {...defaultProps} />)
-    
+
     unmount()
-    
+
     const mockObserver = vi.mocked(global.ResizeObserver).mock.results[0].value
     expect(mockObserver.disconnect).toHaveBeenCalled()
   })
 
   it('cleans up orientation change listener on unmount', () => {
     const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener')
-    
+
     const { unmount } = renderWithProviders(<ResponsiveMapContainer {...defaultProps} />)
-    
+
     unmount()
-    
+
     expect(removeEventListenerSpy).toHaveBeenCalledWith('orientationchange', expect.any(Function))
-    
+
     removeEventListenerSpy.mockRestore()
   })
 })
@@ -357,9 +357,9 @@ describe('responsiveUtils', () => {
     const values = {
       mobile: 'mobile-value',
       tablet: 'tablet-value',
-      desktop: 'desktop-value',
+      desktop: 'desktop-value'
     }
-    
+
     expect(responsiveUtils.getResponsiveValue('mobile', values)).toBe('mobile-value')
   })
 
@@ -367,18 +367,18 @@ describe('responsiveUtils', () => {
     const values = {
       mobile: 'mobile-value',
       tablet: 'tablet-value',
-      desktop: 'desktop-value',
+      desktop: 'desktop-value'
     }
-    
+
     expect(responsiveUtils.getResponsiveValue('tablet', values)).toBe('tablet-value')
   })
 
   it('gets responsive value for desktop when tablet not specified', () => {
     const values = {
       mobile: 'mobile-value',
-      desktop: 'desktop-value',
+      desktop: 'desktop-value'
     }
-    
+
     expect(responsiveUtils.getResponsiveValue('tablet', values)).toBe('desktop-value')
   })
 
@@ -386,9 +386,9 @@ describe('responsiveUtils', () => {
     const values = {
       mobile: 'mobile-value',
       tablet: 'tablet-value',
-      desktop: 'desktop-value',
+      desktop: 'desktop-value'
     }
-    
+
     expect(responsiveUtils.getResponsiveValue('desktop', values)).toBe('desktop-value')
   })
 

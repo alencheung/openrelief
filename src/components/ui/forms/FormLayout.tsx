@@ -10,27 +10,27 @@ const formLayoutVariants = cva(
         tight: 'space-y-3',
         normal: 'space-y-6',
         relaxed: 'space-y-8',
-        custom: '',
+        custom: ''
       },
       columns: {
         1: 'grid-cols-1',
         2: 'grid-cols-1 sm:grid-cols-2',
         3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
         4: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4',
-        auto: 'grid-cols-1 auto-rows-auto',
+        auto: 'grid-cols-1 auto-rows-auto'
       },
       gap: {
         tight: 'gap-3',
         normal: 'gap-6',
         relaxed: 'gap-8',
-        custom: '',
-      },
+        custom: ''
+      }
     },
     defaultVariants: {
       spacing: 'normal',
       columns: 1,
-      gap: 'normal',
-    },
+      gap: 'normal'
+    }
   }
 )
 
@@ -42,19 +42,19 @@ const formSectionVariants = cva(
         default: '',
         card: 'bg-card border rounded-lg p-6 shadow-sm',
         outlined: 'border-2 border-border rounded-lg p-6',
-        ghost: '',
+        ghost: ''
       },
       spacing: {
         tight: 'space-y-2',
         normal: 'space-y-4',
         relaxed: 'space-y-6',
-        custom: '',
-      },
+        custom: ''
+      }
     },
     defaultVariants: {
       variant: 'default',
-      spacing: 'normal',
-    },
+      spacing: 'normal'
+    }
   }
 )
 
@@ -65,7 +65,7 @@ const formFieldVariants = cva(
       layout: {
         default: 'space-y-2',
         horizontal: 'flex items-center gap-4',
-        inline: 'flex items-center gap-2',
+        inline: 'flex items-center gap-2'
       },
       width: {
         auto: 'w-auto',
@@ -73,13 +73,13 @@ const formFieldVariants = cva(
         half: 'w-1/2',
         third: 'w-1/3',
         quarter: 'w-1/4',
-        custom: '',
-      },
+        custom: ''
+      }
     },
     defaultVariants: {
       layout: 'default',
-      width: 'full',
-    },
+      width: 'full'
+    }
   }
 )
 
@@ -130,29 +130,29 @@ export interface FormActionsProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const FormLayout = React.forwardRef<HTMLDivElement, FormLayoutProps>(
-  ({ 
-    className, 
-    spacing, 
-    columns, 
+  ({
+    className,
+    spacing,
+    columns,
     gap,
     customSpacing,
     customGap,
     children,
-    ...props 
+    ...props
   }, ref) => {
     const isGrid = columns !== 1
     const spacingClass = spacing === 'custom' ? customSpacing : undefined
     const gapClass = gap === 'custom' ? customGap : undefined
-    
+
     return (
       <div
         ref={ref}
         className={cn(
           isGrid ? 'grid' : '',
-          formLayoutVariants({ 
-            spacing: spacing === 'custom' ? 'normal' : spacing, 
-            columns, 
-            gap: gap === 'custom' ? 'normal' : gap 
+          formLayoutVariants({
+            spacing: spacing === 'custom' ? 'normal' : spacing,
+            columns,
+            gap: gap === 'custom' ? 'normal' : gap
           }),
           spacingClass,
           gapClass,
@@ -168,18 +168,18 @@ const FormLayout = React.forwardRef<HTMLDivElement, FormLayoutProps>(
 FormLayout.displayName = 'FormLayout'
 
 const FormSection = React.forwardRef<HTMLDivElement, FormSectionProps>(
-  ({ 
-    className, 
-    variant, 
+  ({
+    className,
+    variant,
     spacing,
     title,
     description,
     customSpacing,
     children,
-    ...props 
+    ...props
   }, ref) => {
     const spacingClass = spacing === 'custom' ? customSpacing : undefined
-    
+
     return (
       <div
         ref={ref}
@@ -198,7 +198,7 @@ const FormSection = React.forwardRef<HTMLDivElement, FormSectionProps>(
             )}
           </div>
         )}
-        
+
         <div className={cn(
           formSectionVariants({ variant: 'default', spacing: spacing === 'custom' ? 'normal' : spacing })
         )}>
@@ -211,9 +211,9 @@ const FormSection = React.forwardRef<HTMLDivElement, FormSectionProps>(
 FormSection.displayName = 'FormSection'
 
 const FormField = React.forwardRef<HTMLDivElement, FormFieldProps>(
-  ({ 
-    className, 
-    layout, 
+  ({
+    className,
+    layout,
     width,
     label,
     helperText,
@@ -223,10 +223,10 @@ const FormField = React.forwardRef<HTMLDivElement, FormFieldProps>(
     required = false,
     customWidth,
     children,
-    ...props 
+    ...props
   }, ref) => {
     const widthClass = width === 'custom' ? customWidth : undefined
-    
+
     return (
       <div
         ref={ref}
@@ -250,7 +250,7 @@ const FormField = React.forwardRef<HTMLDivElement, FormFieldProps>(
             {required && <span className="text-destructive ml-1">*</span>}
           </label>
         )}
-        
+
         <div className={cn(
           'flex-1',
           layout === 'horizontal' && 'min-w-0',
@@ -258,16 +258,16 @@ const FormField = React.forwardRef<HTMLDivElement, FormFieldProps>(
         )}>
           {children}
         </div>
-        
+
         {(helperText || errorText || successText || warningText) && (
           <div className={cn(
             'text-xs',
-            errorText 
-              ? 'text-destructive' 
-              : successText 
-                ? 'text-success' 
-                : warningText 
-                  ? 'text-warning' 
+            errorText
+              ? 'text-destructive'
+              : successText
+                ? 'text-success'
+                : warningText
+                  ? 'text-warning'
                   : 'text-muted-foreground',
             layout === 'horizontal' && 'min-w-[120px]',
             layout === 'inline' && 'min-w-[80px]'
@@ -282,19 +282,19 @@ const FormField = React.forwardRef<HTMLDivElement, FormFieldProps>(
 FormField.displayName = 'FormField'
 
 const FormRow = React.forwardRef<HTMLDivElement, FormRowProps>(
-  ({ 
-    className, 
+  ({
+    className,
     gap = 'normal',
     align = 'start',
     justify = 'start',
     wrap = true,
     children,
-    ...props 
+    ...props
   }, ref) => {
     const gapClass = gap === 'none' ? 'gap-0' : `gap-${gap === 'tight' ? '3' : gap === 'relaxed' ? '8' : '6'}`
     const alignClass = `items-${align}`
     const justifyClass = `justify-${justify}`
-    
+
     return (
       <div
         ref={ref}
@@ -316,18 +316,18 @@ const FormRow = React.forwardRef<HTMLDivElement, FormRowProps>(
 FormRow.displayName = 'FormRow'
 
 const FormActions = React.forwardRef<HTMLDivElement, FormActionsProps>(
-  ({ 
-    className, 
+  ({
+    className,
     align = 'right',
     direction = 'row',
     gap = 'normal',
     sticky = false,
     children,
-    ...props 
+    ...props
   }, ref) => {
     const gapClass = gap === 'none' ? 'gap-0' : `gap-${gap === 'tight' ? '3' : gap === 'relaxed' ? '8' : '6'}`
     const alignClass = direction === 'row' ? `justify-${align}` : `items-${align}`
-    
+
     return (
       <div
         ref={ref}
@@ -402,5 +402,5 @@ export {
   FormActions,
   formLayoutVariants,
   formSectionVariants,
-  formFieldVariants,
+  formFieldVariants
 }

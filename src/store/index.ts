@@ -107,14 +107,14 @@ export {
 export type {
   User,
   AuthState,
-  AuthActions,
+  AuthActions
 } from './authStore'
 
 export type {
   EmergencyEvent,
   EmergencyFilter,
   EmergencyMapState,
-  OfflineEmergencyAction,
+  OfflineEmergencyAction
 } from './emergencyStore'
 
 export type {
@@ -122,7 +122,7 @@ export type {
   TrustHistoryEntry,
   TrustFactors,
   TrustCalculation,
-  TrustThresholds,
+  TrustThresholds
 } from './trustStore'
 
 export type {
@@ -131,7 +131,7 @@ export type {
   LocationTrackingSession,
   LocationPermission,
   LocationSettings,
-  ProximityAlert,
+  ProximityAlert
 } from './locationStore'
 
 export type {
@@ -139,7 +139,7 @@ export type {
   NotificationAction,
   NotificationSettings,
   NotificationQueue,
-  NotificationStats,
+  NotificationStats
 } from './notificationStore'
 
 export type {
@@ -148,7 +148,7 @@ export type {
   SyncQueue,
   OfflineMetrics,
   OfflineSettings,
-  ConflictResolution,
+  ConflictResolution
 } from './offlineStore'
 
 // Utility functions for store initialization
@@ -163,7 +163,7 @@ export const initializeStores = async () => {
     await Promise.allSettled([
       locationStore.requestLocationPermission(),
       notificationStore.requestPushPermission(),
-      offlineStore.registerBackgroundSync(),
+      offlineStore.registerBackgroundSync()
     ])
   } catch (error) {
     console.error('Failed to initialize some stores:', error)
@@ -178,18 +178,18 @@ export const checkStoreHealth = () => {
     { name: 'trust', store: useTrustStore.getState() },
     { name: 'location', store: useLocationStore.getState() },
     { name: 'notification', store: useNotificationStore.getState() },
-    { name: 'offline', store: useOfflineStore.getState() },
+    { name: 'offline', store: useOfflineStore.getState() }
   ]
 
   const health = stores.map(({ name, store }) => ({
     name,
     healthy: store !== null && typeof store === 'object',
-    error: (store as any)?.error || null,
+    error: (store as any)?.error || null
   }))
 
   return {
     overall: health.every(s => s.healthy),
-    stores: health,
+    stores: health
   }
 }
 
@@ -211,15 +211,27 @@ export const exportStoreData = () => {
     trust: useTrustStore.getState(),
     location: useLocationStore.getState(),
     notification: useNotificationStore.getState(),
-    offline: useOfflineStore.getState(),
+    offline: useOfflineStore.getState()
   }
 }
 
 export const importStoreData = (data: any) => {
-  if (data.auth) useAuthStore.setState(data.auth)
-  if (data.emergency) useEmergencyStore.setState(data.emergency)
-  if (data.trust) useTrustStore.setState(data.trust)
-  if (data.location) useLocationStore.setState(data.location)
-  if (data.notification) useNotificationStore.setState(data.notification)
-  if (data.offline) useOfflineStore.setState(data.offline)
+  if (data.auth) {
+    useAuthStore.setState(data.auth)
+  }
+  if (data.emergency) {
+    useEmergencyStore.setState(data.emergency)
+  }
+  if (data.trust) {
+    useTrustStore.setState(data.trust)
+  }
+  if (data.location) {
+    useLocationStore.setState(data.location)
+  }
+  if (data.notification) {
+    useNotificationStore.setState(data.notification)
+  }
+  if (data.offline) {
+    useOfflineStore.setState(data.offline)
+  }
 }

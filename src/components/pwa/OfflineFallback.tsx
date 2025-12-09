@@ -21,14 +21,14 @@ export function OfflineFallback() {
 
   const handleRetry = async () => {
     setIsRetrying(true)
-    
+
     try {
       // Try to fetch a small resource to check connectivity
       const response = await fetch('/api/health', {
         cache: 'no-cache',
         signal: AbortSignal.timeout(5000)
       })
-      
+
       if (response.ok) {
         // Connection restored, reload the page
         window.location.reload()
@@ -78,13 +78,13 @@ export function OfflineFallback() {
               )}
             </div>
           </div>
-          
+
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
             {isOnline ? 'Connection Restored' : 'You\'re Offline'}
           </h1>
-          
+
           <p className="text-gray-600 mb-4">
-            {isOnline 
+            {isOnline
               ? 'Your connection has been restored. You can continue using OpenRelief.'
               : 'OpenRelief is working offline. Emergency features remain available.'
             }
@@ -110,7 +110,7 @@ export function OfflineFallback() {
                   </>
                 )}
               </Button>
-              
+
               {reconnectAttempts > 0 && (
                 <p className="text-sm text-gray-500">
                   Reconnect attempts: {reconnectAttempts}
@@ -125,7 +125,7 @@ export function OfflineFallback() {
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
             Emergency Actions Available Offline
           </h2>
-          
+
           <div className="space-y-3">
             {emergencyActions.map((action, index) => (
               <Button
@@ -152,7 +152,7 @@ export function OfflineFallback() {
             <div className="text-sm text-blue-800">
               <p className="font-medium mb-1">Offline Mode Active</p>
               <p className="text-blue-700">
-                OpenRelief continues to work offline for 24+ hours. Your emergency reports 
+                OpenRelief continues to work offline for 24+ hours. Your emergency reports
                 and actions will be synced automatically when you reconnect.
               </p>
               {lastSyncTime && (

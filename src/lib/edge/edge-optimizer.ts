@@ -1,6 +1,6 @@
 /**
  * Edge Caching and Geographic Routing Optimizer
- * 
+ *
  * This module provides comprehensive edge optimization for:
  * - Geographic edge routing and load balancing
  * - Multi-level caching strategies
@@ -229,19 +229,19 @@ class EdgeOptimizer {
     try {
       // Determine client location
       const clientLocation = await this.getClientLocation(request.clientIP)
-      
+
       // Get candidate edge locations
       const candidates = this.getCandidateEdgeLocations(clientLocation, request.path)
-      
+
       // Apply routing strategy
       const selectedEdge = this.applyRoutingStrategy(candidates, clientLocation, request)
-      
+
       // Calculate routing metrics
       const estimatedLatency = this.calculateEstimatedLatency(clientLocation, selectedEdge)
       const confidence = this.calculateRoutingConfidence(selectedEdge, candidates)
-      
+
       const routingDecision = this.generateRoutingDecision(selectedEdge, candidates, request)
-      
+
       const executionTime = performanceMonitor.endTimer(timerId, 'edge', 'edge_routing_decision_time')
 
       performanceMonitor.recordMetric({
@@ -269,7 +269,7 @@ class EdgeOptimizer {
 
       // Fallback to nearest edge
       const fallbackEdge = this.getFallbackEdgeLocation(fallbackStrategy)
-      
+
       return {
         edgeLocation: fallbackEdge,
         routingDecision: 'fallback_nearest',
@@ -301,33 +301,33 @@ class EdgeOptimizer {
       // Determine cache level and TTL
       const cacheLevel = this.determineCacheLevel(resource)
       const ttl = this.calculateTTL(resource, cacheLevel)
-      
+
       // Set cache control headers
       response.headers.set('Cache-Control', this.buildCacheControlHeader(cacheLevel, ttl, resource))
-      
+
       // Set CDN-specific headers
       response.headers.set('Edge-Cache-Tag', this.generateCacheTag(resource))
       response.headers.set('Edge-Cache-Key', this.generateCacheKey(resource))
-      
+
       // Set compression headers
       if (this.cacheConfig.compression.enabled) {
         response.headers.set('Content-Encoding', this.cacheConfig.compression.algorithm)
         response.headers.set('Vary', 'Accept-Encoding')
       }
-      
+
       // Set geographic headers
       if (resource.location) {
         response.headers.set('X-Edge-Location', resource.location)
       }
-      
+
       // Set priority headers
       response.headers.set('X-Priority', resource.priority)
-      
+
       // Set ETag if provided
       if (resource.etag) {
         response.headers.set('ETag', resource.etag)
       }
-      
+
       // Set Last-Modified if provided
       if (resource.lastModified) {
         response.headers.set('Last-Modified', resource.lastModified.toUTCString())
@@ -352,7 +352,7 @@ class EdgeOptimizer {
       performanceMonitor.endTimer(timerId, 'edge', 'cache_header_optimization_time', {
         error: 'true'
       })
-      
+
       return response
     }
   }
@@ -384,7 +384,7 @@ class EdgeOptimizer {
       const errors: string[] = []
 
       // Determine target edge locations
-      const targetEdges = options.edgeLocations 
+      const targetEdges = options.edgeLocations
         ? options.edgeLocations.map(id => this.edgeLocations.get(id)).filter(Boolean) as EdgeLocation[]
         : Array.from(this.edgeLocations.values())
 
@@ -453,7 +453,7 @@ class EdgeOptimizer {
 
     try {
       // Collect metrics from all edge locations or specific region
-      const targetEdges = region 
+      const targetEdges = region
         ? this.getEdgesByRegion(region)
         : Array.from(this.edgeLocations.values())
 
@@ -496,23 +496,23 @@ class EdgeOptimizer {
     try {
       // Switch to lowest latency routing
       this.routingStrategy = RoutingStrategy.LOWEST_LATENCY
-      
+
       // Reduce cache TTLs for emergency data
       this.cacheConfig.maxAge.emergency = 30 // 30 seconds
-      
+
       // Increase cache priority for emergency resources
       this.cacheConfig.levels.forEach(level => {
         if (level.name === 'edge') {
           level.ttl = 300 // 5 minutes
         }
       })
-      
+
       // Preload emergency-critical resources
       await this.preloadEmergencyResources()
-      
+
       // Enable emergency purge capability
       this.cacheConfig.invalidation.emergencyPurge = true
-      
+
       // Increase health check frequency
       this.startEmergencyHealthMonitoring()
 
@@ -544,20 +544,20 @@ class EdgeOptimizer {
     try {
       // Restore normal routing strategy
       this.routingStrategy = RoutingStrategy.PERFORMANCE_BASED
-      
+
       // Restore normal cache TTLs
       this.cacheConfig.maxAge.emergency = 60 // 1 minute
-      
+
       // Restore normal cache levels
       this.cacheConfig.levels.forEach(level => {
         if (level.name === 'edge') {
           level.ttl = 600 // 10 minutes
         }
       })
-      
+
       // Disable emergency purge capability
       this.cacheConfig.invalidation.emergencyPurge = false
-      
+
       // Restore normal health monitoring
       this.startHealthMonitoring()
 
@@ -672,7 +672,7 @@ class EdgeOptimizer {
         capabilities: { cache: true, compute: true, storage: true, functions: true },
         load: { current: 0.4, capacity: 1.0, health: 'healthy' }
       },
-      
+
       // North America West
       {
         id: 'cf-sfo',
@@ -684,7 +684,7 @@ class EdgeOptimizer {
         capabilities: { cache: true, compute: true, storage: true, functions: true },
         load: { current: 0.2, capacity: 1.0, health: 'healthy' }
       },
-      
+
       // Europe West
       {
         id: 'cf-lhr',
@@ -696,7 +696,7 @@ class EdgeOptimizer {
         capabilities: { cache: true, compute: true, storage: true, functions: true },
         load: { current: 0.5, capacity: 1.0, health: 'healthy' }
       },
-      
+
       // Europe Central
       {
         id: 'cf-fra',
@@ -708,7 +708,7 @@ class EdgeOptimizer {
         capabilities: { cache: true, compute: true, storage: true, functions: true },
         load: { current: 0.3, capacity: 1.0, health: 'healthy' }
       },
-      
+
       // Asia East
       {
         id: 'cf-nrt',
@@ -720,7 +720,7 @@ class EdgeOptimizer {
         capabilities: { cache: true, compute: true, storage: true, functions: true },
         load: { current: 0.4, capacity: 1.0, health: 'healthy' }
       },
-      
+
       // Asia Southeast
       {
         id: 'cf-sin',
@@ -736,7 +736,7 @@ class EdgeOptimizer {
 
     edgeLocations.forEach(edge => {
       this.edgeLocations.set(edge.id, edge)
-      
+
       // Add to region
       const region = this.regions.get(edge.region)
       if (region) {
@@ -748,13 +748,13 @@ class EdgeOptimizer {
   private async getClientLocation(clientIP?: string): Promise<{ lat: number; lng: number; country?: string; city?: string }> {
     // In a real implementation, this would use a geolocation service
     // For now, return approximate location based on IP or default
-    
+
     if (clientIP) {
       // Use IP geolocation service
       try {
         const response = await fetch(`https://ipapi.co/${clientIP}/json/`)
         const data = await response.json()
-        
+
         return {
           lat: data.latitude,
           lng: data.longitude,
@@ -775,20 +775,20 @@ class EdgeOptimizer {
     path?: string
   ): EdgeLocation[] {
     const candidates: EdgeLocation[] = []
-    
+
     // Get all healthy edge locations
     for (const edge of this.edgeLocations.values()) {
       if (edge.load.health === 'healthy' && edge.capabilities.cache) {
         candidates.push(edge)
       }
     }
-    
+
     // Filter by path-specific requirements
     if (path?.includes('/api/emergency')) {
       // Only use edges with compute capabilities for emergency APIs
       return candidates.filter(edge => edge.capabilities.compute)
     }
-    
+
     return candidates
   }
 
@@ -800,22 +800,22 @@ class EdgeOptimizer {
     switch (this.routingStrategy) {
       case RoutingStrategy.NEAREST:
         return this.getNearestEdge(candidates, clientLocation)
-      
+
       case RoutingStrategy.LOWEST_LATENCY:
         return this.getLowestLatencyEdge(candidates, clientLocation)
-      
+
       case RoutingStrategy.LEAST_LOADED:
         return this.getLeastLoadedEdge(candidates)
-      
+
       case RoutingStrategy.ROUND_ROBIN:
         return this.getRoundRobinEdge(candidates)
-      
+
       case RoutingStrategy.HEALTH_AWARE:
         return this.getHealthAwareEdge(candidates)
-      
+
       case RoutingStrategy.PERFORMANCE_BASED:
         return this.getPerformanceBasedEdge(candidates, clientLocation, request)
-      
+
       default:
         return candidates[0]
     }
@@ -852,7 +852,7 @@ class EdgeOptimizer {
   }
 
   private getLeastLoadedEdge(candidates: EdgeLocation[]): EdgeLocation {
-    return candidates.reduce((least, current) => 
+    return candidates.reduce((least, current) =>
       current.load.current < least.load.current ? current : least
     )
   }
@@ -876,13 +876,13 @@ class EdgeOptimizer {
     // Prioritize edges with better health scores
     const healthyEdges = candidates.filter(edge => edge.load.health === 'healthy')
     const degradedEdges = candidates.filter(edge => edge.load.health === 'degraded')
-    
+
     if (healthyEdges.length > 0) {
       return this.getLeastLoadedEdge(healthyEdges)
     } else if (degradedEdges.length > 0) {
       return this.getLeastLoadedEdge(degradedEdges)
     }
-    
+
     return candidates[0]
   }
 
@@ -896,10 +896,10 @@ class EdgeOptimizer {
       const distance = this.calculateDistance(clientLocation, edge.coordinates)
       const latency = this.getEdgeLatency(edge.id)
       const load = edge.load.current
-      
+
       // Weighted score (lower is better)
       const score = (distance * 0.3) + (latency * 0.4) + (load * 1000 * 0.3)
-      
+
       return { edge, score }
     })
 
@@ -916,11 +916,11 @@ class EdgeOptimizer {
     const R = 6371 // Earth's radius in kilometers
     const dLat = this.toRadians(point2.lat - point1.lat)
     const dLng = this.toRadians(point2.lng - point1.lng)
-    
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(this.toRadians(point1.lat)) * Math.cos(this.toRadians(point2.lat)) *
-              Math.sin(dLng / 2) * Math.sin(dLng / 2)
-    
+
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+              + Math.cos(this.toRadians(point1.lat)) * Math.cos(this.toRadians(point2.lat))
+              * Math.sin(dLng / 2) * Math.sin(dLng / 2)
+
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
     return R * c
   }
@@ -936,7 +936,7 @@ class EdgeOptimizer {
       const latest = metrics[metrics.length - 1]
       return latest.latency.p95
     }
-    
+
     // Fallback to estimated latency based on distance
     return 100 // Default 100ms
   }
@@ -955,13 +955,13 @@ class EdgeOptimizer {
     candidates: EdgeLocation[]
   ): number {
     // Calculate confidence based on edge health and performance consistency
-    const healthScore = selectedEdge.load.health === 'healthy' ? 1.0 : 
-                       selectedEdge.load.health === 'degraded' ? 0.7 : 0.3
-    
+    const healthScore = selectedEdge.load.health === 'healthy' ? 1.0
+      : selectedEdge.load.health === 'degraded' ? 0.7 : 0.3
+
     const metrics = this.performanceMetrics.get(selectedEdge.id)
-    const performanceScore = metrics && metrics.length > 1 ? 
-      1.0 - (Math.abs(metrics[metrics.length - 1].latency.p95 - metrics[metrics.length - 2].latency.p95) / metrics[metrics.length - 2].latency.p95) : 0.8
-    
+    const performanceScore = metrics && metrics.length > 1
+      ? 1.0 - (Math.abs(metrics[metrics.length - 1].latency.p95 - metrics[metrics.length - 2].latency.p95) / metrics[metrics.length - 2].latency.p95) : 0.8
+
     return (healthScore + performanceScore) / 2
   }
 
@@ -971,16 +971,16 @@ class EdgeOptimizer {
     request: any
   ): string {
     const reasons: string[] = []
-    
+
     reasons.push(`Selected ${selectedEdge.name} (${selectedEdge.provider})`)
     reasons.push(`Strategy: ${this.routingStrategy}`)
     reasons.push(`Health: ${selectedEdge.load.health}`)
     reasons.push(`Load: ${(selectedEdge.load.current * 100).toFixed(1)}%`)
-    
+
     if (request.priority === 'critical') {
       reasons.push('Priority: CRITICAL - fastest path selected')
     }
-    
+
     return reasons.join('; ')
   }
 
@@ -988,12 +988,12 @@ class EdgeOptimizer {
     const fallbackStrategy = strategy || RoutingStrategy.NEAREST
     const healthyEdges = Array.from(this.edgeLocations.values())
       .filter(edge => edge.load.health === 'healthy')
-    
+
     if (healthyEdges.length === 0) {
       // Return any edge if none are healthy
       return Array.from(this.edgeLocations.values())[0]
     }
-    
+
     switch (fallbackStrategy) {
       case RoutingStrategy.NEAREST:
         // Return first healthy edge (simplified)
@@ -1020,12 +1020,12 @@ class EdgeOptimizer {
 
   private calculateTTL(resource: any, cacheLevel: CacheLevel): number {
     const baseTTL = this.cacheConfig.maxAge[resource.type] || this.cacheConfig.defaultTTL
-    
+
     // Adjust TTL based on priority
-    const priorityMultiplier = resource.priority === 'critical' ? 0.5 :
-                            resource.priority === 'high' ? 0.7 :
-                            resource.priority === 'medium' ? 0.9 : 1.0
-    
+    const priorityMultiplier = resource.priority === 'critical' ? 0.5
+      : resource.priority === 'high' ? 0.7
+        : resource.priority === 'medium' ? 0.9 : 1.0
+
     return Math.min(cacheLevel.ttl, baseTTL * priorityMultiplier)
   }
 
@@ -1036,11 +1036,11 @@ class EdgeOptimizer {
       `stale-while-revalidate=${Math.floor(ttl * 0.5)}`,
       `stale-if-error=${Math.floor(ttl * 0.2)}`
     ]
-    
+
     if (resource.priority === 'critical') {
       directives.push('must-revalidate')
     }
-    
+
     return directives.join(', ')
   }
 
@@ -1050,11 +1050,11 @@ class EdgeOptimizer {
       resource.priority || 'medium',
       resource.location || 'global'
     ]
-    
+
     if (resource.type === 'emergency') {
       tags.push('emergency-data')
     }
-    
+
     return tags.join(',')
   }
 
@@ -1064,7 +1064,7 @@ class EdgeOptimizer {
       resource.location || 'global',
       resource.lastModified?.getTime().toString() || '0'
     ]
-    
+
     return keyParts.join(':')
   }
 
@@ -1123,7 +1123,7 @@ class EdgeOptimizer {
       '/emergency-alerts.js',
       '/offline/emergency'
     ]
-    
+
     for (const resource of emergencyResources) {
       // Trigger preload via link headers
       const link = document.createElement('link')
@@ -1138,7 +1138,7 @@ class EdgeOptimizer {
     if (this.healthCheckInterval) {
       clearInterval(this.healthCheckInterval)
     }
-    
+
     // Check health every 30 seconds
     this.healthCheckInterval = setInterval(async () => {
       await this.checkEdgeHealth()
@@ -1149,7 +1149,7 @@ class EdgeOptimizer {
     if (this.healthCheckInterval) {
       clearInterval(this.healthCheckInterval)
     }
-    
+
     // Check health every 10 seconds in emergency mode
     this.healthCheckInterval = setInterval(async () => {
       await this.checkEdgeHealth()
@@ -1161,14 +1161,13 @@ class EdgeOptimizer {
       try {
         // Simulate health check
         const isHealthy = await this.performHealthCheck(edge)
-        
+
         // Update edge health status
-        edge.load.health = isHealthy ? 'healthy' : 
-                           edge.load.health === 'unhealthy' ? 'unhealthy' : 'degraded'
-        
+        edge.load.health = isHealthy ? 'healthy'
+          : edge.load.health === 'unhealthy' ? 'unhealthy' : 'degraded'
+
         // Update load metrics
         edge.load.current = Math.random() * 0.8 // Simulated load
-        
       } catch (error) {
         edge.load.health = 'unhealthy'
         console.warn(`Health check failed for ${edge.id}:`, error)
@@ -1192,20 +1191,20 @@ class EdgeOptimizer {
   private async collectPerformanceMetrics(): Promise<void> {
     const now = new Date()
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
-    
+
     for (const edge of this.edgeLocations.values()) {
       const metrics = await this.collectEdgeMetrics(edge, {
         start: oneHourAgo,
         end: now
       })
-      
+
       if (!this.performanceMetrics.has(edge.id)) {
         this.performanceMetrics.set(edge.id, [])
       }
-      
+
       const edgeMetrics = this.performanceMetrics.get(edge.id)!
       edgeMetrics.push(metrics)
-      
+
       // Keep only last 24 hours of metrics
       const cutoffTime = new Date(now.getTime() - 24 * 60 * 60 * 1000)
       const filteredMetrics = edgeMetrics.filter(m => m.timestamp > cutoffTime)

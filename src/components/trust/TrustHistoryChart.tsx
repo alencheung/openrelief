@@ -23,12 +23,12 @@ interface ChartDataPoint {
   timestamp: Date
 }
 
-export function TrustHistoryChart({ 
-  userId, 
-  days = 30, 
+export function TrustHistoryChart({
+  userId,
+  days = 30,
   showArea = false,
   height = 300,
-  className 
+  className
 }: TrustHistoryChartProps) {
   const trustHistory = useTrustHistory(userId)
   const currentTrustScore = useTrustScore(userId)
@@ -36,16 +36,16 @@ export function TrustHistoryChart({
   const chartData = useMemo(() => {
     const now = new Date()
     const cutoffDate = subDays(now, days)
-    
+
     // Filter history within the specified range
-    const relevantHistory = trustHistory.filter(entry => 
+    const relevantHistory = trustHistory.filter(entry =>
       isAfter(new Date(entry.timestamp), cutoffDate)
     )
 
     // Create data points for each day
     const dataPoints: ChartDataPoint[] = []
     const dailyScores = new Map<string, number>()
-    
+
     // Group by date and get the latest score for each day
     relevantHistory.forEach(entry => {
       const dateKey = format(new Date(entry.timestamp), 'MMM dd')
@@ -56,7 +56,7 @@ export function TrustHistoryChart({
     for (let i = days; i >= 0; i--) {
       const date = subDays(now, i)
       const dateKey = format(date, 'MMM dd')
-      
+
       // Find the most recent score up to this date
       let score = currentTrustScore?.score || 0.5
       for (const [d, s] of dailyScores.entries()) {
@@ -149,18 +149,18 @@ export function TrustHistoryChart({
         <ResponsiveContainer width="100%" height={height}>
           <ChartComponent data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis 
-              dataKey="date" 
+            <XAxis
+              dataKey="date"
               tick={{ fontSize: 12 }}
               interval="preserveStartEnd"
             />
-            <YAxis 
+            <YAxis
               domain={[0, 100]}
               tick={{ fontSize: 12 }}
               label={{ value: 'Trust Score (%)', angle: -90, position: 'insideLeft' }}
             />
             <Tooltip content={<CustomTooltip />} />
-            
+
             {showArea ? (
               <Area
                 type="monotone"
@@ -198,7 +198,7 @@ export function TrustHistoryChart({
             )}
           </ChartComponent>
         </ResponsiveContainer>
-        
+
         {/* Legend */}
         <div className="flex items-center justify-center gap-4 mt-4 text-xs">
           <div className="flex items-center gap-1">
@@ -229,7 +229,9 @@ export function TrustFactorsRadar({ userId, className }: TrustFactorsRadarProps)
   const trustScore = useTrustScore(userId)
 
   const radarData = useMemo(() => {
-    if (!trustScore?.factors) return []
+    if (!trustScore?.factors) {
+      return []
+    }
 
     const factorLabels: Record<string, string> = {
       reportingAccuracy: 'Reporting',
@@ -244,11 +246,11 @@ export function TrustFactorsRadar({ userId, className }: TrustFactorsRadarProps)
 
     return Object.entries(trustScore.factors).map(([key, value]) => ({
       factor: factorLabels[key] || key,
-      value: key === 'responseTime' 
+      value: key === 'responseTime'
         ? Math.max(0, 100 - (value * 100 / 60)) // Convert response time to 0-100 scale
         : key === 'penaltyScore'
-        ? Math.max(0, 100 - (value * 100)) // Invert penalty score
-        : value * 100,
+          ? Math.max(0, 100 - (value * 100)) // Invert penalty score
+          : value * 100,
       fullMark: 100
     }))
   }, [trustScore])

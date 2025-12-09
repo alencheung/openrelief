@@ -1,11 +1,11 @@
 import React from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
-import { 
-  CheckCircle, 
-  AlertCircle, 
-  XCircle, 
-  Shield, 
+import {
+  CheckCircle,
+  AlertCircle,
+  XCircle,
+  Shield,
   TrendingUp,
   TrendingDown,
   Minus
@@ -20,25 +20,25 @@ const trustBadgeVariants = cva(
         good: 'trust-good',
         moderate: 'trust-moderate',
         low: 'trust-low',
-        critical: 'trust-critical',
+        critical: 'trust-critical'
       },
       size: {
         sm: 'px-2 py-1 text-xs',
         md: 'px-3 py-1.5 text-xs',
-        lg: 'px-4 py-2 text-sm',
+        lg: 'px-4 py-2 text-sm'
       },
       variant: {
         default: '',
         outline: 'border-2 bg-transparent',
         subtle: 'bg-opacity-10 text-current border border-current',
-        indicator: 'pl-8 relative',
+        indicator: 'pl-8 relative'
       }
     },
     defaultVariants: {
       level: 'good',
       size: 'md',
-      variant: 'default',
-    },
+      variant: 'default'
+    }
   }
 )
 
@@ -56,10 +56,18 @@ export interface TrustBadgeProps
 
 const getTrustLevel = (score: number, maxScore = 100): keyof typeof trustBadgeVariants.variants.level => {
   const percentage = (score / maxScore) * 100
-  if (percentage >= 90) return 'excellent'
-  if (percentage >= 70) return 'good'
-  if (percentage >= 50) return 'moderate'
-  if (percentage >= 30) return 'low'
+  if (percentage >= 90) {
+    return 'excellent'
+  }
+  if (percentage >= 70) {
+    return 'good'
+  }
+  if (percentage >= 50) {
+    return 'moderate'
+  }
+  if (percentage >= 30) {
+    return 'low'
+  }
   return 'critical'
 }
 
@@ -91,24 +99,24 @@ const getTrendIcon = (trend?: 'up' | 'down' | 'stable') => {
 }
 
 const TrustBadge = React.forwardRef<HTMLDivElement, TrustBadgeProps>(
-  ({ 
-    className, 
-    score, 
-    maxScore = 100, 
-    size, 
-    variant, 
-    showPercentage = true, 
-    showIcon = true, 
-    showTrend = false, 
+  ({
+    className,
+    score,
+    maxScore = 100,
+    size,
+    variant,
+    showPercentage = true,
+    showIcon = true,
+    showTrend = false,
     trend,
     label,
-    ...props 
+    ...props
   }, ref) => {
     const level = getTrustLevel(score, maxScore)
     const IconComponent = showIcon ? getTrustIcon(level) : null
     const TrendComponent = showTrend ? getTrendIcon(trend) : null
     const percentage = Math.round((score / maxScore) * 100)
-    
+
     return (
       <div
         ref={ref}
@@ -120,26 +128,26 @@ const TrustBadge = React.forwardRef<HTMLDivElement, TrustBadgeProps>(
           <div className="absolute left-2 top-1/2 -translate-y-1/2">
             <div className={cn(
               'w-2 h-2 rounded-full',
-              level === 'excellent' || level === 'good' ? 'bg-green-500' :
-              level === 'moderate' ? 'bg-yellow-500' :
-              level === 'low' ? 'bg-orange-500' : 'bg-red-500'
+              level === 'excellent' || level === 'good' ? 'bg-green-500'
+                : level === 'moderate' ? 'bg-yellow-500'
+                  : level === 'low' ? 'bg-orange-500' : 'bg-red-500'
             )} />
           </div>
         )}
-        
+
         {IconComponent && (
           <IconComponent className="w-3 h-3 flex-shrink-0" />
         )}
-        
+
         <span className="truncate">
           {label || (showPercentage ? `${percentage}%` : `${score}/${maxScore}`)}
         </span>
-        
+
         {TrendComponent && (
           <TrendComponent className={cn(
             'w-3 h-3 flex-shrink-0',
-            trend === 'up' ? 'text-green-600' :
-            trend === 'down' ? 'text-red-600' : 'text-gray-500'
+            trend === 'up' ? 'text-green-600'
+              : trend === 'down' ? 'text-red-600' : 'text-gray-500'
           )} />
         )}
       </div>

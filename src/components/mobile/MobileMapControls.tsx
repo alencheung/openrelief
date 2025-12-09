@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { useMobileDetection } from '@/hooks/useMobileDetection'
 import { useTouchGestures } from '@/hooks/useTouchGestures'
-import { 
-  ZoomIn, 
-  ZoomOut, 
-  Crosshair, 
-  Layers, 
+import {
+  ZoomIn,
+  ZoomOut,
+  Crosshair,
+  Layers,
   Navigation,
   Plus,
   Minus,
@@ -46,7 +46,7 @@ export function MobileMapControls({
   position = 'bottom-right',
   variant = 'compact',
   showLabels = false,
-  disabled = false,
+  disabled = false
 }: MobileMapControlsProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [activeControl, setActiveControl] = useState<string | null>(null)
@@ -54,7 +54,9 @@ export function MobileMapControls({
 
   // Auto-collapse controls after inactivity
   useEffect(() => {
-    if (!isMobile) return
+    if (!isMobile) {
+      return
+    }
 
     const timer = setTimeout(() => {
       if (isExpanded && !activeControl) {
@@ -80,16 +82,18 @@ export function MobileMapControls({
     },
     onLongPress: () => {
       setIsExpanded(true)
-    },
+    }
   })
 
-  if (!isMobile) return null
+  if (!isMobile) {
+    return null
+  }
 
   const positionClasses = {
     'bottom-right': 'bottom-4 right-4',
     'bottom-left': 'bottom-4 left-4',
     'top-right': 'top-4 right-4',
-    'top-left': 'top-4 left-4',
+    'top-left': 'top-4 left-4'
   }
 
   return (
@@ -142,7 +146,7 @@ export function MobileMapControls({
             >
               <ZoomIn className="w-4 h-4" />
             </Button>
-            
+
             <Button
               size="icon"
               variant="outline"
@@ -264,10 +268,10 @@ function getControlLabel(controlId: string): string {
     'zoom-in': 'Zoom In',
     'zoom-out': 'Zoom Out',
     'center-location': 'Center Location',
-    'layers': 'Map Layers',
-    'filter': 'Filter',
-    'navigate': 'Navigate',
-    'settings': 'Settings',
+    layers: 'Map Layers',
+    filter: 'Filter',
+    navigate: 'Navigate',
+    settings: 'Settings'
   }
   return labels[controlId] || ''
 }
@@ -277,7 +281,7 @@ export function MobileZoomControls({
   onZoomIn,
   onZoomOut,
   disabled = false,
-  className,
+  className
 }: {
   onZoomIn?: () => void
   onZoomOut?: () => void
@@ -286,7 +290,9 @@ export function MobileZoomControls({
 }) {
   const { isMobile } = useMobileDetection()
 
-  if (!isMobile) return null
+  if (!isMobile) {
+    return null
+  }
 
   return (
     <div className={cn('flex flex-col gap-1', className)}>
@@ -300,7 +306,7 @@ export function MobileZoomControls({
       >
         <Plus className="w-4 h-4" />
       </Button>
-      
+
       <Button
         size="icon"
         variant="outline"
@@ -318,7 +324,7 @@ export function MobileZoomControls({
 export function MobileLocationControl({
   onCenterLocation,
   disabled = false,
-  className,
+  className
 }: {
   onCenterLocation?: () => void
   disabled?: boolean
@@ -326,7 +332,9 @@ export function MobileLocationControl({
 }) {
   const { isMobile } = useMobileDetection()
 
-  if (!isMobile) return null
+  if (!isMobile) {
+    return null
+  }
 
   return (
     <Button
@@ -352,7 +360,7 @@ export function MobileEmergencyControls({
   onNavigate,
   onFilter,
   disabled = false,
-  className,
+  className
 }: {
   emergencies: any[]
   selectedEmergency?: any
@@ -365,7 +373,9 @@ export function MobileEmergencyControls({
   const { isMobile } = useMobileDetection()
   const [isExpanded, setIsExpanded] = useState(false)
 
-  if (!isMobile) return null
+  if (!isMobile) {
+    return null
+  }
 
   return (
     <div className={cn('fixed bottom-20 left-4 z-30', className)}>
@@ -401,7 +411,7 @@ export function MobileEmergencyControls({
               ×
             </button>
           </div>
-          
+
           <div className="mobile-emergency-form-content">
             <div className="space-y-2">
               {emergencies.slice(0, 5).map((emergency) => (
@@ -418,8 +428,8 @@ export function MobileEmergencyControls({
                   }}
                 >
                   <div className="flex items-start gap-3">
-                    <EmergencyIndicator 
-                      type={emergency.type} 
+                    <EmergencyIndicator
+                      type={emergency.type}
                       size="sm"
                       className="mt-1"
                     />
@@ -435,7 +445,7 @@ export function MobileEmergencyControls({
                 </button>
               ))}
             </div>
-            
+
             {emergencies.length > 5 && (
               <button
                 className="w-full mt-3 p-2 text-center text-sm text-primary font-medium"

@@ -99,7 +99,7 @@ export const useRealtimeSubscription = (config: SubscriptionConfig) => {
               event: config.event || '*',
               schema: 'public',
               table: config.table as string,
-              filter: config.filter,
+              filter: config.filter
             },
             (payload: any) => {
               try {
@@ -107,7 +107,7 @@ export const useRealtimeSubscription = (config: SubscriptionConfig) => {
                   eventType: payload.eventType,
                   old: payload.old,
                   new: payload.new,
-                  timestamp: new Date().toISOString(),
+                  timestamp: new Date().toISOString()
                 }
 
                 callbackRef.current(enhancedPayload)
@@ -173,7 +173,7 @@ export const useRealtimeSubscription = (config: SubscriptionConfig) => {
             action: 'realtime_subscription',
             table: config.table,
             attempts,
-            priority,
+            priority
           })
           console.error('[Realtime] Subscription error details:', errorInfo)
         }
@@ -250,7 +250,7 @@ export const useRealtimeSubscription = (config: SubscriptionConfig) => {
     error,
     retryCount,
     lastErrorTime,
-    canRetry: status === 'error' && isOnline && retryCount < maxRetries,
+    canRetry: status === 'error' && isOnline && retryCount < maxRetries
   }
 }
 
@@ -288,7 +288,7 @@ export const useEmergencyEventsSubscription = () => {
                     severity: payload.new.severity >= 5 ? 'critical' : 'warning',
                     title: `New ${payload.new.severity >= 5 ? 'Critical' : 'High'} Emergency`,
                     message: payload.new.title,
-                    location: payload.new.location,
+                    location: payload.new.location
                   })
                 } catch (notificationError) {
                   console.error('[Realtime] Failed to create emergency notification:', notificationError)
@@ -312,7 +312,7 @@ export const useEmergencyEventsSubscription = () => {
                       severity: 'success',
                       title: 'Emergency Resolved',
                       message: payload.new.title,
-                      location: payload.new.location,
+                      location: payload.new.location
                     })
                   } else if (payload.new.status === 'active') {
                     await createEmergencyNotification({
@@ -321,7 +321,7 @@ export const useEmergencyEventsSubscription = () => {
                       severity: 'warning',
                       title: 'Emergency Activated',
                       message: payload.new.title,
-                      location: payload.new.location,
+                      location: payload.new.location
                     })
                   }
                 } catch (notificationError) {
@@ -344,13 +344,13 @@ export const useEmergencyEventsSubscription = () => {
         const errorInfo = classifyError(error, {
           action: 'emergency_event_processing',
           eventType: payload.eventType,
-          eventId: payload.new?.id || payload.old?.id,
+          eventId: payload.new?.id || payload.old?.id
         })
         console.error('[Realtime] Emergency event processing error details:', errorInfo)
 
         // Don't rethrow - we don't want processing errors to break the subscription
       }
-    },
+    }
   })
 
   // Monitor subscription status and update store accordingly
@@ -387,7 +387,7 @@ export const useEventConfirmationsSubscription = () => {
         const confirmationType = payload.new.confirmation_type as 'confirm' | 'dispute'
         updateEvent(payload.new.event_id, {
           confirmation_count: confirmationType === 'confirm' ? 1 : 0,
-          dispute_count: confirmationType === 'dispute' ? 1 : 0,
+          dispute_count: confirmationType === 'dispute' ? 1 : 0
         })
 
         // Update trust score for confirmation
@@ -398,7 +398,7 @@ export const useEventConfirmationsSubscription = () => {
           'success',
           {
             trust_weight: payload.new.trust_weight,
-            location: payload.new.location,
+            location: payload.new.location
           }
         )
 
@@ -409,11 +409,11 @@ export const useEventConfirmationsSubscription = () => {
             userId: payload.new.user_id,
             scoreChange: 0.01, // Small positive change for confirming
             newScore: trustScore.score,
-            reason: `Confirmed emergency event`,
+            reason: 'Confirmed emergency event'
           })
         }
       }
-    },
+    }
   })
 }
 
@@ -447,8 +447,8 @@ export const useUserProfilesSubscription = () => {
               contributionFrequency: 0,
               communityEndorsement: 0.5,
               penaltyScore: 0,
-              expertiseAreas: [],
-            },
+              expertiseAreas: []
+            }
           })
         }
 
@@ -465,7 +465,7 @@ export const useUserProfilesSubscription = () => {
           }
         }
       }
-    },
+    }
   })
 }
 
@@ -490,7 +490,7 @@ export const useTrustHistorySubscription = () => {
           previousScore: payload.new.previous_score,
           newScore: payload.new.new_score,
           reason: payload.new.reason || undefined,
-          timestamp: new Date(payload.new.created_at),
+          timestamp: new Date(payload.new.created_at)
         })
 
         // Create notification for significant trust changes
@@ -499,11 +499,11 @@ export const useTrustHistorySubscription = () => {
             userId: payload.new.user_id,
             scoreChange: payload.new.trust_change,
             newScore: payload.new.new_score,
-            reason: payload.new.reason || `Trust score updated`,
+            reason: payload.new.reason || 'Trust score updated'
           })
         }
       }
-    },
+    }
   })
 }
 
@@ -523,7 +523,7 @@ export const useNotificationQueueSubscription = () => {
           processQueue()
         }
       }
-    },
+    }
   })
 }
 
@@ -542,7 +542,7 @@ export const useSystemMetricsSubscription = () => {
           console.warn(`[System] Critical metric: ${payload.new.metric_name} = ${payload.new.metric_value}`)
         }
       }
-    },
+    }
   })
 }
 
@@ -564,14 +564,14 @@ export const useMultipleRealtimeSubscriptions = (configs: SubscriptionConfig[]) 
             event: config.event || '*',
             schema: 'public',
             table: config.table as string,
-            filter: config.filter,
+            filter: config.filter
           },
           (payload: any) => {
             const enhancedPayload = {
               eventType: payload.eventType,
               old: payload.old,
               new: payload.new,
-              timestamp: new Date().toISOString(),
+              timestamp: new Date().toISOString()
             }
 
             config.callback(enhancedPayload)
@@ -604,7 +604,7 @@ export const useMultipleRealtimeSubscriptions = (configs: SubscriptionConfig[]) 
       })
       channelsRef.current = []
     },
-    isSubscribed: channelsRef.current.length > 0,
+    isSubscribed: channelsRef.current.length > 0
   }
 }
 
@@ -660,7 +660,7 @@ export const useRealtimeConnection = () => {
     const errorInfo = classifyError(error, {
       action: 'realtime_connection',
       connectionStatus: connectionStatusRef.current,
-      reconnectAttempts: reconnectAttemptsRef.current,
+      reconnectAttempts: reconnectAttemptsRef.current
     })
     console.error('[Realtime] Connection error details:', errorInfo)
 
@@ -748,7 +748,9 @@ export const useRealtimeConnection = () => {
 // Presence tracking for active users
 export const usePresenceTracking = (userId: string, userLocation?: { lat: number; lng: number }) => {
   useEffect(() => {
-    if (!userId || !userLocation) return
+    if (!userId || !userLocation) {
+      return
+    }
 
     const channel = supabase.channel(`presence-${userId}`)
       .on('presence' as any, { event: 'sync' }, (state: any) => {
@@ -767,7 +769,7 @@ export const usePresenceTracking = (userId: string, userLocation?: { lat: number
             user_id: userId,
             location: userLocation,
             online_at: new Date().toISOString(),
-            status: 'active',
+            status: 'active'
           })
         }
       })
@@ -794,7 +796,7 @@ export const useEmergencyBroadcast = (eventId?: string) => {
       const enhancedPayload = {
         ...payload,
         timestamp: new Date().toISOString(),
-        senderId: useEmergencyStore.getState().selectedEvent?.reporter_id,
+        senderId: useEmergencyStore.getState().selectedEvent?.reporter_id
       }
 
       logBroadcastAttempt('useEmergencyBroadcast', channelName, eventId)
@@ -810,10 +812,10 @@ export const useEmergencyBroadcast = (eventId?: string) => {
           data: {
             channelName,
             event,
-            payload: enhancedPayload,
+            payload: enhancedPayload
           },
           priority: 'critical', // Emergency broadcasts are highest priority
-          maxRetries: 10,
+          maxRetries: 10
         })
 
         setBroadcastStatus('sent')
@@ -827,12 +829,12 @@ export const useEmergencyBroadcast = (eventId?: string) => {
       await channel.send({
         type: 'broadcast',
         event,
-        payload: enhancedPayload,
+        payload: enhancedPayload
       })
 
       logBroadcastSuccess('useEmergencyBroadcast', channelName, eventId)
       setBroadcastStatus('sent')
-      console.log(`[Realtime] Emergency broadcast sent successfully`)
+      console.log('[Realtime] Emergency broadcast sent successfully')
 
       return { queued: false, offline: false }
     } catch (error) {
@@ -843,7 +845,7 @@ export const useEmergencyBroadcast = (eventId?: string) => {
         action: 'emergency_broadcast',
         channelName,
         event,
-        eventId,
+        eventId
       })
 
       console.error('[Realtime] Broadcast error details:', errorInfo)
@@ -862,11 +864,11 @@ export const useEmergencyBroadcast = (eventId?: string) => {
             payload: {
               ...payload,
               timestamp: new Date().toISOString(),
-              senderId: useEmergencyStore.getState().selectedEvent?.reporter_id,
-            },
+              senderId: useEmergencyStore.getState().selectedEvent?.reporter_id
+            }
           },
           priority: 'critical',
-          maxRetries: 10,
+          maxRetries: 10
         })
       }
 
@@ -913,6 +915,6 @@ export const useEmergencyBroadcast = (eventId?: string) => {
     subscribe,
     status: broadcastStatus,
     error: lastError,
-    canBroadcast: isOnline || broadcastStatus === 'sent', // Can always queue when offline
+    canBroadcast: isOnline || broadcastStatus === 'sent' // Can always queue when offline
   }
 }

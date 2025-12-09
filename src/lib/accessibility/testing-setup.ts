@@ -1,6 +1,6 @@
 /**
  * Accessibility testing setup for OpenRelief
- * 
+ *
  * Provides automated testing utilities, validation rules,
  * and development tools for ensuring WCAG compliance.
  */
@@ -29,7 +29,7 @@ export class AccessibilityTester {
     }
 
     const violations: AccessibilityViolation[] = []
-    
+
     // Run built-in tests
     for (const ruleName of this.config.testRules) {
       const rule = this.getRuleByName(ruleName)
@@ -59,11 +59,11 @@ export class AccessibilityTester {
     }
 
     const violations: AccessibilityViolation[] = []
-    
+
     // Test against all applicable rules
     const allRules = [
       ...this.config.testRules.map(name => this.getRuleByName(name)),
-      ...this.customRules,
+      ...this.customRules
     ].filter(Boolean)
 
     for (const rule of allRules) {
@@ -93,19 +93,19 @@ export class AccessibilityTester {
         test: (element) => {
           const tabIndex = element.tabIndex
           const ariaHidden = element.getAttribute('aria-hidden')
-          
+
           if (ariaHidden === 'true' || tabIndex < 0) {
             return null
           }
-          
-          const hasKeyboardHandler = 
-            element.onkeydown || element.onkeyup || element.onkeypress ||
-            element.tagName === 'BUTTON' ||
-            element.tagName === 'INPUT' ||
-            element.tagName === 'SELECT' ||
-            element.tagName === 'TEXTAREA' ||
-            element.tagName === 'A'
-          
+
+          const hasKeyboardHandler
+            = element.onkeydown || element.onkeyup || element.onkeypress
+            || element.tagName === 'BUTTON'
+            || element.tagName === 'INPUT'
+            || element.tagName === 'SELECT'
+            || element.tagName === 'TEXTAREA'
+            || element.tagName === 'A'
+
           if (!hasKeyboardHandler) {
             return {
               rule: 'keyboard-navigation',
@@ -113,15 +113,15 @@ export class AccessibilityTester {
               message: `Element ${element.tagName} is not keyboard accessible`,
               suggestion: 'Add keyboard event handlers or use natively keyboard-accessible elements',
               severity: 'error',
-              wcagGuideline: '2.1.1',
+              wcagGuideline: '2.1.1'
             }
           }
-          
+
           return null
         },
-        enabled: true,
+        enabled: true
       },
-      
+
       'focus-management': {
         id: 'focus-management',
         name: 'Focus Management',
@@ -131,11 +131,11 @@ export class AccessibilityTester {
         selector: 'button, input, select, textarea, a, [tabindex]:not([tabindex="-1"])',
         test: (element) => {
           const style = window.getComputedStyle(element)
-          const hasFocusStyles = 
-            style.outline !== 'none' && style.outline !== '' ||
-            style.boxShadow !== 'none' && style.boxShadow !== '' ||
-            element.getAttribute('data-focus-visible') !== null
-          
+          const hasFocusStyles
+            = style.outline !== 'none' && style.outline !== ''
+            || style.boxShadow !== 'none' && style.boxShadow !== ''
+            || element.getAttribute('data-focus-visible') !== null
+
           if (!hasFocusStyles) {
             return {
               rule: 'focus-management',
@@ -143,15 +143,15 @@ export class AccessibilityTester {
               message: 'Element lacks visible focus indicator',
               suggestion: 'Add :focus styles with outline, box-shadow, or data-focus-visible attribute',
               severity: 'error',
-              wcagGuideline: '2.4.3',
+              wcagGuideline: '2.4.3'
             }
           }
-          
+
           return null
         },
-        enabled: true,
+        enabled: true
       },
-      
+
       'aria-labels': {
         id: 'aria-labels',
         name: 'ARIA Labels',
@@ -163,7 +163,7 @@ export class AccessibilityTester {
           const ariaLabel = element.getAttribute('aria-label')
           const ariaLabelledby = element.getAttribute('aria-labelledby')
           const textContent = element.textContent?.trim()
-          
+
           if (!ariaLabel && !ariaLabelledby && !textContent) {
             return {
               rule: 'aria-labels',
@@ -171,15 +171,15 @@ export class AccessibilityTester {
               message: `Element ${element.tagName} lacks accessible name`,
               suggestion: 'Add aria-label, aria-labelledby, or visible text content',
               severity: 'error',
-              wcagGuideline: '2.4.6',
+              wcagGuideline: '2.4.6'
             }
           }
-          
+
           return null
         },
-        enabled: true,
+        enabled: true
       },
-      
+
       'color-contrast': {
         id: 'color-contrast',
         name: 'Color Contrast',
@@ -191,14 +191,14 @@ export class AccessibilityTester {
           const style = window.getComputedStyle(element)
           const color = style.color
           const backgroundColor = style.backgroundColor
-          
+
           // Skip if colors are not explicitly set
           if (color === 'rgb(0, 0, 0)' && backgroundColor === 'rgba(0, 0, 0, 0)') {
             return null
           }
-          
+
           const contrast = this.calculateContrastRatio(color, backgroundColor)
-          
+
           if (contrast < 4.5) {
             return {
               rule: 'color-contrast',
@@ -206,15 +206,15 @@ export class AccessibilityTester {
               message: `Insufficient color contrast: ${contrast.toFixed(2)}:1`,
               suggestion: 'Increase color contrast to at least 4.5:1 for normal text',
               severity: 'error',
-              wcagGuideline: '1.4.3',
+              wcagGuideline: '1.4.3'
             }
           }
-          
+
           return null
         },
-        enabled: true,
+        enabled: true
       },
-      
+
       'skip-links': {
         id: 'skip-links',
         name: 'Skip Links',
@@ -225,7 +225,7 @@ export class AccessibilityTester {
         test: (element) => {
           const targetId = element.getAttribute('href')?.slice(1)
           const targetElement = targetId ? document.getElementById(targetId) : null
-          
+
           if (!targetElement) {
             return {
               rule: 'skip-links',
@@ -233,16 +233,16 @@ export class AccessibilityTester {
               message: `Skip link target not found: ${targetId}`,
               suggestion: 'Ensure skip link targets exist on the page',
               severity: 'error',
-              wcagGuideline: '2.4.1',
+              wcagGuideline: '2.4.1'
             }
           }
-          
+
           return null
         },
-        enabled: true,
-      },
+        enabled: true
+      }
     }
-    
+
     return ruleMap[name] || null
   }
 
@@ -252,13 +252,13 @@ export class AccessibilityTester {
   private calculateContrastRatio(color1: string, color2: string): number {
     const rgb1 = this.parseColor(color1)
     const rgb2 = this.parseColor(color2)
-    
+
     const l1 = this.calculateLuminance(rgb1)
     const l2 = this.calculateLuminance(rgb2)
-    
+
     const lighter = Math.max(l1, l2)
     const darker = Math.min(l1, l2)
-    
+
     return (lighter + 0.05) / (darker + 0.05)
   }
 
@@ -273,27 +273,27 @@ export class AccessibilityTester {
         return {
           r: parseInt(hex[0] + hex[0], 16),
           g: parseInt(hex[1] + hex[1], 16),
-          b: parseInt(hex[2] + hex[2], 16),
+          b: parseInt(hex[2] + hex[2], 16)
         }
       } else {
         return {
           r: parseInt(hex.slice(0, 2), 16),
           g: parseInt(hex.slice(2, 4), 16),
-          b: parseInt(hex.slice(4, 6), 16),
+          b: parseInt(hex.slice(4, 6), 16)
         }
       }
     }
-    
+
     // Handle rgb colors
     const rgbMatch = color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/)
     if (rgbMatch) {
       return {
         r: parseInt(rgbMatch[1]),
         g: parseInt(rgbMatch[2]),
-        b: parseInt(rgbMatch[3]),
+        b: parseInt(rgbMatch[3])
       }
     }
-    
+
     // Default to black
     return { r: 0, g: 0, b: 0 }
   }
@@ -305,11 +305,11 @@ export class AccessibilityTester {
     const rsRGB = rgb.r / 255
     const gsRGB = rgb.g / 255
     const bsRGB = rgb.b / 255
-    
+
     const r = rsRGB <= 0.03928 ? rsRGB / 12.92 : Math.pow((rsRGB + 0.055) / 1.055, 2.4)
     const g = gsRGB <= 0.03928 ? gsRGB / 12.92 : Math.pow((gsRGB + 0.055) / 1.055, 2.4)
     const b = bsRGB <= 0.03928 ? bsRGB / 12.92 : Math.pow((bsRGB + 0.055) / 1.055, 2.4)
-    
+
     return 0.2126 * r + 0.7152 * g + 0.0722 * b
   }
 
@@ -319,14 +319,14 @@ export class AccessibilityTester {
   private runRule(rule: AccessibilityRule): AccessibilityViolation[] {
     const violations: AccessibilityViolation[] = []
     const elements = document.querySelectorAll(rule.selector) as NodeListOf<HTMLElement>
-    
+
     for (const element of elements) {
       const violation = rule.test(element)
       if (violation) {
         violations.push(violation)
       }
     }
-    
+
     return violations
   }
 
@@ -351,16 +351,16 @@ export class AccessibilityTester {
     const errors = violations.filter(v => v.severity === 'error')
     const warnings = violations.filter(v => v.severity === 'warning')
     const info = violations.filter(v => v.severity === 'info')
-    
+
     const score = violations.length > 0 ? Math.max(0, 100 - (errors.length * 20)) : 100
-    
+
     return {
       total: violations.length,
       errors: errors.length,
       warnings: warnings.length,
       info: info.length,
       score,
-      wcagLevel: this.getWCAGLevel(score),
+      wcagLevel: this.getWCAGLevel(score)
     }
   }
 
@@ -368,9 +368,15 @@ export class AccessibilityTester {
    * Determine WCAG compliance level
    */
   private getWCAGLevel(score: number): 'A' | 'AA' | 'AAA' | 'Not Compliant' {
-    if (score >= 95) return 'AAA'
-    if (score >= 80) return 'AA'
-    if (score >= 60) return 'A'
+    if (score >= 95) {
+      return 'AAA'
+    }
+    if (score >= 80) {
+      return 'AA'
+    }
+    if (score >= 60) {
+      return 'A'
+    }
     return 'Not Compliant'
   }
 }
@@ -440,13 +446,13 @@ export class AccessibilityDevTools {
         e.preventDefault()
         this.runTestsAndDisplay()
       }
-      
+
       // Ctrl+Shift+R: Generate accessibility report
       if (e.ctrlKey && e.shiftKey && e.key === 'R') {
         e.preventDefault()
         this.generateAndDisplayReport()
       }
-      
+
       // Ctrl+Shift+H: Toggle highlighting
       if (e.ctrlKey && e.shiftKey && e.key === 'H') {
         e.preventDefault()
@@ -472,7 +478,7 @@ export class AccessibilityDevTools {
     observer.observe(document.body, {
       childList: true,
       subtree: true,
-      attributes: true,
+      attributes: true
     })
   }
 
@@ -482,7 +488,7 @@ export class AccessibilityDevTools {
   private runTestsAndDisplay(): void {
     const violations = accessibilityTester.runTests()
     const resultsDiv = document.getElementById('accessibility-results')
-    
+
     if (resultsDiv) {
       resultsDiv.innerHTML = `
         <h4>Test Results (${violations.length} violations)</h4>
@@ -502,7 +508,7 @@ export class AccessibilityDevTools {
   private generateAndDisplayReport(): void {
     const report = generateAccessibilityReport()
     const resultsDiv = document.getElementById('accessibility-results')
-    
+
     if (resultsDiv) {
       resultsDiv.innerHTML = `
         <h4>Accessibility Report</h4>
@@ -526,7 +532,7 @@ export class AccessibilityDevTools {
 export function initializeAccessibilityTesting(): void {
   if (process.env.NODE_ENV === 'development') {
     AccessibilityDevTools.getInstance()
-    
+
     // Run initial tests after page load
     setTimeout(() => {
       const violations = accessibilityTester.runTests()

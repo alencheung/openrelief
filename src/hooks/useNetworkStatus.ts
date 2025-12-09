@@ -20,7 +20,7 @@ export function useNetworkStatus(): NetworkStatus {
     isOffline: false, // Default to false for SSR consistency
     reconnectAttempts: 0,
     lastOnlineTime: null,
-    lastOfflineTime: null,
+    lastOfflineTime: null
   })
 
   const updateNetworkStatus = useCallback((online: boolean) => {
@@ -38,7 +38,7 @@ export function useNetworkStatus(): NetworkStatus {
         connectionType: getConnectionType(),
         effectiveType: getEffectiveType(),
         downlink: getDownlink(),
-        rtt: getRtt(),
+        rtt: getRtt()
       } as NetworkStatus
 
       // Store in localStorage for persistence across page reloads (outside setState to avoid recursion)
@@ -48,7 +48,7 @@ export function useNetworkStatus(): NetworkStatus {
             isOnline: online,
             lastOnlineTime: online ? now.toISOString() : null,
             lastOfflineTime: !online ? now.toISOString() : null,
-            reconnectAttempts: online ? 0 : 1,
+            reconnectAttempts: online ? 0 : 1
           }))
         } catch (error) {
           console.warn('[Network] Failed to save status to localStorage:', error)
@@ -101,7 +101,7 @@ export function useNetworkStatus(): NetworkStatus {
             isOffline: !navigator.onLine,
             reconnectAttempts: parsed.reconnectAttempts || 0,
             lastOnlineTime: parsed.lastOnlineTime ? new Date(parsed.lastOnlineTime) : null,
-            lastOfflineTime: parsed.lastOfflineTime ? new Date(parsed.lastOfflineTime) : null,
+            lastOfflineTime: parsed.lastOfflineTime ? new Date(parsed.lastOfflineTime) : null
           })
         } else {
           // Initialize with actual navigator state on client side
@@ -110,7 +110,7 @@ export function useNetworkStatus(): NetworkStatus {
             isOffline: !navigator.onLine,
             reconnectAttempts: 0,
             lastOnlineTime: null,
-            lastOfflineTime: null,
+            lastOfflineTime: null
           })
         }
       } catch (error) {
@@ -121,7 +121,7 @@ export function useNetworkStatus(): NetworkStatus {
           isOffline: !navigator.onLine,
           reconnectAttempts: 0,
           lastOnlineTime: null,
-          lastOfflineTime: null,
+          lastOfflineTime: null
         })
       }
     }
@@ -334,7 +334,6 @@ function openOfflineDB(): Promise<IDBDatabase> {
       request.onblocked = () => {
         console.warn('[IndexedDB] Database open blocked - another connection might be open')
       }
-
     } catch (error) {
       console.error('[IndexedDB] Exception while opening database:', error)
       reject(error)

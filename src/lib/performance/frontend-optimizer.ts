@@ -1,6 +1,6 @@
 /**
  * Frontend Performance Optimizer for Mobile Networks
- * 
+ *
  * This module provides comprehensive frontend optimization for:
  * - Bundle size optimization and code splitting
  * - Image optimization and lazy loading
@@ -143,7 +143,9 @@ class FrontendOptimizer {
    * Setup intersection observer for lazy loading
    */
   private setupIntersectionObserver(): void {
-    if (typeof IntersectionObserver === 'undefined') return
+    if (typeof IntersectionObserver === 'undefined') {
+      return
+    }
 
     this.intersectionObserver = new IntersectionObserver(
       (entries) => {
@@ -183,10 +185,10 @@ class FrontendOptimizer {
   private setupCriticalResourcePreloading(): void {
     // Preload critical CSS
     this.addPreload('/_next/static/css/main.css', 'style')
-    
+
     // Preload critical fonts
     this.addPreload('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap', 'style')
-    
+
     // Preload critical JavaScript chunks
     if (this.bundleConfig.preloadCriticalChunks) {
       this.addPreload('/_next/static/chunks/main.js', 'script')
@@ -200,7 +202,7 @@ class FrontendOptimizer {
   private setupImageOptimization(): void {
     // Optimize existing images
     this.optimizeExistingImages()
-    
+
     // Setup progressive image loading
     if (this.imageConfig.enableProgressiveLoading) {
       this.setupProgressiveImageLoading()
@@ -213,10 +215,10 @@ class FrontendOptimizer {
   private setupFontOptimization(): void {
     // Use font-display: swap for better loading
     this.addFontDisplayOptimization()
-    
+
     // Preload critical fonts
     this.preloadCriticalFonts()
-    
+
     // Setup font loading observer
     this.setupFontLoadingObserver()
   }
@@ -229,10 +231,10 @@ class FrontendOptimizer {
     if (this.bundleConfig.enableCodeSplitting) {
       this.setupCodeSplitting()
     }
-    
+
     // Setup async loading
     this.setupAsyncLoading()
-    
+
     // Setup JavaScript execution monitoring
     this.setupJavaScriptMonitoring()
   }
@@ -244,7 +246,7 @@ class FrontendOptimizer {
     if ('serviceWorker' in navigator) {
       // Optimize service worker caching
       this.optimizeServiceWorkerCaching()
-      
+
       // Setup background sync for offline
       this.setupBackgroundSync()
     }
@@ -255,7 +257,7 @@ class FrontendOptimizer {
    */
   private loadLazyResource(element: Element): void {
     const resourceType = this.getResourceType(element)
-    
+
     switch (resourceType) {
       case 'image':
         this.loadLazyImage(element as HTMLImageElement)
@@ -274,11 +276,13 @@ class FrontendOptimizer {
    */
   private loadLazyImage(img: HTMLImageElement): void {
     const src = img.dataset.src
-    if (!src) return
+    if (!src) {
+      return
+    }
 
     // Create optimized image URL
     const optimizedSrc = this.optimizeImageUrl(src)
-    
+
     // Create placeholder if not exists
     if (!img.src && this.imageConfig.placeholderStrategy !== 'none') {
       this.createImagePlaceholder(img, optimizedSrc)
@@ -293,23 +297,23 @@ class FrontendOptimizer {
    */
   private optimizeImageUrl(src: string): string {
     let optimizedSrc = src
-    
+
     // Add WebP support check
     if (this.imageConfig.enableWebP && this.supportsWebP()) {
       optimizedSrc = this.addImageFormat(optimizedSrc, 'webp')
     }
-    
+
     // Add AVIF support check
     if (this.imageConfig.enableAVIF && this.supportsAVIF()) {
       optimizedSrc = this.addImageFormat(optimizedSrc, 'avif')
     }
-    
+
     // Add quality parameter
     optimizedSrc = this.addImageQuality(optimizedSrc)
-    
+
     // Add responsive sizing
     optimizedSrc = this.addResponsiveSizing(optimizedSrc)
-    
+
     return optimizedSrc
   }
 
@@ -372,7 +376,7 @@ class FrontendOptimizer {
       border-radius: 0.375rem;
       aspect-ratio: ${img.dataset.aspectRatio || '16/9'};
     `
-    
+
     img.parentNode?.insertBefore(placeholder, img)
     img.dataset.placeholderId = placeholder.id = `placeholder-${Date.now()}`
   }
@@ -384,12 +388,12 @@ class FrontendOptimizer {
     // Start with low quality image
     const lowQualitySrc = this.addImageQuality(src, 30)
     img.src = lowQualitySrc
-    
+
     img.onload = () => {
       // Then load high quality image
       const highQualitySrc = this.addImageQuality(src, this.imageConfig.quality)
       img.src = highQualitySrc
-      
+
       img.onload = () => {
         // Remove placeholder
         const placeholder = document.getElementById(img.dataset.placeholderId || '')
@@ -477,7 +481,7 @@ class FrontendOptimizer {
     const criticalFonts = [
       'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap'
     ]
-    
+
     criticalFonts.forEach(fontUrl => {
       this.addPreload(fontUrl, 'style')
     })
@@ -489,7 +493,7 @@ class FrontendOptimizer {
   private setupCodeSplitting(): void {
     // Dynamic import for non-critical chunks
     this.setupDynamicImports()
-    
+
     // Setup chunk loading monitoring
     this.setupChunkLoadingMonitoring()
   }
@@ -526,7 +530,7 @@ class FrontendOptimizer {
           }
         })
       })
-      
+
       observer.observe({ entryTypes: ['resource'] })
     }
   }
@@ -565,7 +569,7 @@ class FrontendOptimizer {
           }
         })
       })
-      
+
       observer.observe({ entryTypes: ['longtask'] })
     }
   }
@@ -606,10 +610,10 @@ class FrontendOptimizer {
   private startPerformanceMonitoring(): void {
     // Monitor Core Web Vitals
     this.monitorCoreWebVitals()
-    
+
     // Monitor resource loading
     this.monitorResourceLoading()
-    
+
     // Monitor user interactions
     this.monitorUserInteractions()
   }
@@ -620,19 +624,19 @@ class FrontendOptimizer {
   private monitorCoreWebVitals(): void {
     // Largest Contentful Paint (LCP)
     this.observeLCP()
-    
+
     // First Input Delay (FID)
     this.observeFID()
-    
+
     // Cumulative Layout Shift (CLS)
     this.observeCLS()
-    
+
     // First Contentful Paint (FCP)
     this.observeFCP()
-    
+
     // Time to First Byte (TTFB)
     this.observeTTFB()
-    
+
     // Interaction to Next Paint (INP)
     this.observeINP()
   }
@@ -645,7 +649,7 @@ class FrontendOptimizer {
       const observer = new PerformanceObserver((list) => {
         const entries = list.getEntries()
         const lastEntry = entries[entries.length - 1]
-        
+
         performanceMonitor.recordMetric({
           type: 'frontend',
           name: 'largest_contentful_paint',
@@ -653,7 +657,7 @@ class FrontendOptimizer {
           unit: 'ms'
         })
       })
-      
+
       observer.observe({ entryTypes: ['largest-contentful-paint'] })
     }
   }
@@ -675,7 +679,7 @@ class FrontendOptimizer {
           }
         })
       })
-      
+
       observer.observe({ entryTypes: ['first-input'] })
     }
   }
@@ -686,14 +690,14 @@ class FrontendOptimizer {
   private observeCLS(): void {
     if ('PerformanceObserver' in window) {
       let clsValue = 0
-      
+
       const observer = new PerformanceObserver((list) => {
         list.getEntries().forEach(entry => {
           if (!(entry as any).hadRecentInput) {
             clsValue += (entry as any).value
           }
         })
-        
+
         performanceMonitor.recordMetric({
           type: 'frontend',
           name: 'cumulative_layout_shift',
@@ -701,7 +705,7 @@ class FrontendOptimizer {
           unit: 'percentage'
         })
       })
-      
+
       observer.observe({ entryTypes: ['layout-shift'] })
     }
   }
@@ -714,7 +718,7 @@ class FrontendOptimizer {
       const observer = new PerformanceObserver((list) => {
         const entries = list.getEntries()
         const fcpEntry = entries.find(entry => entry.name === 'first-contentful-paint')
-        
+
         if (fcpEntry) {
           performanceMonitor.recordMetric({
             type: 'frontend',
@@ -724,7 +728,7 @@ class FrontendOptimizer {
           })
         }
       })
-      
+
       observer.observe({ entryTypes: ['paint'] })
     }
   }
@@ -737,7 +741,7 @@ class FrontendOptimizer {
       const observer = new PerformanceObserver((list) => {
         const entries = list.getEntries()
         const navigationEntry = entries.find(entry => entry.entryType === 'navigation')
-        
+
         if (navigationEntry) {
           const ttfb = (navigationEntry as any).responseStart - (navigationEntry as any).requestStart
           performanceMonitor.recordMetric({
@@ -748,7 +752,7 @@ class FrontendOptimizer {
           })
         }
       })
-      
+
       observer.observe({ entryTypes: ['navigation'] })
     }
   }
@@ -771,7 +775,7 @@ class FrontendOptimizer {
           }
         })
       })
-      
+
       observer.observe({ entryTypes: ['event'] })
     }
   }
@@ -785,7 +789,7 @@ class FrontendOptimizer {
         list.getEntries().forEach(entry => {
           if (entry.entryType === 'resource') {
             const resource = entry as PerformanceResourceTiming
-            
+
             performanceMonitor.recordMetric({
               type: 'frontend',
               name: 'resource_load_time',
@@ -800,7 +804,7 @@ class FrontendOptimizer {
           }
         })
       })
-      
+
       observer.observe({ entryTypes: ['resource'] })
     }
   }
@@ -813,7 +817,7 @@ class FrontendOptimizer {
     document.addEventListener('click', (event) => {
       const target = event.target as Element
       const interactionTime = performance.now()
-      
+
       performanceMonitor.recordMetric({
         type: 'frontend',
         name: 'user_interaction',
@@ -851,7 +855,7 @@ class FrontendOptimizer {
 
   private getResourceType(element: Element): string {
     const tagName = element.tagName.toLowerCase()
-    
+
     switch (tagName) {
       case 'img': return 'image'
       case 'script': return 'script'
@@ -863,7 +867,7 @@ class FrontendOptimizer {
 
   private getResourceTypeFromUrl(url: string): string {
     const extension = url.split('.').pop()?.toLowerCase()
-    
+
     switch (extension) {
       case 'js': return 'script'
       case 'css': return 'stylesheet'
@@ -905,22 +909,26 @@ class FrontendOptimizer {
 
   private loadLazyScript(script: HTMLScriptElement): void {
     const src = script.dataset.src
-    if (!src) return
+    if (!src) {
+      return
+    }
 
     const newScript = document.createElement('script')
     newScript.src = src
     newScript.async = true
-    
+
     if (script.dataset.module) {
       newScript.type = 'module'
     }
-    
+
     script.parentNode?.replaceChild(newScript, script)
   }
 
   private loadLazyIframe(iframe: HTMLIFrameElement): void {
     const src = iframe.dataset.src
-    if (!src) return
+    if (!src) {
+      return
+    }
 
     iframe.src = src
   }
@@ -936,7 +944,7 @@ class FrontendOptimizer {
     loadTime: number
   }> {
     const startTime = performance.now()
-    
+
     // This would integrate with webpack bundle analyzer
     // For now, return simulated results
     const originalSize = 750 // KB
@@ -999,7 +1007,7 @@ class FrontendOptimizer {
   }> {
     // Get recent performance metrics
     const metrics = await performanceMonitor.getMetrics('frontend')
-    
+
     // Extract Core Web Vitals
     const lcp = metrics.find(m => m.name === 'largest_contentful_paint')?.value || 0
     const fid = metrics.find(m => m.name === 'first_input_delay')?.value || 0
@@ -1019,12 +1027,24 @@ class FrontendOptimizer {
     ]
 
     const violations = []
-    if (lcp > this.webVitalsTargets.lcp) violations.push('LCP exceeds target')
-    if (fid > this.webVitalsTargets.fid) violations.push('FID exceeds target')
-    if (cls > this.webVitalsTargets.cls) violations.push('CLS exceeds target')
-    if (fcp > this.webVitalsTargets.fcp) violations.push('FCP exceeds target')
-    if (ttfb > this.webVitalsTargets.ttfb) violations.push('TTFB exceeds target')
-    if (inp > this.webVitalsTargets.inp) violations.push('INP exceeds target')
+    if (lcp > this.webVitalsTargets.lcp) {
+      violations.push('LCP exceeds target')
+    }
+    if (fid > this.webVitalsTargets.fid) {
+      violations.push('FID exceeds target')
+    }
+    if (cls > this.webVitalsTargets.cls) {
+      violations.push('CLS exceeds target')
+    }
+    if (fcp > this.webVitalsTargets.fcp) {
+      violations.push('FCP exceeds target')
+    }
+    if (ttfb > this.webVitalsTargets.ttfb) {
+      violations.push('TTFB exceeds target')
+    }
+    if (inp > this.webVitalsTargets.inp) {
+      violations.push('INP exceeds target')
+    }
 
     // Generate recommendations
     const recommendations = this.generateRecommendations({
@@ -1075,11 +1095,11 @@ class FrontendOptimizer {
     // Optimize for emergency scenarios
     this.bundleConfig.maxConcurrentLoads = 10
     this.imageConfig.quality = 60 // Lower quality for faster loading
-    
+
     // Preload emergency-critical resources
     this.addPreload('/api/emergency', 'fetch')
     this.addPreload('/emergency-map.js', 'script')
-    
+
     console.log('[FrontendOptimizer] Emergency mode enabled')
   }
 
@@ -1087,7 +1107,7 @@ class FrontendOptimizer {
     // Restore normal settings
     this.bundleConfig.maxConcurrentLoads = 6
     this.imageConfig.quality = 80
-    
+
     console.log('[FrontendOptimizer] Emergency mode disabled')
   }
 }

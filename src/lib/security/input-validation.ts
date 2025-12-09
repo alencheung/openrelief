@@ -1,6 +1,6 @@
 /**
  * Enhanced Input Validation and Sanitization System
- * 
+ *
  * This module provides comprehensive input validation, sanitization,
  * and security checks for all user inputs to prevent injection attacks,
  * XSS, and other security vulnerabilities.
@@ -79,9 +79,9 @@ const SECURITY_PATTERNS = {
     /expression\s*\(/gi,
     /@import/gi,
     /vbscript:/gi,
-    /data:(?!image\/)/gi,
+    /data:(?!image\/)/gi
   ],
-  
+
   // SQL injection patterns
   sqlInjection: [
     /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|EXECUTE)\b)/gi,
@@ -89,9 +89,9 @@ const SECURITY_PATTERNS = {
     /(\b(OR|AND)\b\s+['"]?[^'"]*['"]?\s*=\s*['"]?[^'"]*['"]?)/gi,
     /(--|\/\*|\*\/|;|'|")/gi,
     /(\b(WAITFOR|DELAY|BENCHMARK|SLEEP)\b)/gi,
-    /(\b(INFORMATION_SCHEMA|SYS|MASTER|MSDB)\b)/gi,
+    /(\b(INFORMATION_SCHEMA|SYS|MASTER|MSDB)\b)/gi
   ],
-  
+
   // Path traversal patterns
   pathTraversal: [
     /\.\./g,
@@ -101,32 +101,32 @@ const SECURITY_PATTERNS = {
     /%5c/gi,
     /\/etc\/passwd/gi,
     /\/proc\//gi,
-    /windows\\system32/gi,
+    /windows\\system32/gi
   ],
-  
+
   // Command injection patterns
   commandInjection: [
     /[;&|`$(){}[\]]/g,
     /\b(curl|wget|nc|netcat|telnet|ssh|ftp|tftp)\b/gi,
     /\b(rm|mv|cp|cat|ls|ps|kill|chmod|chown)\b/gi,
     /\b(python|perl|ruby|bash|sh|cmd|powershell)\b/gi,
-    /\b(echo|printf|whoami|id|uname)\b/gi,
+    /\b(echo|printf|whoami|id|uname)\b/gi
   ],
-  
+
   // CSRF patterns
   csrf: [
     /<form\b[^>]*method=["']post["'][^>]*>/gi,
     /<input\b[^>]*type=["']hidden["'][^>]*>/gi,
-    /<iframe\b[^>]*src=["'](?!https?:\/\/)/gi,
+    /<iframe\b[^>]*src=["'](?!https?:\/\/)/gi
   ],
-  
+
   // Suspicious patterns
   suspicious: [
     /\b(eval|exec|system|shell_exec|passthru|assert)\b/gi,
     /\b(base64_decode|base64_encode|str_rot13|convert_uudecode)\b/gi,
     /\b(file_get_contents|file_put_contents|fopen|fwrite)\b/gi,
     /\b(include|require|include_once|require_once)\b/gi,
-    /\b(create_function|preg_replace|call_user_func)\b/gi,
+    /\b(create_function|preg_replace|call_user_func)\b/gi
   ]
 }
 
@@ -135,11 +135,11 @@ const SECURITY_PATTERNS = {
  */
 export class InputValidator {
   private options: SanitizationOptions
-  
+
   constructor(options: Partial<SanitizationOptions> = {}) {
     this.options = { ...DEFAULT_SANITIZATION_OPTIONS, ...options }
   }
-  
+
   /**
    * Validate and sanitize a single value
    */
@@ -150,7 +150,7 @@ export class InputValidator {
       warnings: [],
       securityFlags: []
     }
-    
+
     // Check if value is required
     const requiredRule = rules.find(rule => rule.required)
     if (requiredRule && (value === null || value === undefined || value === '')) {
@@ -158,13 +158,13 @@ export class InputValidator {
       result.errors.push(`${requiredRule.name} is required`)
       return result
     }
-    
+
     // Skip validation if value is empty and not required
     if (value === null || value === undefined || value === '') {
       result.sanitizedValue = value
       return result
     }
-    
+
     // Apply validation rules
     for (const rule of rules) {
       const ruleResult = this.applyRule(value, rule)
@@ -174,17 +174,17 @@ export class InputValidator {
       }
       result.warnings.push(...ruleResult.warnings)
       result.securityFlags.push(...ruleResult.securityFlags)
-      
+
       // Update value with sanitized result
       if (ruleResult.sanitizedValue !== undefined) {
         value = ruleResult.sanitizedValue
       }
     }
-    
+
     result.sanitizedValue = value
     return result
   }
-  
+
   /**
    * Validate and sanitize multiple fields
    */
@@ -202,24 +202,24 @@ export class InputValidator {
       warnings: {} as Record<string, string[]>,
       securityFlags: [] as SecurityFlag[]
     }
-    
+
     for (const [fieldName, rules] of Object.entries(schema)) {
       const fieldValue = data[fieldName]
       const validationResult = this.validateAndSanitize(fieldValue, rules)
-      
+
       result.sanitizedData[fieldName] = validationResult.sanitizedValue
       result.errors[fieldName] = validationResult.errors
       result.warnings[fieldName] = validationResult.warnings
       result.securityFlags.push(...validationResult.securityFlags)
-      
+
       if (!validationResult.isValid) {
         result.isValid = false
       }
     }
-    
+
     return result
   }
-  
+
   /**
    * Apply a single validation rule
    */
@@ -230,21 +230,21 @@ export class InputValidator {
       warnings: [],
       securityFlags: []
     }
-    
+
     // Type validation
     if (!this.validateType(value, rule.type)) {
       result.isValid = false
       result.errors.push(`${rule.name} must be of type ${rule.type}`)
       return result
     }
-    
+
     // Security checks
     if (typeof value === 'string') {
       const securityFlags = this.checkSecurityPatterns(value)
       result.securityFlags.push(...securityFlags)
-      
+
       // Log high-severity security flags
-      const highSeverityFlags = securityFlags.filter(flag => 
+      const highSeverityFlags = securityFlags.filter(flag =>
         flag.severity === 'high' || flag.severity === 'critical'
       )
       if (highSeverityFlags.length > 0) {
@@ -257,43 +257,43 @@ export class InputValidator {
         )
       }
     }
-    
+
     // Length validation
     if (rule.minLength !== undefined && value.length < rule.minLength) {
       result.isValid = false
       result.errors.push(`${rule.name} must be at least ${rule.minLength} characters`)
     }
-    
+
     if (rule.maxLength !== undefined && value.length > rule.maxLength) {
       result.isValid = false
       result.errors.push(`${rule.name} must be no more than ${rule.maxLength} characters`)
     }
-    
+
     // Range validation for numbers
     if (rule.type === 'number') {
       if (rule.min !== undefined && value < rule.min) {
         result.isValid = false
         result.errors.push(`${rule.name} must be at least ${rule.min}`)
       }
-      
+
       if (rule.max !== undefined && value > rule.max) {
         result.isValid = false
         result.errors.push(`${rule.name} must be no more than ${rule.max}`)
       }
     }
-    
+
     // Pattern validation
     if (rule.pattern && !rule.pattern.test(value)) {
       result.isValid = false
       result.errors.push(`${rule.name} format is invalid`)
     }
-    
+
     // Allowed values validation
     if (rule.allowedValues && !rule.allowedValues.includes(value)) {
       result.isValid = false
       result.errors.push(`${rule.name} must be one of: ${rule.allowedValues.join(', ')}`)
     }
-    
+
     // Custom validation
     if (rule.custom) {
       const customError = rule.custom(value)
@@ -302,20 +302,20 @@ export class InputValidator {
         result.errors.push(customError)
       }
     }
-    
+
     // Sanitization
     if (rule.sanitize && typeof value === 'string') {
       result.sanitizedValue = this.sanitizeValue(value)
     }
-    
+
     // HTML stripping
     if (rule.stripHtml && typeof value === 'string') {
       result.sanitizedValue = this.stripHtml(value)
     }
-    
+
     return result
   }
-  
+
   /**
    * Validate data type
    */
@@ -343,13 +343,13 @@ export class InputValidator {
         return true
     }
   }
-  
+
   /**
    * Check for security patterns in input
    */
   private checkSecurityPatterns(value: string): SecurityFlag[] {
     const flags: SecurityFlag[] = []
-    
+
     for (const [type, patterns] of Object.entries(SECURITY_PATTERNS)) {
       for (const pattern of patterns) {
         const matches = value.match(pattern)
@@ -367,10 +367,10 @@ export class InputValidator {
         }
       }
     }
-    
+
     return flags
   }
-  
+
   /**
    * Get severity level for security pattern
    */
@@ -392,7 +392,7 @@ export class InputValidator {
         return 'low'
     }
   }
-  
+
   /**
    * Get description for security pattern
    */
@@ -414,7 +414,7 @@ export class InputValidator {
         return 'Security pattern detected'
     }
   }
-  
+
   /**
    * Validate URL format
    */
@@ -426,23 +426,23 @@ export class InputValidator {
       return false
     }
   }
-  
+
   /**
    * Sanitize input value
    */
   private sanitizeValue(value: string): string {
     let sanitized = value
-    
+
     // Remove control characters
     if (this.options.removeControlChars) {
       sanitized = sanitized.replace(/[\x00-\x1F\x7F]/g, '')
     }
-    
+
     // Normalize whitespace
     if (this.options.normalizeWhitespace) {
       sanitized = sanitized.replace(/\s+/g, ' ').trim()
     }
-    
+
     // HTML sanitization
     if (this.options.allowHtml) {
       sanitized = DOMPurify.sanitize(sanitized, {
@@ -464,10 +464,10 @@ export class InputValidator {
         RETURN_DOM_IMPORT: false
       })
     }
-    
+
     return sanitized
   }
-  
+
   /**
    * Strip HTML from value
    */
@@ -494,7 +494,7 @@ export const VALIDATION_SCHEMAS = {
           return 'Title cannot be empty or whitespace only'
         }
         return null
-      }}
+      } }
     ],
     description: [
       { name: 'description', required: true, type: 'string', minLength: 10, maxLength: 2000, sanitize: true, stripHtml: true }
@@ -514,13 +514,13 @@ export const VALIDATION_SCHEMAS = {
           return 'Invalid longitude'
         }
         return null
-      }}
+      } }
     ],
     reporterId: [
       { name: 'reporterId', required: true, type: 'string', minLength: 1, maxLength: 100 }
     ]
   },
-  
+
   // User registration validation
   userRegistration: {
     email: [
@@ -541,7 +541,7 @@ export const VALIDATION_SCHEMAS = {
           return 'Password must contain at least one special character'
         }
         return null
-      }}
+      } }
     ],
     confirmPassword: [
       { name: 'confirmPassword', required: true, type: 'string', custom: (value, formData) => {
@@ -549,7 +549,7 @@ export const VALIDATION_SCHEMAS = {
           return 'Passwords do not match'
         }
         return null
-      }}
+      } }
     ],
     firstName: [
       { name: 'firstName', required: true, type: 'string', minLength: 2, maxLength: 50, sanitize: true, stripHtml: true }
@@ -558,7 +558,7 @@ export const VALIDATION_SCHEMAS = {
       { name: 'lastName', required: true, type: 'string', minLength: 2, maxLength: 50, sanitize: true, stripHtml: true }
     ]
   },
-  
+
   // API query validation
   apiQuery: {
     limit: [
@@ -585,7 +585,7 @@ export const inputValidator = new InputValidator()
 export function validateApiInput(schema: Record<string, ValidationRule[]>) {
   return (req: Request) => {
     const contentType = req.headers.get('content-type') || ''
-    
+
     if (contentType.includes('application/json')) {
       return req.json().then(data => {
         const result = inputValidator.validateAndSanitizeObject(data, schema)
@@ -597,7 +597,7 @@ export function validateApiInput(schema: Record<string, ValidationRule[]>) {
         }
       })
     }
-    
+
     return Promise.resolve({
       isValid: false,
       sanitizedData: {},

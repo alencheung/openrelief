@@ -1,10 +1,10 @@
 import React from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
-import { 
-  CheckCircle, 
-  AlertCircle, 
-  AlertTriangle, 
+import {
+  CheckCircle,
+  AlertCircle,
+  AlertTriangle,
   Info,
   XCircle
 } from 'lucide-react'
@@ -17,25 +17,25 @@ const formFeedbackVariants = cva(
         success: 'form-feedback-success',
         error: 'form-feedback-error',
         warning: 'form-feedback-warning',
-        info: 'form-feedback-info',
+        info: 'form-feedback-info'
       },
       size: {
         sm: 'text-xs',
         md: 'text-sm',
-        lg: 'text-base',
+        lg: 'text-base'
       },
       variant: {
         default: '',
         outline: 'border-2 bg-transparent rounded-md p-2',
         solid: 'rounded-md p-2 text-white',
-        subtle: 'bg-opacity-10 rounded-md p-2 border border-current',
+        subtle: 'bg-opacity-10 rounded-md p-2 border border-current'
       }
     },
     defaultVariants: {
       type: 'info',
       size: 'md',
-      variant: 'default',
-    },
+      variant: 'default'
+    }
   }
 )
 
@@ -53,7 +53,7 @@ const feedbackIcons = {
   success: CheckCircle,
   error: XCircle,
   warning: AlertTriangle,
-  info: Info,
+  info: Info
 }
 
 const getVariantStyles = (type: keyof typeof formFeedbackVariants.variants.type, variant: string) => {
@@ -71,7 +71,7 @@ const getVariantStyles = (type: keyof typeof formFeedbackVariants.variants.type,
         return ''
     }
   }
-  
+
   if (variant === 'outline') {
     switch (type) {
       case 'success':
@@ -86,7 +86,7 @@ const getVariantStyles = (type: keyof typeof formFeedbackVariants.variants.type,
         return ''
     }
   }
-  
+
   if (variant === 'subtle') {
     switch (type) {
       case 'success':
@@ -101,26 +101,26 @@ const getVariantStyles = (type: keyof typeof formFeedbackVariants.variants.type,
         return ''
     }
   }
-  
+
   return ''
 }
 
 const FormFeedback = React.forwardRef<HTMLDivElement, FormFeedbackProps>(
-  ({ 
-    className, 
-    type, 
-    size, 
-    variant, 
-    message, 
-    showIcon = true, 
-    dismissible = false, 
+  ({
+    className,
+    type,
+    size,
+    variant,
+    message,
+    showIcon = true,
+    dismissible = false,
     onDismiss,
     title,
-    ...props 
+    ...props
   }, ref) => {
     const IconComponent = feedbackIcons[type as keyof typeof feedbackIcons]
     const variantStyles = getVariantStyles(type, variant || 'default')
-    
+
     return (
       <div
         ref={ref}
@@ -134,14 +134,14 @@ const FormFeedback = React.forwardRef<HTMLDivElement, FormFeedbackProps>(
         {showIcon && IconComponent && (
           <IconComponent className="w-4 h-4 flex-shrink-0 mt-0.5" />
         )}
-        
+
         <div className="flex-1 min-w-0">
           {title && (
             <h4 className="font-semibold mb-1">{title}</h4>
           )}
           <p className="text-current">{message}</p>
         </div>
-        
+
         {dismissible && onDismiss && (
           <button
             onClick={onDismiss}

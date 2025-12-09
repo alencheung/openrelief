@@ -33,9 +33,9 @@ export function usePushNotifications() {
   useEffect(() => {
     // Check if push notifications are supported
     const checkSupport = () => {
-      const supported = 'serviceWorker' in navigator &&
-        'PushManager' in window &&
-        'Notification' in window
+      const supported = 'serviceWorker' in navigator
+        && 'PushManager' in window
+        && 'Notification' in window
       setIsSupported(supported)
 
       if (supported) {
@@ -130,7 +130,9 @@ export function usePushNotifications() {
   }, [isSupported])
 
   const unsubscribeFromPush = useCallback(async () => {
-    if (!subscription) return
+    if (!subscription) {
+      return
+    }
 
     try {
       await subscription.unsubscribe()
@@ -312,7 +314,7 @@ async function sendSubscriptionToServer(subscription: PushSubscription) {
     const response = await fetch('/api/push/subscribe', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         endpoint: subscription.endpoint,
@@ -336,7 +338,7 @@ async function removeSubscriptionFromServer(subscription: PushSubscription) {
     const response = await fetch('/api/push/unsubscribe', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         endpoint: subscription.endpoint

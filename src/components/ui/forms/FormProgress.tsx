@@ -11,18 +11,18 @@ const formProgressVariants = cva(
         default: '',
         steps: '',
         dots: '',
-        bar: '',
+        bar: ''
       },
       size: {
         sm: 'text-xs',
         default: 'text-sm',
-        lg: 'text-base',
-      },
+        lg: 'text-base'
+      }
     },
     defaultVariants: {
       variant: 'default',
-      size: 'default',
-    },
+      size: 'default'
+    }
   }
 )
 
@@ -50,8 +50,8 @@ export interface FormProgressProps
 }
 
 const FormProgress = React.forwardRef<HTMLDivElement, FormProgressProps>(
-  ({ 
-    className, 
+  ({
+    className,
     steps,
     currentStep,
     onStepClick,
@@ -62,29 +62,37 @@ const FormProgress = React.forwardRef<HTMLDivElement, FormProgressProps>(
     variant: progressVariant = 'default',
     animateTransitions = true,
     size,
-    ...props 
+    ...props
   }, ref) => {
     const isVertical = orientation === 'vertical'
-    
+
     // Get step status
     const getStepStatus = (index: number): 'pending' | 'active' | 'completed' | 'error' => {
-      if (steps[index].status) return steps[index].status
-      if (index < currentStep) return 'completed'
-      if (index === currentStep) return 'active'
+      if (steps[index].status) {
+        return steps[index].status
+      }
+      if (index < currentStep) {
+        return 'completed'
+      }
+      if (index === currentStep) {
+        return 'active'
+      }
       return 'pending'
     }
-    
+
     // Handle step click
     const handleStepClick = (index: number, step: FormStep) => {
       if (clickable && !step.disabled && onStepClick) {
         onStepClick(index, step)
       }
     }
-    
+
     // Get step icon
     const getStepIcon = (status: string, step: FormStep, index: number) => {
-      if (step.icon) return step.icon
-      
+      if (step.icon) {
+        return step.icon
+      }
+
       switch (status) {
         case 'completed':
           return <Check className="h-4 w-4" />
@@ -96,7 +104,7 @@ const FormProgress = React.forwardRef<HTMLDivElement, FormProgressProps>(
           return showStepNumbers ? index + 1 : null
       }
     }
-    
+
     // Get step color
     const getStepColor = (status: string) => {
       switch (status) {
@@ -110,25 +118,25 @@ const FormProgress = React.forwardRef<HTMLDivElement, FormProgressProps>(
           return 'bg-muted text-muted-foreground border-muted'
       }
     }
-    
+
     // Get connector color
     const getConnectorColor = (index: number) => {
       const currentStatus = getStepStatus(index)
       const nextStatus = getStepStatus(index + 1)
-      
+
       if (currentStatus === 'completed' && nextStatus !== 'error') {
         return 'bg-success'
       }
       return 'bg-muted'
     }
-    
+
     // Render default progress (horizontal bar)
     if (progressVariant === 'bar') {
       return (
         <div ref={ref} className={cn('space-y-2', className)} {...props}>
           <div className="relative">
             <div className="w-full h-2 bg-muted rounded-full">
-              <div 
+              <div
                 className={cn(
                   'h-2 rounded-full transition-all duration-normal',
                   animateTransitions && 'transition-all duration-normal',
@@ -152,7 +160,7 @@ const FormProgress = React.forwardRef<HTMLDivElement, FormProgressProps>(
               ))}
             </div>
           </div>
-          
+
           {showDescriptions && (
             <div className="flex justify-between">
               {steps.map((step, index) => (
@@ -177,7 +185,7 @@ const FormProgress = React.forwardRef<HTMLDivElement, FormProgressProps>(
         </div>
       )
     }
-    
+
     // Render dots progress
     if (progressVariant === 'dots') {
       return (
@@ -202,7 +210,7 @@ const FormProgress = React.forwardRef<HTMLDivElement, FormProgressProps>(
                   aria-label={`Step ${index + 1}: ${step.title}`}
                 />
                 {index < steps.length - 1 && (
-                  <div 
+                  <div
                     className={cn(
                       'h-0.5 flex-1 transition-all duration-normal',
                       animateTransitions && 'transition-all duration-normal',
@@ -216,16 +224,16 @@ const FormProgress = React.forwardRef<HTMLDivElement, FormProgressProps>(
         </div>
       )
     }
-    
+
     // Render steps progress (default and steps variant)
     return (
-      <div 
-        ref={ref} 
+      <div
+        ref={ref}
         className={cn(
           formProgressVariants({ variant: progressVariant, size }),
           isVertical ? 'space-y-4' : 'flex items-center gap-4',
           className
-        )} 
+        )}
         {...props}
       >
         {steps.map((step, index) => {
@@ -233,7 +241,7 @@ const FormProgress = React.forwardRef<HTMLDivElement, FormProgressProps>(
           const isActive = status === 'active'
           const isCompleted = status === 'completed'
           const hasError = status === 'error'
-          
+
           return (
             <React.Fragment key={step.id}>
               <div
@@ -254,7 +262,7 @@ const FormProgress = React.forwardRef<HTMLDivElement, FormProgressProps>(
                 )}>
                   {getStepIcon(status, step, index)}
                 </div>
-                
+
                 {/* Step Content */}
                 <div className={cn(
                   'text-left',
@@ -275,10 +283,10 @@ const FormProgress = React.forwardRef<HTMLDivElement, FormProgressProps>(
                   )}
                 </div>
               </div>
-              
+
               {/* Connector */}
               {index < steps.length - 1 && (
-                <div 
+                <div
                   className={cn(
                     isVertical ? 'ml-5 h-6 w-0.5' : 'flex-1 h-0.5',
                     'transition-all duration-normal',
@@ -309,7 +317,7 @@ export interface FormProgressSummaryProps {
 }
 
 export const FormProgressSummary = React.forwardRef<HTMLDivElement, FormProgressSummaryProps>(
-  ({ 
+  ({
     className,
     currentStep,
     totalSteps,
@@ -321,7 +329,7 @@ export const FormProgressSummary = React.forwardRef<HTMLDivElement, FormProgress
     variant = 'default'
   }, ref) => {
     const percentage = Math.round((completedSteps / totalSteps) * 100)
-    
+
     if (variant === 'compact') {
       return (
         <div ref={ref} className={cn('flex items-center gap-2 text-sm text-muted-foreground', className)}>
@@ -330,7 +338,7 @@ export const FormProgressSummary = React.forwardRef<HTMLDivElement, FormProgress
         </div>
       )
     }
-    
+
     return (
       <div ref={ref} className={cn('space-y-2', className)}>
         <div className="flex items-center justify-between">
@@ -343,14 +351,14 @@ export const FormProgressSummary = React.forwardRef<HTMLDivElement, FormProgress
             </span>
           )}
         </div>
-        
+
         <div className="w-full h-2 bg-muted rounded-full">
-          <div 
+          <div
             className="h-2 bg-primary rounded-full transition-all duration-normal"
             style={{ width: `${percentage}%` }}
           />
         </div>
-        
+
         {showTimeEstimate && (estimatedTime || timeRemaining) && (
           <div className="text-xs text-muted-foreground">
             {estimatedTime && (

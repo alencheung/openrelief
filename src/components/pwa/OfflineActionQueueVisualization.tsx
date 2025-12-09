@@ -124,7 +124,7 @@ export function OfflineActionQueueVisualization() {
   // Sort actions
   const sortActions = (actions: OfflineAction[]) => {
     const sorted = [...actions]
-    
+
     switch (sortBy) {
       case 'priority':
         const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 }
@@ -141,7 +141,7 @@ export function OfflineActionQueueVisualization() {
   // Get filtered actions
   const getFilteredActions = () => {
     let filtered = actions.filter(action => !action.synced)
-    
+
     if (filter === 'pending') {
       filtered = filtered.filter(action => action.retryCount === 0)
     } else if (filter === 'failed') {
@@ -190,8 +190,8 @@ export function OfflineActionQueueVisualization() {
   }
 
   // Calculate sync progress percentage
-  const syncProgressPercentage = syncProgress.total > 0 
-    ? (syncProgress.current / syncProgress.total) * 100 
+  const syncProgressPercentage = syncProgress.total > 0
+    ? (syncProgress.current / syncProgress.total) * 100
     : 0
 
   const filteredActions = getFilteredActions()
@@ -207,10 +207,10 @@ export function OfflineActionQueueVisualization() {
         className={`
           relative flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg backdrop-blur-sm
           transition-all duration-300 ease-in-out
-          ${hasPending || hasFailed 
-            ? 'bg-orange-600 text-white hover:bg-orange-700' 
-            : 'bg-white/90 border border-gray-200 text-gray-900 hover:bg-gray-50'
-          }
+          ${hasPending || hasFailed
+      ? 'bg-orange-600 text-white hover:bg-orange-700'
+      : 'bg-white/90 border border-gray-200 text-gray-900 hover:bg-gray-50'
+    }
         `}
         aria-label={`${filteredActions.length} offline actions pending. ${expanded ? 'Hide' : 'Show'} details`}
       >
@@ -223,7 +223,7 @@ export function OfflineActionQueueVisualization() {
           ) : (
             <WifiIcon className="w-5 h-5" />
           )}
-          
+
           {/* Notification Badge */}
           {(hasPending || hasFailed) && (
             <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
@@ -282,7 +282,7 @@ export function OfflineActionQueueVisualization() {
                   </span>
                 </div>
                 <div className="w-full bg-blue-200 rounded-full h-2">
-                  <div 
+                  <div
                     className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${syncProgressPercentage}%` }}
                   />
@@ -352,10 +352,10 @@ export function OfflineActionQueueVisualization() {
                           className={`
                             flex items-center justify-between p-2 rounded-lg border
                             transition-all duration-200 cursor-pointer
-                            ${selectedAction === action.id 
-                              ? 'border-blue-500 bg-blue-50' 
-                              : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                            }
+                            ${selectedAction === action.id
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                        }
                             ${getPriorityColor(action.priority)}
                           `}
                           onClick={() => setSelectedAction(
@@ -409,10 +409,12 @@ export function OfflineActionQueueVisualization() {
                     <XIcon className="w-4 h-4" />
                   </Button>
                 </div>
-                
+
                 {(() => {
                   const action = actions.find(a => a.id === selectedAction)
-                  if (!action) return null
+                  if (!action) {
+                    return null
+                  }
 
                   return (
                     <div className="space-y-2 text-sm">
@@ -437,7 +439,7 @@ export function OfflineActionQueueVisualization() {
                           Error: {action.error}
                         </div>
                       )}
-                      
+
                       {/* Action Buttons */}
                       <div className="flex gap-2 mt-3">
                         {action.retryCount > 0 && (
@@ -477,7 +479,7 @@ export function OfflineActionQueueVisualization() {
                   Start Sync
                 </Button>
               )}
-              
+
               {isSyncing && (
                 <Button
                   onClick={stopSync}
@@ -488,7 +490,7 @@ export function OfflineActionQueueVisualization() {
                   Stop Sync
                 </Button>
               )}
-              
+
               {hasFailed && (
                 <Button
                   onClick={forceSync}

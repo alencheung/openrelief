@@ -1,11 +1,11 @@
 /**
  * Data Anonymization Utilities for OpenRelief
- * 
+ *
  * This module implements various anonymization techniques including k-anonymity,
  * temporal data decay, and data aggregation to protect user privacy.
  */
 
-import { addNoiseToLocation, DEFAULT_DP_CONFIGS } from './differential-privacy';
+import { addNoiseToLocation, DEFAULT_DP_CONFIGS } from './differential-privacy'
 
 // Configuration for k-anonymity
 export interface KAnonymityConfig {
@@ -27,13 +27,13 @@ export const DEFAULT_K_ANONYMITY_CONFIGS = {
   location: { k: 5, quasiIdentifiers: ['latitude', 'longitude'], sensitiveAttributes: ['userId'] },
   userProfile: { k: 10, quasiIdentifiers: ['age', 'location'], sensitiveAttributes: ['name', 'email'] },
   emergencyData: { k: 3, quasiIdentifiers: ['timestamp', 'location'], sensitiveAttributes: ['userId'] }
-};
+}
 
 export const DEFAULT_TEMPORAL_DECAY_CONFIGS = {
   trustScore: { halfLifeDays: 30, minRetentionDays: 7, maxRetentionDays: 365, decayFunction: 'exponential' as const },
   location: { halfLifeDays: 7, minRetentionDays: 1, maxRetentionDays: 30, decayFunction: 'linear' as const },
   emergencyData: { halfLifeDays: 90, minRetentionDays: 30, maxRetentionDays: 730, decayFunction: 'logarithmic' as const }
-};
+}
 
 /**
  * Reduce location precision by rounding coordinates
@@ -47,11 +47,11 @@ export function reduceLocationPrecision(
   longitude: number,
   precisionDigits: number = 3
 ): { latitude: number; longitude: number } {
-  const factor = Math.pow(10, precisionDigits);
+  const factor = Math.pow(10, precisionDigits)
   return {
     latitude: Math.round(latitude * factor) / factor,
     longitude: Math.round(longitude * factor) / factor
-  };
+  }
 }
 
 /**
@@ -67,14 +67,14 @@ export function createPrivacyGrid(
   gridSizeKm: number = 1
 ): { latitude: number; longitude: number } {
   // Convert grid size to degrees (approximate)
-  const latGridSize = gridSizeKm / 111; // 1 degree ≈ 111 km
-  const lngGridSize = gridSizeKm / (111 * Math.cos(latitude * Math.PI / 180));
-  
+  const latGridSize = gridSizeKm / 111 // 1 degree ≈ 111 km
+  const lngGridSize = gridSizeKm / (111 * Math.cos(latitude * Math.PI / 180))
+
   // Snap to grid
-  const gridLat = Math.round(latitude / latGridSize) * latGridSize;
-  const gridLng = Math.round(longitude / lngGridSize) * lngGridSize;
-  
-  return { latitude: gridLat, longitude: gridLng };
+  const gridLat = Math.round(latitude / latGridSize) * latGridSize
+  const gridLng = Math.round(longitude / lngGridSize) * lngGridSize
+
+  return { latitude: gridLat, longitude: gridLng }
 }
 
 /**
@@ -84,9 +84,9 @@ export function createPrivacyGrid(
  * @returns Age range string
  */
 export function generalizeAge(age: number, rangeSize: number = 5): string {
-  const rangeStart = Math.floor(age / rangeSize) * rangeSize;
-  const rangeEnd = rangeStart + rangeSize - 1;
-  return `${rangeStart}-${rangeEnd}`;
+  const rangeStart = Math.floor(age / rangeSize) * rangeSize
+  const rangeEnd = rangeStart + rangeSize - 1
+  return `${rangeStart}-${rangeEnd}`
 }
 
 /**
@@ -99,27 +99,27 @@ export function generalizeTimestamp(
   timestamp: Date,
   granularity: 'hour' | 'day' | 'week' | 'month' = 'day'
 ): Date {
-  const date = new Date(timestamp);
-  
+  const date = new Date(timestamp)
+
   switch (granularity) {
     case 'hour':
-      date.setMinutes(0, 0, 0);
-      break;
+      date.setMinutes(0, 0, 0)
+      break
     case 'day':
-      date.setHours(0, 0, 0, 0);
-      break;
+      date.setHours(0, 0, 0, 0)
+      break
     case 'week':
-      const dayOfWeek = date.getDay();
-      date.setDate(date.getDate() - dayOfWeek);
-      date.setHours(0, 0, 0, 0);
-      break;
+      const dayOfWeek = date.getDay()
+      date.setDate(date.getDate() - dayOfWeek)
+      date.setHours(0, 0, 0, 0)
+      break
     case 'month':
-      date.setDate(1);
-      date.setHours(0, 0, 0, 0);
-      break;
+      date.setDate(1)
+      date.setHours(0, 0, 0, 0)
+      break
   }
-  
-  return date;
+
+  return date
 }
 
 /**
@@ -133,27 +133,27 @@ export function checkKAnonymity<T extends Record<string, any>>(
   config: KAnonymityConfig
 ): boolean {
   // Group by quasi-identifiers
-  const groups = new Map<string, T[]>();
-  
+  const groups = new Map<string, T[]>()
+
   data.forEach(record => {
     const key = config.quasiIdentifiers
       .map(id => `${id}:${record[id]}`)
-      .join('|');
-    
+      .join('|')
+
     if (!groups.has(key)) {
-      groups.set(key, []);
+      groups.set(key, [])
     }
-    groups.get(key)!.push(record);
-  });
-  
+    groups.get(key)!.push(record)
+  })
+
   // Check if all groups have at least k members
   for (const group of groups.values()) {
     if (group.length < config.k) {
-      return false;
+      return false
     }
   }
-  
-  return true;
+
+  return true
 }
 
 /**
@@ -167,53 +167,53 @@ export function enforceKAnonymity<T extends Record<string, any>>(
   config: KAnonymityConfig
 ): T[] {
   // First, try generalization
-  let generalizedData = [...data];
-  
+  let generalizedData = [...data]
+
   // Generalize location if it's a quasi-identifier
   if (config.quasiIdentifiers.includes('latitude') || config.quasiIdentifiers.includes('longitude')) {
     generalizedData = generalizedData.map(record => ({
       ...record,
       latitude: record.latitude ? createPrivacyGrid(record.latitude, record.longitude, 2).latitude : record.latitude,
       longitude: record.longitude ? createPrivacyGrid(record.latitude, record.longitude, 2).longitude : record.longitude
-    }));
+    }))
   }
-  
+
   // Generalize timestamp if it's a quasi-identifier
   if (config.quasiIdentifiers.includes('timestamp')) {
     generalizedData = generalizedData.map(record => ({
       ...record,
       timestamp: record.timestamp ? generalizeTimestamp(record.timestamp, 'day') : record.timestamp
-    }));
+    }))
   }
-  
+
   // Check if k-anonymity is satisfied
   if (checkKAnonymity(generalizedData, config)) {
-    return generalizedData;
+    return generalizedData
   }
-  
+
   // If not, suppress records in small groups
-  const groups = new Map<string, T[]>();
-  
+  const groups = new Map<string, T[]>()
+
   generalizedData.forEach(record => {
     const key = config.quasiIdentifiers
       .map(id => `${id}:${record[id]}`)
-      .join('|');
-    
+      .join('|')
+
     if (!groups.has(key)) {
-      groups.set(key, []);
+      groups.set(key, [])
     }
-    groups.get(key)!.push(record);
-  });
-  
+    groups.get(key)!.push(record)
+  })
+
   // Only keep records from groups with at least k members
-  const result: T[] = [];
+  const result: T[] = []
   for (const group of groups.values()) {
     if (group.length >= config.k) {
-      result.push(...group);
+      result.push(...group)
     }
   }
-  
-  return result;
+
+  return result
 }
 
 /**
@@ -228,38 +228,38 @@ export function applyTemporalDecay(
   timestamp: Date,
   config: TemporalDecayConfig
 ): number {
-  const now = new Date();
-  const ageDays = (now.getTime() - timestamp.getTime()) / (1000 * 60 * 60 * 24);
-  
+  const now = new Date()
+  const ageDays = (now.getTime() - timestamp.getTime()) / (1000 * 60 * 60 * 24)
+
   // Check retention limits
   if (ageDays > config.maxRetentionDays) {
-    return 0; // Data has expired
+    return 0 // Data has expired
   }
-  
+
   if (ageDays < config.minRetentionDays) {
-    return value; // Data is too new to decay
+    return value // Data is too new to decay
   }
-  
-  const decayedAge = ageDays - config.minRetentionDays;
-  const decayPeriod = config.halfLifeDays;
-  
-  let decayFactor: number;
-  
+
+  const decayedAge = ageDays - config.minRetentionDays
+  const decayPeriod = config.halfLifeDays
+
+  let decayFactor: number
+
   switch (config.decayFunction) {
     case 'linear':
-      decayFactor = Math.max(0, 1 - (decayedAge / decayPeriod));
-      break;
+      decayFactor = Math.max(0, 1 - (decayedAge / decayPeriod))
+      break
     case 'exponential':
-      decayFactor = Math.pow(0.5, decayedAge / decayPeriod);
-      break;
+      decayFactor = Math.pow(0.5, decayedAge / decayPeriod)
+      break
     case 'logarithmic':
-      decayFactor = Math.max(0, 1 - Math.log(1 + decayedAge / decayPeriod) / Math.log(2));
-      break;
+      decayFactor = Math.max(0, 1 - Math.log(1 + decayedAge / decayPeriod) / Math.log(2))
+      break
     default:
-      decayFactor = 1;
+      decayFactor = 1
   }
-  
-  return value * decayFactor;
+
+  return value * decayFactor
 }
 
 /**
@@ -274,58 +274,58 @@ export function aggregateData<T extends Record<string, any>>(
   groupBy: string[],
   aggregations: Record<string, 'sum' | 'avg' | 'count' | 'min' | 'max'>
 ): T[] {
-  const groups = new Map<string, T[]>();
-  
+  const groups = new Map<string, T[]>()
+
   // Group data
   data.forEach(record => {
     const key = groupBy
       .map(field => `${field}:${record[field]}`)
-      .join('|');
-    
+      .join('|')
+
     if (!groups.has(key)) {
-      groups.set(key, []);
+      groups.set(key, [])
     }
-    groups.get(key)!.push(record);
-  });
-  
+    groups.get(key)!.push(record)
+  })
+
   // Aggregate each group
-  const result: T[] = [];
-  
+  const result: T[] = []
+
   for (const [key, group] of groups) {
-    const aggregatedRecord = {} as T;
-    
+    const aggregatedRecord = {} as T
+
     // Copy group by fields
     groupBy.forEach(field => {
-      aggregatedRecord[field] = group[0][field];
-    });
-    
+      aggregatedRecord[field] = group[0][field]
+    })
+
     // Apply aggregations
     for (const [field, aggFunc] of Object.entries(aggregations)) {
-      const values = group.map(record => record[field]).filter(val => val !== null && val !== undefined);
-      
+      const values = group.map(record => record[field]).filter(val => val !== null && val !== undefined)
+
       switch (aggFunc) {
         case 'sum':
-          aggregatedRecord[field] = values.reduce((sum, val) => sum + val, 0) as any;
-          break;
+          aggregatedRecord[field] = values.reduce((sum, val) => sum + val, 0) as any
+          break
         case 'avg':
-          aggregatedRecord[field] = values.reduce((sum, val) => sum + val, 0) / values.length as any;
-          break;
+          aggregatedRecord[field] = values.reduce((sum, val) => sum + val, 0) / values.length as any
+          break
         case 'count':
-          aggregatedRecord[field] = values.length as any;
-          break;
+          aggregatedRecord[field] = values.length as any
+          break
         case 'min':
-          aggregatedRecord[field] = Math.min(...values) as any;
-          break;
+          aggregatedRecord[field] = Math.min(...values) as any
+          break
         case 'max':
-          aggregatedRecord[field] = Math.max(...values) as any;
-          break;
+          aggregatedRecord[field] = Math.max(...values) as any
+          break
       }
     }
-    
-    result.push(aggregatedRecord);
+
+    result.push(aggregatedRecord)
   }
-  
-  return result;
+
+  return result
 }
 
 /**
@@ -339,49 +339,49 @@ export function createUserClusters<T extends Record<string, any>>(
   k: number = 5
 ): Array<{ cluster: T[]; representative: T }> {
   // Simple clustering based on location (in production, use more sophisticated algorithms)
-  const clusters: Array<{ cluster: T[]; representative: T }> = [];
-  const unclustered = [...users];
-  
+  const clusters: Array<{ cluster: T[]; representative: T }> = []
+  const unclustered = [...users]
+
   while (unclustered.length >= k) {
-    const seed = unclustered[0];
-    const cluster = [seed];
-    unclustered.shift();
-    
+    const seed = unclustered[0]
+    const cluster = [seed]
+    unclustered.shift()
+
     // Find nearby users
     for (let i = unclustered.length - 1; i >= 0; i--) {
-      const user = unclustered[i];
+      const user = unclustered[i]
       if (user.latitude && user.longitude && seed.latitude && seed.longitude) {
         const distance = calculateDistance(
           seed.latitude, seed.longitude,
           user.latitude, user.longitude
-        );
-        
+        )
+
         if (distance < 10) { // 10km radius
-          cluster.push(user);
-          unclustered.splice(i, 1);
-          
+          cluster.push(user)
+          unclustered.splice(i, 1)
+
           if (cluster.length >= k * 2) {
-            break; // Limit cluster size
+            break // Limit cluster size
           }
         }
       }
     }
-    
+
     if (cluster.length >= k) {
       // Calculate representative (center point)
-      const representative = { ...seed } as T;
+      const representative = { ...seed } as T
       if (cluster.every(u => u.latitude && u.longitude)) {
-        const avgLat = cluster.reduce((sum, u) => sum + u.latitude, 0) / cluster.length;
-        const avgLng = cluster.reduce((sum, u) => sum + u.longitude, 0) / cluster.length;
-        representative.latitude = avgLat;
-        representative.longitude = avgLng;
+        const avgLat = cluster.reduce((sum, u) => sum + u.latitude, 0) / cluster.length
+        const avgLng = cluster.reduce((sum, u) => sum + u.longitude, 0) / cluster.length
+        representative.latitude = avgLat
+        representative.longitude = avgLng
       }
-      
-      clusters.push({ cluster, representative });
+
+      clusters.push({ cluster, representative })
     }
   }
-  
-  return clusters;
+
+  return clusters
 }
 
 /**
@@ -393,14 +393,14 @@ export function createUserClusters<T extends Record<string, any>>(
  * @returns Distance in kilometers
  */
 function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371; // Earth radius in kilometers
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLng / 2) * Math.sin(dLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
+  const R = 6371 // Earth radius in kilometers
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+    + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180)
+    * Math.sin(dLng / 2) * Math.sin(dLng / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
 }
 
 /**
@@ -424,8 +424,8 @@ export function anonymizeUserData<T extends Record<string, any>>(
     minClusterSize?: number;
   } = {}
 ): T[] {
-  let anonymized = [...userData];
-  
+  let anonymized = [...userData]
+
   // Reduce location precision
   if (options.locationPrecision !== undefined) {
     anonymized = anonymized.map(record => {
@@ -434,54 +434,54 @@ export function anonymizeUserData<T extends Record<string, any>>(
           record.latitude,
           record.longitude,
           options.locationPrecision
-        );
-        return { ...record, ...reduced };
+        )
+        return { ...record, ...reduced }
       }
-      return record;
-    });
+      return record
+    })
   }
-  
+
   // Generalize age
   if (options.generalizeAge && record.age) {
     anonymized = anonymized.map(record => {
       if (record.age) {
-        return { ...record, age: generalizeAge(record.age, options.ageRangeSize) };
+        return { ...record, age: generalizeAge(record.age, options.ageRangeSize) }
       }
-      return record;
-    });
+      return record
+    })
   }
-  
+
   // Generalize timestamp
   if (options.generalizeTimestamp) {
     anonymized = anonymized.map(record => {
       if (record.timestamp) {
-        return { ...record, timestamp: generalizeTimestamp(record.timestamp, options.timestampGranularity) };
+        return { ...record, timestamp: generalizeTimestamp(record.timestamp, options.timestampGranularity) }
       }
-      return record;
-    });
+      return record
+    })
   }
-  
+
   // Apply k-anonymity
   if (options.applyKAnonymity && options.kAnonymityConfig) {
-    anonymized = enforceKAnonymity(anonymized, options.kAnonymityConfig);
+    anonymized = enforceKAnonymity(anonymized, options.kAnonymityConfig)
   }
-  
+
   // Apply differential privacy to locations
   if (options.applyDifferentialPrivacy) {
     anonymized = anonymized.map(record => {
       if (record.latitude && record.longitude) {
-        const noisy = addNoiseToLocation(record.latitude, record.longitude);
-        return { ...record, ...noisy };
+        const noisy = addNoiseToLocation(record.latitude, record.longitude)
+        return { ...record, ...noisy }
       }
-      return record;
-    });
+      return record
+    })
   }
-  
+
   // Cluster users
   if (options.clusterUsers) {
-    const clusters = createUserClusters(anonymized, options.minClusterSize);
-    anonymized = clusters.map(c => c.representative);
+    const clusters = createUserClusters(anonymized, options.minClusterSize)
+    anonymized = clusters.map(c => c.representative)
   }
-  
-  return anonymized;
+
+  return anonymized
 }

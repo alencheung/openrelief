@@ -92,9 +92,9 @@ interface RealtimeStatus {
 }
 
 export function RealtimeOfflineIndicator() {
-  const { 
-    isOnline, 
-    isOffline, 
+  const {
+    isOnline,
+    isOffline,
     connectionType,
     effectiveType,
     downlink,
@@ -102,9 +102,9 @@ export function RealtimeOfflineIndicator() {
     lastOnlineTime,
     lastOfflineTime
   } = useNetworkStatus()
-  
-  const { 
-    pendingActions, 
+
+  const {
+    pendingActions,
     failedActions,
     metrics
   } = useOfflineStore()
@@ -331,12 +331,22 @@ export function RealtimeOfflineIndicator() {
 
   // Get connection quality
   const getConnectionQuality = (): RealtimeStatus['connectionQuality'] => {
-    if (!isOnline) return 'offline'
-    if (!rtt) return 'fair'
-    
-    if (rtt < 50) return 'excellent'
-    if (rtt < 100) return 'good'
-    if (rtt < 200) return 'fair'
+    if (!isOnline) {
+      return 'offline'
+    }
+    if (!rtt) {
+      return 'fair'
+    }
+
+    if (rtt < 50) {
+      return 'excellent'
+    }
+    if (rtt < 100) {
+      return 'good'
+    }
+    if (rtt < 200) {
+      return 'fair'
+    }
     return 'poor'
   }
 
@@ -393,21 +403,23 @@ export function RealtimeOfflineIndicator() {
   // Handle feature toggle
   const handleFeatureToggle = (featureId: string) => {
     const feature = realtimeStatus.features.find(f => f.id === featureId)
-    if (!feature) return
+    if (!feature) {
+      return
+    }
 
     const newStatus = feature.active ? 'disconnected' : 'connected'
-    
+
     setRealtimeStatus(prev => ({
       ...prev,
-      features: prev.features.map(f => 
-        f.id === featureId 
+      features: prev.features.map(f =>
+        f.id === featureId
           ? { ...f, active: !f.active, status: newStatus }
           : f
       )
     }))
 
     announcePolite(
-      feature.active 
+      feature.active
         ? `${feature.name} disabled`
         : `${feature.name} enabled`
     )
@@ -416,7 +428,7 @@ export function RealtimeOfflineIndicator() {
   // Handle reconnect all
   const handleReconnectAll = async () => {
     announcePolite('Attempting to reconnect all real-time features')
-    
+
     setRealtimeStatus(prev => ({
       ...prev,
       features: prev.features.map(f => ({
@@ -436,7 +448,7 @@ export function RealtimeOfflineIndicator() {
           active: isOnline && f.available
         }))
       }))
-      
+
       if (isOnline) {
         announcePolite('All real-time features reconnected')
       } else {
@@ -456,10 +468,10 @@ export function RealtimeOfflineIndicator() {
         <div className={`
           relative flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg backdrop-blur-sm
           transition-all duration-300 ease-in-out
-          ${isOnline 
-            ? 'bg-white/90 border border-gray-200 text-gray-900' 
-            : 'bg-red-600/90 border border-red-700 text-white'
-          }
+          ${isOnline
+      ? 'bg-white/90 border border-gray-200 text-gray-900'
+      : 'bg-red-600/90 border border-red-700 text-white'
+    }
           ${prefersReducedMotion ? '' : 'hover:shadow-xl'}
         `}>
           {/* Status Icon and Text */}
@@ -474,13 +486,13 @@ export function RealtimeOfflineIndicator() {
               ) : (
                 <ActivityIcon className="w-4 h-4 text-red-600" />
               )}
-              
+
               {/* Pulse animation for active connection */}
               {isOnline && !prefersReducedMotion && (
                 <span className="absolute inset-0 rounded-full bg-green-400 opacity-30 animate-ping" />
               )}
             </div>
-            
+
             <div className="flex flex-col">
               <span className="text-sm font-medium">
                 {isOnline ? 'Real-time Active' : 'Real-time Offline'}
@@ -594,20 +606,20 @@ export function RealtimeOfflineIndicator() {
                   className={`
                     flex items-center justify-between p-3 rounded-lg border
                     transition-all duration-200 cursor-pointer
-                    ${feature.active 
-                      ? 'border-green-200 bg-green-50' 
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                    }
+                    ${feature.active
+                  ? 'border-green-200 bg-green-50'
+                  : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                }
                   `}
                   onClick={() => handleFeatureToggle(feature.id)}
                 >
                   <div className="flex items-center gap-3">
                     <div className={`
                       flex items-center justify-center w-10 h-10 rounded-lg
-                      ${feature.active 
-                        ? 'bg-green-100' 
-                        : 'bg-gray-100'
-                      }
+                      ${feature.active
+                  ? 'bg-green-100'
+                  : 'bg-gray-100'
+                }
                     `}>
                       {feature.active ? (
                         <feature.icon className="w-5 h-5 text-green-600" />
@@ -615,7 +627,7 @@ export function RealtimeOfflineIndicator() {
                         <feature.offlineIcon className="w-5 h-5 text-gray-600" />
                       )}
                     </div>
-                    
+
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <h4 className="font-medium text-gray-900">
@@ -630,9 +642,9 @@ export function RealtimeOfflineIndicator() {
                       </p>
                       <div className="flex items-center gap-2 mt-1">
                         <StatusIndicator
-                          status={feature.status === 'connected' ? 'active' : 
-                                 feature.status === 'connecting' ? 'pending' : 
-                                 feature.status === 'error' ? 'critical' : 'inactive'}
+                          status={feature.status === 'connected' ? 'active'
+                            : feature.status === 'connecting' ? 'pending'
+                              : feature.status === 'error' ? 'critical' : 'inactive'}
                           size="sm"
                           animated={feature.status === 'connecting'}
                         />
@@ -671,7 +683,7 @@ export function RealtimeOfflineIndicator() {
                     {feature.requiresMicrophone && (
                       <MicIcon className="w-3 h-3 text-gray-400" title="Requires microphone" />
                     )}
-                    
+
                     <Button
                       variant="ghost"
                       size="sm"

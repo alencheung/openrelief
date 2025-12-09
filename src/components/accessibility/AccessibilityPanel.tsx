@@ -3,13 +3,13 @@
 import { useState, useEffect } from 'react'
 import { useReducedMotion, useAriaAnnouncer } from '@/hooks/accessibility'
 import { cn } from '@/lib/utils'
-import { 
-  Settings, 
-  Eye, 
-  EyeOff, 
-  Volume2, 
-  VolumeX, 
-  Keyboard, 
+import {
+  Settings,
+  Eye,
+  EyeOff,
+  Volume2,
+  VolumeX,
+  Keyboard,
   Monitor,
   Type,
   Palette,
@@ -17,38 +17,47 @@ import {
 } from 'lucide-react'
 
 export interface AccessibilitySettings {
+
   /**
    * Whether high contrast mode is enabled
    */
   highContrast?: boolean
+
   /**
    * Whether large text mode is enabled
    */
   largeText?: boolean
+
   /**
    * Whether reduced motion is preferred
    */
   reducedMotion?: boolean
+
   /**
    * Whether screen reader announcements are enabled
    */
   screenReader?: boolean
+
   /**
    * Whether keyboard navigation is enabled
    */
   keyboardNavigation?: boolean
+
   /**
    * Preferred text size
    */
   textSize?: 'small' | 'medium' | 'large' | 'extra-large'
+
   /**
    * Preferred color scheme
    */
   colorScheme?: 'light' | 'dark' | 'high-contrast'
+
   /**
    * Whether to show focus indicators
    */
   showFocusIndicators?: boolean
+
   /**
    * Whether to enable audio announcements
    */
@@ -56,26 +65,32 @@ export interface AccessibilitySettings {
 }
 
 export interface AccessibilityPanelProps {
+
   /**
    * Current accessibility settings
    */
   settings: AccessibilitySettings
+
   /**
    * Callback when settings change
    */
   onSettingsChange: (settings: Partial<AccessibilitySettings>) => void
+
   /**
    * Whether panel is open
    */
   isOpen: boolean
+
   /**
    * Callback when panel is opened/closed
    */
   onOpenChange: (open: boolean) => void
+
   /**
    * CSS class name for panel
    */
   className?: string
+
   /**
    * Whether to show advanced options
    */
@@ -84,7 +99,7 @@ export interface AccessibilityPanelProps {
 
 /**
  * AccessibilityPanel component for managing user accessibility preferences
- * 
+ *
  * Provides a comprehensive panel where users can customize their
  * accessibility experience, including visual preferences,
  * motion settings, and interaction options.
@@ -95,7 +110,7 @@ export function AccessibilityPanel({
   isOpen,
   onOpenChange,
   className,
-  showAdvanced = false,
+  showAdvanced = false
 }: AccessibilityPanelProps) {
   const { prefersReducedMotion } = useReducedMotion()
   const { announcePolite } = useAriaAnnouncer()
@@ -117,7 +132,7 @@ export function AccessibilityPanel({
     const newSettings = { ...localSettings, [key]: value }
     setLocalSettings(newSettings)
     onSettingsChange({ [key]: value })
-    
+
     // Announce change to screen readers
     announcePolite(`${key.replace(/([A-Z])/g, ' $1').toLowerCase()} set to ${value}`)
   }
@@ -127,40 +142,40 @@ export function AccessibilityPanel({
    */
   const applySettings = (newSettings: AccessibilitySettings) => {
     const root = document.documentElement
-    
+
     // Apply high contrast
     if (newSettings.highContrast) {
       root.classList.add('high-contrast')
     } else {
       root.classList.remove('high-contrast')
     }
-    
+
     // Apply large text
     if (newSettings.largeText) {
       root.classList.add('large-text')
     } else {
       root.classList.remove('large-text')
     }
-    
+
     // Apply reduced motion
     if (newSettings.reducedMotion) {
       root.classList.add('reduced-motion')
     } else {
       root.classList.remove('reduced-motion')
     }
-    
+
     // Apply text size
     root.classList.remove('text-small', 'text-medium', 'text-large', 'text-extra-large')
     if (newSettings.textSize) {
       root.classList.add(`text-${newSettings.textSize}`)
     }
-    
+
     // Apply color scheme
     root.classList.remove('color-light', 'color-dark', 'color-high-contrast')
     if (newSettings.colorScheme) {
       root.classList.add(`color-${newSettings.colorScheme}`)
     }
-    
+
     // Apply focus indicators
     if (newSettings.showFocusIndicators) {
       root.classList.add('show-focus-indicators')
@@ -187,9 +202,9 @@ export function AccessibilityPanel({
       textSize: 'medium',
       colorScheme: 'light',
       showFocusIndicators: true,
-      audioAnnouncements: false,
+      audioAnnouncements: false
     }
-    
+
     setLocalSettings(defaults)
     onSettingsChange(defaults)
     announcePolite('Accessibility settings reset to defaults')
@@ -245,7 +260,7 @@ export function AccessibilityPanel({
                 <Eye className="w-4 h-4" />
                 Visual Settings
               </h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* High Contrast */}
                 <div className="flex items-center justify-between p-4 border border-border rounded-md">
@@ -259,8 +274,8 @@ export function AccessibilityPanel({
                     onClick={() => updateSetting('highContrast', !localSettings.highContrast)}
                     className={cn(
                       'p-2 rounded-md transition-colors',
-                      localSettings.highContrast 
-                        ? 'bg-primary text-primary-foreground' 
+                      localSettings.highContrast
+                        ? 'bg-primary text-primary-foreground'
                         : 'bg-muted hover:bg-accent'
                     )}
                     aria-pressed={localSettings.highContrast}
@@ -281,8 +296,8 @@ export function AccessibilityPanel({
                     onClick={() => updateSetting('largeText', !localSettings.largeText)}
                     className={cn(
                       'p-2 rounded-md transition-colors',
-                      localSettings.largeText 
-                        ? 'bg-primary text-primary-foreground' 
+                      localSettings.largeText
+                        ? 'bg-primary text-primary-foreground'
                         : 'bg-muted hover:bg-accent'
                     )}
                     aria-pressed={localSettings.largeText}
@@ -341,7 +356,7 @@ export function AccessibilityPanel({
                 <Zap className="w-4 h-4" />
                 Motion Settings
               </h3>
-              
+
               <div className="p-4 border border-border rounded-md">
                 <div className="flex items-center justify-between">
                   <div>
@@ -354,8 +369,8 @@ export function AccessibilityPanel({
                     onClick={() => updateSetting('reducedMotion', !localSettings.reducedMotion)}
                     className={cn(
                       'p-2 rounded-md transition-colors',
-                      localSettings.reducedMotion 
-                        ? 'bg-primary text-primary-foreground' 
+                      localSettings.reducedMotion
+                        ? 'bg-primary text-primary-foreground'
                         : 'bg-muted hover:bg-accent'
                     )}
                     aria-pressed={localSettings.reducedMotion}
@@ -376,7 +391,7 @@ export function AccessibilityPanel({
                 <Keyboard className="w-4 h-4" />
                 Interaction Settings
               </h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Focus Indicators */}
                 <div className="flex items-center justify-between p-4 border border-border rounded-md">
@@ -390,8 +405,8 @@ export function AccessibilityPanel({
                     onClick={() => updateSetting('showFocusIndicators', !localSettings.showFocusIndicators)}
                     className={cn(
                       'p-2 rounded-md transition-colors',
-                      localSettings.showFocusIndicators 
-                        ? 'bg-primary text-primary-foreground' 
+                      localSettings.showFocusIndicators
+                        ? 'bg-primary text-primary-foreground'
                         : 'bg-muted hover:bg-accent'
                     )}
                     aria-pressed={localSettings.showFocusIndicators}
@@ -412,8 +427,8 @@ export function AccessibilityPanel({
                     onClick={() => updateSetting('keyboardNavigation', !localSettings.keyboardNavigation)}
                     className={cn(
                       'p-2 rounded-md transition-colors',
-                      localSettings.keyboardNavigation 
-                        ? 'bg-primary text-primary-foreground' 
+                      localSettings.keyboardNavigation
+                        ? 'bg-primary text-primary-foreground'
                         : 'bg-muted hover:bg-accent'
                     )}
                     aria-pressed={localSettings.keyboardNavigation}
@@ -434,8 +449,8 @@ export function AccessibilityPanel({
                     onClick={() => updateSetting('audioAnnouncements', !localSettings.audioAnnouncements)}
                     className={cn(
                       'p-2 rounded-md transition-colors',
-                      localSettings.audioAnnouncements 
-                        ? 'bg-primary text-primary-foreground' 
+                      localSettings.audioAnnouncements
+                        ? 'bg-primary text-primary-foreground'
                         : 'bg-muted hover:bg-accent'
                     )}
                     aria-pressed={localSettings.audioAnnouncements}
@@ -508,7 +523,7 @@ export function useAccessibilitySettings(initialSettings?: AccessibilitySettings
     colorScheme: 'light',
     showFocusIndicators: true,
     audioAnnouncements: false,
-    ...initialSettings,
+    ...initialSettings
   }))
 
   const updateSettings = (newSettings: Partial<AccessibilitySettings>) => {
@@ -517,6 +532,6 @@ export function useAccessibilitySettings(initialSettings?: AccessibilitySettings
 
   return {
     settings,
-    updateSettings,
+    updateSettings
   }
 }

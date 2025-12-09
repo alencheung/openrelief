@@ -81,7 +81,9 @@ export function PWAManager({ children }: PWAManagerProps) {
     }
 
     return () => {
-      if (timer) clearTimeout(timer)
+      if (timer) {
+        clearTimeout(timer)
+      }
     }
   }, [isOffline])
 

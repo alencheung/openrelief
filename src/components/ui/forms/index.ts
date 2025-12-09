@@ -12,11 +12,11 @@ export { AudioRecorder, audioRecorderVariants } from './AudioRecorder'
 export { ImagePreview, SingleImagePreview, imagePreviewVariants } from './ImagePreview'
 
 // Form layout components
-export { 
-  FormLayout, 
-  FormSection, 
-  FormField, 
-  FormRow, 
+export {
+  FormLayout,
+  FormSection,
+  FormField,
+  FormRow,
   FormActions,
   EmergencyFormLayout,
   EmergencyFormSection,
@@ -27,7 +27,7 @@ export {
 } from './FormLayout'
 
 // Re-export types for convenience
-export type { 
+export type {
   EnhancedInputProps,
   EnhancedTextareaProps,
   EnhancedSelectProps,

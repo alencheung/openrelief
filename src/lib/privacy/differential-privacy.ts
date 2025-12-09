@@ -1,6 +1,6 @@
 /**
  * Differential Privacy Utilities for OpenRelief
- * 
+ *
  * This module implements differential privacy mechanisms to protect user location data
  * while maintaining useful functionality for emergency response operations.
  */
@@ -18,7 +18,7 @@ export const DEFAULT_DP_CONFIGS = {
   trustScore: { epsilon: 0.5, delta: 1e-5, sensitivity: 1.0 },
   userProfile: { epsilon: 1.0, delta: 1e-5, sensitivity: 1.0 },
   emergencyData: { epsilon: 0.05, delta: 1e-6, sensitivity: 1.0 } // Higher privacy for emergencies
-};
+}
 
 // Privacy budget tracking for each user
 export interface PrivacyBudget {
@@ -34,7 +34,7 @@ export interface PrivacyBudget {
 }
 
 // In-memory storage for privacy budgets (in production, use secure storage)
-const privacyBudgetStore = new Map<string, PrivacyBudget>();
+const privacyBudgetStore = new Map<string, PrivacyBudget>()
 
 /**
  * Generate Laplace-distributed noise for differential privacy
@@ -43,9 +43,9 @@ const privacyBudgetStore = new Map<string, PrivacyBudget>();
  */
 export function generateLaplaceNoise(scale: number): number {
   // Generate uniform random number in (0,1)
-  const u = Math.random() - 0.5;
+  const u = Math.random() - 0.5
   // Apply Laplace distribution formula
-  return scale * Math.sign(u) * Math.log(1 - 2 * Math.abs(u));
+  return scale * Math.sign(u) * Math.log(1 - 2 * Math.abs(u))
 }
 
 /**
@@ -55,9 +55,9 @@ export function generateLaplaceNoise(scale: number): number {
  * @returns Value with added noise
  */
 export function addLaplaceNoise(value: number, config: DPConfig): number {
-  const scale = config.sensitivity / config.epsilon;
-  const noise = generateLaplaceNoise(scale);
-  return value + noise;
+  const scale = config.sensitivity / config.epsilon
+  const noise = generateLaplaceNoise(scale)
+  return value + noise
 }
 
 /**
@@ -75,18 +75,18 @@ export function addNoiseToLocation(
   // Add noise in meters, then convert back to degrees
   // Approximate conversion: 1 degree latitude ≈ 111,132 meters
   // 1 degree longitude ≈ 111,320 * cos(latitude) meters
-  
-  const latNoiseMeters = addLaplaceNoise(0, config);
-  const lngNoiseMeters = addLaplaceNoise(0, config);
-  
+
+  const latNoiseMeters = addLaplaceNoise(0, config)
+  const lngNoiseMeters = addLaplaceNoise(0, config)
+
   // Convert meter noise to degrees
-  const latNoiseDegrees = latNoiseMeters / 111132;
-  const lngNoiseDegrees = lngNoiseMeters / (111320 * Math.cos(latitude * Math.PI / 180));
-  
+  const latNoiseDegrees = latNoiseMeters / 111132
+  const lngNoiseDegrees = lngNoiseMeters / (111320 * Math.cos(latitude * Math.PI / 180))
+
   return {
     latitude: latitude + latNoiseDegrees,
     longitude: longitude + lngNoiseDegrees
-  };
+  }
 }
 
 /**
@@ -101,15 +101,15 @@ export function checkPrivacyBudget(
   dataType: string,
   epsilonRequired: number
 ): boolean {
-  const budget = privacyBudgetStore.get(userId);
+  const budget = privacyBudgetStore.get(userId)
   if (!budget) {
     // Initialize new user budget
-    initializePrivacyBudget(userId);
-    return checkPrivacyBudget(userId, dataType, epsilonRequired);
+    initializePrivacyBudget(userId)
+    return checkPrivacyBudget(userId, dataType, epsilonRequired)
   }
-  
-  const remaining = budget.remainingBudget.get(dataType) || 0;
-  return remaining >= epsilonRequired;
+
+  const remaining = budget.remainingBudget.get(dataType) || 0
+  return remaining >= epsilonRequired
 }
 
 /**
@@ -125,18 +125,20 @@ export function consumePrivacyBudget(
   epsilonUsed: number,
   queryType: string
 ): void {
-  const budget = privacyBudgetStore.get(userId);
-  if (!budget) return;
-  
-  const remaining = budget.remainingBudget.get(dataType) || 0;
-  budget.remainingBudget.set(dataType, remaining - epsilonUsed);
-  
+  const budget = privacyBudgetStore.get(userId)
+  if (!budget) {
+    return
+  }
+
+  const remaining = budget.remainingBudget.get(dataType) || 0
+  budget.remainingBudget.set(dataType, remaining - epsilonUsed)
+
   budget.queryHistory.push({
     timestamp: new Date(),
     dataType,
     epsilonUsed,
     queryType
-  });
+  })
 }
 
 /**
@@ -154,9 +156,9 @@ export function initializePrivacyBudget(userId: string): void {
     ]),
     lastReset: new Date(),
     queryHistory: []
-  };
-  
-  privacyBudgetStore.set(userId, budget);
+  }
+
+  privacyBudgetStore.set(userId, budget)
 }
 
 /**
@@ -169,9 +171,9 @@ export function resetPrivacyBudgets(): void {
       ['trustScore', 2.0],
       ['userProfile', 3.0],
       ['emergencyData', 0.5]
-    ]);
-    budget.lastReset = new Date();
-  });
+    ])
+    budget.lastReset = new Date()
+  })
 }
 
 /**
@@ -180,7 +182,7 @@ export function resetPrivacyBudgets(): void {
  * @returns Privacy budget information
  */
 export function getPrivacyBudget(userId: string): PrivacyBudget | undefined {
-  return privacyBudgetStore.get(userId);
+  return privacyBudgetStore.get(userId)
 }
 
 /**
@@ -197,7 +199,7 @@ export function applyDPToSpatialResults<T extends { latitude: number; longitude:
     ...result,
     latitude: addLaplaceNoise(result.latitude, config),
     longitude: addLaplaceNoise(result.longitude, config)
-  }));
+  }))
 }
 
 /**
@@ -220,22 +222,22 @@ export function createPrivateBoundingBox(
   west: number;
 } {
   // Add noise to center point
-  const noisyCenter = addNoiseToLocation(centerLat, centerLng, config);
-  
+  const noisyCenter = addNoiseToLocation(centerLat, centerLng, config)
+
   // Add noise to radius
-  const noisyRadius = addLaplaceNoise(radiusKm, config);
-  
+  const noisyRadius = addLaplaceNoise(radiusKm, config)
+
   // Convert radius to degrees (approximate)
-  const latDelta = noisyRadius / 111; // 1 degree ≈ 111 km
-  const lngDelta = noisyRadius / (111 * Math.cos(noisyCenter.latitude * Math.PI / 180));
-  
+  const latDelta = noisyRadius / 111 // 1 degree ≈ 111 km
+  const lngDelta = noisyRadius / (111 * Math.cos(noisyCenter.latitude * Math.PI / 180))
+
   return {
     north: noisyCenter.latitude + latDelta,
     south: noisyCenter.latitude - latDelta,
     east: noisyCenter.longitude + lngDelta,
     west: noisyCenter.longitude - lngDelta
-  };
+  }
 }
 
 // Auto-reset budgets daily
-setInterval(resetPrivacyBudgets, 24 * 60 * 60 * 1000);
+setInterval(resetPrivacyBudgets, 24 * 60 * 60 * 1000)

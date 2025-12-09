@@ -6,7 +6,7 @@ import AuthGuard from '@/components/auth/AuthGuard'
 
 export const metadata: Metadata = {
   title: 'OpenRelief - Emergency Coordination Platform',
-  description: 'Connect victims with resources through our decentralized emergency coordination platform',
+  description: 'Connect victims with resources through our decentralized emergency coordination platform'
 }
 
 export default function HomePage() {

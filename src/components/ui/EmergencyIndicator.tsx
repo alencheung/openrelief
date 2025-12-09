@@ -1,11 +1,11 @@
 import React from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
-import { 
-  Flame, 
-  HeartPulse, 
-  Shield, 
-  CloudRain, 
+import {
+  Flame,
+  HeartPulse,
+  Shield,
+  CloudRain,
   Wrench,
   AlertTriangle
 } from 'lucide-react'
@@ -19,24 +19,24 @@ const emergencyIndicatorVariants = cva(
         medical: 'emergency-medical text-white shadow-md',
         security: 'emergency-security text-white shadow-md',
         natural: 'emergency-natural text-white shadow-md',
-        infrastructure: 'emergency-infrastructure text-white shadow-md',
+        infrastructure: 'emergency-infrastructure text-white shadow-md'
       },
       size: {
         sm: 'px-2 py-1 text-xs',
         md: 'px-3 py-2 text-sm',
-        lg: 'px-4 py-3 text-base',
+        lg: 'px-4 py-3 text-base'
       },
       variant: {
         default: '',
         outline: 'border-2 bg-transparent',
-        subtle: 'bg-opacity-10 text-current border border-current',
+        subtle: 'bg-opacity-10 text-current border border-current'
       }
     },
     defaultVariants: {
       type: 'fire',
       size: 'md',
-      variant: 'default',
-    },
+      variant: 'default'
+    }
   }
 )
 
@@ -54,20 +54,26 @@ const emergencyIcons = {
   medical: HeartPulse,
   security: Shield,
   natural: CloudRain,
-  infrastructure: Wrench,
+  infrastructure: Wrench
 }
 
 const getSeverityColor = (severity: number) => {
-  if (severity >= 4) return 'text-red-600'
-  if (severity >= 3) return 'text-orange-600'
-  if (severity >= 2) return 'text-yellow-600'
+  if (severity >= 4) {
+    return 'text-red-600'
+  }
+  if (severity >= 3) {
+    return 'text-orange-600'
+  }
+  if (severity >= 2) {
+    return 'text-yellow-600'
+  }
   return 'text-blue-600'
 }
 
 const EmergencyIndicator = React.forwardRef<HTMLDivElement, EmergencyIndicatorProps>(
   ({ className, type, size, variant, label, severity, showSeverity = false, icon = true, ...props }, ref) => {
     const IconComponent = emergencyIcons[type as keyof typeof emergencyIcons] || AlertTriangle
-    
+
     return (
       <div
         ref={ref}

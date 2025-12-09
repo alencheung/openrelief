@@ -1,18 +1,18 @@
 /**
  * Data Export and Deletion Tool for OpenRelief
- * 
+ *
  * This component allows users to export their data in various formats
  * and request deletion of their personal information in compliance with
  * data protection regulations like GDPR.
  */
 
-'use client';
+'use client'
 
-import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { StatusIndicator } from '@/components/ui/StatusIndicator';
-import { useToast } from '@/hooks/use-toast';
+import React, { useState, useEffect } from 'react'
+import { Card } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
+import { StatusIndicator } from '@/components/ui/StatusIndicator'
+import { useToast } from '@/hooks/use-toast'
 
 // Types for data export and deletion
 interface DataExportRequest {
@@ -47,20 +47,20 @@ interface DataSummary {
 }
 
 const DataExportTool: React.FC = () => {
-  const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<'export' | 'delete' | 'requests'>('export');
-  const [isLoading, setIsLoading] = useState(false);
-  
+  const { toast } = useToast()
+  const [activeTab, setActiveTab] = useState<'export' | 'delete' | 'requests'>('export')
+  const [isLoading, setIsLoading] = useState(false)
+
   // Data export state
-  const [selectedDataTypes, setSelectedDataTypes] = useState<string[]>([]);
-  const [exportFormat, setExportFormat] = useState<'json' | 'csv' | 'pdf'>('json');
-  const [exportRequests, setExportRequests] = useState<DataExportRequest[]>([]);
-  
+  const [selectedDataTypes, setSelectedDataTypes] = useState<string[]>([])
+  const [exportFormat, setExportFormat] = useState<'json' | 'csv' | 'pdf'>('json')
+  const [exportRequests, setExportRequests] = useState<DataExportRequest[]>([])
+
   // Data deletion state
-  const [deletionReason, setDeletionReason] = useState('');
-  const [deletionRequests, setDeletionRequests] = useState<DataDeletionRequest[]>([]);
-  const [confirmationCode, setConfirmationCode] = useState('');
-  
+  const [deletionReason, setDeletionReason] = useState('')
+  const [deletionRequests, setDeletionRequests] = useState<DataDeletionRequest[]>([])
+  const [confirmationCode, setConfirmationCode] = useState('')
+
   // Data summary
   const [dataSummary, setDataSummary] = useState<DataSummary>({
     totalRecords: 0,
@@ -72,7 +72,7 @@ const DataExportTool: React.FC = () => {
       { name: 'Trust Score History', count: 0, size: '0 MB' },
       { name: 'User Profile', count: 0, size: '0 MB' }
     ]
-  });
+  })
 
   // Available data types for export/deletion
   const availableDataTypes = [
@@ -80,18 +80,18 @@ const DataExportTool: React.FC = () => {
     { id: 'emergency', name: 'Emergency Reports', description: 'Emergency reports you have submitted' },
     { id: 'trust', name: 'Trust Score History', description: 'Historical trust score data' },
     { id: 'profile', name: 'User Profile', description: 'Your profile information and preferences' }
-  ];
+  ]
 
   // Load data summary and requests
   useEffect(() => {
     const loadDataSummary = async () => {
-      setIsLoading(true);
+      setIsLoading(true)
       try {
         // In a real implementation, fetch from API
         // const response = await fetch('/api/privacy/data-summary');
         // const summary = await response.json();
         // setDataSummary(summary);
-        
+
         // Mock data for demonstration
         setDataSummary({
           totalRecords: 156,
@@ -103,17 +103,17 @@ const DataExportTool: React.FC = () => {
             { name: 'Trust Score History', count: 45, size: '0.3 MB' },
             { name: 'User Profile', count: 10, size: '0.1 MB' }
           ]
-        });
+        })
       } catch (error) {
         toast({
-          title: "Error",
-          description: "Failed to load data summary",
-          variant: "destructive"
-        });
+          title: 'Error',
+          description: 'Failed to load data summary',
+          variant: 'destructive'
+        })
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
-    };
+    }
 
     const loadRequests = async () => {
       try {
@@ -126,7 +126,7 @@ const DataExportTool: React.FC = () => {
         // const deletionData = await deletionRes.json();
         // setExportRequests(exportData);
         // setDeletionRequests(deletionData);
-        
+
         // Mock data for demonstration
         setExportRequests([
           {
@@ -138,43 +138,43 @@ const DataExportTool: React.FC = () => {
             completedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
             downloadUrl: '/api/privacy/download/exp-123'
           }
-        ]);
-        
-        setDeletionRequests([]);
+        ])
+
+        setDeletionRequests([])
       } catch (error) {
         toast({
-          title: "Error",
-          description: "Failed to load requests",
-          variant: "destructive"
-        });
+          title: 'Error',
+          description: 'Failed to load requests',
+          variant: 'destructive'
+        })
       }
-    };
+    }
 
-    loadDataSummary();
-    loadRequests();
-  }, [toast]);
+    loadDataSummary()
+    loadRequests()
+  }, [toast])
 
   // Handle data type selection
   const handleDataTypeToggle = (typeId: string) => {
-    setSelectedDataTypes(prev => 
+    setSelectedDataTypes(prev =>
       prev.includes(typeId)
         ? prev.filter(id => id !== typeId)
         : [...prev, typeId]
-    );
-  };
+    )
+  }
 
   // Submit data export request
   const submitExportRequest = async () => {
     if (selectedDataTypes.length === 0) {
       toast({
-        title: "Error",
-        description: "Please select at least one data type to export",
-        variant: "destructive"
-      });
-      return;
+        title: 'Error',
+        description: 'Please select at least one data type to export',
+        variant: 'destructive'
+      })
+      return
     }
 
-    setIsLoading(true);
+    setIsLoading(true)
     try {
       // In a real implementation, submit to API
       // const response = await fetch('/api/privacy/export', {
@@ -186,7 +186,7 @@ const DataExportTool: React.FC = () => {
       //   })
       // });
       // const request = await response.json();
-      
+
       // Mock request for demonstration
       const request: DataExportRequest = {
         id: `exp-${Date.now()}`,
@@ -194,47 +194,47 @@ const DataExportTool: React.FC = () => {
         format: exportFormat,
         status: 'pending',
         createdAt: new Date()
-      };
-      
-      setExportRequests(prev => [request, ...prev]);
-      setSelectedDataTypes([]);
-      
+      }
+
+      setExportRequests(prev => [request, ...prev])
+      setSelectedDataTypes([])
+
       toast({
-        title: "Export Requested",
+        title: 'Export Requested',
         description: "Your data export request has been submitted. You will be notified when it's ready for download."
-      });
+      })
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to submit export request",
-        variant: "destructive"
-      });
+        title: 'Error',
+        description: 'Failed to submit export request',
+        variant: 'destructive'
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   // Submit data deletion request
   const submitDeletionRequest = async () => {
     if (selectedDataTypes.length === 0) {
       toast({
-        title: "Error",
-        description: "Please select at least one data type to delete",
-        variant: "destructive"
-      });
-      return;
+        title: 'Error',
+        description: 'Please select at least one data type to delete',
+        variant: 'destructive'
+      })
+      return
     }
 
     if (!deletionReason.trim()) {
       toast({
-        title: "Error",
-        description: "Please provide a reason for deletion",
-        variant: "destructive"
-      });
-      return;
+        title: 'Error',
+        description: 'Please provide a reason for deletion',
+        variant: 'destructive'
+      })
+      return
     }
 
-    setIsLoading(true);
+    setIsLoading(true)
     try {
       // In a real implementation, submit to API
       // const response = await fetch('/api/privacy/delete', {
@@ -246,7 +246,7 @@ const DataExportTool: React.FC = () => {
       //   })
       // });
       // const request = await response.json();
-      
+
       // Mock request for demonstration
       const request: DataDeletionRequest = {
         id: `del-${Date.now()}`,
@@ -255,45 +255,45 @@ const DataExportTool: React.FC = () => {
         status: 'pending',
         createdAt: new Date(),
         confirmationCode: Math.random().toString(36).substring(2, 10).toUpperCase()
-      };
-      
-      setDeletionRequests(prev => [request, ...prev]);
-      setSelectedDataTypes([]);
-      setDeletionReason('');
-      
+      }
+
+      setDeletionRequests(prev => [request, ...prev])
+      setSelectedDataTypes([])
+      setDeletionReason('')
+
       toast({
-        title: "Deletion Requested",
+        title: 'Deletion Requested',
         description: `Your deletion request has been submitted. Confirmation code: ${request.confirmationCode}`
-      });
+      })
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to submit deletion request",
-        variant: "destructive"
-      });
+        title: 'Error',
+        description: 'Failed to submit deletion request',
+        variant: 'destructive'
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   // Download exported data
   const downloadExport = (request: DataExportRequest) => {
     if (request.downloadUrl) {
       // In a real implementation, initiate download
-      window.open(request.downloadUrl, '_blank');
+      window.open(request.downloadUrl, '_blank')
     }
-  };
+  }
 
   // Get status color for requests
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'green';
-      case 'processing': return 'blue';
-      case 'pending': return 'yellow';
-      case 'failed': return 'red';
-      default: return 'gray';
+      case 'completed': return 'green'
+      case 'processing': return 'blue'
+      case 'pending': return 'yellow'
+      case 'failed': return 'red'
+      default: return 'gray'
     }
-  };
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
@@ -318,7 +318,7 @@ const DataExportTool: React.FC = () => {
             <div className="text-gray-600">Last Updated</div>
           </div>
         </div>
-        
+
         <div className="mt-4">
           <h3 className="font-medium mb-2">Data Types</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -354,7 +354,7 @@ const DataExportTool: React.FC = () => {
         <div className="space-y-6">
           <Card className="p-6">
             <h2 className="text-xl font-semibold mb-4">Export Your Data</h2>
-            
+
             <div className="space-y-4">
               <div>
                 <h3 className="font-medium mb-2">Select Data Types</h3>
@@ -394,8 +394,8 @@ const DataExportTool: React.FC = () => {
                 </div>
               </div>
 
-              <Button 
-                onClick={submitExportRequest} 
+              <Button
+                onClick={submitExportRequest}
                 disabled={isLoading || selectedDataTypes.length === 0}
               >
                 {isLoading ? 'Submitting...' : 'Request Export'}
@@ -410,14 +410,14 @@ const DataExportTool: React.FC = () => {
         <div className="space-y-6">
           <Card className="p-6">
             <h2 className="text-xl font-semibold mb-4">Delete Your Data</h2>
-            
+
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
               <h3 className="font-medium text-yellow-800">Warning</h3>
               <p className="text-yellow-700">
                 Data deletion is permanent and cannot be undone. Please be certain before proceeding.
               </p>
             </div>
-            
+
             <div className="space-y-4">
               <div>
                 <h3 className="font-medium mb-2">Select Data Types to Delete</h3>
@@ -450,9 +450,9 @@ const DataExportTool: React.FC = () => {
                 />
               </div>
 
-              <Button 
+              <Button
                 variant="destructive"
-                onClick={submitDeletionRequest} 
+                onClick={submitDeletionRequest}
                 disabled={isLoading || selectedDataTypes.length === 0 || !deletionReason.trim()}
               >
                 {isLoading ? 'Submitting...' : 'Request Deletion'}
@@ -467,7 +467,7 @@ const DataExportTool: React.FC = () => {
         <div className="space-y-6">
           <Card className="p-6">
             <h2 className="text-xl font-semibold mb-4">Your Requests</h2>
-            
+
             <div className="space-y-6">
               <div>
                 <h3 className="font-medium mb-2">Export Requests</h3>
@@ -480,7 +480,7 @@ const DataExportTool: React.FC = () => {
                         <div>
                           <div className="font-medium">{request.dataType}</div>
                           <div className="text-sm text-gray-600">
-                            Format: {request.format.toUpperCase()} | 
+                            Format: {request.format.toUpperCase()} |
                             Created: {request.createdAt.toLocaleDateString()}
                           </div>
                           {request.completedAt && (
@@ -538,7 +538,7 @@ const DataExportTool: React.FC = () => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default DataExportTool;
+export default DataExportTool

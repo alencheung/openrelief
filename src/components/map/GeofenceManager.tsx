@@ -31,14 +31,14 @@ const geofenceTypes = [
   { value: 'emergency', label: 'Emergency Zone', color: '#ff4444', icon: '🚨' },
   { value: 'safe_zone', label: 'Safe Zone', color: '#44ff44', icon: '🛡️' },
   { value: 'restricted', label: 'Restricted Area', color: '#ffaa00', icon: '🚫' },
-  { value: 'custom', label: 'Custom Zone', color: '#888888', icon: '📍' },
+  { value: 'custom', label: 'Custom Zone', color: '#888888', icon: '📍' }
 ]
 
 const severityLevels = [
   { value: 'low', label: 'Low', color: '#44ff44' },
   { value: 'medium', label: 'Medium', color: '#ffaa00' },
   { value: 'high', label: 'High', color: '#ff8800' },
-  { value: 'critical', label: 'Critical', color: '#ff0000' },
+  { value: 'critical', label: 'Critical', color: '#ff0000' }
 ]
 
 export default function GeofenceManager({
@@ -48,7 +48,7 @@ export default function GeofenceManager({
   onGeofenceUpdate,
   onGeofenceDelete,
   onGeofenceEnter,
-  onGeofenceExit,
+  onGeofenceExit
 }: GeofenceManagerProps) {
   const [isCreating, setIsCreating] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -59,7 +59,7 @@ export default function GeofenceManager({
     radius: 500,
     isActive: true,
     description: '',
-    severity: 'medium',
+    severity: 'medium'
   })
   const [isSelectingLocation, setIsSelectingLocation] = useState(false)
   const [showForm, setShowForm] = useState(false)
@@ -73,7 +73,7 @@ export default function GeofenceManager({
     updateGeofence,
     toggleGeofence,
     checkGeofences,
-    geofenceHistory,
+    geofenceHistory
   } = useLocationStore()
 
   const { currentLocation } = useLocationStore()
@@ -83,7 +83,7 @@ export default function GeofenceManager({
     if (currentLocation && !formData.center.lat && !formData.center.lng) {
       setFormData(prev => ({
         ...prev,
-        center: { lat: currentLocation.lat, lng: currentLocation.lng },
+        center: { lat: currentLocation.lat, lng: currentLocation.lng }
       }))
     }
   }, [currentLocation, formData.center.lat, formData.center.lng])
@@ -103,7 +103,9 @@ export default function GeofenceManager({
 
   // Handle location selection on map
   const handleLocationSelect = () => {
-    if (!mapInstance) return
+    if (!mapInstance) {
+      return
+    }
 
     console.log('Debug: Starting location selection on map')
     setIsSelectingLocation(true)
@@ -114,7 +116,7 @@ export default function GeofenceManager({
       const coords = e.lngLat
       setFormData(prev => ({
         ...prev,
-        center: { lat: coords.lat, lng: coords.lng },
+        center: { lat: coords.lat, lng: coords.lng }
       }))
       mapInstance.getCanvas().style.cursor = ''
       // FIXED: Properly clean up event listener
@@ -141,7 +143,7 @@ export default function GeofenceManager({
       radius: 500,
       isActive: true,
       description: '',
-      severity: 'medium',
+      severity: 'medium'
     })
     setEditingId(null)
     setShowForm(true)
@@ -158,7 +160,7 @@ export default function GeofenceManager({
       isActive: geofence.isActive,
       description: geofence.metadata?.description || '',
       severity: geofence.metadata?.severity || 'medium',
-      expiresAt: geofence.expiresAt ? new Date(geofence.expiresAt).toISOString().split('T')[0] : '',
+      expiresAt: geofence.expiresAt ? new Date(geofence.expiresAt).toISOString().split('T')[0] : ''
     })
     setEditingId(geofence.id)
     setShowForm(true)
@@ -184,9 +186,9 @@ export default function GeofenceManager({
         ...(formData.description && { description: formData.description }),
         // FIXED: Ensure severity is not undefined
         severity: formData.severity || 'medium',
-        createdBy: 'current-user', // Would come from auth
+        createdBy: 'current-user' // Would come from auth
       },
-      ...(formData.expiresAt && { expiresAt: new Date(formData.expiresAt) }),
+      ...(formData.expiresAt && { expiresAt: new Date(formData.expiresAt) })
     }
 
     if (isCreating) {
@@ -199,7 +201,7 @@ export default function GeofenceManager({
       const newGeofence: Geofence = {
         ...geofenceData,
         id,
-        createdAt: new Date(),
+        createdAt: new Date()
       }
       onGeofenceCreate?.(newGeofence)
     } else if (editingId) {
@@ -241,7 +243,7 @@ export default function GeofenceManager({
       radius: 500,
       isActive: true,
       description: '',
-      severity: 'medium',
+      severity: 'medium'
     })
   }
 

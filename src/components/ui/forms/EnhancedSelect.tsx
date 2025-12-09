@@ -11,18 +11,18 @@ const enhancedSelectVariants = cva(
         default: 'border-input',
         error: 'border-destructive focus-visible:ring-destructive',
         success: 'border-success focus-visible:ring-success',
-        warning: 'border-warning focus-visible:ring-warning',
+        warning: 'border-warning focus-visible:ring-warning'
       },
       size: {
         sm: 'h-9 px-3 text-xs',
         default: 'h-10 px-3 py-2',
-        lg: 'h-11 px-4 py-3 text-base',
-      },
+        lg: 'h-11 px-4 py-3 text-base'
+      }
     },
     defaultVariants: {
       variant: 'default',
-      size: 'default',
-    },
+      size: 'default'
+    }
   }
 )
 
@@ -62,9 +62,9 @@ export interface EnhancedSelectProps
 }
 
 const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
-  ({ 
-    className, 
-    variant, 
+  ({
+    className,
+    variant,
     size,
     options,
     label,
@@ -88,62 +88,78 @@ const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
     renderOption,
     renderValue,
     disabled,
-    ...props 
+    ...props
   }, ref) => {
     const [isOpen, setIsOpen] = React.useState(false)
     const [searchQuery, setSearchQuery] = React.useState('')
     const [highlightedIndex, setHighlightedIndex] = React.useState(-1)
-    
+
     const selectRef = React.useRef<HTMLDivElement>(null)
     const inputRef = React.useRef<HTMLInputElement>(null)
     const dropdownRef = React.useRef<HTMLDivElement>(null)
     const inputId = `select-${React.useId()}`
-    
+
     const hasValue = value !== undefined && value !== '' && (Array.isArray(value) ? value.length > 0 : true)
     const isFloating = floatingLabel && (isOpen || hasValue)
-    
+
     // Filter options based on search query
     const filteredOptions = React.useMemo(() => {
-      if (!searchQuery) return options
-      
-      return options.filter(option => 
-        option.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        option.value.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        option.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      if (!searchQuery) {
+        return options
+      }
+
+      return options.filter(option =>
+        option.label.toLowerCase().includes(searchQuery.toLowerCase())
+        || option.value.toLowerCase().includes(searchQuery.toLowerCase())
+        || option.description?.toLowerCase().includes(searchQuery.toLowerCase())
       )
     }, [options, searchQuery])
-    
+
     // Group options if groupBy is provided
     const groupedOptions = React.useMemo(() => {
-      if (!groupBy) return { '': filteredOptions }
-      
+      if (!groupBy) {
+        return { '': filteredOptions }
+      }
+
       return filteredOptions.reduce((groups, option) => {
         const group = groupBy(option) || ''
-        if (!groups[group]) groups[group] = []
+        if (!groups[group]) {
+          groups[group] = []
+        }
         groups[group].push(option)
         return groups
       }, {} as Record<string, SelectOption[]>)
     }, [filteredOptions, groupBy])
-    
+
     // Get selected options
     const selectedOptions = React.useMemo(() => {
-      if (!value) return []
+      if (!value) {
+        return []
+      }
       const values = Array.isArray(value) ? value : [value]
       return options.filter(option => values.includes(option.value))
     }, [value, options])
-    
+
     // Determine final variant
     const getVariant = () => {
-      if (errorText) return 'error'
-      if (successText) return 'success'
-      if (warningText) return 'warning'
+      if (errorText) {
+        return 'error'
+      }
+      if (successText) {
+        return 'success'
+      }
+      if (warningText) {
+        return 'warning'
+      }
       return variant
     }
-    
+
     // Handle option selection
     const handleOptionSelect = (option: SelectOption) => {
-      if (option.disabled) return
-      
+      if (option.disabled) {
+        return
+      }
+
       if (multi) {
         const currentValues = Array.isArray(value) ? value : []
         const newValues = currentValues.includes(option.value)
@@ -156,14 +172,14 @@ const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
         setSearchQuery('')
       }
     }
-    
+
     // Handle clear
     const handleClear = () => {
       onChange?.(multi ? [] : '')
       setSearchQuery('')
       setHighlightedIndex(-1)
     }
-    
+
     // Handle keyboard navigation
     const handleKeyDown = (e: React.KeyboardEvent) => {
       if (!isOpen && e.key === 'Enter') {
@@ -171,13 +187,15 @@ const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
         setIsOpen(true)
         return
       }
-      
-      if (!isOpen) return
-      
+
+      if (!isOpen) {
+        return
+      }
+
       switch (e.key) {
         case 'ArrowDown':
           e.preventDefault()
-          setHighlightedIndex(prev => 
+          setHighlightedIndex(prev =>
             prev < filteredOptions.length - 1 ? prev + 1 : prev
           )
           break
@@ -197,7 +215,7 @@ const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
           break
       }
     }
-    
+
     // Close dropdown when clicking outside
     React.useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
@@ -205,11 +223,11 @@ const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
           setIsOpen(false)
         }
       }
-      
+
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [])
-    
+
     // Scroll highlighted option into view
     React.useEffect(() => {
       if (highlightedIndex >= 0 && dropdownRef.current) {
@@ -219,9 +237,9 @@ const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
         }
       }
     }, [highlightedIndex])
-    
+
     const currentVariant = getVariant()
-    
+
     return (
       <div ref={selectRef} className="relative w-full">
         {/* Floating Label */}
@@ -231,8 +249,8 @@ const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
             className={cn(
               'absolute left-3 transition-all duration-normal pointer-events-none z-10',
               'bg-background px-1',
-              isFloating 
-                ? 'text-xs text-muted-foreground -top-2 left-2' 
+              isFloating
+                ? 'text-xs text-muted-foreground -top-2 left-2'
                 : 'text-sm text-muted-foreground top-1/2 -translate-y-1/2',
               currentVariant === 'error' && 'text-destructive',
               currentVariant === 'success' && 'text-success',
@@ -244,10 +262,10 @@ const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
             {required && <span className="text-destructive ml-1">*</span>}
           </label>
         )}
-        
+
         {/* Standard Label */}
         {label && !floatingLabel && (
-          <label 
+          <label
             htmlFor={inputId}
             className={cn(
               'block text-sm font-medium mb-2 text-foreground',
@@ -260,7 +278,7 @@ const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
             {required && <span className="text-destructive ml-1">*</span>}
           </label>
         )}
-        
+
         {/* Select Trigger */}
         <div
           id={inputId}
@@ -283,7 +301,7 @@ const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
               {leftIcon}
             </div>
           )}
-          
+
           {/* Selected Value */}
           <div className="flex-1 truncate">
             {renderValue ? (
@@ -318,7 +336,7 @@ const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
               <span className="text-muted-foreground">{placeholder}</span>
             )}
           </div>
-          
+
           {/* Right Side Icons */}
           <div className="flex items-center gap-1">
             {errorText && <AlertCircle className="h-4 w-4 text-destructive" />}
@@ -336,7 +354,7 @@ const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
             {rightIcon || <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', isOpen && 'rotate-180')} />}
           </div>
         </div>
-        
+
         {/* Dropdown */}
         {isOpen && (
           <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-60 overflow-auto">
@@ -361,7 +379,7 @@ const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
                 </div>
               </div>
             )}
-            
+
             {/* Options */}
             <div ref={dropdownRef} className="py-1" role="listbox">
               {Object.entries(groupedOptions).map(([group, groupOptions]) => (
@@ -374,7 +392,7 @@ const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
                   {groupOptions.map((option, index) => {
                     const isSelected = selectedOptions.some(selected => selected.value === option.value)
                     const globalIndex = filteredOptions.indexOf(option)
-                    
+
                     return (
                       <div
                         key={option.value}
@@ -411,7 +429,7 @@ const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
                   })}
                 </div>
               ))}
-              
+
               {filteredOptions.length === 0 && (
                 <div className="px-2 py-4 text-center text-sm text-muted-foreground">
                   No options found
@@ -420,17 +438,17 @@ const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
             </div>
           </div>
         )}
-        
+
         {/* Helper Text */}
         {(helperText || errorText || successText || warningText) && (
           <div className={cn(
             'mt-2 text-xs',
-            errorText 
-              ? 'text-destructive' 
-              : successText 
-                ? 'text-success' 
-                : warningText 
-                  ? 'text-warning' 
+            errorText
+              ? 'text-destructive'
+              : successText
+                ? 'text-success'
+                : warningText
+                  ? 'text-warning'
                   : 'text-muted-foreground'
           )}>
             {errorText || successText || warningText || helperText}

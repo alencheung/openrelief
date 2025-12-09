@@ -131,7 +131,7 @@ export function SyncProgressNotification({
     if (isSyncing) {
       setVisible(true)
       setShowDetails(true)
-      
+
       // Clear any existing auto-hide timer
       if (autoHideTimer) {
         clearTimeout(autoHideTimer)
@@ -146,12 +146,24 @@ export function SyncProgressNotification({
 
       // Determine current stage based on progress
       let stageIndex = 0
-      if (progressPercentage >= 90) stageIndex = 5 // completion
-      else if (progressPercentage >= 75) stageIndex = 4 // other-data
-      else if (progressPercentage >= 50) stageIndex = 3 // user-data
-      else if (progressPercentage >= 25) stageIndex = 2 // locations
-      else if (progressPercentage >= 10) stageIndex = 1 // emergency-reports
-      else stageIndex = 0 // validation
+      if (progressPercentage >= 90) {
+        stageIndex = 5
+      } // completion
+      else if (progressPercentage >= 75) {
+        stageIndex = 4
+      } // other-data
+      else if (progressPercentage >= 50) {
+        stageIndex = 3
+      } // user-data
+      else if (progressPercentage >= 25) {
+        stageIndex = 2
+      } // locations
+      else if (progressPercentage >= 10) {
+        stageIndex = 1
+      } // emergency-reports
+      else {
+        stageIndex = 0
+      } // validation
 
       // Update stage statuses
       stages.forEach((stage, index) => {
@@ -183,9 +195,9 @@ export function SyncProgressNotification({
         }))
         setSyncStages(stages)
         setCurrentStage('completion')
-        
+
         announcePolite('Synchronization completed successfully')
-        
+
         // Auto-hide after delay
         if (autoHide) {
           const timer = setTimeout(() => {
@@ -205,7 +217,7 @@ export function SyncProgressNotification({
   const handleDismiss = () => {
     setVisible(false)
     onDismiss?.()
-    
+
     if (autoHideTimer) {
       clearTimeout(autoHideTimer)
       setAutoHideTimer(null)
@@ -219,8 +231,8 @@ export function SyncProgressNotification({
   }
 
   // Calculate overall progress
-  const overallProgress = syncProgress.total > 0 
-    ? (syncProgress.current / syncProgress.total) * 100 
+  const overallProgress = syncProgress.total > 0
+    ? (syncProgress.current / syncProgress.total) * 100
     : 0
 
   // Get position classes
@@ -252,12 +264,12 @@ export function SyncProgressNotification({
       <div className={`fixed z-50 ${getPositionClasses()} ${prefersReducedMotion ? '' : 'animate-slide-in-right'}`}>
         <Card className={`
           w-96 shadow-lg border-2
-          ${isCompleted 
-            ? 'border-green-200 bg-green-50' 
-            : hasErrors 
-              ? 'border-red-200 bg-red-50'
-              : 'border-blue-200 bg-blue-50'
-          }
+          ${isCompleted
+      ? 'border-green-200 bg-green-50'
+      : hasErrors
+        ? 'border-red-200 bg-red-50'
+        : 'border-blue-200 bg-blue-50'
+    }
         `}>
           <div className="p-4">
             {/* Header */}
@@ -266,12 +278,12 @@ export function SyncProgressNotification({
                 {/* Status Icon */}
                 <div className={`
                   flex items-center justify-center w-10 h-10 rounded-full
-                  ${isCompleted 
-                    ? 'bg-green-100 text-green-600' 
-                    : hasErrors 
-                      ? 'bg-red-100 text-red-600'
-                      : 'bg-blue-100 text-blue-600'
-                  }
+                  ${isCompleted
+      ? 'bg-green-100 text-green-600'
+      : hasErrors
+        ? 'bg-red-100 text-red-600'
+        : 'bg-blue-100 text-blue-600'
+    }
                 `}>
                   {isCompleted ? (
                     <CheckCircle2Icon className="w-5 h-5" />
@@ -290,7 +302,7 @@ export function SyncProgressNotification({
                     {isCompleted ? 'Sync Completed' : hasErrors ? 'Sync Issues' : 'Syncing Data'}
                   </h3>
                   <p className="text-sm text-gray-600">
-                    {isCompleted 
+                    {isCompleted
                       ? `${syncProgress.total} actions synchronized`
                       : hasErrors
                         ? `${failedActions.length} actions failed`
@@ -322,7 +334,7 @@ export function SyncProgressNotification({
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
+                  <div
                     className={`
                       h-2 rounded-full transition-all duration-300
                       ${hasErrors ? 'bg-red-500' : 'bg-blue-500'}
@@ -362,7 +374,7 @@ export function SyncProgressNotification({
                   Retry Failed
                 </Button>
               )}
-              
+
               {!isCompleted && !hasErrors && (
                 <Button
                   onClick={() => setShowDetails(!showDetails)}
@@ -393,21 +405,21 @@ export function SyncProgressNotification({
               ${prefersReducedMotion ? '' : 'animate-slide-in-down'}
             `}>
               <h4 className="font-medium text-gray-900 mb-3">Sync Details</h4>
-              
+
               <div className="space-y-2">
                 {syncStages.map((stage) => (
                   <div key={stage.id} className="flex items-center gap-3">
                     {/* Stage Icon */}
                     <div className={`
                       flex items-center justify-center w-8 h-8 rounded-full
-                      ${stage.status === 'completed' 
-                        ? 'bg-green-100 text-green-600' 
-                        : stage.status === 'in-progress'
-                          ? 'bg-blue-100 text-blue-600'
-                          : stage.status === 'failed'
-                            ? 'bg-red-100 text-red-600'
-                            : 'bg-gray-100 text-gray-400'
-                      }
+                      ${stage.status === 'completed'
+                    ? 'bg-green-100 text-green-600'
+                    : stage.status === 'in-progress'
+                      ? 'bg-blue-100 text-blue-600'
+                      : stage.status === 'failed'
+                        ? 'bg-red-100 text-red-600'
+                        : 'bg-gray-100 text-gray-400'
+                  }
                     `}>
                       {stage.status === 'in-progress' ? (
                         <Loader2Icon className="w-4 h-4 animate-spin" />
@@ -426,27 +438,27 @@ export function SyncProgressNotification({
                           {stage.progress > 0 ? `${stage.progress}/${stage.total}` : ''}
                         </span>
                       </div>
-                      
+
                       {/* Stage Progress Bar */}
                       {stage.total > 0 && (
                         <div className="w-full bg-gray-200 rounded-full h-1 mt-1">
-                          <div 
+                          <div
                             className={`
                               h-1 rounded-full transition-all duration-300
-                              ${stage.status === 'failed' 
-                                ? 'bg-red-500' 
-                                : stage.status === 'completed'
-                                  ? 'bg-green-500'
-                                  : 'bg-blue-500'
-                              }
+                              ${stage.status === 'failed'
+                          ? 'bg-red-500'
+                          : stage.status === 'completed'
+                            ? 'bg-green-500'
+                            : 'bg-blue-500'
+                        }
                             `}
-                            style={{ 
-                              width: stage.total > 0 ? `${(stage.progress / stage.total) * 100}%` : '0%' 
+                            style={{
+                              width: stage.total > 0 ? `${(stage.progress / stage.total) * 100}%` : '0%'
                             }}
                           />
                         </div>
                       )}
-                      
+
                       {/* Error Message */}
                       {stage.error && (
                         <p className="text-xs text-red-600 mt-1">
@@ -458,9 +470,9 @@ export function SyncProgressNotification({
                     {/* Status Indicator */}
                     <StatusIndicator
                       status={
-                        stage.status === 'completed' ? 'active' :
-                        stage.status === 'in-progress' ? 'pending' :
-                        stage.status === 'failed' ? 'critical' : 'inactive'
+                        stage.status === 'completed' ? 'active'
+                          : stage.status === 'in-progress' ? 'pending'
+                            : stage.status === 'failed' ? 'critical' : 'inactive'
                       }
                       size="sm"
                       animated={stage.status === 'in-progress'}

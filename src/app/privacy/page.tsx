@@ -1,6 +1,6 @@
 /**
  * Enhanced Privacy Page for OpenRelief
- * 
+ *
  * This page hosts the comprehensive privacy center with advanced features
  * including transparency reporting, granular controls, and GDPR rights management
  */
@@ -10,12 +10,12 @@
 import React, { useState } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { 
-  Shield, 
-  Download, 
-  Trash2, 
-  Settings, 
-  Eye, 
+import {
+  Shield,
+  Download,
+  Trash2,
+  Settings,
+  Eye,
   FileText,
   Lock,
   Bell,
@@ -27,9 +27,9 @@ import {
   CheckCircle,
   Info
 } from 'lucide-react'
-import { 
-  PrivacyDashboard, 
-  DataExportTool, 
+import {
+  PrivacyDashboard,
+  DataExportTool,
   TransparencyReport,
   DataControls,
   RightsManagement,
@@ -38,9 +38,9 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { usePrivacy } from '@/hooks/usePrivacy'
 
-type TabId = 
-  | 'dashboard' 
-  | 'export' 
+type TabId =
+  | 'dashboard'
+  | 'export'
   | 'settings'
   | 'transparency'
   | 'controls'
@@ -55,51 +55,51 @@ const PrivacyPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabId>('dashboard')
 
   const tabs = [
-    { 
-      id: 'dashboard', 
-      label: 'Privacy Dashboard', 
+    {
+      id: 'dashboard',
+      label: 'Privacy Dashboard',
       icon: Settings,
       description: 'Overview of your privacy settings and data usage'
     },
-    { 
-      id: 'transparency', 
-      label: 'Transparency Report', 
+    {
+      id: 'transparency',
+      label: 'Transparency Report',
       icon: FileText,
       description: 'Detailed report of data processing and sharing'
     },
-    { 
-      id: 'controls', 
-      label: 'Data Controls', 
+    {
+      id: 'controls',
+      label: 'Data Controls',
       icon: Lock,
       description: 'Granular control over your data and permissions'
     },
-    { 
-      id: 'rights', 
-      label: 'Your Rights', 
+    {
+      id: 'rights',
+      label: 'Your Rights',
       icon: UserCheck,
       description: 'Exercise your GDPR rights and legal requests'
     },
-    { 
-      id: 'export', 
-      label: 'Data Export & Deletion', 
+    {
+      id: 'export',
+      label: 'Data Export & Deletion',
       icon: Download,
       description: 'Export or delete your personal data'
     },
-    { 
-      id: 'zones', 
-      label: 'Privacy Zones', 
+    {
+      id: 'zones',
+      label: 'Privacy Zones',
       icon: MapPin,
       description: 'Configure location-based privacy settings'
     },
-    { 
-      id: 'notifications', 
-      label: 'Notifications', 
+    {
+      id: 'notifications',
+      label: 'Notifications',
       icon: Bell,
       description: 'Manage privacy alerts and notifications'
     },
-    { 
-      id: 'education', 
-      label: 'Privacy Education', 
+    {
+      id: 'education',
+      label: 'Privacy Education',
       icon: BookOpen,
       description: 'Learn about privacy best practices'
     }
@@ -170,10 +170,10 @@ const PrivacyPage: React.FC = () => {
               </div>
               <div className="flex items-center space-x-2 text-sm">
                 <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  privacyContext.privacyLevel === 'maximum' ? 'bg-green-100 text-green-800' :
-                  privacyContext.privacyLevel === 'high' ? 'bg-blue-100 text-blue-800' :
-                  privacyContext.privacyLevel === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-gray-100 text-gray-800'
+                  privacyContext.privacyLevel === 'maximum' ? 'bg-green-100 text-green-800'
+                    : privacyContext.privacyLevel === 'high' ? 'bg-blue-100 text-blue-800'
+                      : privacyContext.privacyLevel === 'medium' ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-gray-100 text-gray-800'
                 }`}>
                   {privacyContext.privacyLevel.toUpperCase()} PRIVACY
                 </div>
@@ -194,8 +194,8 @@ const PrivacyPage: React.FC = () => {
                   You have {privacyAlerts.length} privacy alert{privacyAlerts.length > 1 ? 's' : ''}
                 </span>
               </div>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="sm"
                 onClick={() => setActiveTab('notifications')}
               >
@@ -245,10 +245,10 @@ const PrivacyPage: React.FC = () => {
                 </div>
               </div>
               <Button variant="outline" size="sm" className="w-full">
-                {action.id === 'export' ? 'Export Data' :
-                 action.id === 'delete' ? 'Manage Deletion' :
-                 action.id === 'report' ? 'View Report' :
-                 'Manage Settings'}
+                {action.id === 'export' ? 'Export Data'
+                  : action.id === 'delete' ? 'Manage Deletion'
+                    : action.id === 'report' ? 'View Report'
+                      : 'Manage Settings'}
               </Button>
             </Card>
           ))}
@@ -268,7 +268,7 @@ const PrivacyPage: React.FC = () => {
                 <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Privacy Zones Coming Soon</h3>
                 <p className="text-gray-600 max-w-md mx-auto">
-                  Configure location-based privacy settings to automatically adjust your privacy 
+                  Configure location-based privacy settings to automatically adjust your privacy
                   preferences based on your physical location.
                 </p>
               </div>
@@ -290,14 +290,14 @@ const PrivacyPage: React.FC = () => {
                   privacyAlerts.map((alert) => (
                     <div key={alert.id} className="flex items-start space-x-3 p-4 border rounded-lg">
                       <div className={`p-2 rounded-full ${
-                        alert.severity === 'critical' ? 'bg-red-100' :
-                        alert.severity === 'warning' ? 'bg-yellow-100' :
-                        'bg-blue-100'
+                        alert.severity === 'critical' ? 'bg-red-100'
+                          : alert.severity === 'warning' ? 'bg-yellow-100'
+                            : 'bg-blue-100'
                       }`}>
                         <AlertTriangle className={`h-4 w-4 ${
-                          alert.severity === 'critical' ? 'text-red-600' :
-                          alert.severity === 'warning' ? 'text-yellow-600' :
-                          'text-blue-600'
+                          alert.severity === 'critical' ? 'text-red-600'
+                            : alert.severity === 'warning' ? 'text-yellow-600'
+                              : 'text-blue-600'
                         }`} />
                       </div>
                       <div className="flex-1">
@@ -307,8 +307,8 @@ const PrivacyPage: React.FC = () => {
                           {new Date(alert.timestamp).toLocaleString()}
                         </p>
                       </div>
-                      <Button 
-                        variant="ghost" 
+                      <Button
+                        variant="ghost"
                         size="sm"
                         onClick={() => clearPrivacyAlert(alert.id)}
                       >

@@ -705,7 +705,7 @@ describe('Emergency Workflow Integration Tests', () => {
       const highVolumeEvents = Array.from({ length: 100 }, (_, i) =>
         createEmergencyEvent({
           id: `high-volume-${i}`,
-          type: ['medical', 'fire', 'accident'][i % 3] as any,
+          type: (['medical', 'fire', 'accident'] as any)[i % 3],
           severity: ['medium', 'high', 'critical'][i % 3] as any,
           title: `High Volume Emergency ${i}`,
           location: {

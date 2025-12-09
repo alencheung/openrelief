@@ -12,31 +12,31 @@ interface ProvidersProps {
 }
 
 export function Providers({ children }: ProvidersProps) {
-    // Create QueryClient inside the component to ensure it's created on the client side only
-    const [queryClient] = useState(
-        () =>
-            new QueryClient({
-                defaultOptions: {
-                    queries: {
-                        staleTime: 60 * 1000, // 1 minute
-                        retry: 3,
-                        refetchOnWindowFocus: false,
-                    },
-                },
-            })
-    )
+  // Create QueryClient inside the component to ensure it's created on the client side only
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 60 * 1000, // 1 minute
+            retry: 3,
+            refetchOnWindowFocus: false
+          }
+        }
+      })
+  )
 
-    return (
-        <QueryClientProvider client={queryClient}>
-            <PWAManager>
-                <NoSSRProvider>
-                    {children}
-                    <Toaster />
-                    {process.env.NODE_ENV === 'development' && (
-                        <ReactQueryDevtools initialIsOpen={false} />
-                    )}
-                </NoSSRProvider>
-            </PWAManager>
-        </QueryClientProvider>
-    )
+  return (
+    <QueryClientProvider client={queryClient}>
+      <PWAManager>
+        <NoSSRProvider>
+          {children}
+          <Toaster />
+          {process.env.NODE_ENV === 'development' && (
+            <ReactQueryDevtools initialIsOpen={false} />
+          )}
+        </NoSSRProvider>
+      </PWAManager>
+    </QueryClientProvider>
+  )
 }

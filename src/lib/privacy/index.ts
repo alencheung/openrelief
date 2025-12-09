@@ -1,6 +1,6 @@
 /**
  * Privacy Utilities Index
- * 
+ *
  * This file exports all privacy-related utilities for easy importing
  */
 

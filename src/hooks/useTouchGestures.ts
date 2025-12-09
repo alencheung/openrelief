@@ -51,7 +51,7 @@ const defaultOptions: Required<TouchGestureOptions> = {
   pinchThreshold: 20,
   rotateThreshold: 15,
   preventDefault: false,
-  stopPropagation: false,
+  stopPropagation: false
 }
 
 export function useTouchGestures(
@@ -66,9 +66,9 @@ export function useTouchGestures(
     velocity: { x: 0, y: 0 },
     distance: { x: 0, y: 0 },
     direction: null,
-    duration: 0,
+    duration: 0
   })
-  
+
   const lastTapRef = useRef<TouchPoint | null>(null)
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null)
   const initialDistanceRef = useRef<number>(0)
@@ -90,29 +90,29 @@ export function useTouchGestures(
   const getTouchPoint = useCallback((touch: Touch): TouchPoint => ({
     x: touch.clientX,
     y: touch.clientY,
-    time: Date.now(),
+    time: Date.now()
   }), [])
 
   const getMidpoint = useCallback((touch1: Touch, touch2: Touch): TouchPoint => ({
     x: (touch1.clientX + touch2.clientX) / 2,
     y: (touch1.clientY + touch2.clientY) / 2,
-    time: Date.now(),
+    time: Date.now()
   }), [])
 
   const getDirection = useCallback((dx: number, dy: number): 'up' | 'down' | 'left' | 'right' | null => {
     const absDx = Math.abs(dx)
     const absDy = Math.abs(dy)
-    
+
     if (Math.max(absDx, absDy) < optionsRef.current.swipeThreshold) {
       return null
     }
-    
+
     return absDx > absDy ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up')
   }, [])
 
   const handleTouchStart = useCallback((event: TouchEvent) => {
     const options = optionsRef.current
-    
+
     if (options.preventDefault) {
       event.preventDefault()
     }
@@ -123,7 +123,7 @@ export function useTouchGestures(
     touchesRef.current = event.touches
     const touch = event.touches[0]
     const point = getTouchPoint(touch)
-    
+
     stateRef.current = {
       isActive: true,
       startPoint: point,
@@ -131,14 +131,14 @@ export function useTouchGestures(
       velocity: { x: 0, y: 0 },
       distance: { x: 0, y: 0 },
       direction: null,
-      duration: 0,
+      duration: 0
     }
 
     // Handle multi-touch gestures
     if (event.touches.length === 2) {
       const touch1 = event.touches[0]
       const touch2 = event.touches[1]
-      
+
       initialDistanceRef.current = calculateDistance(
         getTouchPoint(touch1),
         getTouchPoint(touch2)
@@ -167,8 +167,10 @@ export function useTouchGestures(
   const handleTouchMove = useCallback((event: TouchEvent) => {
     const options = optionsRef.current
     const state = stateRef.current
-    
-    if (!state.isActive || !state.startPoint) return
+
+    if (!state.isActive || !state.startPoint) {
+      return
+    }
 
     if (options.preventDefault) {
       event.preventDefault()
@@ -187,11 +189,11 @@ export function useTouchGestures(
     const dx = currentPoint.x - state.startPoint.x
     const dy = currentPoint.y - state.startPoint.y
     const distance = Math.sqrt(dx * dx + dy * dy)
-    
+
     // Calculate velocity
     const velocity = {
       x: duration > 0 ? dx / duration : 0,
-      y: duration > 0 ? dy / duration : 0,
+      y: duration > 0 ? dy / duration : 0
     }
 
     // Update state
@@ -201,7 +203,7 @@ export function useTouchGestures(
       velocity,
       distance: { x: dx, y: dy },
       direction: getDirection(dx, dy),
-      duration,
+      duration
     }
 
     // Handle multi-touch gestures
@@ -247,8 +249,10 @@ export function useTouchGestures(
   const handleTouchEnd = useCallback((event: TouchEvent) => {
     const options = optionsRef.current
     const state = stateRef.current
-    
-    if (!state.isActive || !state.startPoint) return
+
+    if (!state.isActive || !state.startPoint) {
+      return
+    }
 
     if (options.preventDefault) {
       event.preventDefault()
@@ -272,14 +276,14 @@ export function useTouchGestures(
     // Handle tap
     if (distance < options.tapThreshold && event.touches.length === 0) {
       const currentTime = Date.now()
-      
+
       // Check for double tap
       if (lastTapRef.current) {
         const timeSinceLastTap = currentTime - lastTapRef.current.time
         const distanceFromLastTap = calculateDistance(lastTapRef.current, endPoint)
-        
-        if (timeSinceLastTap < options.doubleTapDelay && 
-            distanceFromLastTap < options.tapThreshold) {
+
+        if (timeSinceLastTap < options.doubleTapDelay
+            && distanceFromLastTap < options.tapThreshold) {
           callbacks.onDoubleTap?.(endPoint)
           lastTapRef.current = null
         } else {
@@ -296,7 +300,7 @@ export function useTouchGestures(
     if (distance >= options.swipeThreshold && direction) {
       const velocity = state.velocity
       const velocityMagnitude = Math.sqrt(velocity.x ** 2 + velocity.y ** 2)
-      
+
       if (velocityMagnitude >= options.swipeVelocityThreshold) {
         callbacks.onSwipe?.(direction, velocity)
       }
@@ -310,7 +314,7 @@ export function useTouchGestures(
       velocity: { x: 0, y: 0 },
       distance: { x: 0, y: 0 },
       direction: null,
-      duration: 0,
+      duration: 0
     }
 
     touchesRef.current = null
@@ -349,7 +353,7 @@ export function useTouchGestures(
         elementRef.current.removeEventListener('touchend', handleTouchEnd, { passive: false })
         elementRef.current.removeEventListener('touchcancel', handleTouchEnd, { passive: false })
       }
-      
+
       if (longPressTimerRef.current) {
         clearTimeout(longPressTimerRef.current)
       }
@@ -358,7 +362,7 @@ export function useTouchGestures(
 
   return {
     ref,
-    state: stateRef.current,
+    state: stateRef.current
   }
 }
 
@@ -368,7 +372,7 @@ export function useSwipe(
   options?: Partial<TouchGestureOptions>
 ) {
   return useTouchGestures({
-    onSwipe: (direction) => onSwipe(direction),
+    onSwipe: (direction) => onSwipe(direction)
   }, options)
 }
 
@@ -377,7 +381,7 @@ export function useTap(
   options?: Partial<TouchGestureOptions>
 ) {
   return useTouchGestures({
-    onTap,
+    onTap
   }, options)
 }
 
@@ -386,6 +390,6 @@ export function useLongPress(
   options?: Partial<TouchGestureOptions>
 ) {
   return useTouchGestures({
-    onLongPress,
+    onLongPress
   }, options)
 }

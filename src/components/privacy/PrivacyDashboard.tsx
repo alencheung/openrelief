@@ -6,13 +6,13 @@
  * transparency reporting, and granular controls.
  */
 
-'use client';
+'use client'
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { StatusIndicator } from '@/components/ui/StatusIndicator';
-import { useToast } from '@/hooks/use-toast';
+import React, { useState, useEffect, useCallback } from 'react'
+import { Card } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
+import { StatusIndicator } from '@/components/ui/StatusIndicator'
+import { useToast } from '@/hooks/use-toast'
 import {
   Shield,
   Activity,
@@ -33,7 +33,7 @@ import {
   Database,
   FileText,
   Calendar
-} from 'lucide-react';
+} from 'lucide-react'
 
 // Types for privacy settings
 interface PrivacySettings {
@@ -113,7 +113,7 @@ interface PrivacyImpactScore {
 }
 
 const PrivacyDashboard: React.FC = () => {
-  const { toast } = useToast();
+  const { toast } = useToast()
   const [privacySettings, setPrivacySettings] = useState<PrivacySettings>({
     locationSharing: true,
     locationPrecision: 3,
@@ -127,7 +127,7 @@ const PrivacyDashboard: React.FC = () => {
     thirdPartyAnalytics: false,
     automatedDataCleanup: true,
     privacyBudgetAlerts: true
-  });
+  })
 
   const [dataUsage, setDataUsage] = useState<DataUsage>({
     totalQueries: 127,
@@ -157,7 +157,7 @@ const PrivacyDashboard: React.FC = () => {
         privacyImpact: 'high'
       }
     ]
-  });
+  })
 
   const [dataRetention, setDataRetention] = useState<DataRetention[]>([
     {
@@ -192,7 +192,7 @@ const PrivacyDashboard: React.FC = () => {
       dataCount: 10,
       dataSize: '0.1 MB'
     }
-  ]);
+  ])
 
   const [privacyZones, setPrivacyZones] = useState<PrivacyZone[]>([
     {
@@ -213,7 +213,7 @@ const PrivacyDashboard: React.FC = () => {
       privacyLevel: 'medium',
       enabled: true
     }
-  ]);
+  ])
 
   const [thirdPartySharing, setThirdPartySharing] = useState<ThirdPartySharing[]>([
     {
@@ -231,7 +231,7 @@ const PrivacyDashboard: React.FC = () => {
       frequency: 'weekly',
       enabled: false
     }
-  ]);
+  ])
 
   const [legalRequests, setLegalRequests] = useState<LegalRequest[]>([
     {
@@ -242,7 +242,7 @@ const PrivacyDashboard: React.FC = () => {
       description: 'Request for all personal data',
       canNotify: true
     }
-  ]);
+  ])
 
   const [privacyImpactScore, setPrivacyImpactScore] = useState<PrivacyImpactScore>({
     action: 'location_query',
@@ -250,16 +250,16 @@ const PrivacyDashboard: React.FC = () => {
     factors: ['Differential privacy enabled', 'K-anonymity active', 'Location precision reduced'],
     recommendations: ['Consider reducing location precision further for enhanced privacy'],
     lastCalculated: new Date()
-  });
+  })
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'settings' | 'usage' | 'retention' | 'zones' | 'sharing' | 'legal'>('overview');
-  const [isLoading, setIsLoading] = useState(false);
-  const [realTimeMonitoring, setRealTimeMonitoring] = useState(true);
+  const [activeTab, setActiveTab] = useState<'overview' | 'settings' | 'usage' | 'retention' | 'zones' | 'sharing' | 'legal'>('overview')
+  const [isLoading, setIsLoading] = useState(false)
+  const [realTimeMonitoring, setRealTimeMonitoring] = useState(true)
 
   // Load privacy settings from server
   useEffect(() => {
     const loadPrivacySettings = async () => {
-      setIsLoading(true);
+      setIsLoading(true)
       try {
         // In a real implementation, fetch from API
         // const response = await fetch('/api/privacy/settings');
@@ -267,29 +267,29 @@ const PrivacyDashboard: React.FC = () => {
         // setPrivacySettings(settings);
       } catch (error) {
         toast({
-          title: "Error",
-          description: "Failed to load privacy settings",
-          variant: "destructive"
-        });
+          title: 'Error',
+          description: 'Failed to load privacy settings',
+          variant: 'destructive'
+        })
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
-    };
+    }
 
-    loadPrivacySettings();
-  }, [toast]);
+    loadPrivacySettings()
+  }, [toast])
 
   // Handle privacy setting changes
   const handleSettingChange = (key: keyof PrivacySettings, value: any) => {
     setPrivacySettings(prev => ({
       ...prev,
       [key]: value
-    }));
-  };
+    }))
+  }
 
   // Save privacy settings
   const savePrivacySettings = async () => {
-    setIsLoading(true);
+    setIsLoading(true)
     try {
       // In a real implementation, save to API
       // await fetch('/api/privacy/settings', {
@@ -299,19 +299,19 @@ const PrivacyDashboard: React.FC = () => {
       // });
 
       toast({
-        title: "Success",
-        description: "Privacy settings saved successfully"
-      });
+        title: 'Success',
+        description: 'Privacy settings saved successfully'
+      })
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to save privacy settings",
-        variant: "destructive"
-      });
+        title: 'Error',
+        description: 'Failed to save privacy settings',
+        variant: 'destructive'
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   // Reset privacy settings to defaults
   const resetPrivacySettings = () => {
@@ -328,41 +328,45 @@ const PrivacyDashboard: React.FC = () => {
       thirdPartyAnalytics: false,
       automatedDataCleanup: true,
       privacyBudgetAlerts: true
-    });
-  };
+    })
+  }
 
   // Get privacy impact color
   const getPrivacyImpactColor = (impact: 'low' | 'medium' | 'high') => {
     switch (impact) {
-      case 'low': return 'green';
-      case 'medium': return 'yellow';
-      case 'high': return 'red';
-      default: return 'gray';
+      case 'low': return 'green'
+      case 'medium': return 'yellow'
+      case 'high': return 'red'
+      default: return 'gray'
     }
-  };
+  }
 
   // Get privacy zone color
   const getPrivacyZoneColor = (level: 'high' | 'medium' | 'low') => {
     switch (level) {
-      case 'high': return 'red';
-      case 'medium': return 'yellow';
-      case 'low': return 'green';
-      default: return 'gray';
+      case 'high': return 'red'
+      case 'medium': return 'yellow'
+      case 'low': return 'green'
+      default: return 'gray'
     }
-  };
+  }
 
   // Format time ago
   const formatTimeAgo = (date: Date) => {
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / (1000 * 60));
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / (1000 * 60))
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
 
-    if (diffMins < 60) return `${diffMins} minutes ago`;
-    if (diffHours < 24) return `${diffHours} hours ago`;
-    return `${diffDays} days ago`;
-  };
+    if (diffMins < 60) {
+      return `${diffMins} minutes ago`
+    }
+    if (diffHours < 24) {
+      return `${diffHours} hours ago`
+    }
+    return `${diffDays} days ago`
+  }
 
   // Add new privacy zone
   const addPrivacyZone = () => {
@@ -374,9 +378,9 @@ const PrivacyDashboard: React.FC = () => {
       radius: 100,
       privacyLevel: 'medium',
       enabled: true
-    };
-    setPrivacyZones(prev => [...prev, newZone]);
-  };
+    }
+    setPrivacyZones(prev => [...prev, newZone])
+  }
 
   // Update privacy zone
   const updatePrivacyZone = (id: string, updates: Partial<PrivacyZone>) => {
@@ -384,13 +388,13 @@ const PrivacyDashboard: React.FC = () => {
       prev.map(zone =>
         zone.id === id ? { ...zone, ...updates } : zone
       )
-    );
-  };
+    )
+  }
 
   // Delete privacy zone
   const deletePrivacyZone = (id: string) => {
-    setPrivacyZones(prev => prev.filter(zone => zone.id !== id));
-  };
+    setPrivacyZones(prev => prev.filter(zone => zone.id !== id))
+  }
 
   // Toggle third party sharing
   const toggleThirdPartySharing = (partner: string) => {
@@ -398,17 +402,23 @@ const PrivacyDashboard: React.FC = () => {
       prev.map(item =>
         item.partner === partner ? { ...item, enabled: !item.enabled } : item
       )
-    );
-  };
+    )
+  }
 
   // Get real-time privacy budget status
   const getPrivacyBudgetStatus = () => {
-    const percentage = (dataUsage.privacyBudgetUsed / dataUsage.privacyBudgetTotal) * 100;
-    if (percentage >= 90) return { status: 'critical', color: 'red' };
-    if (percentage >= 75) return { status: 'warning', color: 'yellow' };
-    if (percentage >= 50) return { status: 'moderate', color: 'blue' };
-    return { status: 'good', color: 'green' };
-  };
+    const percentage = (dataUsage.privacyBudgetUsed / dataUsage.privacyBudgetTotal) * 100
+    if (percentage >= 90) {
+      return { status: 'critical', color: 'red' }
+    }
+    if (percentage >= 75) {
+      return { status: 'warning', color: 'yellow' }
+    }
+    if (percentage >= 50) {
+      return { status: 'moderate', color: 'blue' }
+    }
+    return { status: 'good', color: 'green' }
+  }
 
   // Get privacy level indicator
   const getPrivacyLevel = () => {
@@ -417,15 +427,21 @@ const PrivacyDashboard: React.FC = () => {
       privacySettings.differentialPrivacy,
       privacySettings.kAnonymity,
       privacySettings.endToEndEncryption
-    ].filter(Boolean).length;
+    ].filter(Boolean).length
 
-    if (enabledFeatures === 4) return { level: 'Maximum', color: 'green' };
-    if (enabledFeatures >= 3) return { level: 'High', color: 'blue' };
-    if (enabledFeatures >= 2) return { level: 'Medium', color: 'yellow' };
-    return { level: 'Basic', color: 'red' };
-  };
+    if (enabledFeatures === 4) {
+      return { level: 'Maximum', color: 'green' }
+    }
+    if (enabledFeatures >= 3) {
+      return { level: 'High', color: 'blue' }
+    }
+    if (enabledFeatures >= 2) {
+      return { level: 'Medium', color: 'yellow' }
+    }
+    return { level: 'Basic', color: 'red' }
+  }
 
-  const privacyLevel = getPrivacyLevel();
+  const privacyLevel = getPrivacyLevel()
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
@@ -449,9 +465,9 @@ const PrivacyDashboard: React.FC = () => {
                 : 'text-gray-600 hover:text-gray-800'
             }`}
           >
-            {tab === 'zones' ? 'Privacy Zones' :
-             tab === 'sharing' ? 'Data Sharing' :
-             tab === 'legal' ? 'Legal Requests' : tab}
+            {tab === 'zones' ? 'Privacy Zones'
+              : tab === 'sharing' ? 'Data Sharing'
+                : tab === 'legal' ? 'Legal Requests' : tab}
           </button>
         ))}
       </div>
@@ -477,7 +493,7 @@ const PrivacyDashboard: React.FC = () => {
                 <span className="text-sm text-gray-600">Real-time</span>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="text-center">
                 <div className="flex items-center justify-center mb-2">
@@ -492,7 +508,7 @@ const PrivacyDashboard: React.FC = () => {
                   {privacyLevel.level === 'Basic' && 'Minimal protections enabled'}
                 </div>
               </div>
-              
+
               <div className="text-center">
                 <div className="flex items-center justify-center mb-2">
                   <Activity className="h-8 w-8 text-green-600" />
@@ -501,7 +517,7 @@ const PrivacyDashboard: React.FC = () => {
                 <div className="text-gray-600">Privacy Score</div>
                 <div className="text-sm text-gray-500 mt-1">Out of 100</div>
               </div>
-              
+
               <div className="text-center">
                 <div className="flex items-center justify-center mb-2">
                   <TrendingUp className="h-8 w-8 text-yellow-600" />
@@ -522,7 +538,7 @@ const PrivacyDashboard: React.FC = () => {
                 <span>Live monitoring</span>
               </div>
             </div>
-            
+
             <div className="space-y-3">
               {dataUsage.realTimeUsage.map((activity, index) => (
                 <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
@@ -577,8 +593,8 @@ const PrivacyDashboard: React.FC = () => {
                 className="mt-4 w-full"
                 variant="outline"
                 onClick={() => toast({
-                  title: "Privacy Report",
-                  description: "Your detailed privacy report is being generated."
+                  title: 'Privacy Report',
+                  description: 'Your detailed privacy report is being generated.'
                 })}
               >
                 Generate Report
@@ -612,7 +628,7 @@ const PrivacyDashboard: React.FC = () => {
         <div className="space-y-6">
           <Card className="p-6">
             <h2 className="text-xl font-semibold mb-4">Privacy Settings</h2>
-            
+
             <div className="space-y-4">
               {/* Location Sharing */}
               <div className="flex items-center justify-between">
@@ -753,7 +769,7 @@ const PrivacyDashboard: React.FC = () => {
         <div className="space-y-6">
           <Card className="p-6">
             <h2 className="text-xl font-semibold mb-4">Data Usage & Analytics</h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <h3 className="font-medium mb-2">Query Statistics</h3>
@@ -787,9 +803,9 @@ const PrivacyDashboard: React.FC = () => {
                   <div className="w-full bg-gray-200 rounded-full h-2.5">
                     <div
                       className={`h-2.5 rounded-full ${
-                        getPrivacyBudgetStatus().color === 'red' ? 'bg-red-600' :
-                        getPrivacyBudgetStatus().color === 'yellow' ? 'bg-yellow-600' :
-                        getPrivacyBudgetStatus().color === 'blue' ? 'bg-blue-600' : 'bg-green-600'
+                        getPrivacyBudgetStatus().color === 'red' ? 'bg-red-600'
+                          : getPrivacyBudgetStatus().color === 'yellow' ? 'bg-yellow-600'
+                            : getPrivacyBudgetStatus().color === 'blue' ? 'bg-blue-600' : 'bg-green-600'
                       }`}
                       style={{ width: `${dataUsage.privacyBudgetUsed * 100}%` }}
                     ></div>
@@ -816,14 +832,14 @@ const PrivacyDashboard: React.FC = () => {
                     <span className="text-2xl font-bold">{privacyImpactScore.score}</span>
                     <StatusIndicator
                       status={
-                        privacyImpactScore.score >= 80 ? 'green' :
-                        privacyImpactScore.score >= 60 ? 'yellow' : 'red'
+                        privacyImpactScore.score >= 80 ? 'green'
+                          : privacyImpactScore.score >= 60 ? 'yellow' : 'red'
                       }
                       text=""
                     />
                   </div>
                 </div>
-                
+
                 <div className="mb-3">
                   <h4 className="font-medium mb-2">Contributing Factors:</h4>
                   <ul className="space-y-1">
@@ -835,7 +851,7 @@ const PrivacyDashboard: React.FC = () => {
                     ))}
                   </ul>
                 </div>
-                
+
                 <div>
                   <h4 className="font-medium mb-2">Recommendations:</h4>
                   <ul className="space-y-1">
@@ -864,7 +880,7 @@ const PrivacyDashboard: React.FC = () => {
                 <span className="text-sm text-gray-600">Automatic cleanup enabled</span>
               </div>
             </div>
-            
+
             <div className="space-y-4">
               {dataRetention.map((item, index) => (
                 <div key={index} className="p-4 border rounded-lg">
@@ -880,9 +896,9 @@ const PrivacyDashboard: React.FC = () => {
                           className="sr-only peer"
                           checked={item.autoDelete}
                           onChange={(e) => {
-                            const updated = [...dataRetention];
-                            updated[index].autoDelete = e.target.checked;
-                            setDataRetention(updated);
+                            const updated = [...dataRetention]
+                            updated[index].autoDelete = e.target.checked
+                            setDataRetention(updated)
                           }}
                         />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
@@ -890,7 +906,7 @@ const PrivacyDashboard: React.FC = () => {
                       <span className="text-sm text-gray-600">Auto-delete</span>
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
                     <div>
                       <span className="text-gray-600">Retention Period:</span>
@@ -909,7 +925,7 @@ const PrivacyDashboard: React.FC = () => {
                       <div className="font-medium">{formatTimeAgo(item.lastAccessed)}</div>
                     </div>
                   </div>
-                  
+
                   {/* Retention Timeline Visualization */}
                   <div className="mt-3 pt-3 border-t">
                     <div className="flex items-center space-x-2">
@@ -957,180 +973,180 @@ const PrivacyDashboard: React.FC = () => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default PrivacyDashboard;
-      {/* Privacy Zones Tab */}
-      {activeTab === 'zones' && (
-        <div className="space-y-6">
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Privacy Zones</h2>
-              <Button onClick={addPrivacyZone} size="sm">
+export default PrivacyDashboard
+{/* Privacy Zones Tab */}
+{activeTab === 'zones' && (
+  <div className="space-y-6">
+    <Card className="p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold">Privacy Zones</h2>
+        <Button onClick={addPrivacyZone} size="sm">
                 Add Zone
-              </Button>
-            </div>
-            
-            <div className="space-y-4">
-              {privacyZones.map((zone) => (
-                <div key={zone.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <MapPin className="h-5 w-5 text-gray-600" />
-                    <div>
-                      <h3 className="font-medium">{zone.name}</h3>
-                      <p className="text-sm text-gray-600">
-                        {zone.latitude.toFixed(4)}, {zone.longitude.toFixed(4)} • {zone.radius}m radius
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <StatusIndicator status={getPrivacyZoneColor(zone.privacyLevel)} text={zone.privacyLevel} />
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        className="sr-only peer"
-                        checked={zone.enabled}
-                        onChange={(e) => updatePrivacyZone(zone.id, { enabled: e.target.checked })}
-                      />
-                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[1px] after:left-[1px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
-                    </label>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => deletePrivacyZone(zone.id)}
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </div>
-              ))}
-              
-              {privacyZones.length === 0 && (
-                <div className="text-center py-8 text-gray-600">
-                  <MapPin className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                  <p>No privacy zones configured</p>
-                  <p className="text-sm">Add zones to enhance privacy in specific areas</p>
-                </div>
-              )}
-            </div>
-          </Card>
-        </div>
-      )}
+        </Button>
+      </div>
 
-      {/* Data Sharing Tab */}
-      {activeTab === 'sharing' && (
-        <div className="space-y-6">
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Third-Party Data Sharing</h2>
-            
-            <div className="space-y-4">
-              {thirdPartySharing.map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex-1">
-                    <h3 className="font-medium">{item.partner}</h3>
-                    <p className="text-sm text-gray-600">{item.purpose}</p>
-                    <div className="flex items-center space-x-4 mt-2">
-                      <span className="text-sm text-gray-600">Data: {item.dataType}</span>
-                      <span className="text-sm text-gray-600">Frequency: {item.frequency}</span>
-                      {item.lastShared && (
-                        <span className="text-sm text-gray-600">Last: {formatTimeAgo(item.lastShared)}</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        className="sr-only peer"
-                        checked={item.enabled}
-                        onChange={() => toggleThirdPartySharing(item.partner)}
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                    </label>
-                    <span className="text-sm text-gray-600">
-                      {item.enabled ? 'Enabled' : 'Disabled'}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* Legal Requests Tab */}
-      {activeTab === 'legal' && (
-        <div className="space-y-6">
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Legal Requests & Rights</h2>
-            
-            <div className="space-y-4">
-              {legalRequests.map((request) => (
-                <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2">
-                      <h3 className="font-medium capitalize">{request.type.replace('_', ' ')}</h3>
-                      <StatusIndicator 
-                        status={
-                          request.status === 'completed' ? 'green' :
-                          request.status === 'processing' ? 'blue' :
-                          request.status === 'pending' ? 'yellow' : 'red'
-                        } 
-                        text={request.status} 
-                      />
-                    </div>
-                    <p className="text-sm text-gray-600 mt-1">{request.description}</p>
-                    <div className="flex items-center space-x-4 mt-2">
-                      <span className="text-sm text-gray-600">
-                        Created: {formatTimeAgo(request.createdAt)}
-                      </span>
-                      {request.canNotify && (
-                        <span className="text-sm text-gray-600">
-                          <Bell className="h-3 w-3 inline mr-1" />
-                          Notifications enabled
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Button variant="outline" size="sm">
-                      View Details
-                    </Button>
-                  </div>
-                </div>
-              ))}
-              
-              {legalRequests.length === 0 && (
-                <div className="text-center py-8 text-gray-600">
-                  <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                  <p>No legal requests found</p>
-                  <p className="text-sm">Your data rights requests will appear here</p>
-                </div>
-              )}
-            </div>
-
-            <div className="mt-6 pt-6 border-t">
-              <h3 className="font-medium mb-4">Exercise Your Rights</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Button variant="outline" className="justify-start">
-                  <Download className="h-4 w-4 mr-2" />
-                  Request Data Export
-                </Button>
-                <Button variant="outline" className="justify-start">
-                  <Eye className="h-4 w-4 mr-2" />
-                  Access My Data
-                </Button>
-                <Button variant="outline" className="justify-start">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Correct My Data
-                </Button>
-                <Button variant="outline" className="justify-start">
-                  <AlertTriangle className="h-4 w-4 mr-2" />
-                  Request Deletion
-                </Button>
+      <div className="space-y-4">
+        {privacyZones.map((zone) => (
+          <div key={zone.id} className="flex items-center justify-between p-4 border rounded-lg">
+            <div className="flex items-center space-x-3">
+              <MapPin className="h-5 w-5 text-gray-600" />
+              <div>
+                <h3 className="font-medium">{zone.name}</h3>
+                <p className="text-sm text-gray-600">
+                  {zone.latitude.toFixed(4)}, {zone.longitude.toFixed(4)} • {zone.radius}m radius
+                </p>
               </div>
             </div>
-          </Card>
+            <div className="flex items-center space-x-2">
+              <StatusIndicator status={getPrivacyZoneColor(zone.privacyLevel)} text={zone.privacyLevel} />
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={zone.enabled}
+                  onChange={(e) => updatePrivacyZone(zone.id, { enabled: e.target.checked })}
+                />
+                <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[1px] after:left-[1px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+              </label>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => deletePrivacyZone(zone.id)}
+              >
+                      Delete
+              </Button>
+            </div>
+          </div>
+        ))}
+
+        {privacyZones.length === 0 && (
+          <div className="text-center py-8 text-gray-600">
+            <MapPin className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+            <p>No privacy zones configured</p>
+            <p className="text-sm">Add zones to enhance privacy in specific areas</p>
+          </div>
+        )}
+      </div>
+    </Card>
+  </div>
+)}
+
+{/* Data Sharing Tab */}
+{activeTab === 'sharing' && (
+  <div className="space-y-6">
+    <Card className="p-6">
+      <h2 className="text-xl font-semibold mb-4">Third-Party Data Sharing</h2>
+
+      <div className="space-y-4">
+        {thirdPartySharing.map((item, index) => (
+          <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+            <div className="flex-1">
+              <h3 className="font-medium">{item.partner}</h3>
+              <p className="text-sm text-gray-600">{item.purpose}</p>
+              <div className="flex items-center space-x-4 mt-2">
+                <span className="text-sm text-gray-600">Data: {item.dataType}</span>
+                <span className="text-sm text-gray-600">Frequency: {item.frequency}</span>
+                {item.lastShared && (
+                  <span className="text-sm text-gray-600">Last: {formatTimeAgo(item.lastShared)}</span>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={item.enabled}
+                  onChange={() => toggleThirdPartySharing(item.partner)}
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              </label>
+              <span className="text-sm text-gray-600">
+                {item.enabled ? 'Enabled' : 'Disabled'}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  </div>
+)}
+
+{/* Legal Requests Tab */}
+{activeTab === 'legal' && (
+  <div className="space-y-6">
+    <Card className="p-6">
+      <h2 className="text-xl font-semibold mb-4">Legal Requests & Rights</h2>
+
+      <div className="space-y-4">
+        {legalRequests.map((request) => (
+          <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg">
+            <div className="flex-1">
+              <div className="flex items-center space-x-2">
+                <h3 className="font-medium capitalize">{request.type.replace('_', ' ')}</h3>
+                <StatusIndicator
+                  status={
+                    request.status === 'completed' ? 'green'
+                      : request.status === 'processing' ? 'blue'
+                        : request.status === 'pending' ? 'yellow' : 'red'
+                  }
+                  text={request.status}
+                />
+              </div>
+              <p className="text-sm text-gray-600 mt-1">{request.description}</p>
+              <div className="flex items-center space-x-4 mt-2">
+                <span className="text-sm text-gray-600">
+                        Created: {formatTimeAgo(request.createdAt)}
+                </span>
+                {request.canNotify && (
+                  <span className="text-sm text-gray-600">
+                    <Bell className="h-3 w-3 inline mr-1" />
+                          Notifications enabled
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" size="sm">
+                      View Details
+              </Button>
+            </div>
+          </div>
+        ))}
+
+        {legalRequests.length === 0 && (
+          <div className="text-center py-8 text-gray-600">
+            <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+            <p>No legal requests found</p>
+            <p className="text-sm">Your data rights requests will appear here</p>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-6 pt-6 border-t">
+        <h3 className="font-medium mb-4">Exercise Your Rights</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Button variant="outline" className="justify-start">
+            <Download className="h-4 w-4 mr-2" />
+                  Request Data Export
+          </Button>
+          <Button variant="outline" className="justify-start">
+            <Eye className="h-4 w-4 mr-2" />
+                  Access My Data
+          </Button>
+          <Button variant="outline" className="justify-start">
+            <Settings className="h-4 w-4 mr-2" />
+                  Correct My Data
+          </Button>
+          <Button variant="outline" className="justify-start">
+            <AlertTriangle className="h-4 w-4 mr-2" />
+                  Request Deletion
+          </Button>
         </div>
-      )}
+      </div>
+    </Card>
+  </div>
+)}

@@ -231,13 +231,13 @@ const defaultSettings: NotificationSettings = {
     enabled: false,
     start: '22:00',
     end: '07:00',
-    timezone: 'UTC',
+    timezone: 'UTC'
   },
   channels: {
     inApp: true,
     push: true,
     email: false,
-    sms: false,
+    sms: false
   },
   categories: {
     emergency: true,
@@ -245,24 +245,24 @@ const defaultSettings: NotificationSettings = {
     geofence: true,
     system: true,
     reminder: true,
-    acknowledgment: true,
+    acknowledgment: true
   },
   severity: {
     info: true,
     warning: true,
     critical: true,
-    success: true,
+    success: true
   },
   proximity: {
     enabled: true,
     threshold: 1000,
-    types: [],
+    types: []
   },
   batching: {
     enabled: false,
     interval: 15,
-    maxBatch: 5,
-  },
+    maxBatch: 5
+  }
 }
 
 // Utility functions
@@ -271,7 +271,9 @@ const generateId = (): string => {
 }
 
 const isInQuietHours = (quietHours: NotificationSettings['quietHours']): boolean => {
-  if (!quietHours.enabled) return false
+  if (!quietHours.enabled) {
+    return false
+  }
 
   const now = new Date()
   const currentTime = now.getHours() * 60 + now.getMinutes()
@@ -306,9 +308,9 @@ const calculateStats = (notifications: Notification[]): NotificationStats => {
       inApp: notifications.filter(n => n.channels.inApp).length,
       push: notifications.filter(n => n.channels.push).length,
       email: notifications.filter(n => n.channels.email).length,
-      sms: notifications.filter(n => n.channels.sms).length,
+      sms: notifications.filter(n => n.channels.sms).length
     },
-    recent: notifications.slice(0, 10),
+    recent: notifications.slice(0, 10)
   }
 
   // Calculate by type
@@ -353,9 +355,9 @@ export const useNotificationStore = create<NotificationStore>()(
             inApp: 0,
             push: 0,
             email: 0,
-            sms: 0,
+            sms: 0
           },
-          recent: [],
+          recent: []
         },
 
         // Notification management
@@ -366,11 +368,11 @@ export const useNotificationStore = create<NotificationStore>()(
             id,
             timestamp: new Date(),
             read: false,
-            acknowledged: false,
+            acknowledged: false
           }
 
           set((state) => ({
-            notifications: [newNotification, ...state.notifications],
+            notifications: [newNotification, ...state.notifications]
           }))
 
           get().updateStats()
@@ -381,7 +383,7 @@ export const useNotificationStore = create<NotificationStore>()(
           set((state) => ({
             notifications: state.notifications.map(n =>
               n.id === id ? { ...n, ...updates } : n
-            ),
+            )
           }))
           get().updateStats()
         },
@@ -389,7 +391,7 @@ export const useNotificationStore = create<NotificationStore>()(
         removeNotification: (id) => {
           set((state) => ({
             notifications: state.notifications.filter(n => n.id !== id),
-            selectedNotification: state.selectedNotification?.id === id ? null : state.selectedNotification,
+            selectedNotification: state.selectedNotification?.id === id ? null : state.selectedNotification
           }))
           get().updateStats()
         },
@@ -404,7 +406,7 @@ export const useNotificationStore = create<NotificationStore>()(
 
         markAllAsRead: () => {
           set((state) => ({
-            notifications: state.notifications.map(n => ({ ...n, read: true })),
+            notifications: state.notifications.map(n => ({ ...n, read: true }))
           }))
           get().updateStats()
         },
@@ -414,7 +416,7 @@ export const useNotificationStore = create<NotificationStore>()(
             notifications: filter
               ? state.notifications.filter(filter)
               : [],
-            selectedNotification: null,
+            selectedNotification: null
           }))
           get().updateStats()
         },
@@ -427,18 +429,18 @@ export const useNotificationStore = create<NotificationStore>()(
             id,
             scheduledFor: new Date(),
             retryCount: 0,
-            status: 'pending',
+            status: 'pending'
           }
 
           set((state) => ({
-            queue: [...state.queue, newQueueItem],
+            queue: [...state.queue, newQueueItem]
           }))
           return id
         },
 
         removeFromQueue: (id) => {
           set((state) => ({
-            queue: state.queue.filter(item => item.id !== id),
+            queue: state.queue.filter(item => item.id !== id)
           }))
         },
 
@@ -446,7 +448,7 @@ export const useNotificationStore = create<NotificationStore>()(
           set((state) => ({
             queue: state.queue.map(item =>
               item.id === id ? { ...item, ...updates } : item
-            ),
+            )
           }))
         },
 
@@ -472,7 +474,7 @@ export const useNotificationStore = create<NotificationStore>()(
               get().updateQueueItem(item.id, {
                 status: 'failed',
                 error: error instanceof Error ? error.message : 'Unknown error',
-                lastAttempt: new Date(),
+                lastAttempt: new Date()
               })
             }
           }
@@ -487,7 +489,7 @@ export const useNotificationStore = create<NotificationStore>()(
           for (const item of failedItems) {
             get().updateQueueItem(item.id, {
               status: 'pending',
-              retryCount: item.retryCount + 1,
+              retryCount: item.retryCount + 1
             })
           }
 
@@ -498,7 +500,7 @@ export const useNotificationStore = create<NotificationStore>()(
         // Settings management
         updateSettings: (settings) => {
           set((state) => ({
-            settings: { ...state.settings, ...settings },
+            settings: { ...state.settings, ...settings }
           }))
         },
 
@@ -517,7 +519,7 @@ export const useNotificationStore = create<NotificationStore>()(
 
         setFilter: (filter) => {
           set((state) => ({
-            filter: { ...state.filter, ...filter },
+            filter: { ...state.filter, ...filter }
           }))
         },
 
@@ -558,7 +560,7 @@ export const useNotificationStore = create<NotificationStore>()(
 
             const subscription = await registration.pushManager.subscribe({
               userVisibleOnly: true,
-              applicationServerKey: vapidKey,
+              applicationServerKey: vapidKey
             })
 
             set({ pushSubscription: subscription })
@@ -567,7 +569,7 @@ export const useNotificationStore = create<NotificationStore>()(
             await fetch('/api/push/subscribe', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(subscription),
+              body: JSON.stringify(subscription)
             })
 
             return subscription
@@ -579,7 +581,9 @@ export const useNotificationStore = create<NotificationStore>()(
 
         unsubscribeFromPush: async () => {
           const { pushSubscription } = get()
-          if (!pushSubscription) return
+          if (!pushSubscription) {
+            return
+          }
 
           try {
             await pushSubscription.unsubscribe()
@@ -589,7 +593,7 @@ export const useNotificationStore = create<NotificationStore>()(
             await fetch('/api/push/unsubscribe', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ endpoint: pushSubscription.endpoint }),
+              body: JSON.stringify({ endpoint: pushSubscription.endpoint })
             })
           } catch (error) {
             console.error('Failed to unsubscribe from push notifications:', error)
@@ -608,7 +612,7 @@ export const useNotificationStore = create<NotificationStore>()(
               inApp: true,
               push: true,
               email: false,
-              sms: data.severity === 'critical',
+              sms: data.severity === 'critical'
             },
             actions: data.actions || [
               {
@@ -616,20 +620,20 @@ export const useNotificationStore = create<NotificationStore>()(
                 label: 'View Details',
                 action: 'view',
                 url: `/emergency/${data.eventId}`,
-                style: 'primary',
+                style: 'primary'
               },
               {
                 id: 'confirm',
                 label: 'Confirm',
                 action: 'confirm',
                 data: { eventId: data.eventId },
-                style: 'secondary',
-              },
+                style: 'secondary'
+              }
             ],
             metadata: {
               eventId: data.eventId,
-              category: 'emergency',
-            },
+              category: 'emergency'
+            }
           })
         },
 
@@ -645,12 +649,12 @@ export const useNotificationStore = create<NotificationStore>()(
               inApp: true,
               push: false,
               email: false,
-              sms: false,
+              sms: false
             },
             metadata: {
               userId: data.userId,
-              category: 'trust',
-            },
+              category: 'trust'
+            }
           })
         },
 
@@ -665,12 +669,12 @@ export const useNotificationStore = create<NotificationStore>()(
               inApp: true,
               push: true,
               email: false,
-              sms: false,
+              sms: false
             },
             metadata: {
               geofenceId: data.geofenceId,
-              category: 'geofence',
-            },
+              category: 'geofence'
+            }
           })
         },
 
@@ -685,11 +689,11 @@ export const useNotificationStore = create<NotificationStore>()(
               inApp: true,
               push: true,
               email: false,
-              sms: false,
+              sms: false
             },
             metadata: {
-              category: 'proximity',
-            },
+              category: 'proximity'
+            }
           })
         },
 
@@ -698,10 +702,18 @@ export const useNotificationStore = create<NotificationStore>()(
           const { notifications, filter } = get()
 
           return notifications.filter(notification => {
-            if (filter.type && notification.type !== filter.type) return false
-            if (filter.severity && notification.severity !== filter.severity) return false
-            if (filter.read !== undefined && notification.read !== filter.read) return false
-            if (filter.acknowledged !== undefined && notification.acknowledged !== filter.acknowledged) return false
+            if (filter.type && notification.type !== filter.type) {
+              return false
+            }
+            if (filter.severity && notification.severity !== filter.severity) {
+              return false
+            }
+            if (filter.read !== undefined && notification.read !== filter.read) {
+              return false
+            }
+            if (filter.acknowledged !== undefined && notification.acknowledged !== filter.acknowledged) {
+              return false
+            }
             if (filter.dateRange) {
               const notifTime = notification.timestamp.getTime()
               if (notifTime < filter.dateRange.start.getTime() || notifTime > filter.dateRange.end.getTime()) {
@@ -724,10 +736,18 @@ export const useNotificationStore = create<NotificationStore>()(
         shouldSendNotification: (notification) => {
           const { settings } = get()
 
-          if (!settings.enabled) return false
-          if (get().isInQuietHours() && notification.priority !== 'urgent') return false
-          if (!settings.categories[notification.type]) return false
-          if (!settings.severity[notification.severity]) return false
+          if (!settings.enabled) {
+            return false
+          }
+          if (get().isInQuietHours() && notification.priority !== 'urgent') {
+            return false
+          }
+          if (!settings.categories[notification.type]) {
+            return false
+          }
+          if (!settings.severity[notification.severity]) {
+            return false
+          }
 
           return true
         },
@@ -748,16 +768,16 @@ export const useNotificationStore = create<NotificationStore>()(
             selectedNotification: null,
             filter: {},
             lastSyncTime: null,
-            error: null,
+            error: null
           })
-        },
+        }
       }),
       {
         name: 'notification-storage',
         partialize: (state) => ({
           settings: state.settings,
-          notifications: state.notifications.slice(0, 100), // Limit stored notifications
-        }),
+          notifications: state.notifications.slice(0, 100) // Limit stored notifications
+        })
       }
     )
   )
@@ -768,7 +788,7 @@ export const useNotifications = () => useNotificationStore(state => ({
   notifications: state.notifications,
   filteredNotifications: state.getFilteredNotifications(),
   stats: state.stats,
-  loading: state.loading,
+  loading: state.loading
 }))
 
 export const useNotificationSettings = () => useNotificationStore(state => state.settings)
@@ -776,7 +796,7 @@ export const useNotificationSettings = () => useNotificationStore(state => state
 export const useNotificationUI = () => useNotificationStore(state => ({
   isPanelOpen: state.isPanelOpen,
   selectedNotification: state.selectedNotification,
-  filter: state.filter,
+  filter: state.filter
 }))
 
 export const useNotificationActions = () => useNotificationStore(state => ({
@@ -791,7 +811,7 @@ export const useNotificationActions = () => useNotificationStore(state => ({
   requestPushPermission: state.requestPushPermission,
   createEmergencyNotification: state.createEmergencyNotification,
   createTrustNotification: state.createTrustNotification,
-  createGeofenceNotification: state.createGeofenceNotification,
+  createGeofenceNotification: state.createGeofenceNotification
 }))
 
 export const useUnreadCount = () => useNotificationStore(state => state.stats.unread)

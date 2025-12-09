@@ -27,9 +27,15 @@ export const useEmergencyEvents = (filters?: {
       try {
         // Try online first
         const params: any = {}
-        if (filters?.limit !== undefined) params.limit = filters.limit
-        if (filters?.status?.[0] !== undefined) params.status = filters.status[0]
-        if (filters?.type_ids?.[0] !== undefined) params.type_id = filters.type_ids[0]
+        if (filters?.limit !== undefined) {
+          params.limit = filters.limit
+        }
+        if (filters?.status?.[0] !== undefined) {
+          params.status = filters.status[0]
+        }
+        if (filters?.type_ids?.[0] !== undefined) {
+          params.type_id = filters.type_ids[0]
+        }
 
         const data = await supabaseHelpers.getEmergencyEvents(params)
 
@@ -39,7 +45,7 @@ export const useEmergencyEvents = (filters?: {
         // Cache for offline use
         useOfflineStore.getState().setCache('emergency-events', data, {
           tags: ['emergency', 'events'],
-          expiresAt: Date.now() + (5 * 60 * 1000), // 5 minutes
+          expiresAt: Date.now() + (5 * 60 * 1000) // 5 minutes
         })
 
         return data
@@ -61,11 +67,13 @@ export const useEmergencyEvents = (filters?: {
       // Don't retry on 4xx errors
       if (error && typeof error === 'object' && 'status' in error) {
         const status = (error as any).status
-        if (status >= 400 && status < 500) return false
+        if (status >= 400 && status < 500) {
+          return false
+        }
       }
       return failureCount < 3
     },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000)
   })
 }
 
@@ -78,23 +86,29 @@ export const useInfiniteEmergencyEvents = (filters?: {
     queryKey: ['emergency-events-infinite', filters],
     queryFn: async ({ pageParam = 0 }) => {
       const params: any = {
-        limit: filters?.limit || 20,
+        limit: filters?.limit || 20
       }
-      if (pageParam !== undefined) params.offset = pageParam
-      if (filters?.status?.[0] !== undefined) params.status = filters.status[0]
-      if (filters?.type_ids?.[0] !== undefined) params.type_id = filters.type_ids[0]
+      if (pageParam !== undefined) {
+        params.offset = pageParam
+      }
+      if (filters?.status?.[0] !== undefined) {
+        params.status = filters.status[0]
+      }
+      if (filters?.type_ids?.[0] !== undefined) {
+        params.type_id = filters.type_ids[0]
+      }
 
       const data = await supabaseHelpers.getEmergencyEvents(params)
 
       return {
         data,
         nextPage: pageParam + (filters?.limit || 20),
-        hasMore: data.length === (filters?.limit || 20),
+        hasMore: data.length === (filters?.limit || 20)
       }
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.hasMore ? lastPage.nextPage : undefined,
-    staleTime: 30 * 1000,
+    staleTime: 30 * 1000
   })
 }
 
@@ -125,7 +139,9 @@ export const useEmergencyEvent = (id: string) => {
           .eq('id', id)
           .single()
 
-        if (error) throw error
+        if (error) {
+          throw error
+        }
 
         // Update local store
         useEmergencyStore.getState().addEvent(data)
@@ -143,7 +159,7 @@ export const useEmergencyEvent = (id: string) => {
     },
     enabled: !!id,
     staleTime: 10 * 1000, // 10 seconds
-    retry: 2,
+    retry: 2
   })
 }
 
@@ -180,7 +196,7 @@ export const useCreateEmergencyEvent = () => {
             message: `Your trust score (${(userScore.score * 100).toFixed(1)}%) is below the minimum required (${(minScore * 100).toFixed(1)}%) to report emergencies. Continue contributing to the community to increase your trust score.`,
             severity: 'warning',
             priority: 'high',
-            channels: { inApp: true, push: false, email: false, sms: false },
+            channels: { inApp: true, push: false, email: false, sms: false }
           })
 
           throw error
@@ -202,7 +218,7 @@ export const useCreateEmergencyEvent = () => {
           severity: event.severity || 3,
           expires_at: event.expires_at || null,
           resolved_at: null,
-          resolved_by: null,
+          resolved_by: null
         }
 
         // Add to local store immediately
@@ -215,7 +231,7 @@ export const useCreateEmergencyEvent = () => {
             table: 'emergency_events',
             data: event,
             priority: 'high',
-            maxRetries: 5,
+            maxRetries: 5
           })
 
           addNotification({
@@ -224,7 +240,7 @@ export const useCreateEmergencyEvent = () => {
             message: 'Your emergency report will be synced when you\'re back online.',
             severity: 'info',
             priority: 'medium',
-            channels: { inApp: true, push: false, email: false, sms: false },
+            channels: { inApp: true, push: false, email: false, sms: false }
           })
 
           return optimisticEvent
@@ -236,7 +252,7 @@ export const useCreateEmergencyEvent = () => {
         // Update trust score
         await updateTrustForAction(userId, data.id, 'report', 'pending', {
           severity: event.severity,
-          type: event.type_id,
+          type: event.type_id
         })
 
         // Create notification
@@ -247,7 +263,7 @@ export const useCreateEmergencyEvent = () => {
           severity: 'success',
           priority: 'high',
           channels: { inApp: true, push: true, email: false, sms: false },
-          metadata: { eventId: data.id, category: 'emergency' },
+          metadata: { eventId: data.id, category: 'emergency' }
         })
 
         return data
@@ -260,7 +276,7 @@ export const useCreateEmergencyEvent = () => {
           message: error instanceof Error ? error.message : 'Failed to submit emergency report',
           severity: 'critical',
           priority: 'high',
-          channels: { inApp: true, push: true, email: false, sms: false },
+          channels: { inApp: true, push: true, email: false, sms: false }
         })
 
         throw error
@@ -284,7 +300,7 @@ export const useCreateEmergencyEvent = () => {
       }
 
       console.error('Create emergency event mutation error:', error)
-    },
+    }
   })
 }
 
@@ -297,12 +313,14 @@ export const useUpdateEmergencyEvent = () => {
       try {
         // Optimistic update
         const currentEvent = useEmergencyStore.getState().events.find(e => e.id === id)
-        if (!currentEvent) throw new Error('Event not found')
+        if (!currentEvent) {
+          throw new Error('Event not found')
+        }
 
         const optimisticEvent = {
           ...currentEvent,
           ...updates,
-          updated_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         }
 
         useEmergencyStore.getState().updateEvent(id, updates)
@@ -314,7 +332,7 @@ export const useUpdateEmergencyEvent = () => {
             table: 'emergency_events',
             data: { id, updates },
             priority: 'medium',
-            maxRetries: 3,
+            maxRetries: 3
           })
 
           return optimisticEvent
@@ -329,7 +347,7 @@ export const useUpdateEmergencyEvent = () => {
           message: 'Emergency event has been updated successfully.',
           severity: 'success',
           priority: 'medium',
-          channels: { inApp: true, push: false, email: false, sms: false },
+          channels: { inApp: true, push: false, email: false, sms: false }
         })
 
         return data
@@ -345,7 +363,7 @@ export const useUpdateEmergencyEvent = () => {
     onError: (error, variables) => {
       // Rollback would require storing previous state
       console.error('Update emergency event mutation error:', error)
-    },
+    }
   })
 }
 
@@ -359,7 +377,7 @@ export const useConfirmEvent = () => {
       eventId,
       userId,
       confirmationType,
-      location,
+      location
     }: {
       eventId: string
       userId: string
@@ -384,13 +402,13 @@ export const useConfirmEvent = () => {
           trust_weight: userScore?.score || 0.5,
           location: location ? `POINT(${location.lng} ${location.lat})` : null,
           distance_from_event: null,
-          created_at: new Date().toISOString(),
+          created_at: new Date().toISOString()
         }
 
         // Update local store immediately
         useEmergencyStore.getState().updateEvent(eventId, {
           confirmation_count: confirmationType === 'confirm' ? 1 : 0,
-          dispute_count: confirmationType === 'dispute' ? 1 : 0,
+          dispute_count: confirmationType === 'dispute' ? 1 : 0
         })
 
         // Add to offline queue if needed
@@ -400,7 +418,7 @@ export const useConfirmEvent = () => {
             table: 'event_confirmations',
             data: { eventId, userId, confirmationType, location },
             priority: 'medium',
-            maxRetries: 3,
+            maxRetries: 3
           })
 
           return optimisticConfirmation
@@ -411,7 +429,7 @@ export const useConfirmEvent = () => {
 
         // Update trust score
         await updateTrustForAction(userId, eventId, confirmationType, 'pending', {
-          location,
+          location
         })
 
         addNotification({
@@ -420,7 +438,7 @@ export const useConfirmEvent = () => {
           message: `You have successfully ${confirmationType}ed this emergency event.`,
           severity: 'success',
           priority: 'medium',
-          channels: { inApp: true, push: false, email: false, sms: false },
+          channels: { inApp: true, push: false, email: false, sms: false }
         })
 
         return data
@@ -435,7 +453,7 @@ export const useConfirmEvent = () => {
     },
     onError: (error) => {
       console.error('Confirm event mutation error:', error)
-    },
+    }
   })
 }
 
@@ -444,7 +462,7 @@ export const useEventConfirmations = (eventId: string) => {
     queryKey: ['event-confirmations', eventId],
     queryFn: () => supabaseHelpers.getEventConfirmations(eventId),
     enabled: !!eventId,
-    staleTime: 15 * 1000, // 15 seconds
+    staleTime: 15 * 1000 // 15 seconds
   })
 }
 
@@ -461,7 +479,7 @@ export const useEmergencyTypes = () => {
         // Cache for offline use
         useOfflineStore.getState().setCache('emergency-types', data, {
           tags: ['emergency', 'types'],
-          expiresAt: Date.now() + (24 * 60 * 60 * 1000), // 24 hours
+          expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
         })
 
         return data
@@ -476,7 +494,7 @@ export const useEmergencyTypes = () => {
       }
     },
     staleTime: 60 * 60 * 1000, // 1 hour
-    retry: 2,
+    retry: 2
   })
 }
 
@@ -497,10 +515,12 @@ export const useNearbyEmergencyEvents = (
         p_lng: center.lng,
         p_radius_meters: radius,
         p_status: filters?.status || null,
-        p_min_severity: filters?.severity?.[0] || null,
+        p_min_severity: filters?.severity?.[0] || null
       })
 
-      if (error) throw error
+      if (error) {
+        throw error
+      }
 
       // Calculate distance for each event
       const eventsWithDistance = (data as any[]).map((event: any) => ({
@@ -511,14 +531,14 @@ export const useNearbyEmergencyEvents = (
           parseFloat(event.location.split(' ')[1]),
           parseFloat(event.location.split(' ')[0])
         ),
-        isWithinRadius: true,
+        isWithinRadius: true
       }))
 
       return eventsWithDistance
     },
     enabled: !!(center.lat && center.lng),
     staleTime: 30 * 1000, // 30 seconds
-    refetchInterval: 60 * 1000, // 1 minute
+    refetchInterval: 60 * 1000 // 1 minute
   })
 }
 
@@ -542,11 +562,13 @@ export const useUserEmergencyEvents = (userId: string, status?: Database['public
         .eq(status ? 'status' : 'status', status || 'active')
         .order('created_at', { ascending: false })
 
-      if (error) throw error
+      if (error) {
+        throw error
+      }
       return data
     },
     enabled: !!userId,
-    staleTime: 30 * 1000,
+    staleTime: 30 * 1000
   })
 }
 
@@ -558,9 +580,9 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
   const Δφ = ((lat2 - lat1) * Math.PI) / 180
   const Δλ = ((lon2 - lon1) * Math.PI) / 180
 
-  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-    Math.cos(φ1) * Math.cos(φ2) *
-    Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
+  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2)
+    + Math.cos(φ1) * Math.cos(φ2)
+    * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 
   return R * c // Distance in meters

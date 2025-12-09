@@ -3,11 +3,11 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
-import { 
-  ChevronDown, 
-  ChevronUp, 
-  Layers, 
-  Eye, 
+import {
+  ChevronDown,
+  ChevronUp,
+  Layers,
+  Eye,
   EyeOff,
   Info,
   Accessibility
@@ -22,25 +22,25 @@ const mapLegendVariants = cva(
         'bottom-left': 'bottom-4 left-4',
         'bottom-right': 'bottom-4 right-4',
         'top-left': 'top-4 left-4',
-        'top-right': 'top-4 right-4',
+        'top-right': 'top-4 right-4'
       },
       size: {
         sm: 'max-w-xs',
         md: 'max-w-sm',
         lg: 'max-w-md',
-        xl: 'max-w-lg',
+        xl: 'max-w-lg'
       },
       variant: {
         default: 'p-4',
         compact: 'p-3',
-        minimal: 'p-2',
+        minimal: 'p-2'
       }
     },
     defaultVariants: {
       position: 'bottom-left',
       size: 'md',
-      variant: 'default',
-    },
+      variant: 'default'
+    }
   }
 )
 
@@ -189,21 +189,21 @@ const MapLegend: React.FC<MapLegendProps> = ({
     { type: 'medical', name: 'Medical Emergency' },
     { type: 'security', name: 'Security Threat' },
     { type: 'natural', name: 'Natural Disaster' },
-    { type: 'infrastructure', name: 'Infrastructure Failure' },
+    { type: 'infrastructure', name: 'Infrastructure Failure' }
   ],
   severityLevels = [
     { level: 1, label: 'Low', color: '#3b82f6' },
     { level: 2, label: 'Moderate', color: '#eab308' },
     { level: 3, label: 'High', color: '#f97316' },
     { level: 4, label: 'Severe', color: '#ef4444' },
-    { level: 5, label: 'Critical', color: '#991b1b' },
+    { level: 5, label: 'Critical', color: '#991b1b' }
   ],
   trustLevels = [
     { level: 'excellent', label: 'Excellent Trust', color: '#22c55e' },
     { level: 'good', label: 'Good Trust', color: '#84cc16' },
     { level: 'moderate', label: 'Moderate Trust', color: '#eab308' },
     { level: 'low', label: 'Low Trust', color: '#f97316' },
-    { level: 'critical', label: 'Critical Trust', color: '#ef4444' },
+    { level: 'critical', label: 'Critical Trust', color: '#ef4444' }
   ],
   showLayerControls = true,
   showSeverityIndicators = true,
@@ -219,7 +219,7 @@ const MapLegend: React.FC<MapLegendProps> = ({
     severity: true,
     trust: true,
     heatmap: false,
-    geofences: true,
+    geofences: true
   })
 
   const legendRef = useRef<HTMLDivElement>(null)
@@ -349,10 +349,10 @@ const MapLegend: React.FC<MapLegendProps> = ({
                   <div key={trust.level} className="flex items-center gap-2">
                     <TrustBadge
                       level={trust.level as any}
-                      score={trust.level === 'excellent' ? 95 :
-                             trust.level === 'good' ? 80 :
-                             trust.level === 'moderate' ? 60 :
-                             trust.level === 'low' ? 40 : 20}
+                      score={trust.level === 'excellent' ? 95
+                        : trust.level === 'good' ? 80
+                          : trust.level === 'moderate' ? 60
+                            : trust.level === 'low' ? 40 : 20}
                       size="sm"
                       showPercentage={false}
                       label=""

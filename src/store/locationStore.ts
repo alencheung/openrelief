@@ -175,13 +175,13 @@ const defaultSettings: LocationSettings = {
   maxAge: 60000, // 1 minute
   enableGeofences: true,
   shareWithEmergencyServices: true,
-  retentionPeriod: 30, // 30 days
+  retentionPeriod: 30 // 30 days
 }
 
 const defaultProximityThresholds = {
   events: 1000, // 1km
   users: 500, // 500m
-  geofences: 50, // 50m
+  geofences: 50 // 50m
 }
 
 // Utility functions
@@ -192,9 +192,9 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
   const Δφ = ((lat2 - lat1) * Math.PI) / 180
   const Δλ = ((lon2 - lon1) * Math.PI) / 180
 
-  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-    Math.cos(φ1) * Math.cos(φ2) *
-    Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
+  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2)
+    + Math.cos(φ1) * Math.cos(φ2)
+    * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 
   return R * c // Distance in meters
@@ -221,7 +221,7 @@ export const useLocationStore = create<LocationStore>()(
         locationPermission: {
           granted: false,
           accuracy: 'denied',
-          background: false,
+          background: false
         },
 
         isTracking: false,
@@ -251,7 +251,7 @@ export const useLocationStore = create<LocationStore>()(
             currentLocation: location,
             lastKnownLocation: location,
             lastUpdate: new Date(),
-            updateCount: state.updateCount + 1,
+            updateCount: state.updateCount + 1
           }))
 
           // Check geofences and proximity
@@ -279,7 +279,7 @@ export const useLocationStore = create<LocationStore>()(
                   granted: true,
                   accuracy: highAccuracy ? 'high' : 'low',
                   background: false, // Will be updated separately
-                  lastRequested: new Date(),
+                  lastRequested: new Date()
                 }
                 get().setPermission(permission)
                 resolve(permission)
@@ -289,7 +289,7 @@ export const useLocationStore = create<LocationStore>()(
                   granted: false,
                   accuracy: 'denied',
                   background: false,
-                  lastRequested: new Date(),
+                  lastRequested: new Date()
                 }
                 get().setPermission(permission)
                 resolve(permission)
@@ -297,7 +297,7 @@ export const useLocationStore = create<LocationStore>()(
               {
                 enableHighAccuracy: highAccuracy,
                 timeout: 10000,
-                maximumAge: get().settings.maxAge,
+                maximumAge: get().settings.maxAge
               }
             )
           })
@@ -314,7 +314,7 @@ export const useLocationStore = create<LocationStore>()(
               granted: result.state === 'granted',
               accuracy: result.state === 'granted' ? (get().settings.highAccuracy ? 'high' : 'low') : 'denied',
               background: false, // Requires separate check
-              lastRequested: new Date(),
+              lastRequested: new Date()
             }
             get().setPermission(permission)
             return permission
@@ -329,7 +329,9 @@ export const useLocationStore = create<LocationStore>()(
 
         // Tracking management
         startTracking: async (purpose = 'general', metadata) => {
-          if (get().isTracking) return
+          if (get().isTracking) {
+            return
+          }
 
           const permission = await get().checkLocationPermission()
           if (!permission.granted) {
@@ -343,7 +345,7 @@ export const useLocationStore = create<LocationStore>()(
             points: [],
             purpose,
             isActive: true,
-            metadata,
+            metadata
           }
 
           set({ isTracking: true, trackingSession: session })
@@ -360,7 +362,7 @@ export const useLocationStore = create<LocationStore>()(
                   ...(position.coords.altitudeAccuracy !== null && { altitudeAccuracy: position.coords.altitudeAccuracy }),
                   ...(position.coords.heading !== null && { heading: position.coords.heading }),
                   ...(position.coords.speed !== null && { speed: position.coords.speed }),
-                  timestamp: position.timestamp,
+                  timestamp: position.timestamp
                 }
 
                 get().setCurrentLocation(point)
@@ -374,7 +376,7 @@ export const useLocationStore = create<LocationStore>()(
               {
                 enableHighAccuracy: get().settings.highAccuracy,
                 timeout: 15000,
-                maximumAge: get().settings.maxAge,
+                maximumAge: get().settings.maxAge
               }
             )
 
@@ -393,14 +395,14 @@ export const useLocationStore = create<LocationStore>()(
             const completedSession = {
               ...trackingSession,
               endTime: new Date(),
-              isActive: false,
+              isActive: false
             }
 
             set((state) => ({
               isTracking: false,
               watchId: null,
               trackingSession: null,
-              trackingHistory: [completedSession, ...state.trackingHistory],
+              trackingHistory: [completedSession, ...state.trackingHistory]
             }))
           }
         },
@@ -424,20 +426,22 @@ export const useLocationStore = create<LocationStore>()(
 
         addTrackingPoint: (point) => {
           const { trackingSession } = get()
-          if (!trackingSession) return
+          if (!trackingSession) {
+            return
+          }
 
           set((state) => ({
             trackingSession: state.trackingSession ? {
               ...state.trackingSession,
-              points: [...state.trackingSession.points, point],
-            } : null,
+              points: [...state.trackingSession.points, point]
+            } : null
           }))
         },
 
         // Settings management
         updateSettings: (settings) => {
           set((state) => ({
-            settings: { ...state.settings, ...settings },
+            settings: { ...state.settings, ...settings }
           }))
         },
 
@@ -458,14 +462,14 @@ export const useLocationStore = create<LocationStore>()(
           const newGeofence: Geofence = {
             ...geofence,
             id,
-            createdAt: new Date(),
+            createdAt: new Date()
           }
 
           console.log('Debug: Complete geofence object created:', newGeofence)
 
           set((state) => {
             const updatedState = {
-              geofences: [...state.geofences, newGeofence],
+              geofences: [...state.geofences, newGeofence]
             }
             console.log('Debug: Updated geofences array length:', updatedState.geofences.length)
             return updatedState
@@ -477,7 +481,7 @@ export const useLocationStore = create<LocationStore>()(
         removeGeofence: (geofenceId) => {
           set((state) => ({
             geofences: state.geofences.filter(g => g.id !== geofenceId),
-            activeGeofences: state.activeGeofences.filter(id => id !== geofenceId),
+            activeGeofences: state.activeGeofences.filter(id => id !== geofenceId)
           }))
         },
 
@@ -485,14 +489,16 @@ export const useLocationStore = create<LocationStore>()(
           set((state) => ({
             geofences: state.geofences.map(g =>
               g.id === geofenceId ? { ...g, ...updates } : g
-            ),
+            )
           }))
         },
 
         toggleGeofence: (geofenceId) => {
           set((state) => {
             const geofence = state.geofences.find(g => g.id === geofenceId)
-            if (!geofence) return state
+            if (!geofence) {
+              return state
+            }
 
             const updatedGeofence = { ...geofence, isActive: !geofence.isActive }
             const activeGeofences = geofence.isActive
@@ -503,7 +509,7 @@ export const useLocationStore = create<LocationStore>()(
               geofences: state.geofences.map(g =>
                 g.id === geofenceId ? updatedGeofence : g
               ),
-              activeGeofences,
+              activeGeofences
             }
           })
         },
@@ -512,7 +518,9 @@ export const useLocationStore = create<LocationStore>()(
           const { geofences, activeGeofences, geofenceHistory } = get()
 
           geofences.forEach(geofence => {
-            if (!geofence.isActive) return
+            if (!geofence.isActive) {
+              return
+            }
 
             const wasInside = activeGeofences.includes(geofence.id)
             const isInside = isPointInGeofence(location, geofence)
@@ -525,10 +533,10 @@ export const useLocationStore = create<LocationStore>()(
                   {
                     geofenceId: geofence.id,
                     action: 'exit',
-                    timestamp: new Date(),
+                    timestamp: new Date()
                   },
-                  ...state.geofenceHistory,
-                ],
+                  ...state.geofenceHistory
+                ]
               }))
             } else if (!wasInside && isInside) {
               // Enter geofence
@@ -538,10 +546,10 @@ export const useLocationStore = create<LocationStore>()(
                   {
                     geofenceId: geofence.id,
                     action: 'enter',
-                    timestamp: new Date(),
+                    timestamp: new Date()
                   },
-                  ...state.geofenceHistory,
-                ],
+                  ...state.geofenceHistory
+                ]
               }))
             }
           })
@@ -550,7 +558,7 @@ export const useLocationStore = create<LocationStore>()(
         clearExpiredGeofences: () => {
           const now = new Date()
           set((state) => ({
-            geofences: state.geofences.filter(g => !g.expiresAt || g.expiresAt > now),
+            geofences: state.geofences.filter(g => !g.expiresAt || g.expiresAt > now)
           }))
         },
 
@@ -560,11 +568,11 @@ export const useLocationStore = create<LocationStore>()(
             ...alert,
             id: `alert-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             timestamp: new Date(),
-            acknowledged: false,
+            acknowledged: false
           }
 
           set((state) => ({
-            proximityAlerts: [newAlert, ...state.proximityAlerts],
+            proximityAlerts: [newAlert, ...state.proximityAlerts]
           }))
         },
 
@@ -572,13 +580,13 @@ export const useLocationStore = create<LocationStore>()(
           set((state) => ({
             proximityAlerts: state.proximityAlerts.map(alert =>
               alert.id === alertId ? { ...alert, acknowledged: true } : alert
-            ),
+            )
           }))
         },
 
         clearAlert: (alertId) => {
           set((state) => ({
-            proximityAlerts: state.proximityAlerts.filter(alert => alert.id !== alertId),
+            proximityAlerts: state.proximityAlerts.filter(alert => alert.id !== alertId)
           }))
         },
 
@@ -588,13 +596,15 @@ export const useLocationStore = create<LocationStore>()(
 
         updateProximityThresholds: (thresholds) => {
           set((state) => ({
-            proximityThresholds: { ...state.proximityThresholds, ...thresholds },
+            proximityThresholds: { ...state.proximityThresholds, ...thresholds }
           }))
         },
 
         checkProximity: (targetLocation, targetType, targetId) => {
           const { currentLocation, proximityThresholds } = get()
-          if (!currentLocation) return
+          if (!currentLocation) {
+            return
+          }
 
           const distance = calculateDistance(
             currentLocation.lat,
@@ -607,14 +617,14 @@ export const useLocationStore = create<LocationStore>()(
 
           if (distance <= threshold) {
             get().addProximityAlert({
-              type: targetType === 'event' ? 'event_proximity' :
-                targetType === 'user' ? 'user_proximity' : 'geofence_entry',
+              type: targetType === 'event' ? 'event_proximity'
+                : targetType === 'user' ? 'user_proximity' : 'geofence_entry',
               targetId,
               targetType,
               distance,
               threshold,
               message: `Proximity alert: ${Math.round(distance)}m away`,
-              severity: distance < threshold / 2 ? 'critical' : 'warning',
+              severity: distance < threshold / 2 ? 'critical' : 'warning'
             })
           }
         },
@@ -671,9 +681,9 @@ export const useLocationStore = create<LocationStore>()(
             lastUpdate: null,
             updateCount: 0,
             errorCount: 0,
-            lastError: null,
+            lastError: null
           })
-        },
+        }
       }),
       {
         name: 'location-storage',
@@ -682,8 +692,8 @@ export const useLocationStore = create<LocationStore>()(
           geofences: state.geofences,
           proximityThresholds: state.proximityThresholds,
           trackingHistory: state.trackingHistory.slice(0, 50), // Limit history size
-          geofenceHistory: state.geofenceHistory.slice(0, 100), // Limit history size
-        }),
+          geofenceHistory: state.geofenceHistory.slice(0, 100) // Limit history size
+        })
       }
     )
   )
@@ -696,18 +706,18 @@ export const useLocationTracking = () => useLocationStore(state => ({
   isTracking: state.isTracking,
   trackingSession: state.trackingSession,
   settings: state.settings,
-  permission: state.locationPermission,
+  permission: state.locationPermission
 }))
 
 export const useGeofences = () => useLocationStore(state => ({
   geofences: state.geofences,
   activeGeofences: state.activeGeofences,
-  geofenceHistory: state.geofenceHistory,
+  geofenceHistory: state.geofenceHistory
 }))
 
 export const useProximityAlerts = () => useLocationStore(state => ({
   alerts: state.proximityAlerts,
-  unacknowledgedCount: state.proximityAlerts.filter(a => !a.acknowledged).length,
+  unacknowledgedCount: state.proximityAlerts.filter(a => !a.acknowledged).length
 }))
 
 export const useLocationActions = () => useLocationStore(state => ({
@@ -719,7 +729,7 @@ export const useLocationActions = () => useLocationStore(state => ({
   toggleGeofence: state.toggleGeofence,
   acknowledgeAlert: state.acknowledgeAlert,
   clearAlert: state.clearAlert,
-  updateSettings: state.updateSettings,
+  updateSettings: state.updateSettings
 }))
 
 // Utility exports

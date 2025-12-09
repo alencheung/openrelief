@@ -64,7 +64,7 @@ export const classifyError = (error: any, context?: any): ErrorInfo => {
       recoverable: true,
       suggestions: ['Check your internet connection', 'Try again in a moment'],
       retryable: true,
-      maxRetries: 3,
+      maxRetries: 3
     }
   }
 
@@ -81,7 +81,7 @@ export const classifyError = (error: any, context?: any): ErrorInfo => {
       recoverable: true,
       suggestions: ['Check your connection speed', 'Try again'],
       retryable: true,
-      maxRetries: 2,
+      maxRetries: 2
     }
   }
 
@@ -97,7 +97,7 @@ export const classifyError = (error: any, context?: any): ErrorInfo => {
       severity: 'high',
       recoverable: false,
       suggestions: ['Grant required permissions', 'Check browser settings'],
-      retryable: false,
+      retryable: false
     }
   }
 
@@ -113,7 +113,7 @@ export const classifyError = (error: any, context?: any): ErrorInfo => {
       severity: 'high',
       recoverable: true,
       suggestions: ['Sign in again', 'Check your credentials'],
-      retryable: false,
+      retryable: false
     }
   }
 
@@ -129,7 +129,7 @@ export const classifyError = (error: any, context?: any): ErrorInfo => {
       severity: 'medium',
       recoverable: true,
       suggestions: ['Check your input', 'Ensure all required fields are filled'],
-      retryable: false,
+      retryable: false
     }
   }
 
@@ -147,7 +147,7 @@ export const classifyError = (error: any, context?: any): ErrorInfo => {
       suggestions: ['Wait before trying again', 'Reduce request frequency'],
       retryable: true,
       maxRetries: 5,
-      nextRetry: timestamp + 60000, // 1 minute
+      nextRetry: timestamp + 60000 // 1 minute
     }
   }
 
@@ -164,7 +164,7 @@ export const classifyError = (error: any, context?: any): ErrorInfo => {
       recoverable: true,
       suggestions: ['Try again later', 'Contact support if problem persists'],
       retryable: true,
-      maxRetries: 3,
+      maxRetries: 3
     }
   }
 
@@ -181,7 +181,7 @@ export const classifyError = (error: any, context?: any): ErrorInfo => {
       recoverable: true,
       suggestions: ['Try again', 'Contact support if problem persists'],
       retryable: true,
-      maxRetries: 2,
+      maxRetries: 2
     }
   }
 
@@ -197,7 +197,7 @@ export const classifyError = (error: any, context?: any): ErrorInfo => {
       severity: 'medium',
       recoverable: true,
       suggestions: ['Check your internet connection', 'Data will be synced when online'],
-      retryable: false,
+      retryable: false
     }
   }
 
@@ -213,7 +213,7 @@ export const classifyError = (error: any, context?: any): ErrorInfo => {
     recoverable: true,
     suggestions: ['Try again', 'Refresh the page', 'Contact support'],
     retryable: true,
-    maxRetries: 1,
+    maxRetries: 1
   }
 }
 
@@ -227,7 +227,7 @@ export const createRetryFunction = <T extends any[], R>(
     baseDelay: 1000,
     maxDelay: 30000,
     backoffFactor: 2,
-    jitter: true,
+    jitter: true
   }
 
   const finalConfig = { ...defaultConfig, ...config }
@@ -250,9 +250,9 @@ export const createRetryFunction = <T extends any[], R>(
         const errorInfo = classifyError(error)
 
         // Check if we should retry
-        const shouldRetry = attempt < finalConfig.maxRetries &&
-          errorInfo.retryable &&
-          (!finalConfig.retryCondition || finalConfig.retryCondition(error))
+        const shouldRetry = attempt < finalConfig.maxRetries
+          && errorInfo.retryable
+          && (!finalConfig.retryCondition || finalConfig.retryCondition(error))
 
         if (!shouldRetry) {
           if (finalConfig.onFailure) {
@@ -266,7 +266,7 @@ export const createRetryFunction = <T extends any[], R>(
 
         // Apply jitter if enabled
         if (finalConfig.jitter) {
-          delay = delay * (0.5 + Math.random() * 0.5)
+          delay *= (0.5 + Math.random() * 0.5)
         }
 
         // Respect max delay
@@ -394,8 +394,8 @@ export const reportError = async (errorInfo: ErrorInfo): Promise<void> => {
         ...errorInfo,
         userAgent: navigator.userAgent,
         url: window.location.href,
-        timestamp: new Date().toISOString(),
-      }),
+        timestamp: new Date().toISOString()
+      })
     })
   } catch {
     // Fallback to console
@@ -411,7 +411,7 @@ export class EmergencyErrorBoundary {
     errorCount: 0,
     lastErrorTime: null,
     retryCount: 0,
-    isRecovering: false,
+    isRecovering: false
   }
 
   private listeners: Array<(state: ErrorBoundaryState) => void> = []
@@ -427,7 +427,7 @@ export class EmergencyErrorBoundary {
       action: 'global_error',
       url: event.filename,
       line: event.lineno,
-      column: event.colno,
+      column: event.colno
     })
 
     this.setError(errorInfo)
@@ -436,7 +436,7 @@ export class EmergencyErrorBoundary {
 
   private handleUnhandledRejection = (event: PromiseRejectionEvent) => {
     const errorInfo = classifyError(event.reason, {
-      action: 'unhandled_promise',
+      action: 'unhandled_promise'
     })
 
     this.setError(errorInfo)
@@ -449,7 +449,7 @@ export class EmergencyErrorBoundary {
       hasError: true,
       error,
       errorCount: this.state.errorCount + 1,
-      lastErrorTime: Date.now(),
+      lastErrorTime: Date.now()
     }
 
     this.notifyListeners()
@@ -472,14 +472,16 @@ export class EmergencyErrorBoundary {
   }
 
   public retry = async () => {
-    if (!this.state.error || this.state.isRecovering) return
+    if (!this.state.error || this.state.isRecovering) {
+      return
+    }
 
     const currentError = this.state.error // Store reference to avoid null issues
 
     this.state = {
       ...this.state,
       isRecovering: true,
-      retryCount: this.state.retryCount + 1,
+      retryCount: this.state.retryCount + 1
     }
     this.notifyListeners()
 
@@ -492,18 +494,18 @@ export class EmergencyErrorBoundary {
           errorCount: 0,
           lastErrorTime: null,
           retryCount: 0,
-          isRecovering: false,
+          isRecovering: false
         }
       } else {
         this.state = {
           ...this.state,
-          isRecovering: false,
+          isRecovering: false
         }
       }
     } catch {
       this.state = {
         ...this.state,
-        isRecovering: false,
+        isRecovering: false
       }
     }
 
@@ -517,7 +519,7 @@ export class EmergencyErrorBoundary {
       errorCount: 0,
       lastErrorTime: null,
       retryCount: 0,
-      isRecovering: false,
+      isRecovering: false
     }
     this.notifyListeners()
   }
@@ -574,7 +576,7 @@ export class CircuitBreaker {
     return {
       state: this.state,
       failureCount: this.failureCount,
-      lastFailureTime: this.lastFailureTime,
+      lastFailureTime: this.lastFailureTime
     }
   }
 

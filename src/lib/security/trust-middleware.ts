@@ -1,6 +1,6 @@
 /**
  * Trust-Based Security Middleware
- * 
+ *
  * This middleware integrates trust scores with security decisions,
  * providing dynamic access controls and attack resistance based on user reputation.
  * It works with the existing security infrastructure to enhance protection.
@@ -51,11 +51,11 @@ export async function trustSecurityMiddleware(
   response?: NextResponse
 }> {
   const finalConfig = { ...DEFAULT_CONFIG, ...config }
-  
+
   try {
     // Extract user information from request
     const userId = extractUserIdFromRequest(request)
-    
+
     if (!userId) {
       // No user ID, apply default security
       return {
@@ -72,15 +72,15 @@ export async function trustSecurityMiddleware(
         }
       }
     }
-    
+
     // Get user's trust information
     const trustThreshold = trustScoreManager.getTrustThreshold(userId)
     const rateLimitParams = trustScoreManager.getTrustBasedRateLimit(userId)
-    
+
     // Check if user can perform the requested action
     const action = determineActionFromRequest(request)
     const permissionCheck = await trustScoreManager.canPerformAction(userId, action)
-    
+
     if (!permissionCheck.allowed) {
       // Log permission denied
       await securityMonitor.createAlert(
@@ -97,7 +97,7 @@ export async function trustSecurityMiddleware(
           requirements: permissionCheck.requirements
         }
       )
-      
+
       return {
         allowed: false,
         context: {
@@ -111,7 +111,7 @@ export async function trustSecurityMiddleware(
           requirements: permissionCheck.requirements || []
         },
         response: NextResponse.json(
-          { 
+          {
             error: 'Permission denied',
             reason: permissionCheck.reason,
             requirements: permissionCheck.requirements
@@ -120,11 +120,11 @@ export async function trustSecurityMiddleware(
         )
       }
     }
-    
+
     // Apply attack resistance if enabled
     let resistance = 'allowed'
     let trustWeight = trustThreshold.minScore
-    
+
     if (finalConfig.enableAttackResistance) {
       const requestData = await extractRequestData(request)
       const attackResistance = await trustScoreManager.applyAttackResistance(
@@ -132,10 +132,10 @@ export async function trustSecurityMiddleware(
         action,
         requestData
       )
-      
+
       resistance = attackResistance.resistance
       trustWeight = attackResistance.trustWeight
-      
+
       if (!attackResistance.allowed) {
         await securityMonitor.createAlert(
           'trust_attack_blocked' as any,
@@ -151,7 +151,7 @@ export async function trustSecurityMiddleware(
             requestData: attackResistance.adjustedData
           }
         )
-        
+
         return {
           allowed: false,
           context: {
@@ -165,7 +165,7 @@ export async function trustSecurityMiddleware(
             requirements: permissionCheck.requirements || []
           },
           response: NextResponse.json(
-            { 
+            {
               error: 'Attack resistance triggered',
               resistance,
               trustWeight
@@ -175,7 +175,7 @@ export async function trustSecurityMiddleware(
         }
       }
     }
-    
+
     // Create trust security context
     const context: TrustSecurityContext = {
       userId,
@@ -187,14 +187,14 @@ export async function trustSecurityMiddleware(
       restrictions: permissionCheck.restrictions || [],
       requirements: permissionCheck.requirements || []
     }
-    
+
     // Add trust information to request headers for downstream processing
     const response = NextResponse.next()
     response.headers.set('x-trust-score', trustWeight.toString())
     response.headers.set('x-trust-threshold', trustThreshold.level)
     response.headers.set('x-trust-weight', trustWeight.toString())
     response.headers.set('x-trust-resistance', resistance)
-    
+
     return {
       allowed: true,
       context,
@@ -202,7 +202,7 @@ export async function trustSecurityMiddleware(
     }
   } catch (error) {
     console.error('Error in trust security middleware:', error)
-    
+
     // Fail secure - deny access on error
     return {
       allowed: false,
@@ -240,21 +240,21 @@ export async function trustBasedRateLimitMiddleware(
         limitExceeded: false
       }
     }
-    
+
     // Get trust-based rate limit parameters
     const rateLimitParams = trustScoreManager.getTrustBasedRateLimit(context.userId)
-    
+
     // Check current rate limit usage (this would integrate with your rate limiting system)
     const currentUsage = await getCurrentRateLimitUsage(context.userId, request.ip || '')
     const limitExceeded = currentUsage >= rateLimitParams.maxRequests
-    
+
     if (limitExceeded) {
       // Calculate retry after based on trust level
       const retryAfter = Math.ceil(
-        rateLimitParams.windowMs / 1000 * 
-        (1 + (1 - context.trustWeight) * rateLimitParams.penaltyMultiplier)
+        rateLimitParams.windowMs / 1000
+        * (1 + (1 - context.trustWeight) * rateLimitParams.penaltyMultiplier)
       )
-      
+
       // Log rate limit exceeded
       await securityMonitor.createAlert(
         'trust_rate_limit_exceeded' as any,
@@ -270,18 +270,18 @@ export async function trustBasedRateLimitMiddleware(
           retryAfter
         }
       )
-      
+
       return {
         allowed: false,
         limitExceeded: true,
         retryAfter,
         response: NextResponse.json(
-          { 
+          {
             error: 'Rate limit exceeded',
             retryAfter,
             trustWeight: context.trustWeight
           },
-          { 
+          {
             status: 429,
             headers: {
               'Retry-After': retryAfter.toString(),
@@ -293,14 +293,14 @@ export async function trustBasedRateLimitMiddleware(
         )
       }
     }
-    
+
     return {
       allowed: true,
       limitExceeded: false
     }
   } catch (error) {
     console.error('Error in trust-based rate limiting:', error)
-    
+
     // Fail secure - allow request but log error
     await securityMonitor.createAlert(
       'trust_rate_limit_error' as any,
@@ -309,7 +309,7 @@ export async function trustBasedRateLimitMiddleware(
       error instanceof Error ? error.message : 'Unknown error',
       'trust_system'
     )
-    
+
     return {
       allowed: true,
       limitExceeded: false
@@ -337,12 +337,12 @@ export async function trustBasedContentFilter(
         filtered: false
       }
     }
-    
+
     // Apply content filtering based on trust level
     let filtered = false
     let filteredContent = content
     let reason = ''
-    
+
     if (context.trustWeight < 0.3) {
       // Very low trust - strict filtering
       filteredContent = applyStrictContentFilter(content)
@@ -354,7 +354,7 @@ export async function trustBasedContentFilter(
       filtered = true
       reason = 'Moderate content filtering applied'
     }
-    
+
     if (filtered) {
       await securityMonitor.createAlert(
         'trust_content_filtered' as any,
@@ -371,7 +371,7 @@ export async function trustBasedContentFilter(
         }
       )
     }
-    
+
     return {
       allowed: true,
       filtered,
@@ -380,7 +380,7 @@ export async function trustBasedContentFilter(
     }
   } catch (error) {
     console.error('Error in trust-based content filtering:', error)
-    
+
     // Fail secure - block content on error
     return {
       allowed: false,
@@ -413,9 +413,9 @@ export async function updateTrustScoreFromAction(
     } else if (outcome === 'partial') {
       adjustedAction = action // Use action with reduced impact
     }
-    
+
     const result = await trustScoreManager.calculateTrustScore(userId, adjustedAction, context)
-    
+
     // Log significant trust score changes
     if (Math.abs(result.change) > 0.05) {
       await securityMonitor.createAlert(
@@ -435,7 +435,7 @@ export async function updateTrustScoreFromAction(
         }
       )
     }
-    
+
     return {
       updated: true,
       newScore: result.newScore,
@@ -444,7 +444,7 @@ export async function updateTrustScoreFromAction(
     }
   } catch (error) {
     console.error('Error updating trust score:', error)
-    
+
     await securityMonitor.createAlert(
       'trust_score_update_error' as any,
       'medium' as any,
@@ -457,7 +457,7 @@ export async function updateTrustScoreFromAction(
         outcome
       }
     )
-    
+
     return {
       updated: false
     }
@@ -480,7 +480,7 @@ function extractUserIdFromRequest(request: NextRequest): string | undefined {
       return undefined
     }
   }
-  
+
   // Check for session cookie
   const sessionCookie = request.cookies.get('session')
   if (sessionCookie) {
@@ -492,29 +492,35 @@ function extractUserIdFromRequest(request: NextRequest): string | undefined {
       return undefined
     }
   }
-  
+
   return undefined
 }
 
 function determineActionFromRequest(request: NextRequest): string {
   const { pathname, searchParams } = new URL(request.url)
   const method = request.method
-  
+
   // Determine action based on URL and HTTP method
   if (pathname.includes('/api/emergency')) {
-    if (method === 'POST') return 'report'
-    if (method === 'PUT') return 'confirm'
-    if (method === 'DELETE') return 'dispute'
+    if (method === 'POST') {
+      return 'report'
+    }
+    if (method === 'PUT') {
+      return 'confirm'
+    }
+    if (method === 'DELETE') {
+      return 'dispute'
+    }
   }
-  
+
   if (pathname.includes('/api/endorse')) {
     return 'endorse'
   }
-  
+
   if (pathname.includes('/api/moderate')) {
     return 'moderate'
   }
-  
+
   return 'read'
 }
 
@@ -524,11 +530,11 @@ async function extractRequestData(request: NextRequest): Promise<any> {
       const { searchParams } = new URL(request.url)
       return Object.fromEntries(searchParams.entries())
     }
-    
+
     if (request.method === 'POST' || request.method === 'PUT') {
       return await request.json()
     }
-    
+
     return {}
   } catch (error) {
     return {}
@@ -550,7 +556,7 @@ function applyStrictContentFilter(content: any): any {
       .replace(/javascript:/gi, '')
       .replace(/on\w+\s*=/gi, '')
   }
-  
+
   if (typeof content === 'object' && content !== null) {
     // Filter object properties
     const filtered: any = {}
@@ -563,7 +569,7 @@ function applyStrictContentFilter(content: any): any {
     }
     return filtered
   }
-  
+
   return content
 }
 
@@ -574,7 +580,7 @@ function applyModerateContentFilter(content: any): any {
     return content
       .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
   }
-  
+
   if (typeof content === 'object' && content !== null) {
     // Filter object properties
     const filtered: any = {}
@@ -587,7 +593,7 @@ function applyModerateContentFilter(content: any): any {
     }
     return filtered
   }
-  
+
   return content
 }
 

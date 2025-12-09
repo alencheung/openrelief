@@ -1,6 +1,6 @@
 /**
  * Data Export API Route
- * 
+ *
  * This API endpoint handles user data export requests
  */
 
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error creating export request:', error)
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid request data', details: error.errors },
@@ -225,7 +225,7 @@ async function processExportRequest(
 
     // Store file (in a real implementation, use a file storage service)
     const filePath = `/exports/${userId}/${fileName}`
-    
+
     // Update request with completion info
     await supabase
       .from('data_export_requests')
@@ -253,10 +253,9 @@ async function processExportRequest(
           filePath
         }
       })
-
   } catch (error) {
     console.error('Error processing export request:', error)
-    
+
     // Update request with error status
     await supabase
       .from('data_export_requests')
@@ -289,16 +288,16 @@ function convertToCSV(data: any): string {
   for (const [key, value] of Object.entries(data)) {
     if (Array.isArray(value)) {
       csvRows.push(`\n${key.toUpperCase()}`)
-      
+
       if (value.length > 0) {
         const headers = Object.keys(value[0])
         csvRows.push(headers.join(','))
-        
+
         for (const row of value) {
           const values = headers.map(header => {
             const val = row[header]
-            return typeof val === 'string' && val.includes(',') 
-              ? `"${val.replace(/"/g, '""')}"` 
+            return typeof val === 'string' && val.includes(',')
+              ? `"${val.replace(/"/g, '""')}"`
               : val
           })
           csvRows.push(values.join(','))

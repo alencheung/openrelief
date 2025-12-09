@@ -53,17 +53,17 @@ interface OfflineCapability {
 }
 
 export function EnhancedOfflineFallback() {
-  const { 
-    isOnline, 
-    reconnectAttempts, 
+  const {
+    isOnline,
+    reconnectAttempts,
     lastOnlineTime,
     connectionType,
     effectiveType,
     downlink
   } = useNetworkStatus()
-  
-  const { 
-    pendingActions, 
+
+  const {
+    pendingActions,
     failedActions,
     metrics,
     storageQuota,
@@ -119,7 +119,7 @@ export function EnhancedOfflineFallback() {
         cache: 'no-cache',
         signal: AbortSignal.timeout(5000)
       })
-      
+
       if (response.ok) {
         announcePolite('Connection restored successfully')
         window.location.reload()
@@ -288,20 +288,20 @@ export function EnhancedOfflineFallback() {
               ) : (
                 <WifiOffIcon className="h-12 w-12 text-red-600" />
               )}
-              
+
               {/* Pulse animation for online status */}
               {isOnline && !prefersReducedMotion && (
                 <span className="absolute inset-0 rounded-full bg-green-400 opacity-30 animate-ping" />
               )}
             </div>
           </div>
-          
+
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             {isOnline ? 'Connection Restored' : 'You\'re Offline'}
           </h1>
-          
+
           <p className="text-lg text-gray-600 mb-4">
-            {isOnline 
+            {isOnline
               ? 'Your connection has been restored. OpenRelief is fully functional.'
               : 'OpenRelief is working offline. Emergency features remain available.'
             }
@@ -314,7 +314,7 @@ export function EnhancedOfflineFallback() {
               size="md"
               label={isOnline ? 'Online' : 'Offline'}
             />
-            
+
             {connectionType && (
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <SignalIcon className="w-4 h-4" />
@@ -358,7 +358,7 @@ export function EnhancedOfflineFallback() {
                   </>
                 )}
               </Button>
-              
+
               {reconnectAttempts > 0 && (
                 <p className="text-sm text-gray-500">
                   Reconnect attempts: {reconnectAttempts}
@@ -382,9 +382,9 @@ export function EnhancedOfflineFallback() {
                 flex-1 px-4 py-3 text-center font-medium transition-colors
                 border-b-2 -mb-px
                 ${selectedTab === tab.id
-                  ? 'text-blue-600 border-blue-600'
-                  : 'text-gray-500 border-transparent hover:text-gray-700'
-                }
+              ? 'text-blue-600 border-blue-600'
+              : 'text-gray-500 border-transparent hover:text-gray-700'
+            }
               `}
             >
               {tab.label}
@@ -405,7 +405,7 @@ export function EnhancedOfflineFallback() {
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
                 Emergency Actions Available Offline
               </h2>
-              
+
               <div className="grid gap-4">
                 {emergencyActions.map((action) => (
                   <div
@@ -413,10 +413,10 @@ export function EnhancedOfflineFallback() {
                     className={`
                       flex items-center justify-between p-4 rounded-lg border
                       transition-all duration-200 cursor-pointer
-                      ${action.available 
-                        ? 'border-gray-200 hover:border-gray-300 hover:bg-gray-50' 
-                        : 'border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed'
-                      }
+                      ${action.available
+                    ? 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    : 'border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed'
+                  }
                     `}
                     onClick={() => action.available && action.action()}
                   >
@@ -427,7 +427,7 @@ export function EnhancedOfflineFallback() {
                       `}>
                         <action.icon className="w-6 h-6" />
                       </div>
-                      
+
                       <div className="text-left">
                         <h3 className="font-medium text-gray-900">
                           {action.title}
@@ -465,30 +465,30 @@ export function EnhancedOfflineFallback() {
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
                 Offline Capabilities
               </h2>
-              
+
               <div className="grid gap-4">
                 {offlineCapabilities.map((capability) => (
                   <div
                     key={capability.id}
                     className={`
                       p-4 rounded-lg border
-                      ${capability.available 
-                        ? 'border-gray-200 bg-white' 
-                        : 'border-gray-100 bg-gray-50 opacity-50'
-                      }
+                      ${capability.available
+                    ? 'border-gray-200 bg-white'
+                    : 'border-gray-100 bg-gray-50 opacity-50'
+                  }
                     `}
                   >
                     <div className="flex items-start gap-3">
                       <div className={`
                         flex items-center justify-center w-10 h-10 rounded-lg
-                        ${capability.available 
-                          ? 'bg-blue-100 text-blue-600' 
-                          : 'bg-gray-100 text-gray-400'
-                        }
+                        ${capability.available
+                    ? 'bg-blue-100 text-blue-600'
+                    : 'bg-gray-100 text-gray-400'
+                  }
                       `}>
                         <capability.icon className="w-5 h-5" />
                       </div>
-                      
+
                       <div className="flex-1">
                         <h3 className="font-medium text-gray-900">
                           {capability.name}
@@ -496,30 +496,30 @@ export function EnhancedOfflineFallback() {
                         <p className="text-sm text-gray-600">
                           {capability.description}
                         </p>
-                        
+
                         {/* Storage Usage */}
                         {capability.storageUsed !== undefined && capability.storageLimit !== undefined && (
                           <div className="mt-2">
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-xs text-gray-500">Storage Used</span>
                               <span className="text-xs text-gray-600">
-                                {Math.round(capability.storageUsed / 1024 / 1024)}MB / 
+                                {Math.round(capability.storageUsed / 1024 / 1024)}MB /
                                 {Math.round(capability.storageLimit / 1024 / 1024)}MB
                               </span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-1.5">
-                              <div 
+                              <div
                                 className={`
                                   h-1.5 rounded-full transition-all duration-300
-                                  ${(capability.storageUsed / capability.storageLimit) > 0.8 
-                                    ? 'bg-red-500' 
-                                    : (capability.storageUsed / capability.storageLimit) > 0.6
-                                      ? 'bg-yellow-500'
-                                      : 'bg-green-500'
-                                  }
+                                  ${(capability.storageUsed / capability.storageLimit) > 0.8
+                            ? 'bg-red-500'
+                            : (capability.storageUsed / capability.storageLimit) > 0.6
+                              ? 'bg-yellow-500'
+                              : 'bg-green-500'
+                          }
                                 `}
-                                style={{ 
-                                  width: `${Math.min(100, (capability.storageUsed / capability.storageLimit) * 100)}%` 
+                                style={{
+                                  width: `${Math.min(100, (capability.storageUsed / capability.storageLimit) * 100)}%`
                                 }}
                               />
                             </div>
@@ -545,12 +545,12 @@ export function EnhancedOfflineFallback() {
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
                 System Status
               </h2>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Connection Status */}
                 <div className="space-y-4">
                   <h3 className="font-medium text-gray-900">Connection</h3>
-                  
+
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Status</span>
@@ -560,28 +560,28 @@ export function EnhancedOfflineFallback() {
                         label={isOnline ? 'Online' : 'Offline'}
                       />
                     </div>
-                    
+
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Quality</span>
                       <span className={`text-sm font-medium ${getConnectionQualityColor()}`}>
                         {connectionQuality.charAt(0).toUpperCase() + connectionQuality.slice(1)}
                       </span>
                     </div>
-                    
+
                     {connectionType && (
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Type</span>
                         <span className="text-sm font-medium">{connectionType}</span>
                       </div>
                     )}
-                    
+
                     {downlink && (
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Speed</span>
                         <span className="text-sm font-medium">{downlink.toFixed(1)} Mbps</span>
                       </div>
                     )}
-                    
+
                     {lastOnlineTime && (
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Last Online</span>
@@ -596,7 +596,7 @@ export function EnhancedOfflineFallback() {
                 {/* Sync Status */}
                 <div className="space-y-4">
                   <h3 className="font-medium text-gray-900">Synchronization</h3>
-                  
+
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Pending Actions</span>
@@ -604,28 +604,28 @@ export function EnhancedOfflineFallback() {
                         {pendingActions.length}
                       </span>
                     </div>
-                    
+
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Failed Actions</span>
                       <span className="text-sm font-medium text-red-600">
                         {failedActions.length}
                       </span>
                     </div>
-                    
+
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Last Sync</span>
                       <span className="text-sm font-medium">
                         {lastSyncTime ? lastSyncTime.toLocaleString() : 'Never'}
                       </span>
                     </div>
-                    
+
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Success Rate</span>
                       <span className="text-sm font-medium">
                         {Math.round(metrics.successRate)}%
                       </span>
                     </div>
-                    
+
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Cache Size</span>
                       <span className="text-sm font-medium">
@@ -638,7 +638,7 @@ export function EnhancedOfflineFallback() {
                 {/* Storage Status */}
                 <div className="space-y-4">
                   <h3 className="font-medium text-gray-900">Storage</h3>
-                  
+
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Used</span>
@@ -646,14 +646,14 @@ export function EnhancedOfflineFallback() {
                         {Math.round(storageQuota.used / 1024 / 1024)}MB
                       </span>
                     </div>
-                    
+
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Available</span>
                       <span className="text-sm font-medium">
                         {Math.round(storageQuota.quota / 1024 / 1024)}MB
                       </span>
                     </div>
-                    
+
                     <div className="w-full">
                       <div className="flex justify-between mb-1">
                         <span className="text-xs text-gray-500">Usage</span>
@@ -662,15 +662,15 @@ export function EnhancedOfflineFallback() {
                         </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
+                        <div
                           className={`
                             h-2 rounded-full transition-all duration-300
-                            ${storageQuota.percentage > 80 
-                              ? 'bg-red-500' 
-                              : storageQuota.percentage > 60
-                                ? 'bg-yellow-500'
-                                : 'bg-green-500'
-                            }
+                            ${storageQuota.percentage > 80
+              ? 'bg-red-500'
+              : storageQuota.percentage > 60
+                ? 'bg-yellow-500'
+                : 'bg-green-500'
+            }
                           `}
                           style={{ width: `${Math.min(100, storageQuota.percentage)}%` }}
                         />
@@ -682,7 +682,7 @@ export function EnhancedOfflineFallback() {
                 {/* Performance */}
                 <div className="space-y-4">
                   <h3 className="font-medium text-gray-900">Performance</h3>
-                  
+
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Average Sync Time</span>
@@ -690,21 +690,21 @@ export function EnhancedOfflineFallback() {
                         {Math.round(metrics.averageSyncTime)}ms
                       </span>
                     </div>
-                    
+
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Total Actions</span>
                       <span className="text-sm font-medium">
                         {metrics.totalActions}
                       </span>
                     </div>
-                    
+
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Cache Entries</span>
                       <span className="text-sm font-medium">
                         {metrics.cacheEntries}
                       </span>
                     </div>
-                    
+
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Auto-Sync</span>
                       <StatusIndicator
@@ -713,7 +713,7 @@ export function EnhancedOfflineFallback() {
                         label={settings.autoSync ? 'Enabled' : 'Disabled'}
                       />
                     </div>
-                    
+
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Background Sync</span>
                       <StatusIndicator

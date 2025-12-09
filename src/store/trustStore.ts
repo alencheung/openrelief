@@ -141,7 +141,7 @@ const defaultThresholds: TrustThresholds = {
   confirming: 0.4,
   disputing: 0.5,
   highTrust: 0.8,
-  lowTrust: 0.2,
+  lowTrust: 0.2
 }
 
 const defaultWeights = {
@@ -152,7 +152,7 @@ const defaultWeights = {
   locationAccuracy: 0.10,
   contributionFrequency: 0.10,
   communityEndorsement: 0.05,
-  penaltyScore: 0.05,
+  penaltyScore: 0.05
 }
 
 // Trust calculation algorithms
@@ -169,19 +169,19 @@ const calculateTrustScore = (
     locationAccuracy: Math.max(0, Math.min(1, factors.locationAccuracy)),
     contributionFrequency: Math.max(0, Math.min(1, Math.min(factors.contributionFrequency / 10, 1))), // 10+ per week = 1
     communityEndorsement: Math.max(0, Math.min(1, factors.communityEndorsement)),
-    penaltyScore: Math.max(0, Math.min(1, factors.penaltyScore)),
+    penaltyScore: Math.max(0, Math.min(1, factors.penaltyScore))
   }
 
   // Calculate weighted score
-  const weightedSum =
-    normalizedFactors.reportingAccuracy * weights.reportingAccuracy +
-    normalizedFactors.confirmationAccuracy * weights.confirmationAccuracy +
-    normalizedFactors.disputeAccuracy * weights.disputeAccuracy +
-    normalizedFactors.responseTime * weights.responseTime +
-    normalizedFactors.locationAccuracy * weights.locationAccuracy +
-    normalizedFactors.contributionFrequency * weights.contributionFrequency +
-    normalizedFactors.communityEndorsement * weights.communityEndorsement -
-    normalizedFactors.penaltyScore * weights.penaltyScore
+  const weightedSum
+    = normalizedFactors.reportingAccuracy * weights.reportingAccuracy
+    + normalizedFactors.confirmationAccuracy * weights.confirmationAccuracy
+    + normalizedFactors.disputeAccuracy * weights.disputeAccuracy
+    + normalizedFactors.responseTime * weights.responseTime
+    + normalizedFactors.locationAccuracy * weights.locationAccuracy
+    + normalizedFactors.contributionFrequency * weights.contributionFrequency
+    + normalizedFactors.communityEndorsement * weights.communityEndorsement
+    - normalizedFactors.penaltyScore * weights.penaltyScore
 
   // Calculate confidence based on data availability and consistency
   const dataCompleteness = Object.values(normalizedFactors).filter(v => v > 0).length / Object.keys(normalizedFactors).length
@@ -190,7 +190,7 @@ const calculateTrustScore = (
 
   return {
     score: Math.max(0, Math.min(1, weightedSum)),
-    confidence: Math.max(0, Math.min(1, confidence)),
+    confidence: Math.max(0, Math.min(1, confidence))
   }
 }
 
@@ -203,7 +203,7 @@ const calculateTrustChange = (
   const baseChanges = {
     report: { success: 0.05, failure: -0.1, pending: 0.01 },
     confirm: { success: 0.03, failure: -0.05, pending: 0.005 },
-    dispute: { success: 0.04, failure: -0.08, pending: 0.008 },
+    dispute: { success: 0.04, failure: -0.08, pending: 0.008 }
   }
 
   const baseChange = baseChanges[actionType][outcome]
@@ -242,14 +242,16 @@ export const useTrustStore = create<TrustStore>()(
             newScores.set(userId, score)
             return {
               userScores: newScores,
-              currentUserScore: userId === state.currentUserScore?.userId ? score : state.currentUserScore,
+              currentUserScore: userId === state.currentUserScore?.userId ? score : state.currentUserScore
             }
           })
         },
 
         updateUserScore: (updates) => {
           set((state) => {
-            if (!state.currentUserScore) return state
+            if (!state.currentUserScore) {
+              return state
+            }
 
             const updatedScore = { ...state.currentUserScore, ...updates }
             const newScores = new Map(state.userScores)
@@ -257,7 +259,7 @@ export const useTrustStore = create<TrustStore>()(
 
             return {
               userScores: newScores,
-              currentUserScore: updatedScore,
+              currentUserScore: updatedScore
             }
           })
         },
@@ -272,7 +274,7 @@ export const useTrustStore = create<TrustStore>()(
             newScores.delete(userId)
             return {
               userScores: newScores,
-              currentUserScore: state.currentUserScore?.userId === userId ? null : state.currentUserScore,
+              currentUserScore: state.currentUserScore?.userId === userId ? null : state.currentUserScore
             }
           })
         },
@@ -287,7 +289,7 @@ export const useTrustStore = create<TrustStore>()(
             factors,
             weightedScore: score,
             confidence,
-            lastCalculation: new Date(),
+            lastCalculation: new Date()
           }
 
           set((state) => {
@@ -301,7 +303,9 @@ export const useTrustStore = create<TrustStore>()(
 
         updateTrustFactors: (userId, factors) => {
           const currentScore = get().getUserScore(userId)
-          if (!currentScore) return
+          if (!currentScore) {
+            return
+          }
 
           const updatedFactors = { ...currentScore.factors, ...factors }
           const { score } = calculateTrustScore(updatedFactors, get().weights)
@@ -311,7 +315,7 @@ export const useTrustStore = create<TrustStore>()(
             previousScore: currentScore.score,
             score,
             factors: updatedFactors,
-            lastUpdated: new Date(),
+            lastUpdated: new Date()
           }
 
           get().setUserScore(userId, updatedScore)
@@ -319,7 +323,9 @@ export const useTrustStore = create<TrustStore>()(
 
         recalculateScore: async (userId) => {
           const currentScore = get().getUserScore(userId)
-          if (!currentScore) return
+          if (!currentScore) {
+            return
+          }
 
           const calculation = await get().calculateTrustScore(userId, currentScore.factors)
 
@@ -327,7 +333,7 @@ export const useTrustStore = create<TrustStore>()(
             ...currentScore,
             previousScore: currentScore.score,
             score: calculation.weightedScore,
-            lastUpdated: new Date(),
+            lastUpdated: new Date()
           }
 
           get().setUserScore(userId, updatedScore)
@@ -336,7 +342,7 @@ export const useTrustStore = create<TrustStore>()(
         // History management
         addToHistory: (entry) => {
           set((state) => ({
-            history: [entry, ...state.history],
+            history: [entry, ...state.history]
           }))
         },
 
@@ -357,7 +363,7 @@ export const useTrustStore = create<TrustStore>()(
           set((state) => ({
             history: userId
               ? state.history.filter(entry => entry.userId !== userId)
-              : [],
+              : []
           }))
         },
 
@@ -384,8 +390,8 @@ export const useTrustStore = create<TrustStore>()(
               contributionFrequency: 0,
               communityEndorsement: 0.5,
               penaltyScore: 0,
-              expertiseAreas: [],
-            },
+              expertiseAreas: []
+            }
           }
 
           const change = calculateTrustChange(actionType, outcome, currentScore.score, currentScore.factors)
@@ -401,7 +407,7 @@ export const useTrustStore = create<TrustStore>()(
             newScore,
             reason: `${actionType} ${outcome}`,
             timestamp: new Date(),
-            metadata,
+            metadata
           }
 
           // Update factors based on action
@@ -421,7 +427,7 @@ export const useTrustStore = create<TrustStore>()(
             score: newScore,
             lastUpdated: new Date(),
             factors: updatedFactors,
-            history: [historyEntry, ...currentScore.history],
+            history: [historyEntry, ...currentScore.history]
           }
 
           get().setUserScore(userId, updatedScore)
@@ -432,13 +438,13 @@ export const useTrustStore = create<TrustStore>()(
         // Configuration
         updateThresholds: (thresholds) => {
           set((state) => ({
-            thresholds: { ...state.thresholds, ...thresholds },
+            thresholds: { ...state.thresholds, ...thresholds }
           }))
         },
 
         updateWeights: (weights) => {
           set((state) => ({
-            weights: { ...state.weights, ...weights },
+            weights: { ...state.weights, ...weights }
           }))
         },
 
@@ -451,7 +457,9 @@ export const useTrustStore = create<TrustStore>()(
 
         isCacheExpired: () => {
           const { lastCacheUpdate, cacheExpiry } = get()
-          if (!lastCacheUpdate) return true
+          if (!lastCacheUpdate) {
+            return true
+          }
           return Date.now() - lastCacheUpdate.getTime() > cacheExpiry
         },
 
@@ -466,9 +474,9 @@ export const useTrustStore = create<TrustStore>()(
             history: [],
             loadingHistory: false,
             lastUpdateTime: null,
-            lastCacheUpdate: null,
+            lastCacheUpdate: null
           })
-        },
+        }
       }),
       {
         name: 'trust-storage',
@@ -478,7 +486,7 @@ export const useTrustStore = create<TrustStore>()(
           isRealtimeEnabled: state.isRealtimeEnabled,
           // Convert Maps to arrays for serialization
           userScores: Array.from(state.userScores.entries()),
-          calculations: Array.from(state.calculations.entries()),
+          calculations: Array.from(state.calculations.entries())
         }),
         onRehydrateStorage: () => (state) => {
           if (state) {
@@ -486,7 +494,7 @@ export const useTrustStore = create<TrustStore>()(
             state.userScores = new Map(state.userScores as any)
             state.calculations = new Map(state.calculations as any)
           }
-        },
+        }
       }
     )
   )
@@ -514,7 +522,7 @@ export const useTrustActions = () => useTrustStore(state => ({
   updateTrustFactors: state.updateTrustFactors,
   recalculateScore: state.recalculateScore,
   updateThresholds: state.updateThresholds,
-  updateWeights: state.updateWeights,
+  updateWeights: state.updateWeights
 }))
 
 // Utility functions

@@ -1,15 +1,15 @@
 /**
  * Privacy Notifications System for OpenRelief
- * 
+ *
  * This module provides a comprehensive notification system for privacy-related events,
  * including data processing alerts, privacy budget warnings, legal request updates,
  * and unusual access pattern detection.
  */
 
-import { PrivacyNotificationSettings } from '@/hooks/usePrivacy';
+import { PrivacyNotificationSettings } from '@/hooks/usePrivacy'
 
 // Privacy notification types
-export type PrivacyNotificationType = 
+export type PrivacyNotificationType =
   | 'data_processing_alert'
   | 'privacy_budget_warning'
   | 'legal_request_update'
@@ -175,34 +175,34 @@ const notificationTemplates: NotificationTemplate[] = [
     requiresAction: false,
     expirationHours: 168 // 1 week
   }
-];
+]
 
 // Notification manager class
 export class PrivacyNotificationManager {
-  private notifications: PrivacyNotification[] = [];
-  private settings: PrivacyNotificationSettings;
-  private preferences: NotificationPreferences;
-  private subscribers: ((notification: PrivacyNotification) => void)[] = [];
+  private notifications: PrivacyNotification[] = []
+  private settings: PrivacyNotificationSettings
+  private preferences: NotificationPreferences
+  private subscribers: ((notification: PrivacyNotification) => void)[] = []
 
   constructor(
     settings: PrivacyNotificationSettings,
     preferences: NotificationPreferences
   ) {
-    this.settings = settings;
-    this.preferences = preferences;
+    this.settings = settings
+    this.preferences = preferences
   }
 
   // Subscribe to notifications
   subscribe(callback: (notification: PrivacyNotification) => void): () => void {
-    this.subscribers.push(callback);
-    
+    this.subscribers.push(callback)
+
     // Return unsubscribe function
     return () => {
-      const index = this.subscribers.indexOf(callback);
+      const index = this.subscribers.indexOf(callback)
       if (index > -1) {
-        this.subscribers.splice(index, 1);
+        this.subscribers.splice(index, 1)
       }
-    };
+    }
   }
 
   // Create a new notification
@@ -212,28 +212,28 @@ export class PrivacyNotificationManager {
     customTitle?: string,
     metadata?: Record<string, any>
   ): PrivacyNotification {
-    const template = notificationTemplates.find(t => t.type === type);
-    
+    const template = notificationTemplates.find(t => t.type === type)
+
     if (!template) {
-      throw new Error(`Unknown notification type: ${type}`);
+      throw new Error(`Unknown notification type: ${type}`)
     }
 
     // Check if this notification type is enabled in settings
     if (!this.isNotificationTypeEnabled(type)) {
-      throw new Error(`Notification type ${type} is disabled`);
+      throw new Error(`Notification type ${type} is disabled`)
     }
 
     // Generate notification ID
-    const id = `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
     // Process message template with metadata
-    const message = customMessage || this.processTemplate(template.defaultMessage, metadata);
-    const title = customTitle || template.defaultTitle;
+    const message = customMessage || this.processTemplate(template.defaultMessage, metadata)
+    const title = customTitle || template.defaultTitle
 
     // Calculate expiration date
-    let expiresAt: Date | undefined;
+    let expiresAt: Date | undefined
     if (template.expirationHours) {
-      expiresAt = new Date(Date.now() + template.expirationHours * 60 * 60 * 1000);
+      expiresAt = new Date(Date.now() + template.expirationHours * 60 * 60 * 1000)
     }
 
     // Create notification object
@@ -251,73 +251,75 @@ export class PrivacyNotificationManager {
       metadata,
       expiresAt,
       category: template.defaultCategory
-    };
+    }
 
     // Add to notifications list
-    this.notifications.unshift(notification);
+    this.notifications.unshift(notification)
 
     // Keep only last 100 notifications
     if (this.notifications.length > 100) {
-      this.notifications = this.notifications.slice(0, 100);
+      this.notifications = this.notifications.slice(0, 100)
     }
 
     // Notify subscribers
-    this.subscribers.forEach(callback => callback(notification));
+    this.subscribers.forEach(callback => callback(notification))
 
     // Send notifications based on preferences
-    this.sendNotifications(notification);
+    this.sendNotifications(notification)
 
-    return notification;
+    return notification
   }
 
   // Process template string with metadata
   private processTemplate(template: string, metadata?: Record<string, any>): string {
-    if (!metadata) return template;
+    if (!metadata) {
+      return template
+    }
 
     return template.replace(/\{\{(\w+)\}\}/g, (match, key) => {
-      return metadata[key] !== undefined ? String(metadata[key]) : match;
-    });
+      return metadata[key] !== undefined ? String(metadata[key]) : match
+    })
   }
 
   // Check if notification type is enabled in settings
   private isNotificationTypeEnabled(type: PrivacyNotificationType): boolean {
     const settingMap: Record<PrivacyNotificationType, keyof PrivacyNotificationSettings> = {
-      'data_processing_alert': 'dataProcessingAlerts',
-      'privacy_budget_warning': 'privacyBudgetWarnings',
-      'legal_request_update': 'legalRequestUpdates',
-      'third_party_sharing_alert': 'thirdPartySharingAlerts',
-      'unusual_access_alert': 'unusualAccessAlerts',
-      'data_breach_notification': 'dataBreachNotifications',
-      'system_status_change': 'systemStatusChanges',
-      'consent_required': 'dataProcessingAlerts', // Use data processing alerts setting
-      'retention_policy_change': 'dataProcessingAlerts', // Use data processing alerts setting
-      'new_feature_announcement': 'dataProcessingAlerts' // Use data processing alerts setting
-    };
+      data_processing_alert: 'dataProcessingAlerts',
+      privacy_budget_warning: 'privacyBudgetWarnings',
+      legal_request_update: 'legalRequestUpdates',
+      third_party_sharing_alert: 'thirdPartySharingAlerts',
+      unusual_access_alert: 'unusualAccessAlerts',
+      data_breach_notification: 'dataBreachNotifications',
+      system_status_change: 'systemStatusChanges',
+      consent_required: 'dataProcessingAlerts', // Use data processing alerts setting
+      retention_policy_change: 'dataProcessingAlerts', // Use data processing alerts setting
+      new_feature_announcement: 'dataProcessingAlerts' // Use data processing alerts setting
+    }
 
-    const settingKey = settingMap[type];
-    return this.settings[settingKey];
+    const settingKey = settingMap[type]
+    return this.settings[settingKey]
   }
 
   // Send notifications based on user preferences
   private sendNotifications(notification: PrivacyNotification): void {
     // In-app notification
-    if (this.preferences.inApp.enabled && 
-        this.preferences.inApp.types.includes(notification.type)) {
+    if (this.preferences.inApp.enabled
+        && this.preferences.inApp.types.includes(notification.type)) {
       // In-app notifications are handled by the UI component
     }
 
     // Push notification
-    if (this.preferences.push.enabled && 
-        this.preferences.push.types.includes(notification.type) &&
-        this.preferences.push.frequency === 'immediate') {
-      this.sendPushNotification(notification);
+    if (this.preferences.push.enabled
+        && this.preferences.push.types.includes(notification.type)
+        && this.preferences.push.frequency === 'immediate') {
+      this.sendPushNotification(notification)
     }
 
     // Email notification
-    if (this.preferences.email.enabled && 
-        this.preferences.email.types.includes(notification.type) &&
-        this.preferences.email.frequency === 'immediate') {
-      this.sendEmailNotification(notification);
+    if (this.preferences.email.enabled
+        && this.preferences.email.types.includes(notification.type)
+        && this.preferences.email.frequency === 'immediate') {
+      this.sendEmailNotification(notification)
     }
   }
 
@@ -325,81 +327,81 @@ export class PrivacyNotificationManager {
   private sendPushNotification(notification: PrivacyNotification): void {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window) {
       // In a real implementation, you would use the Web Push API
-      console.log('Sending push notification:', notification);
+      console.log('Sending push notification:', notification)
     }
   }
 
   // Send email notification (mock implementation)
   private sendEmailNotification(notification: PrivacyNotification): void {
     // In a real implementation, you would call an API endpoint to send emails
-    console.log('Sending email notification to', this.preferences.email.address, ':', notification);
+    console.log('Sending email notification to', this.preferences.email.address, ':', notification)
   }
 
   // Get all notifications
   getNotifications(): PrivacyNotification[] {
-    return [...this.notifications];
+    return [...this.notifications]
   }
 
   // Get unread notifications
   getUnreadNotifications(): PrivacyNotification[] {
-    return this.notifications.filter(n => !n.read);
+    return this.notifications.filter(n => !n.read)
   }
 
   // Get notifications by type
   getNotificationsByType(type: PrivacyNotificationType): PrivacyNotification[] {
-    return this.notifications.filter(n => n.type === type);
+    return this.notifications.filter(n => n.type === type)
   }
 
   // Get notifications by category
   getNotificationsByCategory(category: 'privacy' | 'security' | 'legal' | 'system'): PrivacyNotification[] {
-    return this.notifications.filter(n => n.category === category);
+    return this.notifications.filter(n => n.category === category)
   }
 
   // Mark notification as read
   markAsRead(notificationId: string): boolean {
-    const notification = this.notifications.find(n => n.id === notificationId);
+    const notification = this.notifications.find(n => n.id === notificationId)
     if (notification) {
-      notification.read = true;
-      return true;
+      notification.read = true
+      return true
     }
-    return false;
+    return false
   }
 
   // Mark all notifications as read
   markAllAsRead(): void {
-    this.notifications.forEach(n => n.read = true);
+    this.notifications.forEach(n => n.read = true)
   }
 
   // Delete notification
   deleteNotification(notificationId: string): boolean {
-    const index = this.notifications.findIndex(n => n.id === notificationId);
+    const index = this.notifications.findIndex(n => n.id === notificationId)
     if (index > -1) {
-      this.notifications.splice(index, 1);
-      return true;
+      this.notifications.splice(index, 1)
+      return true
     }
-    return false;
+    return false
   }
 
   // Clear expired notifications
   clearExpiredNotifications(): number {
-    const now = new Date();
-    const initialLength = this.notifications.length;
-    
-    this.notifications = this.notifications.filter(n => 
+    const now = new Date()
+    const initialLength = this.notifications.length
+
+    this.notifications = this.notifications.filter(n =>
       !n.expiresAt || n.expiresAt > now
-    );
-    
-    return initialLength - this.notifications.length;
+    )
+
+    return initialLength - this.notifications.length
   }
 
   // Update settings
   updateSettings(settings: PrivacyNotificationSettings): void {
-    this.settings = { ...settings };
+    this.settings = { ...settings }
   }
 
   // Update preferences
   updatePreferences(preferences: Partial<NotificationPreferences>): void {
-    this.preferences = { ...this.preferences, ...preferences };
+    this.preferences = { ...this.preferences, ...preferences }
   }
 
   // Get notification statistics
@@ -409,16 +411,16 @@ export class PrivacyNotificationManager {
     byType: Record<PrivacyNotificationType, number>;
     byCategory: Record<string, number>;
     bySeverity: Record<NotificationSeverity, number>;
-  } {
-    const byType = {} as Record<PrivacyNotificationType, number>;
-    const byCategory = {} as Record<string, number>;
-    const bySeverity = {} as Record<NotificationSeverity, number>;
+    } {
+    const byType = {} as Record<PrivacyNotificationType, number>
+    const byCategory = {} as Record<string, number>
+    const bySeverity = {} as Record<NotificationSeverity, number>
 
     this.notifications.forEach(n => {
-      byType[n.type] = (byType[n.type] || 0) + 1;
-      byCategory[n.category] = (byCategory[n.category] || 0) + 1;
-      bySeverity[n.severity] = (bySeverity[n.severity] || 0) + 1;
-    });
+      byType[n.type] = (byType[n.type] || 0) + 1
+      byCategory[n.category] = (byCategory[n.category] || 0) + 1
+      bySeverity[n.severity] = (bySeverity[n.severity] || 0) + 1
+    })
 
     return {
       total: this.notifications.length,
@@ -426,7 +428,7 @@ export class PrivacyNotificationManager {
       byType,
       byCategory,
       bySeverity
-    };
+    }
   }
 }
 
@@ -469,7 +471,7 @@ export const defaultNotificationPreferences: NotificationPreferences = {
       'new_feature_announcement'
     ]
   }
-};
+}
 
 // Convenience functions for creating specific notifications
 export const createDataProcessingAlert = (
@@ -482,8 +484,8 @@ export const createDataProcessingAlert = (
     undefined,
     undefined,
     { purpose, dataType }
-  );
-};
+  )
+}
 
 export const createPrivacyBudgetWarning = (
   manager: PrivacyNotificationManager,
@@ -494,8 +496,8 @@ export const createPrivacyBudgetWarning = (
     undefined,
     undefined,
     { percentage: percentage.toFixed(1) }
-  );
-};
+  )
+}
 
 export const createLegalRequestUpdate = (
   manager: PrivacyNotificationManager,
@@ -508,8 +510,8 @@ export const createLegalRequestUpdate = (
     undefined,
     undefined,
     { requestType, status, details: details || '' }
-  );
-};
+  )
+}
 
 export const createThirdPartySharingAlert = (
   manager: PrivacyNotificationManager,
@@ -522,8 +524,8 @@ export const createThirdPartySharingAlert = (
     undefined,
     undefined,
     { dataType, recipient, purpose }
-  );
-};
+  )
+}
 
 export const createUnusualAccessAlert = (
   manager: PrivacyNotificationManager,
@@ -535,8 +537,8 @@ export const createUnusualAccessAlert = (
     undefined,
     undefined,
     { dataType, location }
-  );
-};
+  )
+}
 
 export const createDataBreachNotification = (
   manager: PrivacyNotificationManager,
@@ -548,8 +550,8 @@ export const createDataBreachNotification = (
     undefined,
     undefined,
     { dataType, details }
-  );
-};
+  )
+}
 
 export const createSystemStatusChange = (
   manager: PrivacyNotificationManager,
@@ -560,8 +562,8 @@ export const createSystemStatusChange = (
     undefined,
     undefined,
     { changes }
-  );
-};
+  )
+}
 
 export const createConsentRequired = (
   manager: PrivacyNotificationManager,
@@ -573,8 +575,8 @@ export const createConsentRequired = (
     undefined,
     undefined,
     { purpose, details }
-  );
-};
+  )
+}
 
 export const createRetentionPolicyChange = (
   manager: PrivacyNotificationManager,
@@ -586,8 +588,8 @@ export const createRetentionPolicyChange = (
     undefined,
     undefined,
     { dataType, details }
-  );
-};
+  )
+}
 
 export const createNewFeatureAnnouncement = (
   manager: PrivacyNotificationManager,
@@ -599,5 +601,5 @@ export const createNewFeatureAnnouncement = (
     undefined,
     undefined,
     { featureName, description }
-  );
-};
+  )
+}

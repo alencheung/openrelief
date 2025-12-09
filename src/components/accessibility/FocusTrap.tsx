@@ -4,42 +4,52 @@ import { useEffect, useRef, forwardRef } from 'react'
 import { useFocusManagement } from '@/hooks/accessibility'
 
 export interface FocusTrapProps {
+
   /**
    * Whether the focus trap is active
    */
   active?: boolean
+
   /**
    * CSS class name for the container
    */
   className?: string
+
   /**
    * Whether to auto-focus the first element when trap activates
    */
   autoFocus?: boolean
+
   /**
    * Whether to restore focus to previous element when trap deactivates
    */
   restoreFocus?: boolean
+
   /**
    * CSS selector for elements that should be excluded from focus trapping
    */
   excludeSelector?: string
+
   /**
    * Callback when focus trap is activated
    */
   onActivate?: () => void
+
   /**
    * Callback when focus trap is deactivated
    */
   onDeactivate?: () => void
+
   /**
    * Callback when escape key is pressed
    */
   onEscape?: () => void
+
   /**
    * Whether to trap focus (default: true)
    */
   trapFocus?: boolean
+
   /**
    * Children to render inside the focus trap
    */
@@ -48,7 +58,7 @@ export interface FocusTrapProps {
 
 /**
  * FocusTrap component for managing focus within a container
- * 
+ *
  * Traps keyboard focus within a specified container, ensuring that
  * users cannot accidentally navigate outside of modal dialogs,
  * dropdowns, or other focus-contained components.
@@ -65,7 +75,7 @@ export const FocusTrap = forwardRef<HTMLDivElement, FocusTrapProps>(
       onDeactivate,
       onEscape,
       trapFocus = true,
-      children,
+      children
     },
     ref
   ) => {
@@ -76,14 +86,14 @@ export const FocusTrap = forwardRef<HTMLDivElement, FocusTrapProps>(
       getLastFocusableElement,
       startFocusTrap,
       endFocusTrap,
-      isTrapped,
+      isTrapped
     } = useFocusManagement({
       trapFocus: trapFocus && active,
       restoreFocus,
       autoFocus,
       excludeSelector,
       onTrapStart: onActivate,
-      onTrapEnd: onDeactivate,
+      onTrapEnd: onDeactivate
     })
 
     /**
@@ -151,7 +161,7 @@ export function useFocusTrapElement(
     onActivate,
     onDeactivate,
     onEscape,
-    trapFocus = true,
+    trapFocus = true
   } = options
 
   const {
@@ -160,14 +170,14 @@ export function useFocusTrapElement(
     getLastFocusableElement,
     startFocusTrap,
     endFocusTrap,
-    isTrapped,
+    isTrapped
   } = useFocusManagement({
     trapFocus: trapFocus && active,
     restoreFocus,
     autoFocus,
     excludeSelector,
     onTrapStart: onActivate,
-    onTrapEnd: onDeactivate,
+    onTrapEnd: onDeactivate
   })
 
   /**
@@ -184,14 +194,16 @@ export function useFocusTrapElement(
    * Set up focus trap on element
    */
   useEffect(() => {
-    if (!element) return
+    if (!element) {
+      return
+    }
 
     if (active) {
       startFocusTrap()
-      
+
       // Add escape key listener
       element.addEventListener('keydown', handleKeyDown)
-      
+
       // Set ARIA attributes
       if (trapFocus) {
         element.setAttribute('role', 'dialog')
@@ -200,10 +212,10 @@ export function useFocusTrapElement(
       }
     } else {
       endFocusTrap()
-      
+
       // Remove escape key listener
       element.removeEventListener('keydown', handleKeyDown)
-      
+
       // Remove ARIA attributes
       if (trapFocus) {
         element.removeAttribute('role')
@@ -216,7 +228,7 @@ export function useFocusTrapElement(
       // Clean up
       element.removeEventListener('keydown', handleKeyDown)
       endFocusTrap()
-      
+
       if (trapFocus) {
         element.removeAttribute('role')
         element.removeAttribute('aria-modal')
@@ -229,7 +241,7 @@ export function useFocusTrapElement(
     getFocusableElements,
     getFirstFocusableElement,
     getLastFocusableElement,
-    isTrapped,
+    isTrapped
   }
 }
 
@@ -278,21 +290,21 @@ export function createTemporaryFocusTrap(
     onActivate,
     onDeactivate,
     onEscape,
-    trapFocus = true,
+    trapFocus = true
   } = options
 
   const {
     getFocusableElements,
     getFirstFocusableElement,
     startFocusTrap,
-    endFocusTrap,
+    endFocusTrap
   } = useFocusManagement({
     trapFocus,
     restoreFocus,
     autoFocus,
     excludeSelector,
     onTrapStart: onActivate,
-    onTrapEnd: onDeactivate,
+    onTrapEnd: onDeactivate
   })
 
   /**
@@ -308,10 +320,10 @@ export function createTemporaryFocusTrap(
 
   // Activate focus trap
   startFocusTrap()
-  
+
   // Add escape key listener
   element.addEventListener('keydown', handleKeyDown)
-  
+
   // Set ARIA attributes
   if (trapFocus) {
     element.setAttribute('role', 'dialog')
@@ -324,10 +336,10 @@ export function createTemporaryFocusTrap(
    */
   const cleanup = () => {
     endFocusTrap()
-    
+
     // Remove escape key listener
     element.removeEventListener('keydown', handleKeyDown)
-    
+
     // Remove ARIA attributes
     if (trapFocus) {
       element.removeAttribute('role')
@@ -345,9 +357,9 @@ export function createTemporaryFocusTrap(
 export function useFocusTrapStack() {
   const stackRef = useRef<Array<{
     element: HTMLElement
-    cleanup: () => void
+    cleanup:() => void
     id: string
-  }>>([])
+      }>>([])
 
   /**
    * Add a focus trap to the stack
@@ -357,13 +369,13 @@ export function useFocusTrapStack() {
     options: Omit<FocusTrapProps, 'children' | 'className'> = {}
   ): string => {
     const id = `focus-trap-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-    
+
     const cleanup = createTemporaryFocusTrap(element, options)
-    
+
     stackRef.current.push({
       element,
       cleanup,
-      id,
+      id
     })
 
     return id
@@ -374,12 +386,12 @@ export function useFocusTrapStack() {
    */
   const popFocusTrap = (): string | null => {
     const trap = stackRef.current.pop()
-    
+
     if (trap) {
       trap.cleanup()
       return trap.id
     }
-    
+
     return null
   }
 
@@ -388,14 +400,14 @@ export function useFocusTrapStack() {
    */
   const removeFocusTrap = (id: string): boolean => {
     const index = stackRef.current.findIndex(trap => trap.id === id)
-    
+
     if (index !== -1) {
       const trap = stackRef.current[index]
       trap.cleanup()
       stackRef.current.splice(index, 1)
       return true
     }
-    
+
     return false
   }
 
@@ -424,6 +436,6 @@ export function useFocusTrapStack() {
     getStack,
     getTopTrap,
     clearAll,
-    size: stackRef.current.length,
+    size: stackRef.current.length
   }
 }

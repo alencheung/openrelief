@@ -12,28 +12,28 @@ export { default as SpatialInformationOverlay, spatialOverlayVariants } from './
 export { default as AccessibilityMapFeatures, accessibilityControlsVariants } from './AccessibilityMapFeatures'
 
 // Type exports
-export type { 
-  ProximityAlert, 
-  ProximityAlertsDisplayProps 
+export type {
+  ProximityAlert,
+  ProximityAlertsDisplayProps
 } from './ProximityAlertsDisplay'
 
-export type { 
-  EmergencyDetails, 
-  EmergencyDetailsPopupProps 
+export type {
+  EmergencyDetails,
+  EmergencyDetailsPopupProps
 } from './EmergencyDetailsPopup'
 
-export type { 
-  SpatialInfo, 
-  SpatialInformationOverlayProps 
+export type {
+  SpatialInfo,
+  SpatialInformationOverlayProps
 } from './SpatialInformationOverlay'
 
-export type { 
-  AccessibilitySettings, 
-  AccessibilityMapFeaturesProps 
+export type {
+  AccessibilitySettings,
+  AccessibilityMapFeaturesProps
 } from './AccessibilityMapFeatures'
 
-export type { 
-  Breakpoint, 
-  Orientation, 
-  ResponsiveMapContainerProps 
+export type {
+  Breakpoint,
+  Orientation,
+  ResponsiveMapContainerProps
 } from './ResponsiveMapContainer'

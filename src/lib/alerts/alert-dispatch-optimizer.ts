@@ -1,6 +1,6 @@
 /**
  * Alert Dispatch Optimizer for <100ms Latency
- * 
+ *
  * This module provides high-performance alert dispatch with:
  * - Parallel processing for multiple delivery channels
  * - Intelligent queue management and prioritization
@@ -150,11 +150,11 @@ class AlertDispatchOptimizer {
     latency: number
   }> {
     const startTime = performance.now()
-    
+
     try {
       // Generate alert ID
       const alertId = this.generateAlertId()
-      
+
       const fullAlert: EmergencyAlert = {
         id: alertId,
         deliveryAttempts: [],
@@ -165,14 +165,14 @@ class AlertDispatchOptimizer {
 
       // Add to appropriate priority queue
       this.addToQueue(fullAlert)
-      
+
       // Start processing immediately for critical alerts
       if (alert.priority === AlertPriority.CRITICAL) {
         await this.processAlertImmediately(fullAlert)
       }
 
       const latency = performance.now() - startTime
-      
+
       // Record dispatch metrics
       performanceMonitor.recordAlertDispatch({
         alertId,
@@ -197,7 +197,7 @@ class AlertDispatchOptimizer {
       }
     } catch (error) {
       const latency = performance.now() - startTime
-      
+
       performanceMonitor.recordAlertDispatch({
         alertId: '',
         userId: alert.userId,
@@ -332,7 +332,7 @@ class AlertDispatchOptimizer {
       }
     } catch (error) {
       const executionTime = performanceMonitor.endTimer(timerId, 'database', 'get_users_for_alert')
-      
+
       throw new Error(`Failed to get users for alert: ${error.message}`)
     }
   }
@@ -345,12 +345,12 @@ class AlertDispatchOptimizer {
 
     // Process channels in parallel for critical alerts
     if (alert.priority === AlertPriority.CRITICAL) {
-      const channelPromises = alert.channels.map(channel => 
+      const channelPromises = alert.channels.map(channel =>
         this.sendToChannel(alert, channel)
       )
-      
+
       const results = await Promise.allSettled(channelPromises)
-      
+
       results.forEach((result, index) => {
         const channel = alert.channels[index]
         if (result.status === 'fulfilled') {
@@ -469,7 +469,7 @@ class AlertDispatchOptimizer {
       const response = await fetch('https://fcm.googleapis.com/fcm/send', {
         method: 'POST',
         headers: {
-          'Authorization': `key=${process.env.FCM_SERVER_KEY}`,
+          Authorization: `key=${process.env.FCM_SERVER_KEY}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -538,7 +538,7 @@ class AlertDispatchOptimizer {
       const response = await fetch(`${process.env.EMAIL_SERVICE_URL}/send`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${process.env.EMAIL_SERVICE_KEY}`,
+          Authorization: `Bearer ${process.env.EMAIL_SERVICE_KEY}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -592,7 +592,7 @@ class AlertDispatchOptimizer {
       const response = await fetch(`${process.env.SMS_SERVICE_URL}/send`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${process.env.SMS_SERVICE_KEY}`,
+          Authorization: `Bearer ${process.env.SMS_SERVICE_KEY}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -714,19 +714,23 @@ class AlertDispatchOptimizer {
 
   private async processQueue(priority: AlertPriority): Promise<void> {
     const queue = this.alertQueues.get(priority)
-    if (!queue || queue.length === 0) return
+    if (!queue || queue.length === 0) {
+      return
+    }
 
     // Get batch of alerts to process
     const batch = queue.splice(0, this.config.batchSize)
-    
+
     // Process batch in parallel
     const processingPromises = batch.map(alert => this.processAlert(alert))
-    
+
     await Promise.allSettled(processingPromises)
   }
 
   private async processAlert(alert: EmergencyAlert): Promise<void> {
-    if (this.processingAlerts.has(alert.id)) return
+    if (this.processingAlerts.has(alert.id)) {
+      return
+    }
 
     this.processingAlerts.set(alert.id, alert)
 
@@ -735,7 +739,7 @@ class AlertDispatchOptimizer {
       alert.deliveryAttempts.push(...attempts)
 
       // Check if any delivery was successful
-      const hasSuccessfulDelivery = attempts.some(attempt => 
+      const hasSuccessfulDelivery = attempts.some(attempt =>
         attempt.status === DeliveryStatus.SENT || attempt.status === DeliveryStatus.DELIVERED
       )
 
@@ -770,7 +774,7 @@ class AlertDispatchOptimizer {
     const queue = this.alertQueues.get(alert.priority)
     if (queue) {
       queue.push(alert)
-      
+
       // Check queue size limit
       if (queue.length > this.config.maxSize) {
         // Remove oldest low priority alerts
@@ -785,7 +789,7 @@ class AlertDispatchOptimizer {
   private async markAlertDelivered(alertId: string): Promise<void> {
     await this.supabase
       .from('notification_queue')
-      .update({ 
+      .update({
         status: 'sent',
         sent_at: new Date().toISOString()
       })
@@ -795,7 +799,7 @@ class AlertDispatchOptimizer {
   private async markAlertFailed(alertId: string): Promise<void> {
     await this.supabase
       .from('notification_queue')
-      .update({ 
+      .update({
         status: 'failed',
         error_message: 'Max retries exceeded'
       })
@@ -828,12 +832,20 @@ class AlertDispatchOptimizer {
     }
 
     const channels: DeliveryChannel[] = []
-    
-    if (preferences.push_notifications) channels.push(DeliveryChannel.PUSH_NOTIFICATION)
-    if (preferences.email_notifications) channels.push(DeliveryChannel.EMAIL)
-    if (preferences.sms_notifications) channels.push(DeliveryChannel.SMS)
-    if (preferences.websocket_notifications) channels.push(DeliveryChannel.WEBSOCKET)
-    
+
+    if (preferences.push_notifications) {
+      channels.push(DeliveryChannel.PUSH_NOTIFICATION)
+    }
+    if (preferences.email_notifications) {
+      channels.push(DeliveryChannel.EMAIL)
+    }
+    if (preferences.sms_notifications) {
+      channels.push(DeliveryChannel.SMS)
+    }
+    if (preferences.websocket_notifications) {
+      channels.push(DeliveryChannel.WEBSOCKET)
+    }
+
     if (channels.length === 0) {
       channels.push(DeliveryChannel.IN_APP)
     }
@@ -957,8 +969,10 @@ class AlertDispatchOptimizer {
 
     const perf = this.metrics.channelPerformance[channel]
     perf.total++
-    if (success) perf.success++
-    
+    if (success) {
+      perf.success++
+    }
+
     // Update average latency
     const totalLatency = perf.avgLatency * (perf.total - 1) + latency
     perf.avgLatency = totalLatency / perf.total
@@ -966,7 +980,7 @@ class AlertDispatchOptimizer {
 
   private updateMetrics(latency: number, success: boolean): void {
     this.metrics.totalAlerts++
-    
+
     if (success) {
       this.metrics.successfulDeliveries++
     } else {
@@ -997,7 +1011,7 @@ class AlertDispatchOptimizer {
       recentAlerts.sort((a, b) => a - b)
       const p95Index = Math.floor(recentAlerts.length * 0.95)
       const p99Index = Math.floor(recentAlerts.length * 0.99)
-      
+
       this.metrics.p95Latency = recentAlerts[p95Index] || 0
       this.metrics.p99Latency = recentAlerts[p99Index] || 0
     }

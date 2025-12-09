@@ -68,7 +68,7 @@ export const useAuthStore = create<AuthStore>()(
           console.log('🔍 DEBUG: Attempting Supabase signIn')
           const { data, error } = await supabase.auth.signInWithPassword({
             email,
-            password,
+            password
           })
 
           if (error) {
@@ -89,34 +89,34 @@ export const useAuthStore = create<AuthStore>()(
                 sms: false,
                 quiet_hours: {
                   start: '22:00',
-                  end: '07:00',
-                },
+                  end: '07:00'
+                }
               },
               privacy_settings: {
                 location_sharing: true,
                 profile_visibility: 'public',
-                data_retention: 30,
-              },
+                data_retention: 30
+              }
             }
 
             const session = {
               access_token: data.session.access_token,
               refresh_token: data.session.refresh_token!,
-              expires_at: data.session.expires_at!,
+              expires_at: data.session.expires_at!
             }
 
             set({
               user,
               isAuthenticated: true,
               session,
-              isLoading: false,
+              isLoading: false
             })
           }
         } catch (error) {
           console.error('❌ DEBUG: signIn failed', error)
           set({
             error: error instanceof Error ? error.message : 'Sign in failed',
-            isLoading: false,
+            isLoading: false
           })
         }
       },
@@ -129,7 +129,7 @@ export const useAuthStore = create<AuthStore>()(
           console.log('🔍 DEBUG: Attempting Supabase signUp')
           const { data, error } = await supabase.auth.signUp({
             email,
-            password,
+            password
           })
 
           if (error) {
@@ -151,41 +151,41 @@ export const useAuthStore = create<AuthStore>()(
                 sms: false,
                 quiet_hours: {
                   start: '22:00',
-                  end: '07:00',
-                },
+                  end: '07:00'
+                }
               },
               privacy_settings: {
                 location_sharing: true,
                 profile_visibility: 'public',
-                data_retention: 30,
-              },
+                data_retention: 30
+              }
             }
 
             const session = {
               access_token: data.session.access_token,
               refresh_token: data.session.refresh_token!,
-              expires_at: data.session.expires_at!,
+              expires_at: data.session.expires_at!
             }
 
             set({
               user,
               isAuthenticated: true,
               session,
-              isLoading: false,
+              isLoading: false
             })
           } else {
             // Email confirmation required
             console.log('🔍 DEBUG: Email confirmation required')
             set({
               error: 'Please check your email to confirm your account',
-              isLoading: false,
+              isLoading: false
             })
           }
         } catch (error) {
           console.error('❌ DEBUG: signUp failed', error)
           set({
             error: error instanceof Error ? error.message : 'Sign up failed',
-            isLoading: false,
+            isLoading: false
           })
         }
       },
@@ -203,7 +203,7 @@ export const useAuthStore = create<AuthStore>()(
           user: null,
           isAuthenticated: false,
           session: null,
-          error: null,
+          error: null
         })
       },
 
@@ -211,7 +211,7 @@ export const useAuthStore = create<AuthStore>()(
         const currentUser = get().user
         if (currentUser) {
           set({
-            user: { ...currentUser, ...updates },
+            user: { ...currentUser, ...updates }
           })
         }
       },
@@ -222,15 +222,15 @@ export const useAuthStore = create<AuthStore>()(
 
       setLoading: (loading: boolean) => {
         set({ isLoading: loading })
-      },
+      }
     }),
     {
       name: 'auth-storage',
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
-        session: state.session,
-      }),
+        session: state.session
+      })
     }
   )
 )
@@ -240,7 +240,7 @@ export const useAuth = () => useAuthStore(state => ({
   user: state.user,
   isAuthenticated: state.isAuthenticated,
   isLoading: state.isLoading,
-  error: state.error,
+  error: state.error
 }))
 
 export const useAuthActions = () => useAuthStore(state => ({
@@ -249,5 +249,5 @@ export const useAuthActions = () => useAuthStore(state => ({
   signOut: state.signOut,
   updateUser: state.updateUser,
   clearError: state.clearError,
-  setLoading: state.setLoading,
+  setLoading: state.setLoading
 }))

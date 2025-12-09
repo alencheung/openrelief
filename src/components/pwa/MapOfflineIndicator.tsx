@@ -111,16 +111,16 @@ export function MapOfflineIndicator({
   position = 'top-right',
   compact = false
 }: MapOfflineIndicatorProps) {
-  const { 
-    isOnline, 
-    isOffline, 
+  const {
+    isOnline,
+    isOffline,
     connectionType,
     effectiveType,
     downlink
   } = useNetworkStatus()
-  
-  const { 
-    pendingActions, 
+
+  const {
+    pendingActions,
     metrics,
     storageQuota
   } = useOfflineStore()
@@ -269,8 +269,8 @@ export function MapOfflineIndicator({
       }
     ]
 
-    const totalCacheSize = layers.reduce((sum, layer) => sum + (layer.cacheSize || 0), 0) +
-                           cachedAreas.reduce((sum, area) => sum + area.size, 0)
+    const totalCacheSize = layers.reduce((sum, layer) => sum + (layer.cacheSize || 0), 0)
+                           + cachedAreas.reduce((sum, area) => sum + area.size, 0)
 
     setMapStatus({
       isOfflineMode: isOffline,
@@ -291,11 +291,13 @@ export function MapOfflineIndicator({
   // Handle layer toggle
   const handleLayerToggle = (layerId: string) => {
     const layer = mapStatus.availableLayers.find(l => l.id === layerId)
-    if (!layer) return
+    if (!layer) {
+      return
+    }
 
     const newEnabled = !layer.cached
     setSelectedLayer(selectedLayer === layerId ? null : layerId)
-    
+
     if (onLayerToggle) {
       onLayerToggle(layerId, newEnabled)
     }
@@ -395,7 +397,9 @@ export function MapOfflineIndicator({
   const expiredCaches = mapStatus.cachedAreas.filter(c => c.status === 'expired')
   const cacheUsagePercentage = (mapStatus.totalCacheSize / mapStatus.maxCacheSize) * 100
 
-  if (!showOfflineIndicator) return null
+  if (!showOfflineIndicator) {
+    return null
+  }
 
   return (
     <>
@@ -404,10 +408,10 @@ export function MapOfflineIndicator({
         <div className={`
           relative flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg backdrop-blur-sm
           transition-all duration-300 ease-in-out
-          ${mapStatus.isOfflineMode 
-            ? 'bg-red-600/90 border border-red-700 text-white' 
-            : 'bg-green-600/90 border border-green-700 text-white'
-          }
+          ${mapStatus.isOfflineMode
+      ? 'bg-red-600/90 border border-red-700 text-white'
+      : 'bg-green-600/90 border border-green-700 text-white'
+    }
           ${prefersReducedMotion ? '' : 'hover:shadow-xl'}
         `}>
           {/* Status Icon and Text */}
@@ -422,13 +426,13 @@ export function MapOfflineIndicator({
               ) : (
                 <MapIcon className="w-4 h-4" />
               )}
-              
+
               {/* Pulse animation for active offline mode */}
               {mapStatus.isOfflineMode && !prefersReducedMotion && (
                 <span className="absolute inset-0 rounded-full bg-white/30 animate-ping" />
               )}
             </div>
-            
+
             <div className="flex flex-col">
               <span className="text-sm font-medium">
                 {mapStatus.isOfflineMode ? 'Offline Maps' : 'Online Maps'}
@@ -443,12 +447,12 @@ export function MapOfflineIndicator({
           <div className="flex items-center gap-1">
             <DatabaseIcon className="w-4 h-4" />
             <div className="w-16 bg-white/20 rounded-full h-2">
-              <div 
+              <div
                 className="h-2 rounded-full transition-all duration-300"
-                style={{ 
+                style={{
                   width: `${Math.min(100, cacheUsagePercentage)}%`,
-                  backgroundColor: cacheUsagePercentage > 80 ? '#ef4444' : 
-                                   cacheUsagePercentage > 60 ? '#f59e0b' : '#10b981'
+                  backgroundColor: cacheUsagePercentage > 80 ? '#ef4444'
+                    : cacheUsagePercentage > 60 ? '#f59e0b' : '#10b981'
                 }}
               />
             </div>
@@ -508,7 +512,7 @@ export function MapOfflineIndicator({
                     </span>
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <h4 className="text-sm font-medium text-gray-900">Cache Usage</h4>
                   <div className="text-sm">
@@ -519,15 +523,15 @@ export function MapOfflineIndicator({
                       </span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
+                      <div
                         className={`
                           h-2 rounded-full transition-all duration-300
-                          ${cacheUsagePercentage > 80 
-                            ? 'bg-red-500' 
-                            : cacheUsagePercentage > 60
-                              ? 'bg-yellow-500'
-                              : 'bg-green-500'
-                          }
+                          ${cacheUsagePercentage > 80
+            ? 'bg-red-500'
+            : cacheUsagePercentage > 60
+              ? 'bg-yellow-500'
+              : 'bg-green-500'
+          }
                         `}
                         style={{ width: `${Math.min(100, cacheUsagePercentage)}%` }}
                       />
@@ -546,10 +550,10 @@ export function MapOfflineIndicator({
                       className={`
                         flex items-center justify-between p-3 rounded-lg border
                         transition-all duration-200 cursor-pointer
-                        ${selectedLayer === layer.id 
-                          ? 'border-blue-500 bg-blue-50' 
-                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                        }
+                        ${selectedLayer === layer.id
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    }
                         ${getPriorityColor(layer.priority)}
                       `}
                       onClick={() => handleLayerToggle(layer.id)}
@@ -604,9 +608,9 @@ export function MapOfflineIndicator({
 
                       <div className="flex items-center gap-2">
                         <StatusIndicator
-                          status={area.status === 'active' ? 'active' : 
-                                 area.status === 'downloading' ? 'pending' :
-                                 area.status === 'expired' ? 'critical' : 'inactive'}
+                          status={area.status === 'active' ? 'active'
+                            : area.status === 'downloading' ? 'pending'
+                              : area.status === 'expired' ? 'critical' : 'inactive'}
                           size="sm"
                           animated={area.status === 'downloading'}
                         />
@@ -633,10 +637,10 @@ export function MapOfflineIndicator({
                       className={`
                         flex items-center justify-between p-3 rounded-lg border
                         transition-all duration-200 cursor-pointer
-                        ${selectedLayer === layer.id 
-                          ? 'border-blue-500 bg-blue-50' 
-                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                        }
+                        ${selectedLayer === layer.id
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    }
                         ${getPriorityColor(layer.priority)}
                       `}
                       onClick={() => handleLayerToggle(layer.id)}
@@ -681,7 +685,7 @@ export function MapOfflineIndicator({
                   <DownloadIcon className="w-3 h-3 mr-2" />
                   {downloadingRegion ? 'Downloading...' : 'Download Current Area'}
                 </Button>
-                
+
                 <Button
                   onClick={() => handleCacheClear()}
                   size="sm"
@@ -701,7 +705,7 @@ export function MapOfflineIndicator({
                     <span className="text-sm text-blue-700">{downloadProgress}%</span>
                   </div>
                   <div className="w-full bg-blue-200 rounded-full h-2">
-                    <div 
+                    <div
                       className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                       style={{ width: `${downloadProgress}%` }}
                     />

@@ -1,6 +1,6 @@
 /**
  * Accessibility Testing Automation for OpenRelief
- * 
+ *
  * Provides automated testing tools for WCAG 2.1 AA compliance
  * that can be integrated into CI/CD pipelines.
  */
@@ -8,38 +8,47 @@
 import { accessibilityAuditor, runAccessibilityAudit, AccessibilityAuditResult } from './accessibility-audit'
 
 export interface AccessibilityTestConfig {
+
   /**
    * Test environment (development, staging, production)
    */
   environment: 'development' | 'staging' | 'production'
+
   /**
    * Browser configurations to test
    */
   browsers: string[]
+
   /**
    * Viewport sizes to test
    */
   viewports: { width: number; height: number; name: string }[]
+
   /**
    * Whether to test with screen readers
    */
   testScreenReaders: boolean
+
   /**
    * Whether to test keyboard navigation
    */
   testKeyboardNavigation: boolean
+
   /**
    * Whether to test color contrast
    */
   testColorContrast: boolean
+
   /**
    * Whether to test focus management
    */
   testFocusManagement: boolean
+
   /**
    * Components to test specifically
    */
   components?: string[]
+
   /**
    * Custom test selectors
    */
@@ -47,22 +56,27 @@ export interface AccessibilityTestConfig {
 }
 
 export interface AccessibilityTestResult {
+
   /**
    * Overall test result
    */
   passed: boolean
+
   /**
    * Accessibility audit result
    */
   audit: AccessibilityAuditResult
+
   /**
    * Test configuration used
    */
   config: AccessibilityTestConfig
+
   /**
    * Individual test results
    */
   tests: AccessibilityTestCase[]
+
   /**
    * Performance metrics
    */
@@ -73,6 +87,7 @@ export interface AccessibilityTestResult {
     duration: number
     coverage: number
   }
+
   /**
    * Test timestamp
    */
@@ -80,34 +95,42 @@ export interface AccessibilityTestResult {
 }
 
 export interface AccessibilityTestCase {
+
   /**
    * Test case identifier
    */
   id: string
+
   /**
    * Test name
    */
   name: string
+
   /**
    * WCAG guideline being tested
    */
   guideline: string
+
   /**
    * Test description
    */
   description: string
+
   /**
    * Whether test passed
    */
   passed: boolean
+
   /**
    * Test error message
    */
   error?: string
+
   /**
    * Test duration in milliseconds
    */
   duration: number
+
   /**
    * Elements tested
    */
@@ -408,29 +431,33 @@ export class AccessibilityTestSuite {
     const focusableElements = document.querySelectorAll(
       'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
     )
-    
-    if (focusableElements.length === 0) return true
+
+    if (focusableElements.length === 0) {
+      return true
+    }
 
     // Check if elements have logical tabindex values
     for (let i = 0; i < focusableElements.length; i++) {
       const element = focusableElements[i] as HTMLElement
       const tabIndex = parseInt(element.getAttribute('tabindex') || '0')
-      
+
       // Skip elements with negative tabindex
-      if (tabIndex < 0) continue
-      
+      if (tabIndex < 0) {
+        continue
+      }
+
       // Check if tabindex is sequential (simplified check)
       if (i > 0 && tabIndex > 0) {
         const prevElement = focusableElements[i - 1] as HTMLElement
         const prevTabIndex = parseInt(prevElement.getAttribute('tabindex') || '0')
-        
+
         // Allow some flexibility in tab order
         if (Math.abs(tabIndex - prevTabIndex) > 10) {
           return false
         }
       }
     }
-    
+
     return true
   }
 
@@ -438,7 +465,7 @@ export class AccessibilityTestSuite {
     // Check for focus styles in CSS
     const styles = document.styleSheets
     let hasFocusStyles = false
-    
+
     for (const styleSheet of styles) {
       try {
         const rules = styleSheet.cssRules || styleSheet.rules
@@ -452,10 +479,12 @@ export class AccessibilityTestSuite {
         // Cross-origin stylesheets may throw errors
         continue
       }
-      
-      if (hasFocusStyles) break
+
+      if (hasFocusStyles) {
+        break
+      }
     }
-    
+
     return hasFocusStyles
   }
 
@@ -464,7 +493,7 @@ export class AccessibilityTestSuite {
     const hasKeyboardNav = document.querySelector('[data-keyboard-nav]') !== null
     const hasHelpDialog = document.querySelector('[data-keyboard-help]') !== null
     const hasEmergencyShortcuts = document.querySelector('[aria-keyshortcuts]') !== null
-    
+
     return hasKeyboardNav || hasHelpDialog || hasEmergencyShortcuts
   }
 
@@ -476,23 +505,23 @@ export class AccessibilityTestSuite {
   private testTextContrast(): boolean {
     // Simplified contrast test - would need proper implementation
     const textElements = document.querySelectorAll('p, h1, h2, h3, h4, h5, h6, span, div')
-    
+
     for (const element of textElements) {
       const styles = window.getComputedStyle(element)
       const color = styles.color
       const backgroundColor = styles.backgroundColor
-      
+
       // Skip transparent backgrounds
       if (backgroundColor === 'rgba(0, 0, 0, 0)' || backgroundColor === 'transparent') {
         continue
       }
-      
+
       // This is a simplified check - proper implementation needed
       if (color === backgroundColor) {
         return false
       }
     }
-    
+
     return true
   }
 
@@ -504,38 +533,38 @@ export class AccessibilityTestSuite {
   private testColorOnlyInformation(): boolean {
     // Check if information is conveyed by more than just color
     const indicators = document.querySelectorAll('.emergency-marker, .status-indicator, .trust-indicator')
-    
+
     for (const indicator of indicators) {
       const hasText = indicator.textContent && indicator.textContent.trim().length > 0
       const hasAriaLabel = indicator.getAttribute('aria-label')
       const hasAriaDescribedBy = indicator.getAttribute('aria-describedby')
-      
+
       if (!hasText && !hasAriaLabel && !hasAriaDescribedBy) {
         return false
       }
     }
-    
+
     return true
   }
 
   private testModalFocusTrap(): boolean {
     const modals = document.querySelectorAll('[role="dialog"], [aria-modal="true"]')
-    
+
     for (const modal of modals) {
-      const hasFocusTrap = modal.getAttribute('data-focus-trap') === 'true' ||
-                           modal.querySelector('[data-focus-trap]') !== null
+      const hasFocusTrap = modal.getAttribute('data-focus-trap') === 'true'
+                           || modal.querySelector('[data-focus-trap]') !== null
       if (!hasFocusTrap) {
         return false
       }
     }
-    
+
     return true
   }
 
   private testFocusRestoration(): boolean {
     // Check if focus restoration is implemented
-    const hasFocusRestore = document.querySelector('[data-focus-restore]') !== null ||
-                           document.querySelector('.focus-restore') !== null
+    const hasFocusRestore = document.querySelector('[data-focus-restore]') !== null
+                           || document.querySelector('.focus-restore') !== null
     return hasFocusRestore
   }
 
@@ -547,30 +576,30 @@ export class AccessibilityTestSuite {
 
   private testAriaLabels(): boolean {
     const interactiveElements = document.querySelectorAll('button, input, select, textarea, a')
-    
+
     for (const element of interactiveElements) {
-      const hasLabel = element.getAttribute('aria-label') ||
-                       element.getAttribute('aria-labelledby') ||
-                       element.labels?.length > 0 ||
-                       (element.textContent && element.textContent.trim().length > 0)
-      
+      const hasLabel = element.getAttribute('aria-label')
+                       || element.getAttribute('aria-labelledby')
+                       || element.labels?.length > 0
+                       || (element.textContent && element.textContent.trim().length > 0)
+
       if (!hasLabel) {
         return false
       }
     }
-    
+
     return true
   }
 
   private testSemanticStructure(): boolean {
     // Check for semantic landmarks
-    const hasMain = document.querySelector('main') !== null ||
-                     document.querySelector('[role="main"]') !== null
-    const hasNav = document.querySelector('nav') !== null ||
-                    document.querySelector('[role="navigation"]') !== null
-    const hasHeader = document.querySelector('header') !== null ||
-                      document.querySelector('[role="banner"]') !== null
-    
+    const hasMain = document.querySelector('main') !== null
+                     || document.querySelector('[role="main"]') !== null
+    const hasNav = document.querySelector('nav') !== null
+                    || document.querySelector('[role="navigation"]') !== null
+    const hasHeader = document.querySelector('header') !== null
+                      || document.querySelector('[role="banner"]') !== null
+
     return hasMain && hasNav && hasHeader
   }
 
@@ -581,18 +610,18 @@ export class AccessibilityTestSuite {
 
   private testFormAccessibility(): boolean {
     const formElements = document.querySelectorAll('input, select, textarea')
-    
+
     for (const element of formElements) {
-      const hasLabel = element.getAttribute('aria-label') ||
-                       element.getAttribute('aria-labelledby') ||
-                       element.labels?.length > 0 ||
-                       element.closest('label') !== null
-      
+      const hasLabel = element.getAttribute('aria-label')
+                       || element.getAttribute('aria-labelledby')
+                       || element.labels?.length > 0
+                       || element.closest('label') !== null
+
       if (!hasLabel) {
         return false
       }
     }
-    
+
     return true
   }
 
@@ -612,34 +641,40 @@ export class AccessibilityTestSuite {
 
   private testEmergencyMap(): boolean {
     const map = document.querySelector('[role="application"][aria-label*="map"]')
-    if (!map) return false
-    
+    if (!map) {
+      return false
+    }
+
     const hasControls = map.querySelector('[role="toolbar"]') !== null
     const hasKeyboardNav = map.getAttribute('data-keyboard-nav') === 'true'
     const hasAnnouncements = map.querySelector('[aria-live]') !== null
-    
+
     return hasControls && hasKeyboardNav && hasAnnouncements
   }
 
   private testEmergencyReportForm(): boolean {
     const form = document.querySelector('#emergency-report-form, [data-emergency-form]')
-    if (!form) return false
-    
+    if (!form) {
+      return false
+    }
+
     const hasFieldset = form.querySelector('fieldset') !== null
     const hasLegend = form.querySelector('legend') !== null
     const hasValidation = form.querySelector('[aria-invalid], [aria-describedby*="error"]') !== null
-    
+
     return hasFieldset && hasLegend && hasValidation
   }
 
   private testNavigation(): boolean {
     const nav = document.querySelector('nav, [role="navigation"]')
-    if (!nav) return false
-    
+    if (!nav) {
+      return false
+    }
+
     const hasSkipLinks = document.querySelectorAll('a[href^="#skip-"]').length > 0
     const hasAriaLabels = nav.querySelectorAll('[aria-label]').length > 0
     const hasKeyboardNav = nav.getAttribute('data-keyboard-nav') === 'true'
-    
+
     return hasSkipLinks && hasAriaLabels && hasKeyboardNav
   }
 
@@ -650,14 +685,14 @@ export class AccessibilityTestSuite {
     // Simplified coverage calculation
     const totalElements = document.querySelectorAll('*').length
     const testedElements = new Set()
-    
+
     this.results.forEach(test => {
       test.elements.forEach(selector => {
         const elements = document.querySelectorAll(selector)
         elements.forEach(el => testedElements.add(el))
       })
     })
-    
+
     return totalElements > 0 ? (testedElements.size / totalElements) * 100 : 0
   }
 
@@ -675,14 +710,14 @@ export class AccessibilityTestSuite {
     console.log(`❌ Failed: ${result.performance.failedTests}`)
     console.log(`⏱️ Duration: ${result.performance.duration}ms`)
     console.log(`📊 Coverage: ${result.performance.coverage.toFixed(1)}%`)
-    
+
     if (result.performance.failedTests > 0) {
       console.log('\n❌ Failed Tests:')
       result.tests.filter(t => !t.passed).forEach(test => {
         console.log(`  - ${test.name}: ${test.error || 'Test failed'}`)
       })
     }
-    
+
     if (result.audit.issues.length > 0) {
       console.log('\n⚠️ Accessibility Issues:')
       result.audit.issues.forEach(issue => {
@@ -712,7 +747,7 @@ export class AccessibilityTestSuite {
   generateHTMLReport(): string {
     const passedTests = this.results.filter(r => r.passed).length
     const failedTests = this.results.filter(r => !r.passed).length
-    
+
     return `
 <!DOCTYPE html>
 <html lang="en">
@@ -823,16 +858,16 @@ export async function runCIAccessibilityTests(): Promise<AccessibilityTestResult
     ...defaultTestConfig,
     environment: process.env.NODE_ENV as any || 'development'
   }
-  
+
   const testSuite = new AccessibilityTestSuite(ciConfig)
   const result = await testSuite.runTests()
-  
+
   // Output JUnit XML for CI systems
   if (typeof process !== 'undefined' && process.env.CI) {
     console.log('## JUNIT_XML_OUTPUT_START')
     console.log(testSuite.generateJUnitXML())
     console.log('## JUNIT_XML_OUTPUT_END')
   }
-  
+
   return result
 }

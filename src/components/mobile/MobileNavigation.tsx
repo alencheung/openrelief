@@ -45,26 +45,26 @@ export function MobileNavigation({
   className,
   showBadge = true,
   onMenuToggle,
-  onItemClick,
+  onItemClick
 }: MobileNavigationProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [activeItem, setActiveItem] = useState<string>('')
   const { isMobile, isTouch } = useMobileDetection()
   const router = useRouter()
   const pathname = usePathname()
-  
+
   // Accessibility hooks
   const { announcePolite } = useAriaAnnouncer()
   const { containerRef: menuRef } = useFocusManagement({
     trapFocus: true,
     autoFocus: false,
-    restoreFocus: true,
+    restoreFocus: true
   })
 
   // Update active item based on current path
   useEffect(() => {
     const currentPath = pathname || ''
-    const activeNav = items.find(item => 
+    const activeNav = items.find(item =>
       item.href === currentPath || currentPath.startsWith(item.href)
     )
     setActiveItem(activeNav?.id || '')
@@ -76,12 +76,12 @@ export function MobileNavigation({
       announcePolite(`${item.label} is not available`)
       return
     }
-    
+
     setActiveItem(item.id)
     onItemClick?.(item)
     router.push(item.href)
     announcePolite(`Navigated to ${item.label}`)
-    
+
     // Close menu if it's open
     if (isMenuOpen) {
       setIsMenuOpen(false)
@@ -129,11 +129,13 @@ export function MobileNavigation({
         setIsMenuOpen(false)
         onMenuToggle?.(false)
       }
-    },
+    }
   })
 
   // Don't render on desktop
-  if (!isMobile) return null
+  if (!isMobile) {
+    return null
+  }
 
   return (
     <>
@@ -287,33 +289,33 @@ export const defaultNavItems: NavItem[] = [
     id: 'home',
     label: 'Home',
     icon: <Home className="w-5 h-5" />,
-    href: '/',
+    href: '/'
   },
   {
     id: 'map',
     label: 'Map',
     icon: <Map className="w-5 h-5" />,
-    href: '/map',
+    href: '/map'
   },
   {
     id: 'report',
     label: 'Report',
     icon: <AlertTriangle className="w-5 h-5" />,
-    href: '/report',
+    href: '/report'
   },
   {
     id: 'alerts',
     label: 'Alerts',
     icon: <Bell className="w-5 h-5" />,
     href: '/alerts',
-    badge: 0, // This would be updated dynamically
+    badge: 0 // This would be updated dynamically
   },
   {
     id: 'profile',
     label: 'Profile',
     icon: <User className="w-5 h-5" />,
-    href: '/profile',
-  },
+    href: '/profile'
+  }
 ]
 
 // Default menu items for OpenRelief
@@ -322,20 +324,20 @@ export const defaultMenuItems: NavItem[] = [
     id: 'settings',
     label: 'Settings',
     icon: <Settings className="w-5 h-5" />,
-    href: '/settings',
+    href: '/settings'
   },
   {
     id: 'safety',
     label: 'Safety Info',
     icon: <Shield className="w-5 h-5" />,
-    href: '/safety',
+    href: '/safety'
   },
   {
     id: 'about',
     label: 'About',
     icon: <Info className="w-5 h-5" />,
-    href: '/about',
-  },
+    href: '/about'
+  }
 ]
 
 // Convenience component with default items

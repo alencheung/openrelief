@@ -1,62 +1,62 @@
 import React from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
-import { 
+import {
   // Navigation & Action Icons
   ArrowUp, ArrowDown, ArrowLeft, ArrowRight,
   ChevronUp, ChevronDown, ChevronLeft, ChevronRight,
   Home, Search, Filter, Settings, Menu, X, Plus, Minus,
-  
+
   // Emergency Type Icons
   Flame, HeartPulse, Shield, CloudRain, Wrench, AlertTriangle,
-  
+
   // Status & State Icons
   CheckCircle, XCircle, AlertCircle, Clock, PauseCircle,
   Loader2, RefreshCw, Download, Upload,
-  
+
   // Trust & Security Icons
   ShieldCheck, ShieldAlert, ShieldX, Lock, Unlock, Key,
   Eye, EyeOff, Fingerprint, UserCheck,
-  
+
   // Communication Icons
   Bell, BellRing, MessageSquare, Phone, Mail,
   Send, Share2, Link, Unlink,
-  
+
   // Location & Map Icons
   MapPin, Navigation, Compass, Route, Map,
   Globe, Satellite, Radar,
-  
+
   // Medical & Health Icons
   Heart, Activity, Pill, Stethoscope, Ambulance,
   Hospital, FirstAid, MedicalCross,
-  
+
   // Safety & Security Icons
   Camera, CameraOff, Video, VideoOff,
   Siren, Flashlight, Radio,
-  
+
   // Infrastructure Icons
   Building, Zap, Wifi, WifiOff, Battery, BatteryLow,
   Lightbulb, LightbulbOff, Droplet, Wind,
-  
+
   // Weather & Nature Icons
   Sun, Cloud, CloudSnow, CloudLightning,
   Waves, Mountain, Trees,
-  
+
   // Social & Community Icons
   Users, UserPlus, UserMinus, Crown,
   HandHeart, HelpingHand, People,
-  
+
   // Data & Analytics Icons
   BarChart, LineChart, PieChart, TrendingUp, TrendingDown,
   Database, Server, HardDrive, Cloud,
-  
+
   // Time Icons
   Calendar, Clock, Timer, Hourglass,
-  
+
   // File & Document Icons
   File, FileText, Image, Video,
   Download, Upload, Folder,
-  
+
   // Utility Icons
   Info, HelpCircle, ExternalLink, Copy, Trash,
   Edit, Save, Print, ZoomIn, ZoomOut
@@ -73,7 +73,7 @@ const iconVariants = cva(
         lg: 'w-6 h-6',
         xl: 'w-8 h-8',
         '2xl': 'w-10 h-10',
-        '3xl': 'w-12 h-12',
+        '3xl': 'w-12 h-12'
       },
       variant: {
         default: '',
@@ -84,21 +84,21 @@ const iconVariants = cva(
         success: 'text-success',
         warning: 'text-warning',
         error: 'text-destructive',
-        info: 'text-info',
+        info: 'text-info'
       },
       weight: {
         regular: '',
         thin: 'stroke-1',
         light: 'stroke-[1.5]',
-        bold: 'stroke-[2.5]',
+        bold: 'stroke-[2.5]'
       },
       animated: {
         true: '',
-        false: '',
+        false: ''
       },
       interactive: {
         true: 'cursor-pointer hover:scale-110 transition-transform',
-        false: '',
+        false: ''
       }
     },
     defaultVariants: {
@@ -106,8 +106,8 @@ const iconVariants = cva(
       variant: 'default',
       weight: 'regular',
       animated: false,
-      interactive: false,
-    },
+      interactive: false
+    }
   }
 )
 
@@ -126,7 +126,7 @@ const emergencyIcons = {
   security: Shield,
   natural: CloudRain,
   infrastructure: Wrench,
-  default: AlertTriangle,
+  default: AlertTriangle
 } as const
 
 // Semantic icon mapping for trust levels
@@ -136,7 +136,7 @@ const trustIcons = {
   moderate: ShieldAlert,
   low: ShieldX,
   critical: ShieldX,
-  default: Shield,
+  default: Shield
 } as const
 
 // Semantic icon mapping for status types
@@ -147,7 +147,7 @@ const statusIcons = {
   resolved: CheckCircle,
   critical: XCircle,
   loading: Loader2,
-  default: AlertCircle,
+  default: AlertCircle
 } as const
 
 // Comprehensive icon map
@@ -169,16 +169,16 @@ const iconMap = {
   close: X,
   add: Plus,
   remove: Minus,
-  
+
   // Emergency Type Icons
   ...emergencyIcons,
-  
+
   // Status & State Icons
   ...statusIcons,
   refresh: RefreshCw,
   download: Download,
   upload: Upload,
-  
+
   // Trust & Security Icons
   ...trustIcons,
   lock: Lock,
@@ -188,7 +188,7 @@ const iconMap = {
   eyeOff: EyeOff,
   fingerprint: Fingerprint,
   userCheck: UserCheck,
-  
+
   // Communication Icons
   bell: Bell,
   bellRing: BellRing,
@@ -199,7 +199,7 @@ const iconMap = {
   share: Share2,
   link: Link,
   unlink: Unlink,
-  
+
   // Location & Map Icons
   mapPin: MapPin,
   navigation: Navigation,
@@ -209,7 +209,7 @@ const iconMap = {
   globe: Globe,
   satellite: Satellite,
   radar: Radar,
-  
+
   // Medical & Health Icons
   heart: Heart,
   activity: Activity,
@@ -219,7 +219,7 @@ const iconMap = {
   hospital: Hospital,
   firstAid: FirstAid,
   medicalCross: MedicalCross,
-  
+
   // Safety & Security Icons
   camera: Camera,
   cameraOff: CameraOff,
@@ -228,7 +228,7 @@ const iconMap = {
   siren: Siren,
   flashlight: Flashlight,
   radio: Radio,
-  
+
   // Infrastructure Icons
   building: Building,
   zap: Zap,
@@ -240,7 +240,7 @@ const iconMap = {
   lightbulbOff: LightbulbOff,
   droplet: Droplet,
   wind: Wind,
-  
+
   // Weather & Nature Icons
   sun: Sun,
   cloud: Cloud,
@@ -249,7 +249,7 @@ const iconMap = {
   waves: Waves,
   mountain: Mountain,
   trees: Trees,
-  
+
   // Social & Community Icons
   users: Users,
   userPlus: UserPlus,
@@ -258,7 +258,7 @@ const iconMap = {
   handHeart: HandHeart,
   helpingHand: HelpingHand,
   people: People,
-  
+
   // Data & Analytics Icons
   barChart: BarChart,
   lineChart: LineChart,
@@ -269,20 +269,20 @@ const iconMap = {
   server: Server,
   hardDrive: HardDrive,
   cloudStorage: Cloud,
-  
+
   // Time Icons
   calendar: Calendar,
   clock: Clock,
   timer: Timer,
   hourglass: Hourglass,
-  
+
   // File & Document Icons
   file: File,
   fileText: FileText,
   image: Image,
   videoFile: Video,
   folder: Folder,
-  
+
   // Utility Icons
   info: Info,
   help: HelpCircle,
@@ -293,29 +293,29 @@ const iconMap = {
   save: Save,
   print: Print,
   zoomIn: ZoomIn,
-  zoomOut: ZoomOut,
+  zoomOut: ZoomOut
 } as const
 
 const Icon = React.forwardRef<SVGSVGElement, IconProps>(
-  ({ 
-    name, 
-    size, 
-    variant, 
-    weight, 
-    animated = false, 
+  ({
+    name,
+    size,
+    variant,
+    weight,
+    animated = false,
     interactive = false,
     label,
     onClick,
     className,
-    ...props 
+    ...props
   }, ref) => {
     const IconComponent = iconMap[name as keyof typeof iconMap]
-    
+
     if (!IconComponent) {
       console.warn(`Icon "${name}" not found in icon map`)
       return null
     }
-    
+
     return (
       <IconComponent
         ref={ref}
@@ -324,7 +324,7 @@ const Icon = React.forwardRef<SVGSVGElement, IconProps>(
           {
             'animate-spin': animated && name === 'loading',
             'animate-pulse': animated && (name === 'active' || name === 'critical'),
-            'animate-bounce': animated && name === 'notification',
+            'animate-bounce': animated && name === 'notification'
           },
           className
         )}

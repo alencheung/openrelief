@@ -113,7 +113,9 @@ export function FormOfflineStatusIndicator({
 
   // Auto-save functionality
   useEffect(() => {
-    if (!autoSave || !formStatus.isDirty || formStatus.isSubmitted) return
+    if (!autoSave || !formStatus.isDirty || formStatus.isSubmitted) {
+      return
+    }
 
     // Clear existing timer
     if (autoSaveTimer) {
@@ -143,7 +145,9 @@ export function FormOfflineStatusIndicator({
 
   // Handle auto-save
   const handleAutoSave = async () => {
-    if (!formStatus.isDirty || formStatus.isSubmitted) return
+    if (!formStatus.isDirty || formStatus.isSubmitted) {
+      return
+    }
 
     setAutoSaveStatus('saving')
     announcePolite('Saving form data offline')
@@ -189,7 +193,7 @@ export function FormOfflineStatusIndicator({
       setAutoSaveStatus('error')
       announceAssertive('Failed to save form data offline')
       console.error('Auto-save failed:', error)
-      
+
       setTimeout(() => {
         setAutoSaveStatus('idle')
       }, 3000)
@@ -259,7 +263,9 @@ export function FormOfflineStatusIndicator({
 
   // Handle retry
   const handleRetry = async () => {
-    if (!formStatus.offlineActionId) return
+    if (!formStatus.offlineActionId) {
+      return
+    }
 
     setFormStatus(prev => ({
       ...prev,
@@ -286,10 +292,18 @@ export function FormOfflineStatusIndicator({
 
   // Get status color
   const getStatusColor = () => {
-    if (formStatus.isSubmitting) return 'text-blue-600 bg-blue-50 border-blue-200'
-    if (formStatus.lastError) return 'text-red-600 bg-red-50 border-red-200'
-    if (formStatus.isSubmitted) return 'text-green-600 bg-green-50 border-green-200'
-    if (formStatus.isDirty) return 'text-yellow-600 bg-yellow-50 border-yellow-200'
+    if (formStatus.isSubmitting) {
+      return 'text-blue-600 bg-blue-50 border-blue-200'
+    }
+    if (formStatus.lastError) {
+      return 'text-red-600 bg-red-50 border-red-200'
+    }
+    if (formStatus.isSubmitted) {
+      return 'text-green-600 bg-green-50 border-green-200'
+    }
+    if (formStatus.isDirty) {
+      return 'text-yellow-600 bg-yellow-50 border-yellow-200'
+    }
     return 'text-gray-600 bg-gray-50 border-gray-200'
   }
 
@@ -326,7 +340,9 @@ export function FormOfflineStatusIndicator({
   const hasOfflineAction = !!formStatus.offlineActionId
   const isFormValid = formStatus.isValid
 
-  if (!showOfflineIndicator) return null
+  if (!showOfflineIndicator) {
+    return null
+  }
 
   return (
     <>
@@ -355,15 +371,15 @@ export function FormOfflineStatusIndicator({
               ) : (
                 <FileTextIcon className="w-4 h-4" />
               )}
-              
+
               <div className="flex flex-col">
                 <span className="text-sm font-medium">
-                  {formStatus.isSubmitting ? 'Submitting...' :
-                   formStatus.lastError ? 'Submission Failed' :
-                   formStatus.isSubmitted ? 'Submitted' :
-                   isFormDirty ? 'Unsaved Changes' : 'Ready'}
+                  {formStatus.isSubmitting ? 'Submitting...'
+                    : formStatus.lastError ? 'Submission Failed'
+                      : formStatus.isSubmitted ? 'Submitted'
+                        : isFormDirty ? 'Unsaved Changes' : 'Ready'}
                 </span>
-                
+
                 {/* Offline Status */}
                 {isOffline && (
                   <span className="text-xs opacity-75">
@@ -385,13 +401,13 @@ export function FormOfflineStatusIndicator({
                 {autoSaveStatus === 'error' && (
                   <AlertTriangleIcon className="w-3 h-3" />
                 )}
-                
+
                 <span className={`text-xs ${getAutoSaveColor()}`}>
-                  {autoSaveStatus === 'saving' ? 'Auto-saving...' :
-                   autoSaveStatus === 'saved' ? 'Auto-saved' :
-                   autoSaveStatus === 'error' ? 'Auto-save failed' : ''}
+                  {autoSaveStatus === 'saving' ? 'Auto-saving...'
+                    : autoSaveStatus === 'saved' ? 'Auto-saved'
+                      : autoSaveStatus === 'error' ? 'Auto-save failed' : ''}
                 </span>
-                
+
                 {lastSaved && (
                   <span className="text-xs text-gray-500">
                     at {lastSaved.toLocaleTimeString()}
@@ -552,7 +568,7 @@ export function FormOfflineStatusIndicator({
                     Retry
                   </Button>
                 )}
-                
+
                 {isFormDirty && !formStatus.isSubmitted && (
                   <Button
                     onClick={handleAutoSave}

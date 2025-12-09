@@ -24,7 +24,7 @@ export const defaultClusterOptions: ClusterOptions = {
   maxZoom: 14,
   minPoints: 2,
   extent: 512,
-  nodeSize: 64,
+  nodeSize: 64
 }
 
 // Create a supercluster instance for emergency events
@@ -34,7 +34,7 @@ export function createEmergencyCluster(options: ClusterOptions = defaultClusterO
     maxZoom: options.maxZoom,
     minPoints: options.minPoints,
     extent: options.extent,
-    nodeSize: options.nodeSize,
+    nodeSize: options.nodeSize
   })
 }
 
@@ -56,15 +56,15 @@ export function clusterEmergencyEvents(
       trust_score: event.trust_weight,
       title: event.title,
       description: event.description,
-      created_at: event.created_at,
+      created_at: event.created_at
     },
     geometry: {
       type: 'Point' as const,
       coordinates: [
         parseFloat(event.location.split(' ')[1] || '0'), // longitude
-        parseFloat(event.location.split(' ')[0] || '0'), // latitude
-      ],
-    },
+        parseFloat(event.location.split(' ')[0] || '0') // latitude
+      ]
+    }
   }))
 
   // Load features into cluster
@@ -92,9 +92,9 @@ export function calculateDistance(
   const Δφ = ((lat2 - lat1) * Math.PI) / 180
   const Δλ = ((lon2 - lon1) * Math.PI) / 180
 
-  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-    Math.cos(φ1) * Math.cos(φ2) *
-    Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
+  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2)
+    + Math.cos(φ1) * Math.cos(φ2)
+    * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 
   return R * c // Distance in meters
@@ -134,8 +134,8 @@ export function createGeofenceBuffer(geofence: Geofence): GeoJSON.Feature {
       name: geofence.name,
       type: geofence.type,
       isActive: geofence.isActive,
-      severity: geofence.metadata?.severity || 'medium',
-    },
+      severity: geofence.metadata?.severity || 'medium'
+    }
   } as GeoJSON.Feature
 }
 
@@ -157,7 +157,9 @@ export class MapPerformanceManager {
   }
 
   private waitForMapLoad() {
-    if (!this.map) return
+    if (!this.map) {
+      return
+    }
 
     if (this.map.loaded() && this.map.getStyle()) {
       console.log('[MapPerformanceManager] Map is loaded, starting performance monitoring')
@@ -178,11 +180,11 @@ export class MapPerformanceManager {
     const deviceMemory = navigator.deviceMemory || 4
     const connection = (navigator as any).connection
 
-    this.isLowEndDevice =
-      hardwareConcurrency <= 2 ||
-      deviceMemory <= 2 ||
-      (connection && connection.effectiveType &&
-        ['slow-2g', '2g', '3g'].includes(connection.effectiveType))
+    this.isLowEndDevice
+      = hardwareConcurrency <= 2
+      || deviceMemory <= 2
+      || (connection && connection.effectiveType
+        && ['slow-2g', '2g', '3g'].includes(connection.effectiveType))
   }
 
   private setupPerformanceMonitoring() {
@@ -386,12 +388,12 @@ export class EmergencyRouter {
             end.lng
           ),
           duration: 0, // Would be calculated by routing service
-          emergency: preferences.emergencyVehicle || false,
+          emergency: preferences.emergencyVehicle || false
         },
         geometry: {
           type: 'LineString' as const,
-          coordinates: [[start.lng, start.lat], [end.lng, end.lat]],
-        },
+          coordinates: [[start.lng, start.lat], [end.lng, end.lat]]
+        }
       }
 
       return route
@@ -410,10 +412,12 @@ export class EmergencyRouter {
       // Query OpenMapTiles for nearest emergency service
       const features = this.map.querySourceFeatures('openmaptiles', {
         sourceLayer: 'poi',
-        filter: ['==', 'class', serviceType],
+        filter: ['==', 'class', serviceType]
       })
 
-      if (features.length === 0) return null
+      if (features.length === 0) {
+        return null
+      }
 
       // Find nearest feature
       let nearestFeature: GeoJSONFeature | null = null
@@ -540,19 +544,19 @@ export function generateEmergencyHeatmap(
     type: 'Feature' as const,
     properties: {
       intensity: event.severity * event.trust_weight,
-      weight: event.severity,
+      weight: event.severity
     },
     geometry: {
       type: 'Point' as const,
       coordinates: [
         parseFloat(event.location.split(' ')[1] || '0'),
-        parseFloat(event.location.split(' ')[0] || '0'),
-      ],
-    },
+        parseFloat(event.location.split(' ')[0] || '0')
+      ]
+    }
   }))
 
   return {
     type: 'FeatureCollection',
-    features,
+    features
   }
 }

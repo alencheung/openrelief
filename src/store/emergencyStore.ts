@@ -144,7 +144,7 @@ const initialState: EmergencyState = {
 
   filters: {
     status: ['pending', 'active'],
-    severity: [3, 4, 5], // High severity events
+    severity: [3, 4, 5] // High severity events
   },
   searchQuery: '',
 
@@ -154,7 +154,7 @@ const initialState: EmergencyState = {
     showUserLocation: true,
     showEvents: true,
     showHeatmap: false,
-    showClusters: true,
+    showClusters: true
   },
 
   offlineActions: [],
@@ -164,7 +164,7 @@ const initialState: EmergencyState = {
 
   userLocation: null,
   locationAccuracy: null,
-  isLocationTracking: false,
+  isLocationTracking: false
 }
 
 // Filter utility functions
@@ -242,9 +242,9 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
   const Δφ = ((lat2 - lat1) * Math.PI) / 180
   const Δλ = ((lon2 - lon1) * Math.PI) / 180
 
-  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-    Math.cos(φ1) * Math.cos(φ2) *
-    Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
+  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2)
+    + Math.cos(φ1) * Math.cos(φ2)
+    * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 
   return R * c // Distance in meters
@@ -273,7 +273,7 @@ export const useEmergencyStore = create<EmergencyStore>()(
                 state.filters,
                 state.searchQuery,
                 state.userLocation
-              ),
+              )
             }
           })
         },
@@ -293,7 +293,7 @@ export const useEmergencyStore = create<EmergencyStore>()(
                 state.filters,
                 state.searchQuery,
                 state.userLocation
-              ),
+              )
             }
           })
         },
@@ -309,7 +309,7 @@ export const useEmergencyStore = create<EmergencyStore>()(
                 state.filters,
                 state.searchQuery,
                 state.userLocation
-              ),
+              )
             }
           })
         },
@@ -325,7 +325,7 @@ export const useEmergencyStore = create<EmergencyStore>()(
         clearFilters: () => {
           set({
             filters: initialState.filters,
-            searchQuery: '',
+            searchQuery: ''
           })
           get().applyFilters()
         },
@@ -365,17 +365,17 @@ export const useEmergencyStore = create<EmergencyStore>()(
             id: `${action.type}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             timestamp: Date.now(),
             synced: false,
-            retryCount: 0,
+            retryCount: 0
           }
 
           set((state) => ({
-            offlineActions: [...state.offlineActions, newAction],
+            offlineActions: [...state.offlineActions, newAction]
           }))
         },
 
         removeOfflineAction: (actionId) => {
           set((state) => ({
-            offlineActions: state.offlineActions.filter(action => action.id !== actionId),
+            offlineActions: state.offlineActions.filter(action => action.id !== actionId)
           }))
         },
 
@@ -383,7 +383,7 @@ export const useEmergencyStore = create<EmergencyStore>()(
           set((state) => ({
             offlineActions: state.offlineActions.map(action =>
               action.id === actionId ? { ...action, synced: true } : action
-            ),
+            )
           }))
         },
 
@@ -391,13 +391,13 @@ export const useEmergencyStore = create<EmergencyStore>()(
           set((state) => ({
             offlineActions: state.offlineActions.map(action =>
               action.id === actionId ? { ...action, retryCount: action.retryCount + 1 } : action
-            ),
+            )
           }))
         },
 
         clearSyncedActions: () => {
           set((state) => ({
-            offlineActions: state.offlineActions.filter(action => !action.synced),
+            offlineActions: state.offlineActions.filter(action => !action.synced)
           }))
         },
 
@@ -426,7 +426,7 @@ export const useEmergencyStore = create<EmergencyStore>()(
         setError: (error) => set({ error }),
         clearError: () => set({ error: null }),
 
-        reset: () => set(initialState),
+        reset: () => set(initialState)
       }),
       {
         name: 'emergency-storage',
@@ -437,8 +437,8 @@ export const useEmergencyStore = create<EmergencyStore>()(
           emergencyTypes: state.emergencyTypes,
           isRealtimeEnabled: state.isRealtimeEnabled,
           isLocationTracking: state.isLocationTracking,
-          offlineActions: state.offlineActions.filter(action => !action.synced), // Only persist unsynced actions
-        }),
+          offlineActions: state.offlineActions.filter(action => !action.synced) // Only persist unsynced actions
+        })
       }
     )
   )
@@ -449,13 +449,13 @@ export const useEmergencyEvents = () => useEmergencyStore(state => ({
   events: state.events,
   filteredEvents: state.filteredEvents,
   loading: state.loading,
-  error: state.error,
+  error: state.error
 }))
 
 export const useEmergencyFilters = () => useEmergencyStore(state => ({
   filters: state.filters,
   searchQuery: state.searchQuery,
-  filteredEvents: state.filteredEvents,
+  filteredEvents: state.filteredEvents
 }))
 
 export const useEmergencyMap = () => useEmergencyStore(state => state.mapState)
@@ -463,7 +463,7 @@ export const useEmergencyMap = () => useEmergencyStore(state => state.mapState)
 export const useOfflineActions = () => useEmergencyStore(state => ({
   offlineActions: state.offlineActions,
   addOfflineAction: state.addOfflineAction,
-  clearSyncedActions: state.clearSyncedActions,
+  clearSyncedActions: state.clearSyncedActions
 }))
 
 export const useEmergencyActions = () => useEmergencyStore(state => ({
@@ -478,5 +478,5 @@ export const useEmergencyActions = () => useEmergencyStore(state => ({
   setMapState: state.setMapState,
   setLoading: state.setLoading,
   setError: state.setError,
-  clearError: state.clearError,
+  clearError: state.clearError
 }))

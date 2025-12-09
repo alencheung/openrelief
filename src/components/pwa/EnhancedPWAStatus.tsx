@@ -72,9 +72,9 @@ interface ServiceWorkerStatus {
 }
 
 export function EnhancedPWAStatus() {
-  const { 
-    isOnline, 
-    isOffline, 
+  const {
+    isOnline,
+    isOffline,
     connectionType,
     effectiveType,
     downlink,
@@ -82,11 +82,11 @@ export function EnhancedPWAStatus() {
     lastOnlineTime,
     lastOfflineTime
   } = useNetworkStatus()
-  
-  const { 
-    isSyncing, 
-    syncProgress, 
-    pendingActions, 
+
+  const {
+    isSyncing,
+    syncProgress,
+    pendingActions,
     failedActions,
     metrics,
     storageQuota,
@@ -132,14 +132,14 @@ export function EnhancedPWAStatus() {
       const quality = await NetworkUtils.getNetworkQuality()
       setNetworkQuality(quality)
     }
-    
+
     updateNetworkQuality()
-    
+
     // Listen for network changes
     if ('connection' in navigator) {
       const connection = (navigator as any).connection
       const handleChange = () => updateNetworkQuality()
-      
+
       connection.addEventListener('change', handleChange)
       return () => connection.removeEventListener('change', handleChange)
     }
@@ -156,7 +156,7 @@ export function EnhancedPWAStatus() {
       // Load performance metrics
       const perf = await PWAPerformance.measurePageLoad()
       const cacheHitRate = await PWAPerformance.getCacheHitRate()
-      
+
       setPerformanceMetrics({
         ...perf,
         cacheHitRate,
@@ -189,9 +189,9 @@ export function EnhancedPWAStatus() {
   const handleRefresh = async () => {
     setIsRefreshing(true)
     announcePolite('Refreshing PWA status information')
-    
+
     await loadStatus()
-    
+
     setIsRefreshing(false)
     announcePolite('PWA status updated')
   }
@@ -240,9 +240,15 @@ export function EnhancedPWAStatus() {
 
   // Get performance grade
   const getPerformanceGrade = (loadTime: number) => {
-    if (loadTime < 1000) return { grade: 'A', color: 'text-green-600' }
-    if (loadTime < 2000) return { grade: 'B', color: 'text-yellow-600' }
-    if (loadTime < 3000) return { grade: 'C', color: 'text-orange-600' }
+    if (loadTime < 1000) {
+      return { grade: 'A', color: 'text-green-600' }
+    }
+    if (loadTime < 2000) {
+      return { grade: 'B', color: 'text-yellow-600' }
+    }
+    if (loadTime < 3000) {
+      return { grade: 'C', color: 'text-orange-600' }
+    }
     return { grade: 'D', color: 'text-red-600' }
   }
 
@@ -293,9 +299,9 @@ export function EnhancedPWAStatus() {
               flex items-center gap-2 px-4 py-3 font-medium transition-colors
               border-b-2 -mb-px
               ${activeTab === tab.id
-                ? 'text-blue-600 border-blue-600'
-                : 'text-gray-500 border-transparent hover:text-gray-700'
-              }
+            ? 'text-blue-600 border-blue-600'
+            : 'text-gray-500 border-transparent hover:text-gray-700'
+          }
             `}
           >
             <tab.icon className="w-4 h-4" />
@@ -310,7 +316,7 @@ export function EnhancedPWAStatus() {
         {activeTab === 'overview' && (
           <div className="p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-6">System Overview</h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* Connection Status */}
               <Card className="p-4">
@@ -365,15 +371,15 @@ export function EnhancedPWAStatus() {
                   of {Math.round(storageQuota.quota / 1024 / 1024)}MB used
                 </div>
                 <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
-                  <div 
+                  <div
                     className={`
                       h-2 rounded-full transition-all duration-300
-                      ${storageQuota.percentage > 80 
-                        ? 'bg-red-500' 
-                        : storageQuota.percentage > 60
-                          ? 'bg-yellow-500'
-                          : 'bg-green-500'
-                      }
+                      ${storageQuota.percentage > 80
+            ? 'bg-red-500'
+            : storageQuota.percentage > 60
+              ? 'bg-yellow-500'
+              : 'bg-green-500'
+          }
                     `}
                     style={{ width: `${Math.min(100, storageQuota.percentage)}%` }}
                   />
@@ -434,12 +440,12 @@ export function EnhancedPWAStatus() {
         {activeTab === 'network' && (
           <div className="p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-6">Network Status</h2>
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Connection Info */}
               <div className="space-y-4">
                 <h3 className="font-medium text-gray-900">Connection Information</h3>
-                
+
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Status</span>
@@ -449,7 +455,7 @@ export function EnhancedPWAStatus() {
                       label={isOnline ? 'Online' : 'Offline'}
                     />
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Type</span>
                     <div className="flex items-center gap-2">
@@ -459,28 +465,28 @@ export function EnhancedPWAStatus() {
                       <span className="text-sm font-medium">{connectionType || 'Unknown'}</span>
                     </div>
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Effective Type</span>
                     <div className={`px-2 py-1 rounded-full text-xs font-medium ${getConnectionQualityColor(effectiveType || 'unknown')}`}>
                       {(effectiveType || 'unknown').toUpperCase()}
                     </div>
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Downlink</span>
                     <span className="text-sm font-medium">
                       {downlink ? `${downlink.toFixed(1)} Mbps` : 'Unknown'}
                     </span>
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">RTT</span>
                     <span className="text-sm font-medium">
                       {rtt ? `${rtt}ms` : 'Unknown'}
                     </span>
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Save Data</span>
                     <StatusIndicator
@@ -495,7 +501,7 @@ export function EnhancedPWAStatus() {
               {/* Connection History */}
               <div className="space-y-4">
                 <h3 className="font-medium text-gray-900">Connection History</h3>
-                
+
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Last Online</span>
@@ -503,21 +509,21 @@ export function EnhancedPWAStatus() {
                       {lastOnlineTime ? lastOnlineTime.toLocaleString() : 'Never'}
                     </span>
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Last Offline</span>
                     <span className="text-sm font-medium">
                       {lastOfflineTime ? lastOfflineTime.toLocaleString() : 'Never'}
                     </span>
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Connection Quality</span>
                     <div className={`px-2 py-1 rounded-full text-xs font-medium ${getConnectionQualityColor(effectiveType || 'unknown')}`}>
-                      {effectiveType === '4g' ? 'Excellent' :
-                       effectiveType === '3g' ? 'Good' :
-                       effectiveType === '2g' ? 'Fair' :
-                       effectiveType === 'slow-2g' ? 'Poor' : 'Unknown'}
+                      {effectiveType === '4g' ? 'Excellent'
+                        : effectiveType === '3g' ? 'Good'
+                          : effectiveType === '2g' ? 'Fair'
+                            : effectiveType === 'slow-2g' ? 'Poor' : 'Unknown'}
                     </div>
                   </div>
                 </div>
@@ -533,12 +539,12 @@ export function EnhancedPWAStatus() {
                           key={bar}
                           className={`
                             h-4 rounded-sm transition-all duration-300
-                            ${effectiveType === '4g' && bar <= 5 ? 'bg-green-500' :
-                             effectiveType === '3g' && bar <= 4 ? 'bg-yellow-500' :
-                             effectiveType === '2g' && bar <= 3 ? 'bg-orange-500' :
-                             effectiveType === 'slow-2g' && bar <= 2 ? 'bg-red-500' :
-                             'bg-gray-300'
-                            }
+                            ${effectiveType === '4g' && bar <= 5 ? 'bg-green-500'
+                          : effectiveType === '3g' && bar <= 4 ? 'bg-yellow-500'
+                            : effectiveType === '2g' && bar <= 3 ? 'bg-orange-500'
+                              : effectiveType === 'slow-2g' && bar <= 2 ? 'bg-red-500'
+                                : 'bg-gray-300'
+                        }
                           `}
                           style={{
                             width: '8px',
@@ -548,10 +554,10 @@ export function EnhancedPWAStatus() {
                       ))}
                     </div>
                     <span className="text-sm font-medium">
-                      {effectiveType === '4g' ? 'Excellent' :
-                       effectiveType === '3g' ? 'Good' :
-                       effectiveType === '2g' ? 'Fair' :
-                       effectiveType === 'slow-2g' ? 'Poor' : 'Unknown'}
+                      {effectiveType === '4g' ? 'Excellent'
+                        : effectiveType === '3g' ? 'Good'
+                          : effectiveType === '2g' ? 'Fair'
+                            : effectiveType === 'slow-2g' ? 'Poor' : 'Unknown'}
                     </span>
                   </div>
                 </div>
@@ -576,12 +582,12 @@ export function EnhancedPWAStatus() {
                 </Button>
               </div>
             </div>
-            
+
             {/* Storage Overview */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
               <div className="space-y-4">
                 <h3 className="font-medium text-gray-900">Storage Usage</h3>
-                
+
                 <div className="p-4 bg-gray-50 rounded-lg">
                   <div className="flex justify-between mb-2">
                     <span className="text-sm text-gray-600">Used Space</span>
@@ -590,15 +596,15 @@ export function EnhancedPWAStatus() {
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div 
+                    <div
                       className={`
                         h-3 rounded-full transition-all duration-300
-                        ${storageQuota.percentage > 80 
-                          ? 'bg-red-500' 
-                          : storageQuota.percentage > 60
-                            ? 'bg-yellow-500'
-                            : 'bg-green-500'
-                        }
+                        ${storageQuota.percentage > 80
+            ? 'bg-red-500'
+            : storageQuota.percentage > 60
+              ? 'bg-yellow-500'
+              : 'bg-green-500'
+          }
                       `}
                       style={{ width: `${Math.min(100, storageQuota.percentage)}%` }}
                     />
@@ -615,7 +621,7 @@ export function EnhancedPWAStatus() {
 
               <div className="space-y-4">
                 <h3 className="font-medium text-gray-900">Cache Statistics</h3>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-3 bg-gray-50 rounded-lg">
                     <div className="text-lg font-bold text-gray-900">
@@ -623,21 +629,21 @@ export function EnhancedPWAStatus() {
                     </div>
                     <div className="text-sm text-gray-600">Cache stores</div>
                   </div>
-                  
+
                   <div className="p-3 bg-gray-50 rounded-lg">
                     <div className="text-lg font-bold text-gray-900">
                       {cacheStatus.reduce((sum, cache) => sum + cache.entries, 0)}
                     </div>
                     <div className="text-sm text-gray-600">Total entries</div>
                   </div>
-                  
+
                   <div className="p-3 bg-gray-50 rounded-lg">
                     <div className="text-lg font-bold text-gray-900">
                       {formatFileSize(cacheStatus.reduce((sum, cache) => sum + cache.size, 0))}
                     </div>
                     <div className="text-sm text-gray-600">Total size</div>
                   </div>
-                  
+
                   <div className="p-3 bg-gray-50 rounded-lg">
                     <div className="text-lg font-bold text-gray-900">
                       {Math.round(performanceMetrics.cacheHitRate)}%
@@ -651,7 +657,7 @@ export function EnhancedPWAStatus() {
             {/* Cache Details */}
             <div className="space-y-4">
               <h3 className="font-medium text-gray-900">Cache Details</h3>
-              
+
               <div className="space-y-3">
                 {cacheStatus.map((cache, index) => (
                   <div key={index} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
@@ -659,7 +665,7 @@ export function EnhancedPWAStatus() {
                       <div className={`p-2 rounded-lg ${getCacheTypeColor(cache.type)}`}>
                         <DatabaseIcon className="w-5 h-5" />
                       </div>
-                      
+
                       <div>
                         <div className="font-medium text-gray-900">{cache.name}</div>
                         <div className="text-sm text-gray-600">
@@ -672,7 +678,7 @@ export function EnhancedPWAStatus() {
                       <div className={`px-2 py-1 rounded-full text-xs font-medium ${getCacheTypeColor(cache.type)}`}>
                         {cache.type}
                       </div>
-                      
+
                       <Button
                         onClick={() => handleClearCache(cache.name)}
                         size="sm"
@@ -692,12 +698,12 @@ export function EnhancedPWAStatus() {
         {activeTab === 'performance' && (
           <div className="p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-6">Performance Metrics</h2>
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Page Load Performance */}
               <div className="space-y-4">
                 <h3 className="font-medium text-gray-900">Page Load Performance</h3>
-                
+
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Load Complete</span>
@@ -710,27 +716,27 @@ export function EnhancedPWAStatus() {
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">DOM Content Loaded</span>
                     <span className="text-sm font-medium">
                       {formatDuration(performanceMetrics.domContentLoaded)}
                     </span>
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">First Contentful Paint</span>
                     <span className="text-sm font-medium">
-                      {performanceMetrics.firstContentfulPaint ? 
-                        formatDuration(performanceMetrics.firstContentfulPaint) : 'N/A'}
+                      {performanceMetrics.firstContentfulPaint
+                        ? formatDuration(performanceMetrics.firstContentfulPaint) : 'N/A'}
                     </span>
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Largest Contentful Paint</span>
                     <span className="text-sm font-medium">
-                      {performanceMetrics.largestContentfulPaint ? 
-                        formatDuration(performanceMetrics.largestContentfulPaint) : 'N/A'}
+                      {performanceMetrics.largestContentfulPaint
+                        ? formatDuration(performanceMetrics.largestContentfulPaint) : 'N/A'}
                     </span>
                   </div>
                 </div>
@@ -739,13 +745,13 @@ export function EnhancedPWAStatus() {
               {/* Cache Performance */}
               <div className="space-y-4">
                 <h3 className="font-medium text-gray-900">Cache Performance</h3>
-                
+
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Cache Hit Rate</span>
                     <div className="flex items-center gap-2">
                       <div className="w-20 bg-gray-200 rounded-full h-2">
-                        <div 
+                        <div
                           className="bg-green-500 h-2 rounded-full transition-all duration-300"
                           style={{ width: `${performanceMetrics.cacheHitRate}%` }}
                         />
@@ -755,21 +761,21 @@ export function EnhancedPWAStatus() {
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Total Requests</span>
                     <span className="text-sm font-medium">
                       {performanceMetrics.totalRequests}
                     </span>
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Cached Requests</span>
                     <span className="text-sm font-medium text-green-600">
                       {performanceMetrics.cachedRequests}
                     </span>
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Network Requests</span>
                     <span className="text-sm font-medium text-orange-600">
@@ -783,7 +789,7 @@ export function EnhancedPWAStatus() {
             {/* Performance Visualization */}
             <div className="mt-6 p-4 bg-gray-50 rounded-lg">
               <h3 className="text-sm font-medium text-gray-900 mb-4">Performance Breakdown</h3>
-              
+
               <div className="space-y-3">
                 {[
                   { name: 'DNS Lookup', time: 50, color: 'bg-blue-500' },
@@ -795,7 +801,7 @@ export function EnhancedPWAStatus() {
                   <div key={index} className="flex items-center gap-3">
                     <span className="text-sm text-gray-600 w-24">{item.name}</span>
                     <div className="flex-1 bg-gray-200 rounded-full h-4">
-                      <div 
+                      <div
                         className={`${item.color} h-4 rounded-full transition-all duration-300`}
                         style={{ width: `${(item.time / 800) * 100}%` }}
                       />
@@ -814,12 +820,12 @@ export function EnhancedPWAStatus() {
         {activeTab === 'sync' && (
           <div className="p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-6">Synchronization Status</h2>
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Sync Status */}
               <div className="space-y-4">
                 <h3 className="font-medium text-gray-900">Current Status</h3>
-                
+
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Sync Status</span>
@@ -829,29 +835,29 @@ export function EnhancedPWAStatus() {
                       label={isSyncing ? 'Syncing' : 'Idle'}
                     />
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Pending Actions</span>
                     <span className="text-sm font-medium text-orange-600">
                       {pendingActions.length}
                     </span>
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Failed Actions</span>
                     <span className="text-sm font-medium text-red-600">
                       {failedActions.length}
                     </span>
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Last Sync</span>
                     <span className="text-sm font-medium">
-                      {metrics.lastSyncTime ? 
-                        new Date(metrics.lastSyncTime).toLocaleString() : 'Never'}
+                      {metrics.lastSyncTime
+                        ? new Date(metrics.lastSyncTime).toLocaleString() : 'Never'}
                     </span>
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Success Rate</span>
                     <span className="text-sm font-medium">
@@ -864,7 +870,7 @@ export function EnhancedPWAStatus() {
               {/* Sync Settings */}
               <div className="space-y-4">
                 <h3 className="font-medium text-gray-900">Sync Settings</h3>
-                
+
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Auto Sync</span>
@@ -874,21 +880,21 @@ export function EnhancedPWAStatus() {
                       label={settings.autoSync ? 'Enabled' : 'Disabled'}
                     />
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Sync Interval</span>
                     <span className="text-sm font-medium">
                       {settings.syncInterval} minutes
                     </span>
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Max Retries</span>
                     <span className="text-sm font-medium">
                       {settings.maxRetries}
                     </span>
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Background Sync</span>
                     <StatusIndicator
@@ -897,7 +903,7 @@ export function EnhancedPWAStatus() {
                       label={settings.backgroundSync ? 'Enabled' : 'Disabled'}
                     />
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Priority Sync</span>
                     <StatusIndicator
@@ -914,7 +920,7 @@ export function EnhancedPWAStatus() {
             {isSyncing && (
               <div className="mt-6 p-4 bg-blue-50 rounded-lg">
                 <h3 className="text-sm font-medium text-blue-900 mb-3">Sync Progress</h3>
-                
+
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-blue-700">
                     {syncProgress.currentAction || 'Processing...'}
@@ -923,12 +929,12 @@ export function EnhancedPWAStatus() {
                     {syncProgress.current} / {syncProgress.total}
                   </span>
                 </div>
-                
+
                 <div className="w-full bg-blue-200 rounded-full h-3">
-                  <div 
+                  <div
                     className="bg-blue-600 h-3 rounded-full transition-all duration-300"
-                    style={{ 
-                      width: `${syncProgress.total > 0 ? (syncProgress.current / syncProgress.total) * 100 : 0}%` 
+                    style={{
+                      width: `${syncProgress.total > 0 ? (syncProgress.current / syncProgress.total) * 100 : 0}%`
                     }}
                   />
                 </div>

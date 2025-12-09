@@ -1,10 +1,10 @@
 import React from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
-import { 
-  CheckCircle, 
-  Clock, 
-  AlertCircle, 
+import {
+  CheckCircle,
+  Clock,
+  AlertCircle,
   PauseCircle,
   XCircle,
   Loader2
@@ -19,30 +19,30 @@ const statusIndicatorVariants = cva(
         inactive: 'status-inactive',
         pending: 'status-pending',
         resolved: 'status-resolved',
-        critical: 'status-critical',
+        critical: 'status-critical'
       },
       size: {
         sm: 'px-2 py-1 text-xs',
         md: 'px-3 py-1.5 text-sm',
-        lg: 'px-4 py-2 text-base',
+        lg: 'px-4 py-2 text-base'
       },
       variant: {
         default: '',
         outline: 'border-2 bg-transparent',
         subtle: 'bg-opacity-10 text-current border border-current',
-        pill: 'rounded-full',
+        pill: 'rounded-full'
       },
       animated: {
         true: '',
-        false: '',
+        false: ''
       }
     },
     defaultVariants: {
       status: 'active',
       size: 'md',
       variant: 'default',
-      animated: false,
-    },
+      animated: false
+    }
   }
 )
 
@@ -60,24 +60,24 @@ const statusIcons = {
   inactive: PauseCircle,
   pending: Clock,
   resolved: CheckCircle,
-  critical: XCircle,
+  critical: XCircle
 }
 
 const StatusIndicator = React.forwardRef<HTMLDivElement, StatusIndicatorProps>(
-  ({ 
-    className, 
-    status, 
-    size, 
-    variant, 
+  ({
+    className,
+    status,
+    size,
+    variant,
     animated = false,
-    label, 
-    showIcon = true, 
+    label,
+    showIcon = true,
     pulse = false,
     loading = false,
-    ...props 
+    ...props
   }, ref) => {
     const IconComponent = loading ? Loader2 : statusIcons[status as keyof typeof statusIcons]
-    
+
     return (
       <div
         ref={ref}
@@ -86,7 +86,7 @@ const StatusIndicator = React.forwardRef<HTMLDivElement, StatusIndicatorProps>(
           {
             'animate-pulse': pulse,
             'animate-spin': loading,
-            'animate-emergency-pulse': status === 'critical' && animated,
+            'animate-emergency-pulse': status === 'critical' && animated
           },
           className
         )}
@@ -99,7 +99,7 @@ const StatusIndicator = React.forwardRef<HTMLDivElement, StatusIndicatorProps>(
           )} />
         )}
         <span className="truncate">{label}</span>
-        
+
         {/* Animated indicator dot for active status */}
         {status === 'active' && animated && (
           <span className="relative flex h-2 w-2">
@@ -107,7 +107,7 @@ const StatusIndicator = React.forwardRef<HTMLDivElement, StatusIndicatorProps>(
             <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
           </span>
         )}
-        
+
         {/* Pulsing indicator for critical status */}
         {status === 'critical' && pulse && (
           <span className="relative flex h-2 w-2">

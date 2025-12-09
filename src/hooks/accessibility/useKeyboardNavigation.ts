@@ -3,30 +3,37 @@
 import { useEffect, useCallback, useRef } from 'react'
 
 export interface KeyboardShortcut {
+
   /**
    * Key or key combination (e.g., 'Enter', 'Ctrl+K', 'Shift+Tab')
    */
   key: string
+
   /**
    * Function to execute when shortcut is triggered
    */
   action: (event: KeyboardEvent) => void
+
   /**
    * Description of the shortcut for help/documentation
    */
   description?: string
+
   /**
    * Whether the shortcut is currently enabled
    */
   enabled?: boolean
+
   /**
    * Element selector to scope the shortcut to specific elements
    */
   scope?: string
+
   /**
    * Whether to prevent default behavior
    */
   preventDefault?: boolean
+
   /**
    * Whether to stop event propagation
    */
@@ -34,22 +41,27 @@ export interface KeyboardShortcut {
 }
 
 export interface KeyboardNavigationOptions {
+
   /**
    * Whether keyboard navigation is enabled
    */
   enabled?: boolean
+
   /**
    * Whether to show help dialog when '?' is pressed
    */
   enableHelp?: boolean
+
   /**
    * Global keyboard shortcuts
    */
   shortcuts?: KeyboardShortcut[]
+
   /**
    * Callback when any key is pressed
    */
   onKeyDown?: (event: KeyboardEvent) => void
+
   /**
    * Callback when any key is released
    */
@@ -57,10 +69,12 @@ export interface KeyboardNavigationOptions {
 }
 
 export interface KeyboardNavigationState {
+
   /**
    * Whether keyboard navigation is currently active
    */
   isActive: boolean
+
   /**
    * Currently pressed modifier keys
    */
@@ -70,10 +84,12 @@ export interface KeyboardNavigationState {
     alt: boolean
     meta: boolean
   }
+
   /**
    * Last pressed key
    */
   lastKey: string | null
+
   /**
    * Registered shortcuts
    */
@@ -89,7 +105,7 @@ export function useKeyboardNavigation(options: KeyboardNavigationOptions = {}) {
     enableHelp = true,
     shortcuts = [],
     onKeyDown,
-    onKeyUp,
+    onKeyUp
   } = options
 
   const stateRef = useRef<KeyboardNavigationState>({
@@ -98,10 +114,10 @@ export function useKeyboardNavigation(options: KeyboardNavigationOptions = {}) {
       ctrl: false,
       shift: false,
       alt: false,
-      meta: false,
+      meta: false
     },
     lastKey: null,
-    shortcuts: [],
+    shortcuts: []
   })
 
   const helpDialogRef = useRef<HTMLDivElement | null>(null)
@@ -117,13 +133,13 @@ export function useKeyboardNavigation(options: KeyboardNavigationOptions = {}) {
     meta: boolean
   } => {
     const parts = combo.toLowerCase().split('+').map(part => part.trim())
-    
+
     return {
       key: parts.find(part => !['ctrl', 'shift', 'alt', 'meta'].includes(part)) || '',
       ctrl: parts.includes('ctrl'),
       shift: parts.includes('shift'),
       alt: parts.includes('alt'),
-      meta: parts.includes('meta'),
+      meta: parts.includes('meta')
     }
   }, [])
 
@@ -135,20 +151,30 @@ export function useKeyboardNavigation(options: KeyboardNavigationOptions = {}) {
     combo: string
   ): boolean => {
     const { key, ctrl, shift, alt, meta } = parseKeyCombo(combo)
-    
+
     // Normalize event key
     const eventKey = event.key.toLowerCase()
     const comboKey = key.toLowerCase()
-    
+
     // Check main key
-    if (eventKey !== comboKey) return false
-    
+    if (eventKey !== comboKey) {
+      return false
+    }
+
     // Check modifiers
-    if (ctrl !== event.ctrlKey) return false
-    if (shift !== event.shiftKey) return false
-    if (alt !== event.altKey) return false
-    if (meta !== event.metaKey) return false
-    
+    if (ctrl !== event.ctrlKey) {
+      return false
+    }
+    if (shift !== event.shiftKey) {
+      return false
+    }
+    if (alt !== event.altKey) {
+      return false
+    }
+    if (meta !== event.metaKey) {
+      return false
+    }
+
     return true
   }, [parseKeyCombo])
 
@@ -175,12 +201,16 @@ export function useKeyboardNavigation(options: KeyboardNavigationOptions = {}) {
     shortcut: KeyboardShortcut,
     event: KeyboardEvent
   ) => {
-    if (shortcut.enabled === false) return
+    if (shortcut.enabled === false) {
+      return
+    }
 
     // Check scope if specified
     if (shortcut.scope) {
       const target = event.target as HTMLElement
-      if (!target.closest(shortcut.scope)) return
+      if (!target.closest(shortcut.scope)) {
+        return
+      }
     }
 
     // Prevent default and stop propagation if requested
@@ -199,7 +229,9 @@ export function useKeyboardNavigation(options: KeyboardNavigationOptions = {}) {
    * Show keyboard shortcuts help dialog
    */
   const showHelpDialog = useCallback(() => {
-    if (!enableHelp) return
+    if (!enableHelp) {
+      return
+    }
 
     // Create help dialog if it doesn't exist
     if (!helpDialogRef.current) {
@@ -208,14 +240,14 @@ export function useKeyboardNavigation(options: KeyboardNavigationOptions = {}) {
       dialog.setAttribute('role', 'dialog')
       dialog.setAttribute('aria-modal', 'true')
       dialog.setAttribute('aria-label', 'Keyboard Shortcuts Help')
-      
+
       dialog.innerHTML = `
         <div class="bg-background rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[80vh] overflow-auto p-6">
           <h2 class="text-lg font-semibold mb-4">Keyboard Shortcuts</h2>
           <div class="space-y-2">
             ${stateRef.current.shortcuts
-              .filter(shortcut => shortcut.enabled !== false && shortcut.description)
-              .map(shortcut => `
+    .filter(shortcut => shortcut.enabled !== false && shortcut.description)
+    .map(shortcut => `
                 <div class="flex justify-between items-center py-2 border-b">
                   <span class="text-sm text-muted-foreground">${shortcut.description}</span>
                   <kbd class="px-2 py-1 text-xs bg-muted rounded">${shortcut.key}</kbd>
@@ -230,14 +262,14 @@ export function useKeyboardNavigation(options: KeyboardNavigationOptions = {}) {
           </button>
         </div>
       `
-      
+
       document.body.appendChild(dialog)
       helpDialogRef.current = dialog
-      
+
       // Focus first button
       const firstButton = dialog.querySelector('button') as HTMLButtonElement
       firstButton?.focus()
-      
+
       // Handle escape key to close
       const handleEscape = (e: KeyboardEvent) => {
         if (e.key === 'Escape') {
@@ -246,9 +278,9 @@ export function useKeyboardNavigation(options: KeyboardNavigationOptions = {}) {
           document.removeEventListener('keydown', handleEscape)
         }
       }
-      
+
       document.addEventListener('keydown', handleEscape)
-      
+
       // Remove dialog when clicking outside
       dialog.addEventListener('click', (e) => {
         if (e.target === dialog) {
@@ -264,7 +296,9 @@ export function useKeyboardNavigation(options: KeyboardNavigationOptions = {}) {
    * Handle key down events
    */
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (!enabled) return
+    if (!enabled) {
+      return
+    }
 
     // Update state
     stateRef.current.isActive = true
@@ -272,7 +306,7 @@ export function useKeyboardNavigation(options: KeyboardNavigationOptions = {}) {
       ctrl: event.ctrlKey,
       shift: event.shiftKey,
       alt: event.altKey,
-      meta: event.metaKey,
+      meta: event.metaKey
     }
     stateRef.current.lastKey = event.key
 
@@ -298,14 +332,16 @@ export function useKeyboardNavigation(options: KeyboardNavigationOptions = {}) {
    * Handle key up events
    */
   const handleKeyUp = useCallback((event: KeyboardEvent) => {
-    if (!enabled) return
+    if (!enabled) {
+      return
+    }
 
     // Update state
     stateRef.current.modifiers = {
       ctrl: event.ctrlKey,
       shift: event.shiftKey,
       alt: event.altKey,
-      meta: event.metaKey,
+      meta: event.metaKey
     }
 
     // Call custom key up handler
@@ -316,7 +352,9 @@ export function useKeyboardNavigation(options: KeyboardNavigationOptions = {}) {
    * Set up global keyboard event listeners
    */
   useEffect(() => {
-    if (!enabled) return
+    if (!enabled) {
+      return
+    }
 
     // Register initial shortcuts
     stateRef.current.shortcuts = [...shortcuts]
@@ -329,7 +367,7 @@ export function useKeyboardNavigation(options: KeyboardNavigationOptions = {}) {
       // Clean up event listeners
       document.removeEventListener('keydown', handleKeyDown)
       document.removeEventListener('keyup', handleKeyUp)
-      
+
       // Remove help dialog if it exists
       if (helpDialogRef.current) {
         helpDialogRef.current.remove()
@@ -351,15 +389,15 @@ export function useKeyboardNavigation(options: KeyboardNavigationOptions = {}) {
     modifiers: stateRef.current.modifiers,
     lastKey: stateRef.current.lastKey,
     shortcuts: stateRef.current.shortcuts,
-    
+
     // Methods
     registerShortcut,
     unregisterShortcut,
     showHelpDialog,
-    
+
     // Utility
     matchesKeyCombo,
-    parseKeyCombo,
+    parseKeyCombo
   }
 }
 
@@ -376,7 +414,9 @@ export function useArrowNavigation(options: {
   const currentIndexRef = useRef(-1)
 
   const navigate = useCallback((direction: 'up' | 'down' | 'left' | 'right') => {
-    if (items.length === 0) return
+    if (items.length === 0) {
+      return
+    }
 
     let newIndex = currentIndexRef.current
 
@@ -450,7 +490,7 @@ export function useArrowNavigation(options: {
   return {
     currentIndex: currentIndexRef.current,
     navigate,
-    handleKeyDown,
+    handleKeyDown
   }
 }
 
@@ -466,7 +506,9 @@ export function useRovingTabIndex(items: HTMLElement[], options: {
   const activeIndexRef = useRef(-1)
 
   const setActiveIndex = useCallback((index: number) => {
-    if (index < 0 || index >= items.length) return
+    if (index < 0 || index >= items.length) {
+      return
+    }
 
     // Update tabindexes
     items.forEach((item, i) => {
@@ -482,16 +524,16 @@ export function useRovingTabIndex(items: HTMLElement[], options: {
       case 'ArrowUp':
       case 'ArrowLeft':
         event.preventDefault()
-        const prevIndex = activeIndexRef.current > 0 
-          ? activeIndexRef.current - 1 
+        const prevIndex = activeIndexRef.current > 0
+          ? activeIndexRef.current - 1
           : (loop ? items.length - 1 : activeIndexRef.current)
         setActiveIndex(prevIndex)
         break
       case 'ArrowDown':
       case 'ArrowRight':
         event.preventDefault()
-        const nextIndex = activeIndexRef.current < items.length - 1 
-          ? activeIndexRef.current + 1 
+        const nextIndex = activeIndexRef.current < items.length - 1
+          ? activeIndexRef.current + 1
           : (loop ? 0 : activeIndexRef.current)
         setActiveIndex(nextIndex)
         break
@@ -517,6 +559,6 @@ export function useRovingTabIndex(items: HTMLElement[], options: {
   return {
     activeIndex: activeIndexRef.current,
     setActiveIndex,
-    handleKeyDown,
+    handleKeyDown
   }
 }

@@ -3,12 +3,12 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
-import { 
-  Bell, 
-  BellRing, 
-  Navigation, 
-  AlertTriangle, 
-  Clock, 
+import {
+  Bell,
+  BellRing,
+  Navigation,
+  AlertTriangle,
+  Clock,
   X,
   ChevronDown,
   ChevronUp,
@@ -26,25 +26,25 @@ const proximityAlertsVariants = cva(
         'top-left': 'top-4 left-4',
         'top-right': 'top-4 right-4',
         'bottom-left': 'bottom-4 left-4',
-        'bottom-right': 'bottom-4 right-4',
+        'bottom-right': 'bottom-4 right-4'
       },
       size: {
         sm: 'max-w-xs',
         md: 'max-w-sm',
         lg: 'max-w-md',
-        xl: 'max-w-lg',
+        xl: 'max-w-lg'
       },
       variant: {
         default: 'p-4',
         compact: 'p-3',
-        minimal: 'p-2',
+        minimal: 'p-2'
       }
     },
     defaultVariants: {
       position: 'top-left',
       size: 'md',
-      variant: 'default',
-    },
+      variant: 'default'
+    }
   }
 )
 
@@ -257,10 +257,10 @@ const AlertItem: React.FC<AlertItemProps> = ({
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">Trust Score:</span>
                   <TrustBadge
-                    level={alert.trustScore >= 0.8 ? 'excellent' :
-                           alert.trustScore >= 0.6 ? 'good' :
-                           alert.trustScore >= 0.4 ? 'moderate' :
-                           alert.trustScore >= 0.2 ? 'low' : 'critical'}
+                    level={alert.trustScore >= 0.8 ? 'excellent'
+                      : alert.trustScore >= 0.6 ? 'good'
+                        : alert.trustScore >= 0.4 ? 'moderate'
+                          : alert.trustScore >= 0.2 ? 'low' : 'critical'}
                     score={Math.round(alert.trustScore * 100)}
                     size="sm"
                     showPercentage
@@ -327,7 +327,9 @@ const ProximityAlertsDisplay: React.FC<ProximityAlertsDisplayProps> = ({
 
   // Auto-dismiss functionality
   useEffect(() => {
-    if (!autoDismiss) return
+    if (!autoDismiss) {
+      return
+    }
 
     const interval = setInterval(() => {
       const now = Date.now()
@@ -342,9 +344,15 @@ const ProximityAlertsDisplay: React.FC<ProximityAlertsDisplayProps> = ({
 
   // Filter alerts
   const filteredAlerts = React.useMemo(() => {
-    if (filter === 'all') return visibleAlerts
-    if (filter === 'unread') return visibleAlerts.filter(alert => !alert.isRead)
-    if (filter === 'critical') return visibleAlerts.filter(alert => alert.severity === 'critical')
+    if (filter === 'all') {
+      return visibleAlerts
+    }
+    if (filter === 'unread') {
+      return visibleAlerts.filter(alert => !alert.isRead)
+    }
+    if (filter === 'critical') {
+      return visibleAlerts.filter(alert => alert.severity === 'critical')
+    }
     return visibleAlerts
   }, [visibleAlerts, filter])
 
@@ -483,7 +491,7 @@ const ProximityAlertsDisplay: React.FC<ProximityAlertsDisplayProps> = ({
                 onClick={() => handleAlertClick(alert)}
                 onDismiss={() => handleAlertDismiss(alert.id)}
                 onMarkRead={() => {
-                  setVisibleAlerts(prev => 
+                  setVisibleAlerts(prev =>
                     prev.map(a => a.id === alert.id ? { ...a, isRead: true } : a)
                   )
                 }}

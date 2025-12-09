@@ -1,6 +1,6 @@
 /**
  * Comprehensive tests for Emergency Event Lifecycle
- * 
+ *
  * These tests verify the complete lifecycle of emergency events:
  * creation → confirmation → resolution, including edge cases and error scenarios.
  */
@@ -8,13 +8,13 @@
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { useEmergencyStore } from '../emergencyStore'
 import { useTrustStore } from '../trustStore'
-import { 
-  createEmergencyEvent, 
-  createUser, 
+import {
+  createEmergencyEvent,
+  createUser,
   createTrustScore,
-  emergencyScenarios 
+  emergencyScenarios
 } from '@/test-utils/fixtures/emergencyScenarios'
-import { 
+import {
   initializeTestDatabase,
   resetTestDatabase,
   getMockDatabase,
@@ -25,7 +25,7 @@ describe('Emergency Event Lifecycle', () => {
   beforeEach(async () => {
     await resetTestDatabase()
     await initializeTestDatabase()
-    
+
     // Reset stores
     useEmergencyStore.getState().reset()
     useTrustStore.getState().reset()
@@ -43,13 +43,13 @@ describe('Emergency Event Lifecycle', () => {
         title: 'Test Medical Emergency',
         description: 'Patient experiencing chest pain',
         location: { latitude: 40.7128, longitude: -74.0060 },
-        reportedBy: 'user-citizen-001',
+        reportedBy: 'user-citizen-001'
       })
 
       // Set up user trust score
       const userTrustScore = createTrustScore({
         userId: 'user-citizen-001',
-        overall: 0.85,
+        overall: 0.85
       })
       act(() => {
         trustResult.current.setUserScore('user-citizen-001', userTrustScore)
@@ -66,7 +66,7 @@ describe('Emergency Event Lifecycle', () => {
         type: 'medical',
         severity: 'high',
         title: 'Test Medical Emergency',
-        status: 'pending',
+        status: 'pending'
       })
     })
 
@@ -76,7 +76,7 @@ describe('Emergency Event Lifecycle', () => {
       const invalidEvent = {
         // Missing required fields
         id: 'invalid-event',
-        type: 'medical',
+        type: 'medical'
         // Missing severity, title, description, location, reportedBy
       }
 
@@ -97,13 +97,13 @@ describe('Emergency Event Lifecycle', () => {
       const events = Array.from({ length: 10 }, (_, i) =>
         createEmergencyEvent({
           id: `concurrent-event-${i}`,
-          title: `Concurrent Event ${i}`,
+          title: `Concurrent Event ${i}`
         })
       )
 
       // Simulate concurrent creation
       await act(async () => {
-        await Promise.all(events.map(event => 
+        await Promise.all(events.map(event =>
           new Promise(resolve => {
             setTimeout(() => {
               result.current.addEvent(event)
@@ -114,7 +114,7 @@ describe('Emergency Event Lifecycle', () => {
       })
 
       expect(result.current.events).toHaveLength(10)
-      
+
       // Verify all events were added
       events.forEach(event => {
         expect(result.current.events.some(e => e.id === event.id)).toBe(true)
@@ -138,12 +138,12 @@ describe('Emergency Event Lifecycle', () => {
 
       const highTrustEvent = createEmergencyEvent({
         id: 'high-trust-event',
-        reportedBy: 'high-trust-user',
+        reportedBy: 'high-trust-user'
       })
 
       const lowTrustEvent = createEmergencyEvent({
         id: 'low-trust-event',
-        reportedBy: 'low-trust-user',
+        reportedBy: 'low-trust-user'
       })
 
       act(() => {
@@ -168,20 +168,20 @@ describe('Emergency Event Lifecycle', () => {
 
       const event = createEmergencyEvent({
         id: 'confirmation-test-1',
-        status: 'pending',
+        status: 'pending'
       })
 
       // Set up high-trust users for confirmation
       const confirmers = [
         createUser({ id: 'confirmer-1', trustScore: 0.9 }),
         createUser({ id: 'confirmer-2', trustScore: 0.85 }),
-        createUser({ id: 'confirmer-3', trustScore: 0.8 }),
+        createUser({ id: 'confirmer-3', trustScore: 0.8 })
       ]
 
       confirmers.forEach(user => {
         const trustScore = createTrustScore({
           userId: user.id,
-          overall: user.trustScore,
+          overall: user.trustScore
         })
         act(() => {
           trustResult.current.setUserScore(user.id, trustScore)
@@ -200,7 +200,7 @@ describe('Emergency Event Lifecycle', () => {
         eventId: event.id,
         userId: confirmer.id,
         confirmationType: 'confirm' as const,
-        location: confirmer.location,
+        location: confirmer.location
       }))
 
       // Add confirmations (this would typically be done through a separate confirmation system)
@@ -225,7 +225,7 @@ describe('Emergency Event Lifecycle', () => {
 
       const event = createEmergencyEvent({
         id: 'dispute-test-1',
-        status: 'pending',
+        status: 'pending'
       })
 
       // Set up users with conflicting trust levels
@@ -233,13 +233,13 @@ describe('Emergency Event Lifecycle', () => {
       const lowTrustDisputers = [
         createUser({ id: 'disputer-1', trustScore: 0.15 }),
         createUser({ id: 'disputer-2', trustScore: 0.12 }),
-        createUser({ id: 'disputer-3', trustScore: 0.10 }),
+        createUser({ id: 'disputer-3', trustScore: 0.10 })
       ]
 
       act(() => {
-        trustResult.current.setUserScore(highTrustConfirmer.id, 
+        trustResult.current.setUserScore(highTrustConfirmer.id,
           createTrustScore({ userId: highTrustConfirmer.id, overall: 0.95 }))
-        
+
         lowTrustDisputers.forEach(disputer => {
           trustResult.current.setUserScore(disputer.id,
             createTrustScore({ userId: disputer.id, overall: disputer.trustScore }))
@@ -252,7 +252,7 @@ describe('Emergency Event Lifecycle', () => {
 
       // The event should remain pending or be marked as disputed due to low-trust disputes
       act(() => {
-        emergencyResult.current.updateEvent(event.id, { 
+        emergencyResult.current.updateEvent(event.id, {
           status: 'pending', // Would typically be 'disputed' but we don't have that status
           trust_weight: 0.95 * 1 - (0.15 + 0.12 + 0.10) // Weighted calculation
         })
@@ -268,11 +268,11 @@ describe('Emergency Event Lifecycle', () => {
 
       const event = createEmergencyEvent({
         id: 'trust-threshold-test',
-        status: 'pending',
+        status: 'pending'
       })
 
       const lowTrustUser = createUser({ id: 'low-trust-user', trustScore: 0.2 })
-      
+
       act(() => {
         trustResult.current.setUserScore(lowTrustUser.id,
           createTrustScore({ userId: lowTrustUser.id, overall: 0.2 }))
@@ -294,7 +294,7 @@ describe('Emergency Event Lifecycle', () => {
 
       const event = createEmergencyEvent({
         id: 'resolution-test-1',
-        status: 'active',
+        status: 'active'
       })
 
       act(() => {
@@ -312,7 +312,7 @@ describe('Emergency Event Lifecycle', () => {
       const oldEvent = createEmergencyEvent({
         id: 'expired-event-1',
         status: 'resolved',
-        reportedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days ago
+        reportedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days ago
       })
 
       act(() => {
@@ -325,7 +325,7 @@ describe('Emergency Event Lifecycle', () => {
       const daysSinceResolution = (now.getTime() - eventDate.getTime()) / (1000 * 60 * 60 * 24)
 
       expect(daysSinceResolution).toBeGreaterThan(30)
-      
+
       // Event should be eligible for archival
       expect(daysSinceResolution).toBeGreaterThan(30)
     })
@@ -335,7 +335,7 @@ describe('Emergency Event Lifecycle', () => {
 
       const event = createEmergencyEvent({
         id: 'closure-test-1',
-        status: 'active',
+        status: 'active'
       })
 
       const finalReport = {
@@ -343,14 +343,14 @@ describe('Emergency Event Lifecycle', () => {
         message: 'Emergency resolved successfully',
         casualties: { minor: 0, major: 1, critical: 0, fatal: 0 },
         resourcesUsed: ['ambulance', 'paramedic'],
-        responseTime: 8,
+        responseTime: 8
       }
 
       act(() => {
         result.current.addEvent(event)
-        result.current.updateEvent(event.id, { 
+        result.current.updateEvent(event.id, {
           status: 'closed',
-          finalReport,
+          finalReport
         })
       })
 
@@ -365,7 +365,7 @@ describe('Emergency Event Lifecycle', () => {
       const expiredEvent = createEmergencyEvent({
         id: 'expired-pending-1',
         status: 'pending',
-        reportedAt: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(), // 25 hours ago
+        reportedAt: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString() // 25 hours ago
       })
 
       act(() => {
@@ -394,7 +394,7 @@ describe('Emergency Event Lifecycle', () => {
         createEmergencyEvent({
           id: `old-event-${i}`,
           status: 'resolved',
-          reportedAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(), // 90 days ago
+          reportedAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString() // 90 days ago
         })
       )
 
@@ -425,7 +425,7 @@ describe('Emergency Event Lifecycle', () => {
       const { result } = renderHook(() => useEmergencyStore())
 
       const event = createEmergencyEvent({
-        id: 'duplicate-test',
+        id: 'duplicate-test'
       })
 
       act(() => {
@@ -442,7 +442,7 @@ describe('Emergency Event Lifecycle', () => {
 
       const event = createEmergencyEvent({
         id: 'invalid-transition-test',
-        status: 'resolved',
+        status: 'resolved'
       })
 
       act(() => {
@@ -460,7 +460,7 @@ describe('Emergency Event Lifecycle', () => {
 
       const event = createEmergencyEvent({
         id: 'concurrent-update-test',
-        status: 'pending',
+        status: 'pending'
       })
 
       act(() => {
@@ -481,7 +481,7 @@ describe('Emergency Event Lifecycle', () => {
               result.current.updateEvent(event.id, { severity: 'critical' })
               resolve(undefined)
             }, 20)
-          }),
+          })
         ])
       })
 
@@ -497,7 +497,7 @@ describe('Emergency Event Lifecycle', () => {
       const event = createEmergencyEvent({
         id: 'integrity-test',
         title: 'Original Title',
-        description: 'Original Description',
+        description: 'Original Description'
       })
 
       act(() => {
@@ -520,7 +520,7 @@ describe('Emergency Event Lifecycle', () => {
       expect(finalEvent.title).toBe(originalEvent.title)
       expect(finalEvent.description).toBe(originalEvent.description)
       expect(finalEvent.reportedBy).toBe(originalEvent.reportedBy)
-      
+
       // Status should have evolved correctly
       expect(finalEvent.status).toBe('resolved')
       expect(finalEvent.severity).toBe('high')
@@ -536,7 +536,7 @@ describe('Emergency Event Lifecycle', () => {
       const largeEventSet = Array.from({ length: 1000 }, (_, i) =>
         createEmergencyEvent({
           id: `perf-test-${i}`,
-          title: `Performance Test Event ${i}`,
+          title: `Performance Test Event ${i}`
         })
       )
 
@@ -561,7 +561,7 @@ describe('Emergency Event Lifecycle', () => {
         createEmergencyEvent({
           id: `filter-test-${i}`,
           status: i % 3 === 0 ? 'active' : 'pending',
-          severity: ['low', 'medium', 'high', 'critical'][i % 4] as any,
+          severity: ['low', 'medium', 'high', 'critical'][i % 4] as any
         })
       )
 
@@ -572,7 +572,7 @@ describe('Emergency Event Lifecycle', () => {
       const startTime = performance.now()
 
       act(() => {
-        result.current.setFilters({ 
+        result.current.setFilters({
           status: ['active'],
           severity: [3, 4] // high and critical
         })

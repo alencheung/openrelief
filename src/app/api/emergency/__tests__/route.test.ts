@@ -1,6 +1,6 @@
 /**
  * Tests for Emergency Management API Routes
- * 
+ *
  * These tests verify the API endpoints for emergency event management
  * including CRUD operations, validation, and error handling.
  */
@@ -13,17 +13,19 @@ import { createEmergencyEvent, createUser } from '@/test-utils/fixtures/emergenc
 
 // Mock Supabase
 jest.mock('@/lib/supabase', () => ({
-  supabase: createMockSupabaseClient(),
+  supabase: createMockSupabaseClient()
 }))
 
 // Mock Next.js headers
 jest.mock('next/headers', () => ({
   headers: () => ({
     get: jest.fn((name) => {
-      if (name === 'authorization') return 'Bearer test-token'
+      if (name === 'authorization') {
+        return 'Bearer test-token'
+      }
       return null
-    }),
-  }),
+    })
+  })
 }))
 
 describe('Emergency API Routes', () => {
@@ -39,7 +41,7 @@ describe('Emergency API Routes', () => {
     it('should fetch emergency events with default parameters', async () => {
       const mockEvents = [
         createEmergencyEvent({ id: 'event-1' }),
-        createEmergencyEvent({ id: 'event-2' }),
+        createEmergencyEvent({ id: 'event-2' })
       ]
 
       mockSupabase.from.mockReturnValue({
@@ -49,11 +51,11 @@ describe('Emergency API Routes', () => {
               range: jest.fn().mockResolvedValue({
                 data: mockEvents,
                 error: null,
-                count: 2,
-              }),
-            }),
-          }),
-        }),
+                count: 2
+              })
+            })
+          })
+        })
       })
 
       const request = new NextRequest('http://localhost:3000/api/emergency')
@@ -69,11 +71,11 @@ describe('Emergency API Routes', () => {
 
     it('should fetch emergency events with filters', async () => {
       const mockFilteredEvents = [
-        createEmergencyEvent({ 
-          id: 'event-3', 
+        createEmergencyEvent({
+          id: 'event-3',
           emergency_type_id: 1, // Fire
-          severity: 'high',
-        }),
+          severity: 'high'
+        })
       ]
 
       mockSupabase.from.mockReturnValue({
@@ -85,13 +87,13 @@ describe('Emergency API Routes', () => {
                   range: jest.fn().mockResolvedValue({
                     data: mockFilteredEvents,
                     error: null,
-                    count: 1,
-                  }),
-                }),
-              }),
-            }),
-          }),
-        }),
+                    count: 1
+                  })
+                })
+              })
+            })
+          })
+        })
       })
 
       const request = new NextRequest(
@@ -108,15 +110,15 @@ describe('Emergency API Routes', () => {
 
     it('should fetch emergency events with spatial filtering', async () => {
       const mockNearbyEvents = [
-        createEmergencyEvent({ 
+        createEmergencyEvent({
           id: 'event-4',
-          location: 'POINT(-74.0060 40.7128)', // NYC
-        }),
+          location: 'POINT(-74.0060 40.7128)' // NYC
+        })
       ]
 
       mockSupabase.rpc.mockReturnValue({
         data: mockNearbyEvents,
-        error: null,
+        error: null
       })
 
       const request = new NextRequest(
@@ -130,7 +132,7 @@ describe('Emergency API Routes', () => {
       expect(mockSupabase.rpc).toHaveBeenCalledWith('get_nearby_emergency_events', {
         center_lat: 40.7128,
         center_lng: -74.0060,
-        radius_km: 10,
+        radius_km: 10
       })
     })
 
@@ -146,11 +148,11 @@ describe('Emergency API Routes', () => {
               range: jest.fn().mockResolvedValue({
                 data: mockPaginatedEvents,
                 error: null,
-                count: 25, // Total 25 events
-              }),
-            }),
-          }),
-        }),
+                count: 25 // Total 25 events
+              })
+            })
+          })
+        })
       })
 
       const request = new NextRequest('http://localhost:3000/api/emergency?page=2&limit=5')
@@ -173,11 +175,11 @@ describe('Emergency API Routes', () => {
               range: jest.fn().mockResolvedValue({
                 data: null,
                 error: { message: 'Database connection failed' },
-                count: null,
-              }),
-            }),
-          }),
-        }),
+                count: null
+              })
+            })
+          })
+        })
       })
 
       const request = new NextRequest('http://localhost:3000/api/emergency')
@@ -207,12 +209,12 @@ describe('Emergency API Routes', () => {
         severity: 'high',
         location: 'POINT(-74.0060 40.7128)',
         estimated_duration: 120,
-        affected_radius: 5,
+        affected_radius: 5
       }
 
       const createdEvent = createEmergencyEvent({
         id: 'new-event-1',
-        ...newEventData,
+        ...newEventData
       })
 
       mockSupabase.from.mockReturnValue({
@@ -220,18 +222,18 @@ describe('Emergency API Routes', () => {
           select: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: createdEvent,
-              error: null,
-            }),
-          }),
-        }),
+              error: null
+            })
+          })
+        })
       })
 
       const request = new NextRequest('http://localhost:3000/api/emergency', {
         method: 'POST',
         body: JSON.stringify(newEventData),
         headers: {
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       })
 
       const response = await POST(request)
@@ -245,7 +247,7 @@ describe('Emergency API Routes', () => {
 
     it('should validate required fields', async () => {
       const incompleteEventData = {
-        title: 'Test Emergency',
+        title: 'Test Emergency'
         // Missing required fields
       }
 
@@ -253,8 +255,8 @@ describe('Emergency API Routes', () => {
         method: 'POST',
         body: JSON.stringify(incompleteEventData),
         headers: {
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       })
 
       const response = await POST(request)
@@ -270,7 +272,7 @@ describe('Emergency API Routes', () => {
         description: 'Invalid emergency type',
         emergency_type_id: 999, // Non-existent type
         severity: 'high',
-        location: 'POINT(-74.0060 40.7128)',
+        location: 'POINT(-74.0060 40.7128)'
       }
 
       mockSupabase.from.mockReturnValue({
@@ -278,18 +280,18 @@ describe('Emergency API Routes', () => {
           eq: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: null, // No emergency type found
-              error: null,
-            }),
-          }),
-        }),
+              error: null
+            })
+          })
+        })
       })
 
       const request = new NextRequest('http://localhost:3000/api/emergency', {
         method: 'POST',
         body: JSON.stringify(invalidEventData),
         headers: {
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       })
 
       const response = await POST(request)
@@ -305,15 +307,15 @@ describe('Emergency API Routes', () => {
         description: 'Invalid severity',
         emergency_type_id: 1,
         severity: 'critical', // Invalid severity
-        location: 'POINT(-74.0060 40.7128)',
+        location: 'POINT(-74.0060 40.7128)'
       }
 
       const request = new NextRequest('http://localhost:3000/api/emergency', {
         method: 'POST',
         body: JSON.stringify(invalidEventData),
         headers: {
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       })
 
       const response = await POST(request)
@@ -329,15 +331,15 @@ describe('Emergency API Routes', () => {
         description: 'Invalid location',
         emergency_type_id: 1,
         severity: 'high',
-        location: 'invalid-location-format',
+        location: 'invalid-location-format'
       }
 
       const request = new NextRequest('http://localhost:3000/api/emergency', {
         method: 'POST',
         body: JSON.stringify(invalidEventData),
         headers: {
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       })
 
       const response = await POST(request)
@@ -353,7 +355,7 @@ describe('Emergency API Routes', () => {
         description: 'Valid emergency data',
         emergency_type_id: 1,
         severity: 'high',
-        location: 'POINT(-74.0060 40.7128)',
+        location: 'POINT(-74.0060 40.7128)'
       }
 
       mockSupabase.from.mockReturnValue({
@@ -361,18 +363,18 @@ describe('Emergency API Routes', () => {
           select: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: null,
-              error: { message: 'Database constraint violation' },
-            }),
-          }),
-        }),
+              error: { message: 'Database constraint violation' }
+            })
+          })
+        })
       })
 
       const request = new NextRequest('http://localhost:3000/api/emergency', {
         method: 'POST',
         body: JSON.stringify(validEventData),
         headers: {
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       })
 
       const response = await POST(request)
@@ -387,8 +389,8 @@ describe('Emergency API Routes', () => {
         method: 'POST',
         body: 'invalid-json{',
         headers: {
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       })
 
       const response = await POST(request)
@@ -405,19 +407,19 @@ describe('Emergency API Routes', () => {
         id: 'event-to-update',
         title: 'Updated Emergency Title',
         description: 'Updated description',
-        severity: 'medium',
+        severity: 'medium'
       }
 
       const existingEvent = createEmergencyEvent({
         id: updateData.id,
         title: 'Original Title',
-        severity: 'high',
+        severity: 'high'
       })
 
       const updatedEvent = {
         ...existingEvent,
         ...updateData,
-        updated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }
 
       // Mock fetching existing event
@@ -426,10 +428,10 @@ describe('Emergency API Routes', () => {
           eq: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: existingEvent,
-              error: null,
-            }),
-          }),
-        }),
+              error: null
+            })
+          })
+        })
       })
 
       // Mock update
@@ -439,19 +441,19 @@ describe('Emergency API Routes', () => {
             select: jest.fn().mockReturnValue({
               single: jest.fn().mockResolvedValue({
                 data: updatedEvent,
-                error: null,
-              }),
-            }),
-          }),
-        }),
+                error: null
+              })
+            })
+          })
+        })
       })
 
       const request = new NextRequest('http://localhost:3000/api/emergency', {
         method: 'PUT',
         body: JSON.stringify(updateData),
         headers: {
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       })
 
       const response = await PUT(request)
@@ -465,7 +467,7 @@ describe('Emergency API Routes', () => {
 
     it('should require event ID for updates', async () => {
       const updateData = {
-        title: 'Updated Title',
+        title: 'Updated Title'
         // Missing ID
       }
 
@@ -473,8 +475,8 @@ describe('Emergency API Routes', () => {
         method: 'PUT',
         body: JSON.stringify(updateData),
         headers: {
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       })
 
       const response = await PUT(request)
@@ -487,7 +489,7 @@ describe('Emergency API Routes', () => {
     it('should handle non-existent event', async () => {
       const updateData = {
         id: 'non-existent-event',
-        title: 'Updated Title',
+        title: 'Updated Title'
       }
 
       mockSupabase.from.mockReturnValue({
@@ -495,18 +497,18 @@ describe('Emergency API Routes', () => {
           eq: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: null,
-              error: null,
-            }),
-          }),
-        }),
+              error: null
+            })
+          })
+        })
       })
 
       const request = new NextRequest('http://localhost:3000/api/emergency', {
         method: 'PUT',
         body: JSON.stringify(updateData),
         headers: {
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       })
 
       const response = await PUT(request)
@@ -519,13 +521,13 @@ describe('Emergency API Routes', () => {
     it('should prevent updating resolved events', async () => {
       const updateData = {
         id: 'resolved-event',
-        title: 'Should not update',
+        title: 'Should not update'
       }
 
       const resolvedEvent = createEmergencyEvent({
         id: updateData.id,
         status: 'resolved',
-        resolved_at: new Date().toISOString(),
+        resolved_at: new Date().toISOString()
       })
 
       mockSupabase.from.mockReturnValue({
@@ -533,18 +535,18 @@ describe('Emergency API Routes', () => {
           eq: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: resolvedEvent,
-              error: null,
-            }),
-          }),
-        }),
+              error: null
+            })
+          })
+        })
       })
 
       const request = new NextRequest('http://localhost:3000/api/emergency', {
         method: 'PUT',
         body: JSON.stringify(updateData),
         headers: {
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       })
 
       const response = await PUT(request)
@@ -558,7 +560,7 @@ describe('Emergency API Routes', () => {
       const updateData = {
         id: 'event-to-validate',
         severity: 'invalid-severity',
-        emergency_type_id: 'not-a-number',
+        emergency_type_id: 'not-a-number'
       }
 
       const existingEvent = createEmergencyEvent({ id: updateData.id })
@@ -568,18 +570,18 @@ describe('Emergency API Routes', () => {
           eq: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: existingEvent,
-              error: null,
-            }),
-          }),
-        }),
+              error: null
+            })
+          })
+        })
       })
 
       const request = new NextRequest('http://localhost:3000/api/emergency', {
         method: 'PUT',
         body: JSON.stringify(updateData),
         headers: {
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       })
 
       const response = await PUT(request)
@@ -601,10 +603,10 @@ describe('Emergency API Routes', () => {
           eq: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: existingEvent,
-              error: null,
-            }),
-          }),
-        }),
+              error: null
+            })
+          })
+        })
       })
 
       // Mock deletion
@@ -612,14 +614,14 @@ describe('Emergency API Routes', () => {
         delete: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
             eq: jest.fn().mockResolvedValue({
-              error: null,
-            }),
-          }),
-        }),
+              error: null
+            })
+          })
+        })
       })
 
       const request = new NextRequest(`http://localhost:3000/api/emergency?id=${eventId}`, {
-        method: 'DELETE',
+        method: 'DELETE'
       })
 
       const response = await DELETE(request)
@@ -631,7 +633,7 @@ describe('Emergency API Routes', () => {
 
     it('should require event ID for deletion', async () => {
       const request = new NextRequest('http://localhost:3000/api/emergency', {
-        method: 'DELETE',
+        method: 'DELETE'
       })
 
       const response = await DELETE(request)
@@ -649,14 +651,14 @@ describe('Emergency API Routes', () => {
           eq: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: null,
-              error: null,
-            }),
-          }),
-        }),
+              error: null
+            })
+          })
+        })
       })
 
       const request = new NextRequest(`http://localhost:3000/api/emergency?id=${eventId}`, {
-        method: 'DELETE',
+        method: 'DELETE'
       })
 
       const response = await DELETE(request)
@@ -670,7 +672,7 @@ describe('Emergency API Routes', () => {
       const eventId = 'active-event'
       const activeEvent = createEmergencyEvent({
         id: eventId,
-        status: 'active',
+        status: 'active'
       })
 
       mockSupabase.from.mockReturnValue({
@@ -678,14 +680,14 @@ describe('Emergency API Routes', () => {
           eq: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: activeEvent,
-              error: null,
-            }),
-          }),
-        }),
+              error: null
+            })
+          })
+        })
       })
 
       const request = new NextRequest(`http://localhost:3000/api/emergency?id=${eventId}`, {
-        method: 'DELETE',
+        method: 'DELETE'
       })
 
       const response = await DELETE(request)
@@ -705,10 +707,10 @@ describe('Emergency API Routes', () => {
           eq: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: existingEvent,
-              error: null,
-            }),
-          }),
-        }),
+              error: null
+            })
+          })
+        })
       })
 
       // Mock deletion error
@@ -716,14 +718,14 @@ describe('Emergency API Routes', () => {
         delete: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
             eq: jest.fn().mockResolvedValue({
-              error: { message: 'Foreign key constraint violation' },
-            }),
-          }),
-        }),
+              error: { message: 'Foreign key constraint violation' }
+            })
+          })
+        })
       })
 
       const request = new NextRequest(`http://localhost:3000/api/emergency?id=${eventId}`, {
-        method: 'DELETE',
+        method: 'DELETE'
       })
 
       const response = await DELETE(request)
@@ -739,16 +741,16 @@ describe('Emergency API Routes', () => {
       // Mock headers without authorization
       jest.doMock('next/headers', () => ({
         headers: () => ({
-          get: jest.fn(() => null),
-        }),
+          get: jest.fn(() => null)
+        })
       }))
 
       const request = new NextRequest('http://localhost:3000/api/emergency', {
         method: 'POST',
         body: JSON.stringify({}),
         headers: {
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       })
 
       const response = await POST(request)
@@ -761,11 +763,11 @@ describe('Emergency API Routes', () => {
     it('should handle rate limiting', async () => {
       // Mock rate limiter
       jest.doMock('@/lib/rate-limiter', () => ({
-        checkRateLimit: jest.fn().mockResolvedValue(false),
+        checkRateLimit: jest.fn().mockResolvedValue(false)
       }))
 
       const request = new NextRequest('http://localhost:3000/api/emergency', {
-        method: 'GET',
+        method: 'GET'
       })
 
       const response = await GET(request)
@@ -781,15 +783,15 @@ describe('Emergency API Routes', () => {
         description: 'A'.repeat(100000), // Very large description
         emergency_type_id: 1,
         severity: 'high',
-        location: 'POINT(-74.0060 40.7128)',
+        location: 'POINT(-74.0060 40.7128)'
       }
 
       const request = new NextRequest('http://localhost:3000/api/emergency', {
         method: 'POST',
         body: JSON.stringify(largePayload),
         headers: {
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       })
 
       const response = await POST(request)
@@ -805,7 +807,7 @@ describe('Emergency API Routes', () => {
         description: 'Testing concurrent requests',
         emergency_type_id: 1,
         severity: 'high',
-        location: 'POINT(-74.0060 40.7128)',
+        location: 'POINT(-74.0060 40.7128)'
       }
 
       const createdEvent = createEmergencyEvent(eventData)
@@ -815,10 +817,10 @@ describe('Emergency API Routes', () => {
           select: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: createdEvent,
-              error: null,
-            }),
-          }),
-        }),
+              error: null
+            })
+          })
+        })
       })
 
       // Create multiple concurrent requests
@@ -827,8 +829,8 @@ describe('Emergency API Routes', () => {
           method: 'POST',
           body: JSON.stringify(eventData),
           headers: {
-            'Content-Type': 'application/json',
-          },
+            'Content-Type': 'application/json'
+          }
         })
       )
 
@@ -848,13 +850,13 @@ describe('Emergency API Routes', () => {
         description: '<img src=x onerror=alert("xss")>Malicious content',
         emergency_type_id: 1,
         severity: 'high',
-        location: 'POINT(-74.0060 40.7128)',
+        location: 'POINT(-74.0060 40.7128)'
       }
 
       const sanitizedEvent = createEmergencyEvent({
         ...maliciousData,
         title: 'Emergency', // Script removed
-        description: 'Malicious content', // HTML removed
+        description: 'Malicious content' // HTML removed
       })
 
       mockSupabase.from.mockReturnValue({
@@ -862,18 +864,18 @@ describe('Emergency API Routes', () => {
           select: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: sanitizedEvent,
-              error: null,
-            }),
-          }),
-        }),
+              error: null
+            })
+          })
+        })
       })
 
       const request = new NextRequest('http://localhost:3000/api/emergency', {
         method: 'POST',
         body: JSON.stringify(maliciousData),
         headers: {
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       })
 
       const response = await POST(request)
@@ -892,15 +894,15 @@ describe('Emergency API Routes', () => {
         description: 'Test with invalid coordinates',
         emergency_type_id: 1,
         severity: 'high',
-        location: 'POINT(200 100)', // Invalid coordinates
+        location: 'POINT(200 100)' // Invalid coordinates
       }
 
       const request = new NextRequest('http://localhost:3000/api/emergency', {
         method: 'POST',
         body: JSON.stringify(invalidCoordinates),
         headers: {
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       })
 
       const response = await POST(request)
@@ -916,15 +918,15 @@ describe('Emergency API Routes', () => {
         description: 'Valid description',
         emergency_type_id: 1,
         severity: 'high',
-        location: 'POINT(-74.0060 40.7128)',
+        location: 'POINT(-74.0060 40.7128)'
       }
 
       const request = new NextRequest('http://localhost:3000/api/emergency', {
         method: 'POST',
         body: JSON.stringify(longTitle),
         headers: {
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       })
 
       const response = await POST(request)

@@ -3,11 +3,11 @@
 import React, { useEffect, useRef, useCallback } from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
-import { 
-  Volume2, 
-  VolumeX, 
-  Eye, 
-  EyeOff, 
+import {
+  Volume2,
+  VolumeX,
+  Eye,
+  EyeOff,
   Keyboard,
   Navigation,
   Info,
@@ -23,24 +23,24 @@ const accessibilityControlsVariants = cva(
         'top-left': 'top-4 left-4',
         'top-right': 'top-4 right-4',
         'bottom-left': 'bottom-4 left-4',
-        'bottom-right': 'bottom-4 right-4',
+        'bottom-right': 'bottom-4 right-4'
       },
       size: {
         sm: 'p-3',
         md: 'p-4',
-        lg: 'p-6',
+        lg: 'p-6'
       },
       variant: {
         default: 'border-border',
         minimal: 'border-transparent shadow-lg',
-        prominent: 'border-primary shadow-xl',
+        prominent: 'border-primary shadow-xl'
       }
     },
     defaultVariants: {
       position: 'top-right',
       size: 'sm',
-      variant: 'default',
-    },
+      variant: 'default'
+    }
   }
 )
 
@@ -91,7 +91,9 @@ const AccessibilityMapFeatures: React.FC<AccessibilityMapFeaturesProps> = ({
 
   // Screen reader announcements
   const announce = useCallback((message: string, priority: 'low' | 'medium' | 'high' | 'critical' = 'medium') => {
-    if (!settings.screenReaderEnabled && !settings.audioAnnouncements) return
+    if (!settings.screenReaderEnabled && !settings.audioAnnouncements) {
+      return
+    }
 
     const id = `announcement-${++announcementIdRef.current}`
     const newAnnouncement: AnnouncementMessage = {
@@ -124,7 +126,9 @@ const AccessibilityMapFeatures: React.FC<AccessibilityMapFeaturesProps> = ({
 
   // Keyboard navigation handler
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (!settings.keyboardNavigation) return
+    if (!settings.keyboardNavigation) {
+      return
+    }
 
     let handled = false
 
@@ -135,7 +139,7 @@ const AccessibilityMapFeatures: React.FC<AccessibilityMapFeaturesProps> = ({
         announce('Closed all popups')
         handled = true
         break
-      
+
       case 'Tab':
         // Enhance tab navigation with announcement
         if (event.shiftKey) {
@@ -144,7 +148,7 @@ const AccessibilityMapFeatures: React.FC<AccessibilityMapFeaturesProps> = ({
           announce('Navigating forwards')
         }
         break
-      
+
       case 'Enter':
       case ' ':
         // Announce button activation
@@ -153,7 +157,7 @@ const AccessibilityMapFeatures: React.FC<AccessibilityMapFeaturesProps> = ({
           announce(`Activated ${label}`)
         }
         break
-      
+
       case 'h':
         if (event.ctrlKey || event.metaKey) {
           event.preventDefault()
@@ -162,7 +166,7 @@ const AccessibilityMapFeatures: React.FC<AccessibilityMapFeaturesProps> = ({
           handled = true
         }
         break
-      
+
       case 'l':
         if (event.ctrlKey || event.metaKey) {
           event.preventDefault()
@@ -171,7 +175,7 @@ const AccessibilityMapFeatures: React.FC<AccessibilityMapFeaturesProps> = ({
           handled = true
         }
         break
-      
+
       case 'm':
         if (event.ctrlKey || event.metaKey) {
           event.preventDefault()
@@ -180,7 +184,7 @@ const AccessibilityMapFeatures: React.FC<AccessibilityMapFeaturesProps> = ({
           handled = true
         }
         break
-      
+
       case 'a':
         if (event.ctrlKey || event.metaKey) {
           event.preventDefault()
@@ -208,7 +212,7 @@ const AccessibilityMapFeatures: React.FC<AccessibilityMapFeaturesProps> = ({
   // Apply accessibility classes to document
   useEffect(() => {
     const root = document.documentElement
-    
+
     if (settings.highContrastMode) {
       root.classList.add('high-contrast')
     } else {
@@ -236,7 +240,9 @@ const AccessibilityMapFeatures: React.FC<AccessibilityMapFeaturesProps> = ({
 
   // Map-specific accessibility features
   useEffect(() => {
-    if (!mapInstance) return
+    if (!mapInstance) {
+      return
+    }
 
     // Enhanced keyboard navigation for map
     if (settings.keyboardNavigation) {
@@ -262,7 +268,7 @@ const AccessibilityMapFeatures: React.FC<AccessibilityMapFeaturesProps> = ({
               'circle-stroke-color': '#000000',
               'circle-stroke-width': 3,
               'text-halo-color': '#ffffff',
-              'text-halo-width': 2,
+              'text-halo-width': 2
             })
           }
         }))
@@ -299,7 +305,9 @@ const AccessibilityMapFeatures: React.FC<AccessibilityMapFeaturesProps> = ({
     onSettingsChange({ [key]: !settings[key] })
   }
 
-  if (!showControls) return null
+  if (!showControls) {
+    return null
+  }
 
   return (
     <>
@@ -335,6 +343,7 @@ const AccessibilityMapFeatures: React.FC<AccessibilityMapFeaturesProps> = ({
             <Keyboard className="w-4 h-4" />
           </EnhancedButton>
         ) : (
+
           /* Full Controls */
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between mb-2">

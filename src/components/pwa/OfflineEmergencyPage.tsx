@@ -172,7 +172,7 @@ export function OfflineEmergencyPage() {
                     className={`p-3 text-center rounded-lg border-2 transition-colors ${formData.type === type.value
                       ? 'border-red-500 bg-red-50'
                       : 'border-gray-200 hover:border-gray-300'
-                      }`}
+                    }`}
                   >
                     <div className="text-2xl mb-1">{type.icon}</div>
                     <div className="text-xs font-medium">{type.label}</div>
@@ -195,7 +195,7 @@ export function OfflineEmergencyPage() {
                     className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${formData.severity === level.value
                       ? level.color
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
+                    }`}
                   >
                     {level.label}
                   </button>

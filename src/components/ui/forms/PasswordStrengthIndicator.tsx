@@ -11,12 +11,12 @@ const passwordStrengthVariants = cva(
         weak: 'bg-destructive',
         fair: 'bg-warning',
         good: 'bg-yellow-500',
-        strong: 'bg-success',
-      },
+        strong: 'bg-success'
+      }
     },
     defaultVariants: {
-      strength: 'weak',
-    },
+      strength: 'weak'
+    }
   }
 )
 
@@ -45,8 +45,8 @@ export interface PasswordStrengthIndicatorProps
 }
 
 const PasswordStrengthIndicator = React.forwardRef<HTMLDivElement, PasswordStrengthIndicatorProps>(
-  ({ 
-    className, 
+  ({
+    className,
     password,
     showRequirements = false,
     showPassword = false,
@@ -55,7 +55,7 @@ const PasswordStrengthIndicator = React.forwardRef<HTMLDivElement, PasswordStren
     strengthLevels = { weak: 25, fair: 50, good: 75, strong: 100 },
     showScore = false,
     scoreFormatter = (score, max) => `${score}/${max}`,
-    ...props 
+    ...props
   }, ref) => {
     // Default password requirements
     const defaultRequirements: PasswordRequirement[] = [
@@ -63,53 +63,64 @@ const PasswordStrengthIndicator = React.forwardRef<HTMLDivElement, PasswordStren
       { regex: /[A-Z]/, text: 'One uppercase letter', met: false },
       { regex: /[a-z]/, text: 'One lowercase letter', met: false },
       { regex: /[0-9]/, text: 'One number', met: false },
-      { regex: /[^A-Za-z0-9]/, text: 'One special character', met: false },
+      { regex: /[^A-Za-z0-9]/, text: 'One special character', met: false }
     ]
-    
+
     const requirements = customRequirements || defaultRequirements
-    
+
     // Calculate password strength
     const calculateStrength = (pwd: string) => {
-      if (!pwd) return 0
-      
+      if (!pwd) {
+        return 0
+      }
+
       let score = 0
       let metRequirements = 0
-      
+
       // Check requirements
       const updatedRequirements = requirements.map(req => {
         const met = req.regex.test(pwd)
-        if (met) metRequirements++
+        if (met) {
+          metRequirements++
+        }
         return { ...req, met }
       })
-      
+
       // Base score from requirements met
       score = (metRequirements / requirements.length) * 70
-      
+
       // Bonus points for length
-      if (pwd.length >= 12) score += 15
-      else if (pwd.length >= 10) score += 10
-      else if (pwd.length >= 8) score += 5
-      
+      if (pwd.length >= 12) {
+        score += 15
+      } else if (pwd.length >= 10) {
+        score += 10
+      } else if (pwd.length >= 8) {
+        score += 5
+      }
+
       // Bonus points for complexity
       const hasUpper = /[A-Z]/.test(pwd)
       const hasLower = /[a-z]/.test(pwd)
       const hasNumber = /[0-9]/.test(pwd)
       const hasSpecial = /[^A-Za-z0-9]/.test(pwd)
-      
-      if (hasUpper && hasLower && hasNumber && hasSpecial) score += 10
-      else if ((hasUpper && hasLower) && (hasNumber || hasSpecial)) score += 5
-      
+
+      if (hasUpper && hasLower && hasNumber && hasSpecial) {
+        score += 10
+      } else if ((hasUpper && hasLower) && (hasNumber || hasSpecial)) {
+        score += 5
+      }
+
       return Math.min(100, Math.round(score))
     }
-    
+
     const [strength, setStrength] = React.useState(0)
     const [currentRequirements, setCurrentRequirements] = React.useState(requirements)
-    
+
     // Update strength when password changes
     React.useEffect(() => {
       const newStrength = calculateStrength(password)
       setStrength(newStrength)
-      
+
       // Update requirements
       const updatedRequirements = requirements.map(req => ({
         ...req,
@@ -117,15 +128,21 @@ const PasswordStrengthIndicator = React.forwardRef<HTMLDivElement, PasswordStren
       }))
       setCurrentRequirements(updatedRequirements)
     }, [password])
-    
+
     // Get strength level
     const getStrengthLevel = () => {
-      if (strength < strengthLevels.weak) return 'weak'
-      if (strength < strengthLevels.fair) return 'fair'
-      if (strength < strengthLevels.good) return 'good'
+      if (strength < strengthLevels.weak) {
+        return 'weak'
+      }
+      if (strength < strengthLevels.fair) {
+        return 'fair'
+      }
+      if (strength < strengthLevels.good) {
+        return 'good'
+      }
       return 'strong'
     }
-    
+
     // Get strength color
     const getStrengthColor = () => {
       const level = getStrengthLevel()
@@ -136,7 +153,7 @@ const PasswordStrengthIndicator = React.forwardRef<HTMLDivElement, PasswordStren
         case 'strong': return 'text-success'
       }
     }
-    
+
     // Get strength text
     const getStrengthText = () => {
       const level = getStrengthLevel()
@@ -147,10 +164,10 @@ const PasswordStrengthIndicator = React.forwardRef<HTMLDivElement, PasswordStren
         case 'strong': return 'Strong password'
       }
     }
-    
+
     const strengthLevel = getStrengthLevel()
     const strengthColor = getStrengthColor()
-    
+
     return (
       <div ref={ref} className={cn('space-y-3', className)} {...props}>
         {/* Strength Bar */}
@@ -163,35 +180,35 @@ const PasswordStrengthIndicator = React.forwardRef<HTMLDivElement, PasswordStren
               </span>
             )}
           </div>
-          
+
           <div className="relative">
             {/* Background */}
             <div className="w-full h-2 bg-muted rounded-full" />
-            
+
             {/* Strength segments */}
             <div className="absolute inset-0 flex">
-              <div 
+              <div
                 className={cn(
                   'h-2 rounded-l-full transition-all duration-normal',
                   strength >= 25 ? passwordStrengthVariants({ strength: strengthLevel }) : 'bg-muted'
                 )}
                 style={{ width: '25%' }}
               />
-              <div 
+              <div
                 className={cn(
                   'h-2 transition-all duration-normal',
                   strength >= 50 ? passwordStrengthVariants({ strength: strengthLevel }) : 'bg-muted'
                 )}
                 style={{ width: '25%' }}
               />
-              <div 
+              <div
                 className={cn(
                   'h-2 transition-all duration-normal',
                   strength >= 75 ? passwordStrengthVariants({ strength: strengthLevel }) : 'bg-muted'
                 )}
                 style={{ width: '25%' }}
               />
-              <div 
+              <div
                 className={cn(
                   'h-2 rounded-r-full transition-all duration-normal',
                   strength >= 100 ? passwordStrengthVariants({ strength: strengthLevel }) : 'bg-muted'
@@ -200,12 +217,12 @@ const PasswordStrengthIndicator = React.forwardRef<HTMLDivElement, PasswordStren
               />
             </div>
           </div>
-          
+
           <div className={cn('text-sm font-medium', strengthColor)}>
             {getStrengthText()}
           </div>
         </div>
-        
+
         {/* Password Toggle */}
         {onTogglePassword && (
           <button
@@ -217,7 +234,7 @@ const PasswordStrengthIndicator = React.forwardRef<HTMLDivElement, PasswordStren
             {showPassword ? 'Hide password' : 'Show password'}
           </button>
         )}
-        
+
         {/* Requirements List */}
         {showRequirements && (
           <div className="space-y-2">
@@ -227,8 +244,8 @@ const PasswordStrengthIndicator = React.forwardRef<HTMLDivElement, PasswordStren
                 <div key={index} className="flex items-center gap-2 text-sm">
                   <div className={cn(
                     'flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center',
-                    req.met 
-                      ? 'bg-success text-success-foreground' 
+                    req.met
+                      ? 'bg-success text-success-foreground'
                       : 'bg-muted text-muted-foreground'
                   )}>
                     {req.met ? <Check className="h-2.5 w-2.5" /> : <X className="h-2.5 w-2.5" />}
@@ -243,7 +260,7 @@ const PasswordStrengthIndicator = React.forwardRef<HTMLDivElement, PasswordStren
             </div>
           </div>
         )}
-        
+
         {/* Security Tips */}
         {strength < 50 && (
           <div className="flex items-start gap-2 p-3 bg-warning/10 border border-warning/20 rounded-lg">

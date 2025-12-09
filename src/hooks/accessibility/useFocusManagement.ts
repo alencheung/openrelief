@@ -3,30 +3,37 @@
 import { useRef, useEffect, useCallback } from 'react'
 
 export interface FocusManagementOptions {
+
   /**
    * Whether to trap focus within the container
    */
   trapFocus?: boolean
+
   /**
    * Whether to restore focus to the previous element when unmounted
    */
   restoreFocus?: boolean
+
   /**
    * Whether to focus the first focusable element when mounted
    */
   autoFocus?: boolean
+
   /**
    * Whether to focus the container itself instead of the first element
    */
   focusContainer?: boolean
+
   /**
    * CSS selector for elements that should be excluded from focus trapping
    */
   excludeSelector?: string
+
   /**
    * Callback when focus is trapped
    */
   onTrapStart?: () => void
+
   /**
    * Callback when focus is released
    */
@@ -50,7 +57,7 @@ export function useFocusManagement(options: FocusManagementOptions = {}) {
     focusContainer = false,
     excludeSelector,
     onTrapStart,
-    onTrapEnd,
+    onTrapEnd
   } = options
 
   const containerRef = useRef<HTMLElement>(null)
@@ -61,7 +68,9 @@ export function useFocusManagement(options: FocusManagementOptions = {}) {
    * Get all focusable elements within the container
    */
   const getFocusableElements = useCallback((): HTMLElement[] => {
-    if (!containerRef.current) return []
+    if (!containerRef.current) {
+      return []
+    }
 
     const selector = [
       'button:not([disabled])',
@@ -78,7 +87,7 @@ export function useFocusManagement(options: FocusManagementOptions = {}) {
       'object',
       'embed',
       'audio[controls]',
-      'video[controls]',
+      'video[controls]'
     ].join(', ')
 
     const elements = Array.from(
@@ -142,7 +151,9 @@ export function useFocusManagement(options: FocusManagementOptions = {}) {
    * Start trapping focus within the container
    */
   const startFocusTrap = useCallback(() => {
-    if (!trapFocus || isTrappedRef.current) return
+    if (!trapFocus || isTrappedRef.current) {
+      return
+    }
 
     // Store the currently focused element
     previousFocusRef.current = document.activeElement as HTMLElement
@@ -160,7 +171,9 @@ export function useFocusManagement(options: FocusManagementOptions = {}) {
    * Stop trapping focus and restore the previous focus
    */
   const endFocusTrap = useCallback(() => {
-    if (!isTrappedRef.current) return
+    if (!isTrappedRef.current) {
+      return
+    }
 
     isTrappedRef.current = false
 
@@ -177,12 +190,16 @@ export function useFocusManagement(options: FocusManagementOptions = {}) {
    * Handle keyboard navigation within the trapped area
    */
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (!isTrappedRef.current || !trapFocus) return
+    if (!isTrappedRef.current || !trapFocus) {
+      return
+    }
 
     if (event.key === 'Tab') {
       const focusableElements = getFocusableElements()
-      
-      if (focusableElements.length === 0) return
+
+      if (focusableElements.length === 0) {
+        return
+      }
 
       const firstElement = focusableElements[0]
       const lastElement = focusableElements[focusableElements.length - 1]
@@ -210,7 +227,9 @@ export function useFocusManagement(options: FocusManagementOptions = {}) {
    * Set up focus trap when container is mounted
    */
   useEffect(() => {
-    if (!containerRef.current) return
+    if (!containerRef.current) {
+      return
+    }
 
     const container = containerRef.current
 
@@ -223,7 +242,7 @@ export function useFocusManagement(options: FocusManagementOptions = {}) {
     return () => {
       // Clean up event listener
       container.removeEventListener('keydown', handleKeyDown)
-      
+
       // End focus trap
       endFocusTrap()
     }
@@ -248,7 +267,7 @@ export function useFocusManagement(options: FocusManagementOptions = {}) {
     focusFirstElement,
     startFocusTrap,
     endFocusTrap,
-    isTrapped: isTrappedRef.current,
+    isTrapped: isTrappedRef.current
   }
 }
 
@@ -280,17 +299,21 @@ export function useFocusOrder(elements: HTMLElement[]) {
   const currentIndexRef = useRef(-1)
 
   const next = useCallback(() => {
-    if (elements.length === 0) return
+    if (elements.length === 0) {
+      return
+    }
 
     currentIndexRef.current = (currentIndexRef.current + 1) % elements.length
     elements[currentIndexRef.current]?.focus()
   }, [elements])
 
   const previous = useCallback(() => {
-    if (elements.length === 0) return
+    if (elements.length === 0) {
+      return
+    }
 
-    currentIndexRef.current = currentIndexRef.current <= 0 
-      ? elements.length - 1 
+    currentIndexRef.current = currentIndexRef.current <= 0
+      ? elements.length - 1
       : currentIndexRef.current - 1
     elements[currentIndexRef.current]?.focus()
   }, [elements])

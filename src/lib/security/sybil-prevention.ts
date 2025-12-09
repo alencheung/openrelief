@@ -1,6 +1,6 @@
 /**
  * Sybil Attack Prevention System
- * 
+ *
  * This module provides real-time detection and prevention of Sybil attacks
  * through behavioral analysis, pattern recognition, and trust score integration.
  * It implements multiple layers of defense to protect the emergency coordination
@@ -137,46 +137,46 @@ const DETECTION_CONFIG = {
     maxAccountsPerHour: 10,
     maxAccountsPerIP: 5,
     suspiciousTrustScoreThreshold: 0.2,
-    accountAgeSuspicionThreshold: 24 * 60 * 60 * 1000, // 24 hours
+    accountAgeSuspicionThreshold: 24 * 60 * 60 * 1000 // 24 hours
   },
-  
+
   // Behavioral analysis thresholds
   behavior: {
     maxActionsPerHour: 100,
     suspiciousConsistencyThreshold: 0.9,
     automatedBehaviorThreshold: 0.8,
-    burstActivityThreshold: 20,
+    burstActivityThreshold: 20
   },
-  
+
   // Network analysis thresholds
   network: {
     maxSimilarConnections: 10,
     reciprocityThreshold: 0.1,
     clusteringThreshold: 0.7,
-    isolationThreshold: 0.1,
+    isolationThreshold: 0.1
   },
-  
+
   // Voting analysis thresholds
   voting: {
     consensusAlignmentThreshold: 0.3,
     targetVotingThreshold: 5,
     timingSimilarityThreshold: 0.8,
-    clusterSizeThreshold: 5,
+    clusterSizeThreshold: 5
   },
-  
+
   // Location analysis thresholds
   location: {
     maxSpeedKmh: 1000, // Supersonic speed threshold
     proximityThreshold: 100, // meters
     reportingRadiusThreshold: 500, // meters
-    timeWindowThreshold: 60 * 60 * 1000, // 1 hour
+    timeWindowThreshold: 60 * 60 * 1000 // 1 hour
   },
-  
+
   // Trust score thresholds
   trust: {
     manipulationThreshold: 0.1,
     rapidIncreaseThreshold: 0.05,
-    suspiciousVarianceThreshold: 0.2,
+    suspiciousVarianceThreshold: 0.2
   }
 }
 
@@ -187,24 +187,26 @@ export class SybilPreventionEngine {
   private userProfiles: Map<string, UserBehaviorProfile> = new Map()
   private detectionActive = false
   private analysisInterval: NodeJS.Timeout | null = null
-  
+
   constructor() {
     this.startDetection()
   }
-  
+
   /**
    * Start Sybil attack detection
    */
   startDetection(): void {
-    if (this.detectionActive) return
-    
+    if (this.detectionActive) {
+      return
+    }
+
     this.detectionActive = true
     this.loadUserProfiles()
     this.startRealTimeAnalysis()
-    
+
     console.log('Sybil attack prevention system activated')
   }
-  
+
   /**
    * Stop Sybil attack detection
    */
@@ -214,10 +216,10 @@ export class SybilPreventionEngine {
       clearInterval(this.analysisInterval)
       this.analysisInterval = null
     }
-    
+
     console.log('Sybil attack prevention system deactivated')
   }
-  
+
   /**
    * Analyze user behavior for Sybil patterns
    */
@@ -229,32 +231,32 @@ export class SybilPreventionEngine {
         .select('*')
         .eq('user_id', userId)
         .single()
-      
+
       if (userError || !userData) {
         throw new Error(`User ${userId} not found`)
       }
-      
+
       // Get user's activity history
       const activityHistory = await this.getUserActivityHistory(userId)
-      
+
       // Analyze activity patterns
       const activityPattern = this.analyzeActivityPattern(activityHistory)
-      
+
       // Analyze network connections
       const networkConnections = await this.analyzeNetworkConnections(userId)
-      
+
       // Analyze voting history
       const votingHistory = await this.analyzeVotingHistory(userId)
-      
+
       // Analyze reporting history
       const reportingHistory = await this.analyzeReportingHistory(userId)
-      
+
       // Get location history
       const locationHistory = await this.getLocationHistory(userId)
-      
+
       // Generate device fingerprint
       const deviceFingerprint = await this.generateDeviceFingerprint(userId)
-      
+
       // Calculate risk score
       const riskScore = this.calculateRiskScore({
         activityPattern,
@@ -264,7 +266,7 @@ export class SybilPreventionEngine {
         locationHistory,
         trustScore: userData.trust_score
       })
-      
+
       // Detect Sybil flags
       const flags = await this.detectSybilFlags({
         userId,
@@ -276,7 +278,7 @@ export class SybilPreventionEngine {
         locationHistory,
         deviceFingerprint
       })
-      
+
       const profile: UserBehaviorProfile = {
         userId,
         createdAt: new Date(userData.created_at),
@@ -291,22 +293,22 @@ export class SybilPreventionEngine {
         riskScore,
         flags
       }
-      
+
       // Cache profile
       this.userProfiles.set(userId, profile)
-      
+
       // Take action if high risk
       if (riskScore > 0.7) {
         await this.handleHighRiskUser(profile)
       }
-      
+
       return profile
     } catch (error) {
       console.error(`Error analyzing user behavior for ${userId}:`, error)
       throw error
     }
   }
-  
+
   /**
    * Detect coordinated Sybil attacks
    */
@@ -318,37 +320,37 @@ export class SybilPreventionEngine {
     evidence: any[]
   }> {
     const attacks = []
-    
+
     // Check for account creation bursts
     const creationBurst = await this.detectAccountCreationBurst()
     if (creationBurst.detected) {
       attacks.push(creationBurst)
     }
-    
+
     // Check for coordinated voting
     const coordinatedVoting = await this.detectCoordinatedVoting()
     if (coordinatedVoting.detected) {
       attacks.push(coordinatedVoting)
     }
-    
+
     // Check for clustered reporting
     const clusteredReporting = await this.detectClusteredReporting()
     if (clusteredReporting.detected) {
       attacks.push(clusteredReporting)
     }
-    
+
     // Check for circular endorsements
     const circularEndorsements = await this.detectCircularEndorsements()
     if (circularEndorsements.detected) {
       attacks.push(circularEndorsements)
     }
-    
+
     // Return highest confidence attack
     if (attacks.length > 0) {
       const sortedAttacks = attacks.sort((a, b) => b.confidence - a.confidence)
       return sortedAttacks[0]
     }
-    
+
     return {
       attackDetected: false,
       attackType: '',
@@ -357,7 +359,7 @@ export class SybilPreventionEngine {
       evidence: []
     }
   }
-  
+
   /**
    * Get user risk assessment
    */
@@ -376,10 +378,10 @@ export class SybilPreventionEngine {
         recommendations: ['User profile not available for analysis']
       }
     }
-    
+
     const riskLevel = this.getRiskLevel(profile.riskScore)
     const recommendations = this.generateRecommendations(profile)
-    
+
     return {
       riskScore: profile.riskScore,
       riskLevel,
@@ -387,20 +389,22 @@ export class SybilPreventionEngine {
       recommendations
     }
   }
-  
+
   /**
    * Private helper methods
    */
-  
+
   private async loadUserProfiles(): Promise<void> {
     try {
       const { data: users, error } = await supabaseAdmin
         .from('user_profiles')
         .select('*')
         .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()) // Last 7 days
-      
-      if (error) throw error
-      
+
+      if (error) {
+        throw error
+      }
+
       for (const user of users || []) {
         // Analyze active users
         if (user.last_activity > new Date(Date.now() - 24 * 60 * 60 * 1000)) {
@@ -411,7 +415,7 @@ export class SybilPreventionEngine {
       console.error('Error loading user profiles:', error)
     }
   }
-  
+
   private startRealTimeAnalysis(): void {
     this.analysisInterval = setInterval(async () => {
       if (this.detectionActive) {
@@ -419,30 +423,30 @@ export class SybilPreventionEngine {
       }
     }, 5 * 60 * 1000) // Every 5 minutes
   }
-  
+
   private async performRealTimeAnalysis(): Promise<void> {
     try {
       // Check for coordinated attacks
       const attackResult = await this.detectCoordinatedAttacks()
-      
+
       if (attackResult.attackDetected) {
         await this.handleCoordinatedAttack(attackResult)
       }
-      
+
       // Re-analyze high-risk users
       for (const [userId, profile] of this.userProfiles.entries()) {
         if (profile.riskScore > 0.6) {
           await this.analyzeUserBehavior(userId)
         }
       }
-      
+
       // Cleanup old profiles
       this.cleanupOldProfiles()
     } catch (error) {
       console.error('Error in real-time analysis:', error)
     }
   }
-  
+
   private async getUserActivityHistory(userId: string): Promise<any[]> {
     const { data, error } = await supabaseAdmin
       .from('audit_log')
@@ -450,53 +454,55 @@ export class SybilPreventionEngine {
       .eq('user_id', userId)
       .gte('timestamp', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Last 24 hours
       .order('timestamp', { ascending: true })
-    
-    if (error) throw error
+
+    if (error) {
+      throw error
+    }
     return data || []
   }
-  
+
   private analyzeActivityPattern(activityHistory: any[]): ActivityPattern {
     const actions = activityHistory.map(log => ({
       action: log.action,
       timestamp: new Date(log.timestamp).getTime()
     }))
-    
+
     // Calculate actions per hour
     const actionsPerHour = new Map<number, number>()
     for (const action of actions) {
       const hour = new Date(action.timestamp).getHours()
       actionsPerHour.set(hour, (actionsPerHour.get(hour) || 0) + 1)
     }
-    
+
     const averageActionsPerHour = Array.from(actionsPerHour.values()).reduce((sum, count) => sum + count, 0) / actionsPerHour.size || 0
-    
+
     // Find peak activity hours
     const peakActivityHours = Array.from(actionsPerHour.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 3)
       .map(([hour]) => hour)
-    
+
     // Analyze action distribution
     const actionDistribution: Record<string, number> = {}
     for (const action of actions) {
       actionDistribution[action.action] = (actionDistribution[action.action] || 0) + 1
     }
-    
+
     // Calculate time between actions
     const timeBetweenActions = []
     for (let i = 1; i < actions.length; i++) {
       timeBetweenActions.push(actions[i].timestamp - actions[i - 1].timestamp)
     }
-    
+
     // Detect burst activity
     const burstActivityCount = this.detectBurstActivity(actions)
-    
+
     // Check for consistent timing (automated behavior)
     const consistentTiming = this.checkConsistentTiming(timeBetweenActions)
-    
+
     // Check for automated behavior patterns
     const automatedBehavior = this.detectAutomatedBehavior(actions, timeBetweenActions)
-    
+
     return {
       averageActionsPerHour,
       peakActivityHours,
@@ -507,7 +513,7 @@ export class SybilPreventionEngine {
       automatedBehavior
     }
   }
-  
+
   private async analyzeNetworkConnections(userId: string): Promise<NetworkConnection[]> {
     const { data, error } = await supabaseAdmin
       .from('event_confirmations')
@@ -517,9 +523,11 @@ export class SybilPreventionEngine {
       `)
       .eq('user_id', userId)
       .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
-    
-    if (error) throw error
-    
+
+    if (error) {
+      throw error
+    }
+
     return (data || []).map(connection => ({
       connectedUserId: connection.event_id, // Simplified - would need proper relation
       connectionType: connection.confirmation_type as any,
@@ -528,36 +536,38 @@ export class SybilPreventionEngine {
       reciprocity: false // Would need additional analysis
     }))
   }
-  
+
   private async analyzeVotingHistory(userId: string): Promise<VotingHistory> {
     const { data, error } = await supabaseAdmin
       .from('event_confirmations')
       .select('*')
       .eq('user_id', userId)
       .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
-    
-    if (error) throw error
-    
+
+    if (error) {
+      throw error
+    }
+
     const votes = data || []
     const totalVotes = votes.length
     const confirmVotes = votes.filter(v => v.confirmation_type === 'confirm').length
     const disputeVotes = votes.filter(v => v.confirmation_type === 'dispute').length
-    
+
     // Calculate consensus alignment (simplified)
     const consensusAlignment = 0.5 // Would need actual consensus data
-    
+
     // Detect voting clusters
     const votingClusters = await this.detectVotingClusters(userId, votes)
-    
+
     // Analyze timing patterns
     const timingPatterns = this.analyzeVotingTimingPatterns(votes)
-    
+
     // Count target voting
     const targetVoting: Record<string, number> = {}
     for (const vote of votes) {
       targetVoting[vote.event_id] = (targetVoting[vote.event_id] || 0) + 1
     }
-    
+
     return {
       totalVotes,
       confirmVotes,
@@ -568,31 +578,33 @@ export class SybilPreventionEngine {
       targetVoting
     }
   }
-  
+
   private async analyzeReportingHistory(userId: string): Promise<ReportingHistory> {
     const { data, error } = await supabaseAdmin
       .from('emergency_events')
       .select('*')
       .eq('reported_by', userId)
       .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
-    
-    if (error) throw error
-    
+
+    if (error) {
+      throw error
+    }
+
     const reports = data || []
     const totalReports = reports.length
     const confirmedReports = reports.filter(r => r.status === 'resolved').length
     const disputedReports = reports.filter(r => r.status === 'disputed').length
-    
+
     // Calculate average severity
     const severities = reports.map(r => this.severityToNumber(r.severity))
     const averageSeverity = severities.reduce((sum, s) => sum + s, 0) / severities.length || 0
-    
+
     // Detect report clusters
     const reportClusters = await this.detectReportClusters(userId, reports)
-    
+
     // Analyze location proximity
     const locationProximity = await this.analyzeLocationProximity(userId, reports)
-    
+
     return {
       totalReports,
       confirmedReports,
@@ -602,16 +614,18 @@ export class SybilPreventionEngine {
       locationProximity
     }
   }
-  
+
   private async getLocationHistory(userId: string): Promise<LocationHistory[]> {
     const { data, error } = await supabaseAdmin
       .from('user_profiles')
       .select('last_known_location, updated_at')
       .eq('user_id', userId)
       .order('updated_at', { ascending: true })
-    
-    if (error) throw error
-    
+
+    if (error) {
+      throw error
+    }
+
     const locations = data || []
     return locations.map(loc => {
       const coords = this.parseLocation(loc.last_known_location)
@@ -625,7 +639,7 @@ export class SybilPreventionEngine {
       }
     })
   }
-  
+
   private async generateDeviceFingerprint(userId: string): Promise<string> {
     // This would collect various device characteristics
     // For now, return a hash of user ID and timestamp
@@ -634,7 +648,7 @@ export class SybilPreventionEngine {
       .digest('hex')
       .substring(0, 16)
   }
-  
+
   private calculateRiskScore(profile: {
     activityPattern: ActivityPattern
     networkConnections: NetworkConnection[]
@@ -644,7 +658,7 @@ export class SybilPreventionEngine {
     trustScore: number
   }): number {
     let riskScore = 0.5 // Base risk score
-    
+
     // Activity pattern risk
     if (profile.activityPattern.automatedBehavior) {
       riskScore += 0.2
@@ -655,30 +669,30 @@ export class SybilPreventionEngine {
     if (profile.activityPattern.consistentTiming) {
       riskScore += 0.1
     }
-    
+
     // Network connection risk
     if (profile.networkConnections.length < DETECTION_CONFIG.network.isolationThreshold) {
       riskScore += 0.1
     }
-    
+
     // Voting history risk
     if (profile.votingHistory.consensusAlignment < DETECTION_CONFIG.voting.consensusAlignmentThreshold) {
       riskScore += 0.15
     }
-    
+
     // Reporting history risk
     if (profile.reportingHistory.totalReports > 50) {
       riskScore += 0.1
     }
-    
+
     // Trust score risk
     if (profile.trustScore < DETECTION_CONFIG.accountCreation.suspiciousTrustScoreThreshold) {
       riskScore += 0.2
     }
-    
+
     return Math.min(1.0, Math.max(0.0, riskScore))
   }
-  
+
   private async detectSybilFlags(profile: {
     userId: string
     userData: any
@@ -690,7 +704,7 @@ export class SybilPreventionEngine {
     deviceFingerprint: string
   }): Promise<SybilFlag[]> {
     const flags: SybilFlag[] = []
-    
+
     // Check for automated behavior
     if (profile.activityPattern.automatedBehavior) {
       flags.push({
@@ -705,7 +719,7 @@ export class SybilPreventionEngine {
         confidence: 0.8
       })
     }
-    
+
     // Check for network isolation
     if (profile.networkConnections.length < 3) {
       flags.push({
@@ -719,7 +733,7 @@ export class SybilPreventionEngine {
         confidence: 0.6
       })
     }
-    
+
     // Check for suspicious voting patterns
     if (profile.votingHistory.consensusAlignment < 0.3) {
       flags.push({
@@ -734,10 +748,10 @@ export class SybilPreventionEngine {
         confidence: 0.7
       })
     }
-    
+
     return flags
   }
-  
+
   private async detectAccountCreationBurst(): Promise<{
     detected: boolean
     attackType: string
@@ -749,17 +763,19 @@ export class SybilPreventionEngine {
       .from('user_profiles')
       .select('*')
       .gte('created_at', new Date(Date.now() - 60 * 60 * 1000).toISOString()) // Last hour
-    
-    if (error) throw error
-    
+
+    if (error) {
+      throw error
+    }
+
     const recentUsers = data || []
-    
+
     // Check for account creation burst
     if (recentUsers.length > DETECTION_CONFIG.accountCreation.maxAccountsPerHour) {
-      const suspiciousUsers = recentUsers.filter(user => 
+      const suspiciousUsers = recentUsers.filter(user =>
         user.trust_score < DETECTION_CONFIG.accountCreation.suspiciousTrustScoreThreshold
       )
-      
+
       if (suspiciousUsers.length > DETECTION_CONFIG.accountCreation.maxAccountsPerIP) {
         return {
           detected: true,
@@ -777,7 +793,7 @@ export class SybilPreventionEngine {
         }
       }
     }
-    
+
     return {
       detected: false,
       attackType: '',
@@ -786,7 +802,7 @@ export class SybilPreventionEngine {
       evidence: []
     }
   }
-  
+
   private async detectCoordinatedVoting(): Promise<{
     detected: boolean
     attackType: string
@@ -796,7 +812,7 @@ export class SybilPreventionEngine {
   }> {
     // This would analyze voting patterns across multiple users
     // Simplified implementation for demonstration
-    
+
     return {
       detected: false,
       attackType: '',
@@ -805,7 +821,7 @@ export class SybilPreventionEngine {
       evidence: []
     }
   }
-  
+
   private async detectClusteredReporting(): Promise<{
     detected: boolean
     attackType: string
@@ -815,7 +831,7 @@ export class SybilPreventionEngine {
   }> {
     // This would analyze geographic clustering of reports
     // Simplified implementation for demonstration
-    
+
     return {
       detected: false,
       attackType: '',
@@ -824,7 +840,7 @@ export class SybilPreventionEngine {
       evidence: []
     }
   }
-  
+
   private async detectCircularEndorsements(): Promise<{
     detected: boolean
     attackType: string
@@ -834,7 +850,7 @@ export class SybilPreventionEngine {
   }> {
     // This would detect circular endorsement patterns
     // Simplified implementation for demonstration
-    
+
     return {
       detected: false,
       attackType: '',
@@ -843,7 +859,7 @@ export class SybilPreventionEngine {
       evidence: []
     }
   }
-  
+
   private async handleHighRiskUser(profile: UserBehaviorProfile): Promise<void> {
     // Log security incident
     await securityMonitor.createAlert(
@@ -853,7 +869,7 @@ export class SybilPreventionEngine {
       `Risk score: ${profile.riskScore}, Flags: ${profile.flags.length}`,
       'sybil_prevention'
     )
-    
+
     // Apply restrictions based on risk level
     if (profile.riskScore > 0.8) {
       // Temporary suspension
@@ -863,7 +879,7 @@ export class SybilPreventionEngine {
       await this.increaseMonitoring(profile.userId)
     }
   }
-  
+
   private async handleCoordinatedAttack(attack: {
     attackType: string
     involvedUsers: string[]
@@ -882,13 +898,13 @@ export class SybilPreventionEngine {
         evidence: attack.evidence
       }
     )
-    
+
     // Take action against involved users
     for (const userId of attack.involvedUsers) {
       await this.suspendUser(userId, `Coordinated attack: ${attack.attackType}`)
     }
   }
-  
+
   private async suspendUser(userId: string, reason: string): Promise<void> {
     try {
       await supabaseAdmin
@@ -899,143 +915,153 @@ export class SybilPreventionEngine {
           suspended_at: new Date().toISOString()
         })
         .eq('user_id', userId)
-      
+
       console.log(`User ${userId} suspended: ${reason}`)
     } catch (error) {
       console.error(`Error suspending user ${userId}:`, error)
     }
   }
-  
+
   private async increaseMonitoring(userId: string): Promise<void> {
     // This would increase monitoring level for the user
     console.log(`Increased monitoring for user ${userId}`)
   }
-  
+
   private getRiskLevel(riskScore: number): 'low' | 'medium' | 'high' | 'critical' {
-    if (riskScore < 0.3) return 'low'
-    if (riskScore < 0.6) return 'medium'
-    if (riskScore < 0.8) return 'high'
+    if (riskScore < 0.3) {
+      return 'low'
+    }
+    if (riskScore < 0.6) {
+      return 'medium'
+    }
+    if (riskScore < 0.8) {
+      return 'high'
+    }
     return 'critical'
   }
-  
+
   private generateRecommendations(profile: UserBehaviorProfile): string[] {
     const recommendations: string[] = []
-    
+
     if (profile.activityPattern.automatedBehavior) {
       recommendations.push('Review for automated behavior patterns')
     }
-    
+
     if (profile.networkConnections.length < 3) {
       recommendations.push('Limited network connections - requires verification')
     }
-    
+
     if (profile.votingHistory.consensusAlignment < 0.3) {
       recommendations.push('Voting patterns deviate from consensus')
     }
-    
+
     if (profile.trustScore < 0.2) {
       recommendations.push('Low trust score - additional verification needed')
     }
-    
+
     return recommendations
   }
-  
+
   private detectBurstActivity(actions: any[]): number {
     // Count actions in short time windows
     let maxBurst = 0
     const windowSize = 5 * 60 * 1000 // 5 minutes
-    
+
     for (let i = 0; i < actions.length; i++) {
       const windowStart = actions[i].timestamp
       const windowEnd = windowStart + windowSize
-      
-      const burstCount = actions.filter(action => 
+
+      const burstCount = actions.filter(action =>
         action.timestamp >= windowStart && action.timestamp <= windowEnd
       ).length
-      
+
       maxBurst = Math.max(maxBurst, burstCount)
     }
-    
+
     return maxBurst
   }
-  
+
   private checkConsistentTiming(timeBetweenActions: number[]): boolean {
-    if (timeBetweenActions.length < 10) return false
-    
+    if (timeBetweenActions.length < 10) {
+      return false
+    }
+
     // Calculate variance
     const mean = timeBetweenActions.reduce((sum, time) => sum + time, 0) / timeBetweenActions.length
     const variance = timeBetweenActions.reduce((sum, time) => sum + Math.pow(time - mean, 2), 0) / timeBetweenActions.length
     const standardDeviation = Math.sqrt(variance)
-    
+
     // Check if timing is too consistent (low variance)
     const coefficientOfVariation = standardDeviation / mean
     return coefficientOfVariation < 0.1
   }
-  
+
   private detectAutomatedBehavior(actions: any[], timeBetweenActions: number[]): boolean {
     // Multiple indicators of automated behavior
     const consistentTiming = this.checkConsistentTiming(timeBetweenActions)
     const burstActivity = this.detectBurstActivity(actions) > DETECTION_CONFIG.behavior.burstActivityThreshold
     const regularIntervals = this.checkRegularIntervals(timeBetweenActions)
-    
+
     return consistentTiming || burstActivity || regularIntervals
   }
-  
+
   private checkRegularIntervals(timeBetweenActions: number[]): boolean {
-    if (timeBetweenActions.length < 5) return false
-    
+    if (timeBetweenActions.length < 5) {
+      return false
+    }
+
     // Check for regular intervals (e.g., every 60 seconds)
     const intervals = timeBetweenActions.slice(0, 20) // Check first 20 intervals
     const commonInterval = this.findMostCommonInterval(intervals)
-    
-    const regularCount = intervals.filter(interval => 
+
+    const regularCount = intervals.filter(interval =>
       Math.abs(interval - commonInterval) < commonInterval * 0.1
     ).length
-    
+
     return regularCount > intervals.length * 0.7
   }
-  
+
   private findMostCommonInterval(intervals: number[]): number {
     const frequency = new Map<number, number>()
-    
+
     for (const interval of intervals) {
       const rounded = Math.round(interval / 1000) // Round to seconds
       frequency.set(rounded, (frequency.get(rounded) || 0) + 1)
     }
-    
+
     let maxCount = 0
     let mostCommon = 0
-    
+
     for (const [interval, count] of frequency.entries()) {
       if (count > maxCount) {
         maxCount = count
         mostCommon = interval * 1000 // Convert back to milliseconds
       }
     }
-    
+
     return mostCommon
   }
-  
+
   private async detectVotingClusters(userId: string, votes: any[]): Promise<VotingCluster[]> {
     // Simplified implementation
     return []
   }
-  
+
   private analyzeVotingTimingPatterns(votes: any[]): TimingPattern[] {
     // Simplified implementation
     return []
   }
-  
+
   private async detectReportClusters(userId: string, reports: any[]): Promise<ReportCluster[]> {
     // Simplified implementation
     return []
   }
-  
+
   private async analyzeLocationProximity(userId: string, reports: any[]): Promise<LocationProximity[]> {
     // Simplified implementation
     return []
   }
-  
+
   private parseLocation(locationString: string): { lat: number; lng: number } {
     // Parse PostGIS POINT format
     const match = locationString.match(/POINT\(([-\d.]+)\s+([-\d.]+)\)/)
@@ -1047,20 +1073,20 @@ export class SybilPreventionEngine {
     }
     return { lat: 0, lng: 0 }
   }
-  
+
   private severityToNumber(severity: string): number {
     const severityMap: Record<string, number> = {
-      'low': 1,
-      'medium': 2,
-      'high': 3,
-      'critical': 4
+      low: 1,
+      medium: 2,
+      high: 3,
+      critical: 4
     }
     return severityMap[severity] || 2
   }
-  
+
   private cleanupOldProfiles(): void {
     const cutoffTime = Date.now() - 24 * 60 * 60 * 1000 // 24 hours ago
-    
+
     for (const [userId, profile] of this.userProfiles.entries()) {
       if (profile.lastActivity.getTime() < cutoffTime) {
         this.userProfiles.delete(userId)

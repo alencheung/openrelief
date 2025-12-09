@@ -1,17 +1,17 @@
 /**
  * Transparency Report Component for OpenRelief
- * 
+ *
  * This component provides detailed transparency reporting including data processing logs,
  * algorithmic decision explanations, audit trails, and system-wide transparency reports.
  */
 
-'use client';
+'use client'
 
-import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { StatusIndicator } from '@/components/ui/StatusIndicator';
-import { useToast } from '@/hooks/use-toast';
+import React, { useState, useEffect } from 'react'
+import { Card } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
+import { StatusIndicator } from '@/components/ui/StatusIndicator'
+import { useToast } from '@/hooks/use-toast'
 import {
   FileText,
   Eye,
@@ -35,7 +35,7 @@ import {
   Lock,
   Unlock,
   Brain
-} from 'lucide-react';
+} from 'lucide-react'
 
 // Types for transparency reporting
 interface DataProcessingLog {
@@ -100,11 +100,11 @@ interface SystemTransparencyMetric {
 }
 
 const TransparencyReport: React.FC = () => {
-  const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<'processing' | 'algorithms' | 'access' | 'legal' | 'metrics'>('processing');
-  const [isLoading, setIsLoading] = useState(false);
-  const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
-  const [searchQuery, setSearchQuery] = useState('');
+  const { toast } = useToast()
+  const [activeTab, setActiveTab] = useState<'processing' | 'algorithms' | 'access' | 'legal' | 'metrics'>('processing')
+  const [isLoading, setIsLoading] = useState(false)
+  const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d')
+  const [searchQuery, setSearchQuery] = useState('')
 
   // Mock data for demonstration
   const [processingLogs, setProcessingLogs] = useState<DataProcessingLog[]>([
@@ -144,7 +144,7 @@ const TransparencyReport: React.FC = () => {
       privacyImpact: 'high',
       dataSubjects: 892
     }
-  ]);
+  ])
 
   const [algorithmicDecisions, setAlgorithmicDecisions] = useState<AlgorithmicDecision[]>([
     {
@@ -180,7 +180,7 @@ const TransparencyReport: React.FC = () => {
       impact: 'Emergency response resources allocated to specified area',
       userCanAppeal: true
     }
-  ]);
+  ])
 
   const [accessLogs, setAccessLogs] = useState<DataAccessEntry[]>([
     {
@@ -215,7 +215,7 @@ const TransparencyReport: React.FC = () => {
       location: 'Remote access',
       successful: true
     }
-  ]);
+  ])
 
   const [legalRequests, setLegalRequests] = useState<LegalRequestStatus[]>([
     {
@@ -240,7 +240,7 @@ const TransparencyReport: React.FC = () => {
       estimatedCompletion: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
       canUserContact: true
     }
-  ]);
+  ])
 
   const [systemMetrics, setSystemMetrics] = useState<SystemTransparencyMetric[]>([
     {
@@ -278,73 +278,77 @@ const TransparencyReport: React.FC = () => {
       period: 'Current',
       description: 'Total number of data subjects in system'
     }
-  ]);
+  ])
 
   // Format time ago
   const formatTimeAgo = (date: Date) => {
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / (1000 * 60));
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / (1000 * 60))
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
 
-    if (diffMins < 60) return `${diffMins} minutes ago`;
-    if (diffHours < 24) return `${diffHours} hours ago`;
-    return `${diffDays} days ago`;
-  };
+    if (diffMins < 60) {
+      return `${diffMins} minutes ago`
+    }
+    if (diffHours < 24) {
+      return `${diffHours} hours ago`
+    }
+    return `${diffDays} days ago`
+  }
 
   // Get privacy impact color
   const getPrivacyImpactColor = (impact: 'low' | 'medium' | 'high') => {
     switch (impact) {
-      case 'low': return 'green';
-      case 'medium': return 'yellow';
-      case 'high': return 'red';
-      default: return 'gray';
+      case 'low': return 'green'
+      case 'medium': return 'yellow'
+      case 'high': return 'red'
+      default: return 'gray'
     }
-  };
+  }
 
   // Get status color
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'green';
-      case 'processing': return 'blue';
-      case 'pending': return 'yellow';
-      case 'rejected': case 'appealed': return 'red';
-      default: return 'gray';
+      case 'completed': return 'green'
+      case 'processing': return 'blue'
+      case 'pending': return 'yellow'
+      case 'rejected': case 'appealed': return 'red'
+      default: return 'gray'
     }
-  };
+  }
 
   // Get trend icon
   const getTrendIcon = (trend: 'up' | 'down' | 'stable') => {
     switch (trend) {
-      case 'up': return <TrendingUp className="h-4 w-4 text-green-600" />;
-      case 'down': return <TrendingUp className="h-4 w-4 text-red-600 rotate-180" />;
-      case 'stable': return <div className="h-4 w-4 bg-gray-400 rounded-full" />;
-      default: return null;
+      case 'up': return <TrendingUp className="h-4 w-4 text-green-600" />
+      case 'down': return <TrendingUp className="h-4 w-4 text-red-600 rotate-180" />
+      case 'stable': return <div className="h-4 w-4 bg-gray-400 rounded-full" />
+      default: return null
     }
-  };
+  }
 
   // Export transparency report
   const exportTransparencyReport = async () => {
-    setIsLoading(true);
+    setIsLoading(true)
     try {
       // In a real implementation, generate and download report
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
       toast({
-        title: "Report Generated",
-        description: "Your transparency report has been generated and downloaded."
-      });
+        title: 'Report Generated',
+        description: 'Your transparency report has been generated and downloaded.'
+      })
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to generate transparency report",
-        variant: "destructive"
-      });
+        title: 'Error',
+        description: 'Failed to generate transparency report',
+        variant: 'destructive'
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
@@ -364,7 +368,7 @@ const TransparencyReport: React.FC = () => {
               <option value="1y">Last year</option>
             </select>
           </div>
-          
+
           <div className="flex items-center space-x-2">
             <Search className="h-4 w-4 text-gray-600" />
             <input
@@ -375,7 +379,7 @@ const TransparencyReport: React.FC = () => {
               className="border rounded px-3 py-1 text-sm"
             />
           </div>
-          
+
           <Button
             variant="outline"
             size="sm"
@@ -400,11 +404,11 @@ const TransparencyReport: React.FC = () => {
                 : 'text-gray-600 hover:text-gray-800'
             }`}
           >
-            {tab === 'processing' ? 'Data Processing' :
-             tab === 'algorithms' ? 'Algorithmic Decisions' :
-             tab === 'access' ? 'Data Access Logs' :
-             tab === 'legal' ? 'Legal Requests' :
-             tab === 'metrics' ? 'System Metrics' : tab}
+            {tab === 'processing' ? 'Data Processing'
+              : tab === 'algorithms' ? 'Algorithmic Decisions'
+                : tab === 'access' ? 'Data Access Logs'
+                  : tab === 'legal' ? 'Legal Requests'
+                    : tab === 'metrics' ? 'System Metrics' : tab}
           </button>
         ))}
       </div>
@@ -420,7 +424,7 @@ const TransparencyReport: React.FC = () => {
                 <span>Real-time processing</span>
               </div>
             </div>
-            
+
             <div className="space-y-4">
               {processingLogs.map((log) => (
                 <div key={log.id} className="border rounded-lg p-4">
@@ -434,7 +438,7 @@ const TransparencyReport: React.FC = () => {
                       {formatTimeAgo(log.timestamp)}
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-gray-600">Purpose:</span>
@@ -481,7 +485,7 @@ const TransparencyReport: React.FC = () => {
                 <span>Explainable AI</span>
               </div>
             </div>
-            
+
             <div className="space-y-4">
               {algorithmicDecisions.map((decision) => (
                 <div key={decision.id} className="border rounded-lg p-4">
@@ -491,26 +495,26 @@ const TransparencyReport: React.FC = () => {
                       <h3 className="font-medium">{decision.algorithm}</h3>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <StatusIndicator 
-                        status={decision.confidence >= 0.8 ? 'green' : decision.confidence >= 0.6 ? 'yellow' : 'red'} 
-                        text="" 
+                      <StatusIndicator
+                        status={decision.confidence >= 0.8 ? 'green' : decision.confidence >= 0.6 ? 'yellow' : 'red'}
+                        text=""
                       />
                       <span className="text-sm font-medium">
                         {Math.round(decision.confidence * 100)}% confidence
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="mb-3">
                     <h4 className="font-medium mb-2">Decision:</h4>
                     <p className="text-gray-800">{decision.decision}</p>
                   </div>
-                  
+
                   <div className="mb-3">
                     <h4 className="font-medium mb-2">Explanation:</h4>
                     <p className="text-gray-600 text-sm">{decision.explanation}</p>
                   </div>
-                  
+
                   <div className="mb-3">
                     <h4 className="font-medium mb-2">Decision Factors:</h4>
                     <div className="space-y-2">
@@ -519,7 +523,7 @@ const TransparencyReport: React.FC = () => {
                           <span className="text-sm font-medium">{factor.name}</span>
                           <div className="flex items-center space-x-2">
                             <div className="w-20 bg-gray-200 rounded-full h-2">
-                              <div 
+                              <div
                                 className="bg-blue-600 h-2 rounded-full"
                                 style={{ width: `${factor.weight * 100}%` }}
                               ></div>
@@ -531,7 +535,7 @@ const TransparencyReport: React.FC = () => {
                       ))}
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between pt-3 border-t">
                     <div className="text-sm text-gray-600">
                       <span>Impact: {decision.impact}</span>
@@ -569,7 +573,7 @@ const TransparencyReport: React.FC = () => {
                 <span>Complete audit log</span>
               </div>
             </div>
-            
+
             <div className="space-y-4">
               {accessLogs.map((entry) => (
                 <div key={entry.id} className="border rounded-lg p-4">
@@ -582,9 +586,9 @@ const TransparencyReport: React.FC = () => {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <StatusIndicator 
-                        status={entry.successful ? 'green' : 'red'} 
-                        text="" 
+                      <StatusIndicator
+                        status={entry.successful ? 'green' : 'red'}
+                        text=""
                       />
                       <span className="text-sm font-medium">
                         {entry.successful ? 'Successful' : 'Failed'}
@@ -594,7 +598,7 @@ const TransparencyReport: React.FC = () => {
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-gray-600">Purpose:</span>
@@ -631,7 +635,7 @@ const TransparencyReport: React.FC = () => {
                 <span>GDPR compliance tracking</span>
               </div>
             </div>
-            
+
             <div className="space-y-4">
               {legalRequests.map((request) => (
                 <div key={request.id} className="border rounded-lg p-4">
@@ -651,11 +655,11 @@ const TransparencyReport: React.FC = () => {
                       {formatTimeAgo(request.createdAt)}
                     </div>
                   </div>
-                  
+
                   <div className="mb-3">
                     <p className="text-gray-800">{request.description}</p>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-gray-600">Created:</span>
@@ -710,7 +714,7 @@ const TransparencyReport: React.FC = () => {
                 <span>Live statistics</span>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {systemMetrics.map((metric, index) => (
                 <div key={index} className="p-4 border rounded-lg">
@@ -728,7 +732,7 @@ const TransparencyReport: React.FC = () => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default TransparencyReport;
+export default TransparencyReport

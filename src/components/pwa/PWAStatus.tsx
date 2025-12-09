@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { PWACacheManager, OfflineStorage, NetworkUtils, PWAPerformance, formatFileSize, formatDuration } from '@/lib/pwa-utils'
-import { 
-  WifiIcon, 
-  WifiOffIcon, 
-  DatabaseIcon, 
+import {
+  WifiIcon,
+  WifiOffIcon,
+  DatabaseIcon,
   HardDriveIcon,
   ActivityIcon,
   RefreshCwIcon,
@@ -41,14 +41,14 @@ export function PWAStatus() {
 
   useEffect(() => {
     loadStatus()
-    
+
     // Listen for network changes
     const handleOnline = () => setIsOnline(true)
     const handleOffline = () => setIsOnline(false)
-    
+
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
-    
+
     return () => {
       window.removeEventListener('online', handleOnline)
       window.removeEventListener('offline', handleOffline)
@@ -120,9 +120,15 @@ export function PWAStatus() {
   }
 
   const getPerformanceGrade = (loadTime: number) => {
-    if (loadTime < 1000) return { grade: 'A', color: 'text-green-600' }
-    if (loadTime < 2000) return { grade: 'B', color: 'text-yellow-600' }
-    if (loadTime < 3000) return { grade: 'C', color: 'text-orange-600' }
+    if (loadTime < 1000) {
+      return { grade: 'A', color: 'text-green-600' }
+    }
+    if (loadTime < 2000) {
+      return { grade: 'B', color: 'text-yellow-600' }
+    }
+    if (loadTime < 3000) {
+      return { grade: 'C', color: 'text-orange-600' }
+    }
     return { grade: 'D', color: 'text-red-600' }
   }
 
@@ -152,7 +158,7 @@ export function PWAStatus() {
             Network Status
           </h2>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="p-4 bg-gray-50 rounded-lg">
             <div className="text-sm text-gray-600 mb-1">Connection</div>
@@ -160,14 +166,14 @@ export function PWAStatus() {
               {isOnline ? 'Online' : 'Offline'}
             </div>
           </div>
-          
+
           <div className="p-4 bg-gray-50 rounded-lg">
             <div className="text-sm text-gray-600 mb-1">Effective Type</div>
             <div className={`text-lg font-medium ${getConnectionColor(networkQuality.effectiveType)}`}>
               {networkQuality.effectiveType?.toUpperCase() || 'Unknown'}
             </div>
           </div>
-          
+
           <div className="p-4 bg-gray-50 rounded-lg">
             <div className="text-sm text-gray-600 mb-1">Downlink</div>
             <div className="text-lg font-medium">
@@ -185,7 +191,7 @@ export function PWAStatus() {
             Storage Status
           </h2>
         </div>
-        
+
         <div className="space-y-4">
           <div className="p-4 bg-gray-50 rounded-lg">
             <div className="flex justify-between items-center mb-2">
@@ -195,16 +201,16 @@ export function PWAStatus() {
               </span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
+              <div
                 className={`h-2 rounded-full ${
-                  storageStatus.percentage > 80 ? 'bg-red-600' : 
-                  storageStatus.percentage > 60 ? 'bg-yellow-600' : 'bg-green-600'
+                  storageStatus.percentage > 80 ? 'bg-red-600'
+                    : storageStatus.percentage > 60 ? 'bg-yellow-600' : 'bg-green-600'
                 }`}
                 style={{ width: `${Math.min(storageStatus.percentage, 100)}%` }}
               />
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-4 bg-gray-50 rounded-lg">
               <div className="text-sm text-gray-600 mb-1">Queued Actions</div>
@@ -212,7 +218,7 @@ export function PWAStatus() {
                 {queuedActions.length} items
               </div>
             </div>
-            
+
             <div className="p-4 bg-gray-50 rounded-lg">
               <div className="text-sm text-gray-600 mb-1">Cache Entries</div>
               <div className="text-lg font-medium">
@@ -242,7 +248,7 @@ export function PWAStatus() {
             </Button>
           </div>
         </div>
-        
+
         <div className="space-y-3">
           {cacheStatus.map((cache, index) => (
             <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
@@ -278,7 +284,7 @@ export function PWAStatus() {
             Performance
           </h2>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="p-4 bg-gray-50 rounded-lg">
             <div className="text-sm text-gray-600 mb-1">Page Load Time</div>
@@ -293,21 +299,21 @@ export function PWAStatus() {
               )}
             </div>
           </div>
-          
+
           <div className="p-4 bg-gray-50 rounded-lg">
             <div className="text-sm text-gray-600 mb-1">DOM Content Loaded</div>
             <div className="text-lg font-medium">
               {performance.domContentLoaded ? formatDuration(performance.domContentLoaded) : 'N/A'}
             </div>
           </div>
-          
+
           <div className="p-4 bg-gray-50 rounded-lg">
             <div className="text-sm text-gray-600 mb-1">First Contentful Paint</div>
             <div className="text-lg font-medium">
               {performance.firstContentfulPaint ? formatDuration(performance.firstContentfulPaint) : 'N/A'}
             </div>
           </div>
-          
+
           <div className="p-4 bg-gray-50 rounded-lg">
             <div className="text-sm text-gray-600 mb-1">Largest Contentful Paint</div>
             <div className="text-lg font-medium">
@@ -326,7 +332,7 @@ export function PWAStatus() {
               Queued Actions ({queuedActions.length})
             </h2>
           </div>
-          
+
           <div className="space-y-3">
             {queuedActions.map((action, index) => (
               <div key={index} className="flex items-center justify-between p-4 bg-orange-50 border border-orange-200 rounded-lg">
@@ -343,7 +349,7 @@ export function PWAStatus() {
               </div>
             ))}
           </div>
-          
+
           <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center space-x-2">
               <CheckCircleIcon className="h-5 w-5 text-blue-600" />

@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Shield, 
-  Award, 
+import {
+  TrendingUp,
+  TrendingDown,
+  Shield,
+  Award,
   AlertTriangle,
   CheckCircle,
   XCircle,
@@ -37,17 +37,17 @@ interface TrustDashboardProps {
   className?: string
 }
 
-export function TrustDashboard({ 
-  userId, 
-  compact = false, 
-  showDetails = true, 
-  className 
+export function TrustDashboard({
+  userId,
+  compact = false,
+  showDetails = true,
+  className
 }: TrustDashboardProps) {
   const trustScore = useTrustScore(userId)
   const trustHistory = useTrustHistory(userId)
   const thresholds = useTrustThresholds()
   const { getUserScore, loadHistory } = useTrustStore()
-  
+
   const [expanded, setExpanded] = useState(false)
   const [showFactors, setShowFactors] = useState(true)
   const [timeRange, setTimeRange] = useState<'week' | 'month' | 'all'>('month')
@@ -68,7 +68,7 @@ export function TrustDashboard({
     const entryDate = new Date(entry.timestamp)
     const now = new Date()
     const daysDiff = (now.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24)
-    
+
     switch (timeRange) {
       case 'week': return daysDiff <= 7
       case 'month': return daysDiff <= 30
@@ -85,9 +85,15 @@ export function TrustDashboard({
   const disputes = filteredHistory.filter(e => e.actionType === 'dispute').length
 
   const getTrustLevel = (score: number) => {
-    if (score >= thresholds.highTrust) return { level: 'High Trust', color: 'text-green-600', bg: 'bg-green-50' }
-    if (score >= thresholds.confirming) return { level: 'Medium Trust', color: 'text-blue-600', bg: 'bg-blue-50' }
-    if (score >= thresholds.reporting) return { level: 'Low Trust', color: 'text-yellow-600', bg: 'bg-yellow-50' }
+    if (score >= thresholds.highTrust) {
+      return { level: 'High Trust', color: 'text-green-600', bg: 'bg-green-50' }
+    }
+    if (score >= thresholds.confirming) {
+      return { level: 'Medium Trust', color: 'text-blue-600', bg: 'bg-blue-50' }
+    }
+    if (score >= thresholds.reporting) {
+      return { level: 'Low Trust', color: 'text-yellow-600', bg: 'bg-yellow-50' }
+    }
     return { level: 'Critical', color: 'text-red-600', bg: 'bg-red-50' }
   }
 
@@ -151,8 +157,8 @@ export function TrustDashboard({
                   {scoreTrend === 'down' && <TrendingDown className="h-4 w-4 text-red-600" />}
                   <span className={cn(
                     'text-sm',
-                    scoreChange > 0 ? 'text-green-600' : 
-                    scoreChange < 0 ? 'text-red-600' : 'text-gray-600'
+                    scoreChange > 0 ? 'text-green-600'
+                      : scoreChange < 0 ? 'text-red-600' : 'text-gray-600'
                   )}>
                     {scoreChange > 0 ? '+' : ''}{(scoreChange * 100).toFixed(1)}%
                   </span>
@@ -172,7 +178,7 @@ export function TrustDashboard({
                   {showFactors ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
-              
+
               <AnimatePresence>
                 {showFactors && trustScore?.factors && (
                   <motion.div
@@ -193,11 +199,11 @@ export function TrustDashboard({
                         penaltyScore: 'Penalty Score'
                       }
 
-                      const displayValue = key === 'responseTime' 
-                        ? `${value}min` 
+                      const displayValue = key === 'responseTime'
+                        ? `${value}min`
                         : key === 'contributionFrequency'
-                        ? `${value}/week`
-                        : `${(value * 100).toFixed(0)}%`
+                          ? `${value}/week`
+                          : `${(value * 100).toFixed(0)}%`
 
                       return (
                         <div key={key} className="flex items-center justify-between text-sm">
@@ -314,8 +320,8 @@ export function TrustDashboard({
                         <div className="flex items-center gap-3">
                           <div className={cn(
                             'w-2 h-2 rounded-full',
-                            entry.change > 0 ? 'bg-green-500' : 
-                            entry.change < 0 ? 'bg-red-500' : 'bg-gray-500'
+                            entry.change > 0 ? 'bg-green-500'
+                              : entry.change < 0 ? 'bg-red-500' : 'bg-gray-500'
                           )} />
                           <div>
                             <div className="text-sm font-medium capitalize">
@@ -329,8 +335,8 @@ export function TrustDashboard({
                         <div className="text-right">
                           <div className={cn(
                             'text-sm font-medium',
-                            entry.change > 0 ? 'text-green-600' : 
-                            entry.change < 0 ? 'text-red-600' : 'text-gray-600'
+                            entry.change > 0 ? 'text-green-600'
+                              : entry.change < 0 ? 'text-red-600' : 'text-gray-600'
                           )}>
                             {entry.change > 0 ? '+' : ''}{(entry.change * 100).toFixed(1)}%
                           </div>

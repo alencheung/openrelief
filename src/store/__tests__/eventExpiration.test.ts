@@ -1,6 +1,6 @@
 /**
  * Comprehensive tests for Event Expiration and Cleanup Logic
- * 
+ *
  * These tests verify event expiration functionality, including
  * automatic cleanup, archival processes, and data retention policies.
  */
@@ -22,7 +22,7 @@ describe('Event Expiration and Cleanup Logic', () => {
       const pendingEvent = createEmergencyEvent({
         id: 'expired-pending',
         status: 'pending',
-        reportedAt: expiredTime,
+        reportedAt: expiredTime
       })
 
       act(() => {
@@ -53,7 +53,7 @@ describe('Event Expiration and Cleanup Logic', () => {
       const activeEvent = createEmergencyEvent({
         id: 'recent-active',
         status: 'active',
-        reportedAt: recentTime,
+        reportedAt: recentTime
       })
 
       act(() => {
@@ -75,18 +75,18 @@ describe('Event Expiration and Cleanup Logic', () => {
         createEmergencyEvent({
           id: 'pending-expire',
           status: 'pending',
-          reportedAt: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(), // 25 hours
+          reportedAt: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString() // 25 hours
         }),
         createEmergencyEvent({
           id: 'active-no-expire',
           status: 'active',
-          reportedAt: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(), // 25 hours
+          reportedAt: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString() // 25 hours
         }),
         createEmergencyEvent({
           id: 'resolved-old',
           status: 'resolved',
-          reportedAt: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString(), // 35 days
-        }),
+          reportedAt: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString() // 35 days
+        })
       ]
 
       act(() => {
@@ -104,9 +104,9 @@ describe('Event Expiration and Cleanup Logic', () => {
           status: event.status,
           hoursElapsed,
           daysElapsed,
-          shouldExpire: 
-            (event.status === 'pending' && hoursElapsed > 24) ||
-            (event.status === 'resolved' && daysElapsed > 30),
+          shouldExpire:
+            (event.status === 'pending' && hoursElapsed > 24)
+            || (event.status === 'resolved' && daysElapsed > 30)
         }
       })
 
@@ -128,7 +128,7 @@ describe('Event Expiration and Cleanup Logic', () => {
         createEmergencyEvent({
           id: `old-event-${i}`,
           status: 'resolved',
-          reportedAt: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString(), // 40 days
+          reportedAt: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString() // 40 days
         })
       )
 
@@ -136,7 +136,7 @@ describe('Event Expiration and Cleanup Logic', () => {
         createEmergencyEvent({
           id: `recent-event-${i}`,
           status: 'active',
-          reportedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days
+          reportedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() // 2 days
         })
       )
 
@@ -166,7 +166,7 @@ describe('Event Expiration and Cleanup Logic', () => {
         createEmergencyEvent({
           id: `archive-event-${i}`,
           status: 'resolved',
-          reportedAt: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString(),
+          reportedAt: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString()
         })
       )
 
@@ -180,7 +180,7 @@ describe('Event Expiration and Cleanup Logic', () => {
         result.current.events = result.current.events.filter(event => {
           const eventDate = new Date(event.reportedAt)
           const daysOld = (Date.now() - eventDate.getTime()) / (1000 * 60 * 60 * 24)
-          
+
           if (daysOld > 30 && event.status === 'resolved') {
             archivedEvents.push({ ...event, archivedAt: new Date().toISOString() })
             return false
@@ -201,13 +201,13 @@ describe('Event Expiration and Cleanup Logic', () => {
         createEmergencyEvent({
           id: 'corrupted-event-1',
           status: 'resolved',
-          reportedAt: 'invalid-date' as any,
+          reportedAt: 'invalid-date' as any
         }),
         createEmergencyEvent({
           id: 'corrupted-event-2',
           status: 'resolved',
-          reportedAt: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString(),
-        }),
+          reportedAt: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString()
+        })
       ]
 
       act(() => {
@@ -241,20 +241,20 @@ describe('Event Expiration and Cleanup Logic', () => {
           id: 'medical-retention',
           type: 'medical',
           status: 'resolved',
-          reportedAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(), // 45 days
+          reportedAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString() // 45 days
         }),
         createEmergencyEvent({
           id: 'fire-retention',
           type: 'fire',
           status: 'resolved',
-          reportedAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(), // 45 days
+          reportedAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString() // 45 days
         }),
         createEmergencyEvent({
           id: 'natural-disaster-retention',
           type: 'natural_disaster',
           status: 'resolved',
-          reportedAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(), // 45 days
-        }),
+          reportedAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString() // 45 days
+        })
       ]
 
       act(() => {
@@ -265,20 +265,20 @@ describe('Event Expiration and Cleanup Logic', () => {
       const retentionPeriods = {
         medical: 90,    // 90 days for medical events
         fire: 60,       // 60 days for fire events
-        natural_disaster: 365, // 1 year for natural disasters
+        natural_disaster: 365 // 1 year for natural disasters
       }
 
       const retentionChecks = eventsByType.map(event => {
         const eventDate = new Date(event.reportedAt)
         const daysOld = (Date.now() - eventDate.getTime()) / (1000 * 60 * 60 * 24)
         const retentionPeriod = retentionPeriods[event.type as keyof typeof retentionPeriods]
-        
+
         return {
           id: event.id,
           type: event.type,
           daysOld,
           retentionPeriod,
-          shouldRetain: daysOld <= retentionPeriod,
+          shouldRetain: daysOld <= retentionPeriod
         }
       })
 
@@ -299,14 +299,14 @@ describe('Event Expiration and Cleanup Logic', () => {
           id: 'low-severity-old',
           severity: 'low',
           status: 'resolved',
-          reportedAt: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString(),
+          reportedAt: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString()
         }),
         createEmergencyEvent({
           id: 'high-severity-old',
           severity: 'critical',
           status: 'resolved',
-          reportedAt: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString(),
-        }),
+          reportedAt: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString()
+        })
       ]
 
       act(() => {
@@ -318,20 +318,20 @@ describe('Event Expiration and Cleanup Logic', () => {
         low: 30,      // 30 days for low severity
         medium: 45,    // 45 days for medium severity
         high: 60,      // 60 days for high severity
-        critical: 90,  // 90 days for critical severity
+        critical: 90  // 90 days for critical severity
       }
 
       const retentionChecks = severityEvents.map(event => {
         const eventDate = new Date(event.reportedAt)
         const daysOld = (Date.now() - eventDate.getTime()) / (1000 * 60 * 60 * 24)
         const retentionPeriod = severityRetention[event.severity as keyof typeof severityRetention]
-        
+
         return {
           id: event.id,
           severity: event.severity,
           daysOld,
           retentionPeriod,
-          shouldRetain: daysOld <= retentionPeriod,
+          shouldRetain: daysOld <= retentionPeriod
         }
       })
 
@@ -353,7 +353,7 @@ describe('Event Expiration and Cleanup Logic', () => {
           createEmergencyEvent({
             id: `cleanup-old-${i}`,
             status: 'resolved',
-            reportedAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+            reportedAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString()
           })
         ),
         // 500 recent events to keep
@@ -361,9 +361,9 @@ describe('Event Expiration and Cleanup Logic', () => {
           createEmergencyEvent({
             id: `cleanup-recent-${i}`,
             status: 'active',
-            reportedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+            reportedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
           })
-        ),
+        )
       ]
 
       act(() => {
@@ -397,18 +397,18 @@ describe('Event Expiration and Cleanup Logic', () => {
         createEmergencyEvent({
           id: 'keep-active',
           status: 'active',
-          reportedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+          reportedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString()
         }),
         createEmergencyEvent({
           id: 'keep-recent-resolved',
           status: 'resolved',
-          reportedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+          reportedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
         }),
         createEmergencyEvent({
           id: 'remove-old-resolved',
           status: 'resolved',
-          reportedAt: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString(),
-        }),
+          reportedAt: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString()
+        })
       ]
 
       act(() => {
@@ -416,9 +416,9 @@ describe('Event Expiration and Cleanup Logic', () => {
       })
 
       const originalActiveCount = mixedEvents.filter(e => e.status === 'active').length
-      const originalRecentResolvedCount = mixedEvents.filter(e => 
-        e.status === 'resolved' && 
-        (Date.now() - new Date(e.reportedAt).getTime()) <= 30 * 24 * 60 * 60 * 1000
+      const originalRecentResolvedCount = mixedEvents.filter(e =>
+        e.status === 'resolved'
+        && (Date.now() - new Date(e.reportedAt).getTime()) <= 30 * 24 * 60 * 60 * 1000
       ).length
 
       // Perform cleanup
@@ -444,7 +444,7 @@ describe('Event Expiration and Cleanup Logic', () => {
       // Simulate scheduled cleanup every 24 hours
       const cleanupSchedule = {
         interval: 24 * 60 * 60 * 1000, // 24 hours
-        lastCleanup: Date.now() - (24 * 60 * 60 * 1000), // 24 hours ago
+        lastCleanup: Date.now() - (24 * 60 * 60 * 1000) // 24 hours ago
       }
 
       const shouldRunCleanup = Date.now() - cleanupSchedule.lastCleanup >= cleanupSchedule.interval
@@ -454,7 +454,7 @@ describe('Event Expiration and Cleanup Logic', () => {
       const oldEvent = createEmergencyEvent({
         id: 'scheduled-cleanup-old',
         status: 'resolved',
-        reportedAt: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString(),
+        reportedAt: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString()
       })
 
       act(() => {
@@ -482,7 +482,7 @@ describe('Event Expiration and Cleanup Logic', () => {
         createEmergencyEvent({
           id: `interrupt-cleanup-${i}`,
           status: 'resolved',
-          reportedAt: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString(),
+          reportedAt: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString()
         })
       )
 
@@ -497,8 +497,10 @@ describe('Event Expiration and Cleanup Logic', () => {
       act(() => {
         result.current.events = result.current.events.filter((event, index) => {
           // Simulate interruption after processing 50 events
-          if (index >= 50) return true
-          
+          if (index >= 50) {
+            return true
+          }
+
           processedCount++
           const eventDate = new Date(event.reportedAt)
           const daysOld = (Date.now() - eventDate.getTime()) / (1000 * 60 * 60 * 24)
@@ -519,23 +521,23 @@ describe('Event Expiration and Cleanup Logic', () => {
         createEmergencyEvent({
           id: 'stats-keep-1',
           status: 'active',
-          reportedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+          reportedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
         }),
         createEmergencyEvent({
           id: 'stats-keep-2',
           status: 'resolved',
-          reportedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+          reportedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
         }),
         createEmergencyEvent({
           id: 'stats-remove-1',
           status: 'resolved',
-          reportedAt: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString(),
+          reportedAt: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString()
         }),
         createEmergencyEvent({
           id: 'stats-remove-2',
           status: 'resolved',
-          reportedAt: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString(),
-        }),
+          reportedAt: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString()
+        })
       ]
 
       act(() => {
@@ -551,18 +553,18 @@ describe('Event Expiration and Cleanup Logic', () => {
         processed: 0,
         removed: 0,
         archived: 0,
-        errors: 0,
+        errors: 0
       }
 
       act(() => {
         const cutoffDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
         result.current.events = result.current.events.filter(event => {
           cleanupStats.processed++
-          
+
           try {
             const eventDate = new Date(event.reportedAt)
             const daysOld = (Date.now() - eventDate.getTime()) / (1000 * 60 * 60 * 24)
-            
+
             if (daysOld > 30 && event.status === 'resolved') {
               cleanupStats.removed++
               if (daysOld > 90) {
@@ -600,7 +602,7 @@ describe('Event Expiration and Cleanup Logic', () => {
         eventsArchived: 50,
         eventsRemaining: 700,
         errors: 0,
-        retentionPolicyViolations: 0,
+        retentionPolicyViolations: 0
       }
 
       // Report should contain comprehensive cleanup information
@@ -628,18 +630,18 @@ describe('Event Expiration and Cleanup Logic', () => {
         createEmergencyEvent({
           id: 'future-date',
           status: 'pending',
-          reportedAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Future date
+          reportedAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // Future date
         }),
         createEmergencyEvent({
           id: 'invalid-date-string',
           status: 'resolved',
-          reportedAt: 'not-a-date' as any,
+          reportedAt: 'not-a-date' as any
         }),
         createEmergencyEvent({
           id: 'null-date',
           status: 'resolved',
-          reportedAt: null as any,
-        }),
+          reportedAt: null as any
+        })
       ]
 
       act(() => {
@@ -670,7 +672,7 @@ describe('Event Expiration and Cleanup Logic', () => {
         createEmergencyEvent({
           id: `concurrent-cleanup-${i}`,
           status: 'resolved',
-          reportedAt: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString(),
+          reportedAt: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString()
         })
       )
 
@@ -701,7 +703,7 @@ describe('Event Expiration and Cleanup Logic', () => {
               result.current.addEvent(createEmergencyEvent({
                 id: 'concurrent-new-event',
                 status: 'active',
-                reportedAt: new Date().toISOString(),
+                reportedAt: new Date().toISOString()
               }))
             })
             resolve(undefined)

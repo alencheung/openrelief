@@ -1,6 +1,6 @@
 /**
  * Comprehensive tests for Spatial Queries and Location-Based Filtering
- * 
+ *
  * These tests verify spatial query functionality, including
  * location-based filtering, distance calculations, and geographic operations.
  */
@@ -24,12 +24,12 @@ describe('Spatial Queries and Location-Based Filtering', () => {
       // Add events at these locations
       const nycEvent = createEmergencyEvent({
         id: 'nyc-event',
-        location: nycPoint,
+        location: nycPoint
       })
 
       const bostonEvent = createEmergencyEvent({
         id: 'boston-event',
-        location: bostonPoint,
+        location: bostonPoint
       })
 
       act(() => {
@@ -42,7 +42,7 @@ describe('Spatial Queries and Location-Based Filtering', () => {
       act(() => {
         result.current.setFilters({
           radius: 400000, // 400km (approximately NYC to Boston distance)
-          center: nycPoint,
+          center: nycPoint
         })
       })
 
@@ -53,7 +53,7 @@ describe('Spatial Queries and Location-Based Filtering', () => {
       act(() => {
         result.current.setFilters({
           radius: 50000, // 50km
-          center: nycPoint,
+          center: nycPoint
         })
       })
 
@@ -70,12 +70,12 @@ describe('Spatial Queries and Location-Based Filtering', () => {
 
       const centerEvent = createEmergencyEvent({
         id: 'center-event',
-        location: centerPoint,
+        location: centerPoint
       })
 
       const nearbyEvent = createEmergencyEvent({
         id: 'nearby-event',
-        location: nearbyPoint,
+        location: nearbyPoint
       })
 
       act(() => {
@@ -83,7 +83,7 @@ describe('Spatial Queries and Location-Based Filtering', () => {
         result.current.addEvent(nearbyEvent)
         result.current.setFilters({
           radius: 1000, // 1km
-          center: centerPoint,
+          center: centerPoint
         })
       })
 
@@ -98,12 +98,12 @@ describe('Spatial Queries and Location-Based Filtering', () => {
 
       const event1 = createEmergencyEvent({
         id: 'antipodal-1',
-        location: point1,
+        location: point1
       })
 
       const event2 = createEmergencyEvent({
         id: 'antipodal-2',
-        location: point2,
+        location: point2
       })
 
       act(() => {
@@ -116,7 +116,7 @@ describe('Spatial Queries and Location-Based Filtering', () => {
       act(() => {
         result.current.setFilters({
           radius: 20015000, // Half Earth's circumference in meters
-          center: point1,
+          center: point1
         })
       })
 
@@ -126,7 +126,7 @@ describe('Spatial Queries and Location-Based Filtering', () => {
       act(() => {
         result.current.setFilters({
           radius: 10000000, // 10,000km
-          center: point1,
+          center: point1
         })
       })
 
@@ -143,47 +143,47 @@ describe('Spatial Queries and Location-Based Filtering', () => {
         north: 40.8,
         south: 40.6,
         east: -73.9,
-        west: -74.1,
+        west: -74.1
       }
 
       const events = [
         createEmergencyEvent({
           id: 'inside-bounds-1',
-          location: { lat: 40.7, lng: -74.0 }, // Inside bounds
+          location: { lat: 40.7, lng: -74.0 } // Inside bounds
         }),
         createEmergencyEvent({
           id: 'inside-bounds-2',
-          location: { lat: 40.75, lng: -73.95 }, // Inside bounds
+          location: { lat: 40.75, lng: -73.95 } // Inside bounds
         }),
         createEmergencyEvent({
           id: 'outside-bounds-1',
-          location: { lat: 41.0, lng: -74.0 }, // North of bounds
+          location: { lat: 41.0, lng: -74.0 } // North of bounds
         }),
         createEmergencyEvent({
           id: 'outside-bounds-2',
-          location: { lat: 40.5, lng: -74.0 }, // South of bounds
+          location: { lat: 40.5, lng: -74.0 } // South of bounds
         }),
         createEmergencyEvent({
           id: 'outside-bounds-3',
-          location: { lat: 40.7, lng: -73.8 }, // East of bounds
+          location: { lat: 40.7, lng: -73.8 } // East of bounds
         }),
         createEmergencyEvent({
           id: 'outside-bounds-4',
-          location: { lat: 40.7, lng: -74.2 }, // West of bounds
-        }),
+          location: { lat: 40.7, lng: -74.2 } // West of bounds
+        })
       ]
 
       act(() => {
         events.forEach(event => result.current.addEvent(event))
-        
+
         // Set map bounds (this would typically come from map component)
         result.current.setMapState({
-          bounds,
+          bounds
         })
       })
 
       // Only events inside bounds should be visible
-      const insideEvents = events.filter(event => 
+      const insideEvents = events.filter(event =>
         event.id === 'inside-bounds-1' || event.id === 'inside-bounds-2'
       )
 
@@ -200,36 +200,36 @@ describe('Spatial Queries and Location-Based Filtering', () => {
         north: 10,
         south: -10,
         east: 170,
-        west: -170,
+        west: -170
       }
 
       const events = [
         createEmergencyEvent({
           id: 'special-1',
-          location: { lat: 0, lng: 180 }, // On date line
+          location: { lat: 0, lng: 180 } // On date line
         }),
         createEmergencyEvent({
           id: 'special-2',
-          location: { lat: 0, lng: -180 }, // On date line
+          location: { lat: 0, lng: -180 } // On date line
         }),
         createEmergencyEvent({
           id: 'special-3',
-          location: { lat: 5, lng: 175 }, // Inside bounds
+          location: { lat: 5, lng: 175 } // Inside bounds
         }),
         createEmergencyEvent({
           id: 'special-4',
-          location: { lat: -5, lng: -175 }, // Inside bounds
+          location: { lat: -5, lng: -175 } // Inside bounds
         }),
         createEmergencyEvent({
           id: 'special-5',
-          location: { lat: 15, lng: 0 }, // Outside bounds (north)
-        }),
+          location: { lat: 15, lng: 0 } // Outside bounds (north)
+        })
       ]
 
       act(() => {
         events.forEach(event => result.current.addEvent(event))
         result.current.setMapState({
-          bounds: specialBounds,
+          bounds: specialBounds
         })
       })
 
@@ -246,18 +246,18 @@ describe('Spatial Queries and Location-Based Filtering', () => {
       const nearbyUser = createUser({
         id: 'nearby-user',
         trustScore: 0.8,
-        location: { lat: 40.7130, lng: -74.0062 }, // ~200m away
+        location: { lat: 40.7130, lng: -74.0062 } // ~200m away
       })
 
       const distantUser = createUser({
         id: 'distant-user',
         trustScore: 0.8,
-        location: { lat: 40.7589, lng: -73.9851 }, // ~5km away
+        location: { lat: 40.7589, lng: -73.9851 } // ~5km away
       })
 
       const event = createEmergencyEvent({
         id: 'location-trust-event',
-        location: eventLocation,
+        location: eventLocation
       })
 
       act(() => {
@@ -276,13 +276,13 @@ describe('Spatial Queries and Location-Based Filtering', () => {
 
       const event = createEmergencyEvent({
         id: 'no-location-user-event',
-        location: { lat: 40.7128, lng: -74.0060 },
+        location: { lat: 40.7128, lng: -74.0060 }
       })
 
       const userWithoutLocation = createUser({
         id: 'no-location-user',
         trustScore: 0.8,
-        location: undefined,
+        location: undefined
       })
 
       act(() => {
@@ -305,7 +305,7 @@ describe('Spatial Queries and Location-Based Filtering', () => {
         const lng = centerPoint.lng + (Math.random() - 0.5) * 0.1
         return createEmergencyEvent({
           id: `perf-event-${i}`,
-          location: { lat, lng },
+          location: { lat, lng }
         })
       })
 
@@ -320,7 +320,7 @@ describe('Spatial Queries and Location-Based Filtering', () => {
       act(() => {
         result.current.setFilters({
           radius: 5000, // 5km
-          center: centerPoint,
+          center: centerPoint
         })
       })
 
@@ -340,7 +340,7 @@ describe('Spatial Queries and Location-Based Filtering', () => {
         for (let lng = -74.5; lng <= -73.5; lng += 0.01) {
           gridEvents.push(createEmergencyEvent({
             id: `grid-${lat}-${lng}`,
-            location: { lat, lng },
+            location: { lat, lng }
           }))
         }
       }
@@ -359,7 +359,7 @@ describe('Spatial Queries and Location-Based Filtering', () => {
           radius: 2000, // 2km
           center: { lat: 40.5, lng: -74.0 },
           severity: [3, 4], // High and critical only
-          status: ['active'],
+          status: ['active']
         })
       })
 
@@ -377,12 +377,12 @@ describe('Spatial Queries and Location-Based Filtering', () => {
 
       const northPoleEvent = createEmergencyEvent({
         id: 'north-pole',
-        location: { lat: 89.9, lng: 0 }, // Near North Pole
+        location: { lat: 89.9, lng: 0 } // Near North Pole
       })
 
       const southPoleEvent = createEmergencyEvent({
         id: 'south-pole',
-        location: { lat: -89.9, lng: 0 }, // Near South Pole
+        location: { lat: -89.9, lng: 0 } // Near South Pole
       })
 
       act(() => {
@@ -394,7 +394,7 @@ describe('Spatial Queries and Location-Based Filtering', () => {
       act(() => {
         result.current.setFilters({
           radius: 100000, // 100km
-          center: { lat: 90, lng: 0 },
+          center: { lat: 90, lng: 0 }
         })
       })
 
@@ -409,16 +409,16 @@ describe('Spatial Queries and Location-Based Filtering', () => {
       const dateLineEvents = [
         createEmergencyEvent({
           id: 'dateline-east',
-          location: { lat: 40.7128, lng: 179.9 }, // Just east of date line
+          location: { lat: 40.7128, lng: 179.9 } // Just east of date line
         }),
         createEmergencyEvent({
           id: 'dateline-west',
-          location: { lat: 40.7128, lng: -179.9 }, // Just west of date line
+          location: { lat: 40.7128, lng: -179.9 } // Just west of date line
         }),
         createEmergencyEvent({
           id: 'dateline-far-east',
-          location: { lat: 40.7128, lng: 170 }, // Further east
-        }),
+          location: { lat: 40.7128, lng: 170 } // Further east
+        })
       ]
 
       act(() => {
@@ -429,7 +429,7 @@ describe('Spatial Queries and Location-Based Filtering', () => {
       act(() => {
         result.current.setFilters({
           radius: 100000, // 100km
-          center: { lat: 40.7128, lng: 180 },
+          center: { lat: 40.7128, lng: 180 }
         })
       })
 
@@ -446,16 +446,16 @@ describe('Spatial Queries and Location-Based Filtering', () => {
       const invalidEvents = [
         createEmergencyEvent({
           id: 'invalid-lat',
-          location: { lat: 91, lng: 0 }, // Invalid latitude
+          location: { lat: 91, lng: 0 } // Invalid latitude
         }),
         createEmergencyEvent({
           id: 'invalid-lng',
-          location: { lat: 0, lng: 181 }, // Invalid longitude
+          location: { lat: 0, lng: 181 } // Invalid longitude
         }),
         createEmergencyEvent({
           id: 'nan-coords',
-          location: { lat: NaN, lng: NaN }, // NaN coordinates
-        }),
+          location: { lat: NaN, lng: NaN } // NaN coordinates
+        })
       ]
 
       act(() => {
@@ -464,12 +464,12 @@ describe('Spatial Queries and Location-Based Filtering', () => {
 
       // Should handle invalid coordinates without crashing
       expect(result.current.events).toHaveLength(3)
-      
+
       // Filtering should still work
       act(() => {
         result.current.setFilters({
           radius: 1000,
-          center: { lat: 40.7128, lng: -74.0060 },
+          center: { lat: 40.7128, lng: -74.0060 }
         })
       })
 
@@ -490,7 +490,7 @@ describe('Spatial Queries and Location-Based Filtering', () => {
         { id: 'near', distance: 500 },          // 500m
         { id: 'medium', distance: 2000 },        // 2km
         { id: 'far', distance: 10000 },         // 10km
-        { id: 'very-far', distance: 50000 },     // 50km
+        { id: 'very-far', distance: 50000 }     // 50km
       ]
 
       const events = distanceEvents.map(({ id, distance }) => {
@@ -498,10 +498,10 @@ describe('Spatial Queries and Location-Based Filtering', () => {
         const latOffset = distance / 111320 // 1 degree lat ≈ 111.32km
         return createEmergencyEvent({
           id,
-          location: { 
-            lat: userLocation.lat + latOffset, 
-            lng: userLocation.lng 
-          },
+          location: {
+            lat: userLocation.lat + latOffset,
+            lng: userLocation.lng
+          }
         })
       })
 
@@ -518,7 +518,7 @@ describe('Spatial Queries and Location-Based Filtering', () => {
         act(() => {
           result.current.setFilters({
             radius,
-            center: userLocation,
+            center: userLocation
           })
         })
 
@@ -535,8 +535,8 @@ describe('Spatial Queries and Location-Based Filtering', () => {
           id: `cache-test-${i}`,
           location: {
             lat: userLocation.lat + (Math.random() - 0.5) * 0.01,
-            lng: userLocation.lng + (Math.random() - 0.5) * 0.01,
-          },
+            lng: userLocation.lng + (Math.random() - 0.5) * 0.01
+          }
         })
       )
 
@@ -550,7 +550,7 @@ describe('Spatial Queries and Location-Based Filtering', () => {
       act(() => {
         result.current.setFilters({
           radius: 1000,
-          center: userLocation,
+          center: userLocation
         })
       })
       const firstFilterTime = performance.now() - startTime1
@@ -560,7 +560,7 @@ describe('Spatial Queries and Location-Based Filtering', () => {
       act(() => {
         result.current.setFilters({
           radius: 1000,
-          center: userLocation,
+          center: userLocation
         })
       })
       const secondFilterTime = performance.now() - startTime2
@@ -581,12 +581,12 @@ describe('Spatial Queries and Location-Based Filtering', () => {
       const events = [
         createEmergencyEvent({
           id: 'near-initial',
-          location: { lat: 40.7130, lng: -74.0062 }, // Near initial
+          location: { lat: 40.7130, lng: -74.0062 } // Near initial
         }),
         createEmergencyEvent({
           id: 'near-new',
-          location: { lat: 40.7591, lng: -73.9852 }, // Near new
-        }),
+          location: { lat: 40.7591, lng: -73.9852 } // Near new
+        })
       ]
 
       act(() => {
@@ -594,7 +594,7 @@ describe('Spatial Queries and Location-Based Filtering', () => {
         result.current.setUserLocation(initialLocation)
         result.current.setFilters({
           radius: 1000,
-          center: initialLocation,
+          center: initialLocation
         })
       })
 
@@ -607,7 +607,7 @@ describe('Spatial Queries and Location-Based Filtering', () => {
         result.current.setUserLocation(newLocation)
         result.current.setFilters({
           radius: 1000,
-          center: newLocation,
+          center: newLocation
         })
       })
 
@@ -640,20 +640,20 @@ describe('Spatial Queries and Location-Based Filtering', () => {
       const events = [
         createEmergencyEvent({
           id: 'valid-location',
-          location: { lat: 40.7128, lng: -74.0060 },
+          location: { lat: 40.7128, lng: -74.0060 }
         }),
         createEmergencyEvent({
           id: 'missing-location',
-          location: undefined as any,
+          location: undefined as any
         }),
         createEmergencyEvent({
           id: 'null-location',
-          location: null as any,
+          location: null as any
         }),
         createEmergencyEvent({
           id: 'empty-location',
-          location: {} as any,
-        }),
+          location: {} as any
+        })
       ]
 
       act(() => {
@@ -666,7 +666,7 @@ describe('Spatial Queries and Location-Based Filtering', () => {
       act(() => {
         result.current.setFilters({
           radius: 1000,
-          center: { lat: 40.7128, lng: -74.0060 },
+          center: { lat: 40.7128, lng: -74.0060 }
         })
       })
 
@@ -679,7 +679,7 @@ describe('Spatial Queries and Location-Based Filtering', () => {
 
       const originalEvent = createEmergencyEvent({
         id: 'spatial-consistency-test',
-        location: { lat: 40.7128, lng: -74.0060 },
+        location: { lat: 40.7128, lng: -74.0060 }
       })
 
       const updatedLocation = { lat: 40.7589, lng: -73.9851 }
@@ -692,7 +692,7 @@ describe('Spatial Queries and Location-Based Filtering', () => {
 
       act(() => {
         result.current.updateEvent(originalEvent.id, {
-          location: updatedLocation,
+          location: updatedLocation
         })
       })
 

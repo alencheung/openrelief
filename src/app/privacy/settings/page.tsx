@@ -1,6 +1,6 @@
 /**
  * Privacy Settings Page for OpenRelief
- * 
+ *
  * This page provides detailed privacy settings configuration
  * with granular controls and advanced options
  */
@@ -10,12 +10,12 @@
 import React, { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { 
-  Shield, 
-  Eye, 
-  Lock, 
-  Clock, 
-  Globe, 
+import {
+  Shield,
+  Eye,
+  Lock,
+  Clock,
+  Globe,
   Users,
   Database,
   Key,
@@ -219,8 +219,8 @@ const PrivacySettingsPage: React.FC = () => {
   const saveSettings = () => {
     updateSettings(localSettings)
     toast({
-      title: "Settings Saved",
-      description: "Your privacy settings have been updated successfully."
+      title: 'Settings Saved',
+      description: 'Your privacy settings have been updated successfully.'
     })
     setHasChanges(false)
   }
@@ -244,11 +244,11 @@ const PrivacySettingsPage: React.FC = () => {
       consentManagement: true,
       realTimeMonitoring: true
     }
-    
+
     setLocalSettings(defaultSettings)
     toast({
-      title: "Settings Reset",
-      description: "Privacy settings have been reset to default values."
+      title: 'Settings Reset',
+      description: 'Privacy settings have been reset to default values.'
     })
   }
 
@@ -322,7 +322,7 @@ const PrivacySettingsPage: React.FC = () => {
         <div className="space-y-6">
           {settingSections.map((section) => (
             <Card key={section.id} className="overflow-hidden">
-              <div 
+              <div
                 className="p-6 border-b cursor-pointer hover:bg-gray-50"
                 onClick={() => toggleSection(section.id)}
               >
@@ -343,7 +343,7 @@ const PrivacySettingsPage: React.FC = () => {
                   )}
                 </div>
               </div>
-              
+
               {expandedSections.includes(section.id) && (
                 <div className="p-6 space-y-6">
                   {section.settings.map((setting) => (
@@ -356,7 +356,7 @@ const PrivacySettingsPage: React.FC = () => {
                         </div>
                         <p className="text-sm text-gray-600 mt-1">{setting.description}</p>
                       </div>
-                      
+
                       <div className="ml-6">
                         {setting.type === 'toggle' && (
                           <label className="relative inline-flex items-center cursor-pointer">
@@ -370,7 +370,7 @@ const PrivacySettingsPage: React.FC = () => {
                             <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                           </label>
                         )}
-                        
+
                         {setting.type === 'number' && (
                           <div className="flex items-center space-x-2">
                             <input
@@ -385,11 +385,11 @@ const PrivacySettingsPage: React.FC = () => {
                             />
                             {setting.key === 'locationPrecision' && (
                               <span className="text-sm text-gray-500">
-                                {localSettings.locationPrecision === 1 ? 'Lowest' :
-                                 localSettings.locationPrecision === 2 ? 'Low' :
-                                 localSettings.locationPrecision === 3 ? 'Medium' :
-                                 localSettings.locationPrecision === 4 ? 'High' :
-                                 'Highest'}
+                                {localSettings.locationPrecision === 1 ? 'Lowest'
+                                  : localSettings.locationPrecision === 2 ? 'Low'
+                                    : localSettings.locationPrecision === 3 ? 'Medium'
+                                      : localSettings.locationPrecision === 4 ? 'High'
+                                        : 'Highest'}
                               </span>
                             )}
                             {setting.key === 'dataRetentionDays' && (
@@ -408,22 +408,22 @@ const PrivacySettingsPage: React.FC = () => {
 
         {/* Action Buttons */}
         <div className="mt-8 flex justify-between">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={resetToDefaults}
           >
             Reset to Defaults
           </Button>
-          
+
           <div className="space-x-4">
-            <Button 
+            <Button
               variant="outline"
               onClick={() => setLocalSettings(privacyContext.settings)}
               disabled={!hasChanges}
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={saveSettings}
               disabled={!hasChanges}
             >

@@ -29,17 +29,17 @@ const breakpointValues: Record<Breakpoint, number> = {
   lg: 1024,
   xl: 1280,
   '2xl': 1536,
-  '3xl': 1792,
+  '3xl': 1792
 }
 
 const deviceBreakpoints: Record<DeviceType, { min: number; max: number }> = {
   mobile: { min: 0, max: 767 },
   tablet: { min: 768, max: 1023 },
-  desktop: { min: 1024, max: Infinity },
+  desktop: { min: 1024, max: Infinity }
 }
 
 export function useMobileDetection(): MobileDetectionState {
-  const [state, setState] = useState<MobileDetectionState>(() => 
+  const [state, setState] = useState<MobileDetectionState>(() =>
     getInitialState()
   )
 
@@ -56,7 +56,7 @@ export function useMobileDetection(): MobileDetectionState {
       ...calculateState(width, height, pixelRatio),
       screenWidth: width,
       screenHeight: height,
-      pixelRatio,
+      pixelRatio
     }
   }
 
@@ -74,7 +74,7 @@ export function useMobileDetection(): MobileDetectionState {
       isLargeScreen: true,
       screenWidth: 1024,
       screenHeight: 768,
-      pixelRatio: 1,
+      pixelRatio: 1
     }
   }
 
@@ -94,7 +94,7 @@ export function useMobileDetection(): MobileDetectionState {
       isTouch,
       isSmallScreen: width < 768,
       isMediumScreen: width >= 768 && width < 1024,
-      isLargeScreen: width >= 1024,
+      isLargeScreen: width >= 1024
     }
   }
 
@@ -104,13 +104,19 @@ export function useMobileDetection(): MobileDetectionState {
   }
 
   function getCurrentDeviceType(width: number): DeviceType {
-    if (width <= deviceBreakpoints.mobile.max) return 'mobile'
-    if (width <= deviceBreakpoints.tablet.max) return 'tablet'
+    if (width <= deviceBreakpoints.mobile.max) {
+      return 'mobile'
+    }
+    if (width <= deviceBreakpoints.tablet.max) {
+      return 'tablet'
+    }
     return 'desktop'
   }
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    if (typeof window === 'undefined') {
+      return
+    }
 
     let resizeTimer: NodeJS.Timeout
 
@@ -127,7 +133,7 @@ export function useMobileDetection(): MobileDetectionState {
           ...calculateState(width, height, pixelRatio),
           screenWidth: width,
           screenHeight: height,
-          pixelRatio,
+          pixelRatio
         }))
       }, 100)
     }
@@ -159,14 +165,14 @@ export function getResponsiveValue<T>(
   // Find the first value that matches or is smaller than current breakpoint
   const breakpointOrder: Breakpoint[] = ['3xl', '2xl', 'xl', 'lg', 'md', 'sm', 'xs']
   const currentIndex = breakpointOrder.indexOf(breakpoint)
-  
+
   for (let i = currentIndex; i < breakpointOrder.length; i++) {
     const bp = breakpointOrder[i]
     if (values[bp] !== undefined) {
       return values[bp]!
     }
   }
-  
+
   return defaultValue
 }
 
@@ -178,7 +184,7 @@ export function isViewportInRange(
 ): boolean {
   const minWidth = typeof min === 'string' ? breakpointValues[min] : min
   const maxWidth = typeof max === 'string' ? breakpointValues[max] : max
-  
+
   return width >= minWidth && width < maxWidth
 }
 
@@ -196,7 +202,9 @@ export function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(false)
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    if (typeof window === 'undefined') {
+      return
+    }
 
     const mediaQuery = window.matchMedia(query)
     setMatches(mediaQuery.matches)

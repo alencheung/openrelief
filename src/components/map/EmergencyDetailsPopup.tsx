@@ -3,12 +3,12 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
-import { 
-  X, 
-  Navigation, 
-  Clock, 
-  Share2, 
-  ExternalLink, 
+import {
+  X,
+  Navigation,
+  Clock,
+  Share2,
+  ExternalLink,
   Phone,
   MessageSquare,
   Route,
@@ -24,13 +24,13 @@ import {
   ChevronDown,
   ChevronUp
 } from 'lucide-react'
-import { 
-  EmergencyIndicator, 
-  TrustBadge, 
-  StatusIndicator, 
-  Icon, 
-  EnhancedCard, 
-  EnhancedButton 
+import {
+  EmergencyIndicator,
+  TrustBadge,
+  StatusIndicator,
+  Icon,
+  EnhancedCard,
+  EnhancedButton
 } from '@/components/ui'
 
 const emergencyDetailsVariants = cva(
@@ -38,30 +38,30 @@ const emergencyDetailsVariants = cva(
   {
     variants: {
       position: {
-        'bottom': 'bottom-4 left-4 right-4',
-        'top': 'top-4 left-4 right-4',
-        'left': 'left-4 top-4 bottom-4',
-        'right': 'right-4 top-4 bottom-4',
-        'center': 'top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2',
+        bottom: 'bottom-4 left-4 right-4',
+        top: 'top-4 left-4 right-4',
+        left: 'left-4 top-4 bottom-4',
+        right: 'right-4 top-4 bottom-4',
+        center: 'top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2'
       },
       size: {
         sm: 'max-w-sm',
         md: 'max-w-md',
         lg: 'max-w-lg',
         xl: 'max-w-xl',
-        '2xl': 'max-w-2xl',
+        '2xl': 'max-w-2xl'
       },
       variant: {
         default: 'p-4',
         compact: 'p-3',
-        minimal: 'p-2',
+        minimal: 'p-2'
       }
     },
     defaultVariants: {
       position: 'bottom',
       size: 'md',
-      variant: 'default',
-    },
+      variant: 'default'
+    }
   }
 )
 
@@ -212,7 +212,9 @@ const EmergencyDetailsPopup: React.FC<EmergencyDetailsPopupProps> = ({
 
   // Auto-close functionality
   useEffect(() => {
-    if (!autoClose) return
+    if (!autoClose) {
+      return
+    }
 
     const timer = setTimeout(() => {
       onClose()
@@ -260,15 +262,25 @@ const EmergencyDetailsPopup: React.FC<EmergencyDetailsPopupProps> = ({
   }
 
   const getTrustLevel = (trustScore: number) => {
-    if (trustScore >= 0.9) return 'excellent'
-    if (trustScore >= 0.7) return 'good'
-    if (trustScore >= 0.5) return 'moderate'
-    if (trustScore >= 0.3) return 'low'
+    if (trustScore >= 0.9) {
+      return 'excellent'
+    }
+    if (trustScore >= 0.7) {
+      return 'good'
+    }
+    if (trustScore >= 0.5) {
+      return 'moderate'
+    }
+    if (trustScore >= 0.3) {
+      return 'low'
+    }
     return 'critical'
   }
 
   const formatDistance = (distance?: number) => {
-    if (!distance) return null
+    if (!distance) {
+      return null
+    }
     if (distance < 1000) {
       return `${Math.round(distance)}m away`
     }
@@ -280,10 +292,16 @@ const EmergencyDetailsPopup: React.FC<EmergencyDetailsPopupProps> = ({
     const now = new Date()
     const diffMs = now.getTime() - date.getTime()
     const diffMins = Math.floor(diffMs / 60000)
-    
-    if (diffMins < 1) return 'Just now'
-    if (diffMins < 60) return `${diffMins} minutes ago`
-    if (diffMins < 1440) return `${Math.floor(diffMins / 60)} hours ago`
+
+    if (diffMins < 1) {
+      return 'Just now'
+    }
+    if (diffMins < 60) {
+      return `${diffMins} minutes ago`
+    }
+    if (diffMins < 1440) {
+      return `${Math.floor(diffMins / 60)} hours ago`
+    }
     return date.toLocaleDateString()
   }
 
@@ -572,8 +590,8 @@ const EmergencyDetailsPopup: React.FC<EmergencyDetailsPopupProps> = ({
                   </div>
                 </div>
                 <StatusIndicator
-                  status={resource.status === 'available' ? 'active' :
-                          resource.status === 'deployed' ? 'pending' : 'inactive'}
+                  status={resource.status === 'available' ? 'active'
+                    : resource.status === 'deployed' ? 'pending' : 'inactive'}
                   size="sm"
                   variant="subtle"
                   label={resource.status}

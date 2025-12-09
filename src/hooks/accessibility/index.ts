@@ -2,20 +2,20 @@
 export {
   useFocusManagement,
   useFocusRestore,
-  useFocusOrder,
+  useFocusOrder
 } from './useFocusManagement'
 
 export {
   useKeyboardNavigation,
   useArrowNavigation,
-  useRovingTabIndex,
+  useRovingTabIndex
 } from './useKeyboardNavigation'
 
 export {
   useAriaAnnouncer,
   usePageTitleAnnouncer,
   useStatusAnnouncer,
-  useFormValidationAnnouncer,
+  useFormValidationAnnouncer
 } from './useAriaAnnouncer'
 
 export {
@@ -27,7 +27,7 @@ export {
   useReducedMotionScroll,
   useReducedMotionCarousel,
   useReducedMotionVideo,
-  useReducedMotionCSSProperties,
+  useReducedMotionCSSProperties
 } from './useReducedMotion'
 
 export {
@@ -39,14 +39,14 @@ export {
   applyHighContrastMode,
   removeHighContrastMode,
   toggleHighContrastMode,
-  isHighContrastModeActive,
+  isHighContrastModeActive
 } from '../lib/accessibility/color-contrast'
 
 export {
   runAccessibilityAudit,
   runDefaultAccessibilityTests,
   runCIAccessibilityTests,
-  accessibilityAuditor,
+  accessibilityAuditor
 } from '../lib/accessibility/accessibility-audit'
 
 export {
@@ -54,44 +54,44 @@ export {
   AccessibilityTestSuite,
   defaultTestConfig,
   AccessibilityTestResult,
-  AccessibilityTestConfig,
+  AccessibilityTestConfig
 } from '../lib/accessibility/accessibility-testing'
 
 // Re-export types
 export type {
   FocusManagementOptions,
-  FocusElement,
+  FocusElement
 } from './useFocusManagement'
 
 export type {
   KeyboardShortcut,
   KeyboardNavigationOptions,
-  KeyboardNavigationState,
+  KeyboardNavigationState
 } from './useKeyboardNavigation'
 
 export type {
   AriaAnnouncement,
-  AriaAnnouncerOptions,
+  AriaAnnouncerOptions
 } from './useAriaAnnouncer'
 
 export type {
   ReducedMotionOptions,
-  ReducedMotionState,
+  ReducedMotionState
 } from './useReducedMotion'
 
 export type {
   AccessibilityAuditResult,
   AccessibilityIssue,
-  AccessibilityRecommendation,
+  AccessibilityRecommendation
 } from '../lib/accessibility/accessibility-audit'
 
 export type {
   AccessibilityTestResult,
   AccessibilityTestConfig,
-  AccessibilityTestCase,
+  AccessibilityTestCase
 } from '../lib/accessibility/accessibility-testing'
 
 export type {
   ColorContrastResult,
-  ContrastValidationOptions,
+  ContrastValidationOptions
 } from '../lib/accessibility/color-contrast'

@@ -11,24 +11,24 @@ const audioRecorderVariants = cva(
         default: 'bg-primary text-primary-foreground hover:bg-primary/90',
         destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
         success: 'bg-success text-success-foreground hover:bg-success/90',
-        warning: 'bg-warning text-warning-foreground hover:bg-warning/90',
+        warning: 'bg-warning text-warning-foreground hover:bg-warning/90'
       },
       size: {
         sm: 'w-12 h-12',
         default: 'w-16 h-16',
-        lg: 'w-20 h-20',
+        lg: 'w-20 h-20'
       },
       state: {
         idle: '',
         recording: 'animate-pulse',
-        processing: 'animate-spin',
-      },
+        processing: 'animate-spin'
+      }
     },
     defaultVariants: {
       variant: 'default',
       size: 'default',
-      state: 'idle',
-    },
+      state: 'idle'
+    }
   }
 )
 
@@ -79,9 +79,9 @@ export interface AudioRecorderProps
 }
 
 const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
-  ({ 
-    className, 
-    variant, 
+  ({
+    className,
+    variant,
     size,
     label,
     helperText,
@@ -102,7 +102,7 @@ const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
     onError,
     renderRecording,
     renderControls,
-    ...props 
+    ...props
   }, ref) => {
     const [isRecording, setIsRecording] = React.useState(false)
     const [isPaused, setIsPaused] = React.useState(false)
@@ -112,14 +112,14 @@ const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
     const [duration, setDuration] = React.useState(0)
     const [audioLevels, setAudioLevels] = React.useState<number[]>(new Array(20).fill(0))
     const [permission, setPermission] = React.useState<'granted' | 'denied' | 'prompt' | null>(null)
-    
+
     const mediaRecorderRef = React.useRef<MediaRecorder | null>(null)
     const audioChunksRef = React.useRef<Blob[]>([])
     const streamRef = React.useRef<MediaStream | null>(null)
     const analyserRef = React.useRef<AnalyserNode | null>(null)
     const animationFrameRef = React.useRef<number | null>(null)
     const timerRef = React.useRef<NodeJS.Timeout | null>(null)
-    
+
     // Get recording settings based on quality
     const getRecordingSettings = () => {
       switch (quality) {
@@ -131,7 +131,7 @@ const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
           return { sampleRate: 44100, bitRate: 64000 }
       }
     }
-    
+
     // Get MIME type based on format
     const getMimeType = () => {
       switch (format) {
@@ -143,13 +143,13 @@ const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
           return 'audio/webm;codecs=opus'
       }
     }
-    
+
     // Check microphone permission
     const checkPermission = async () => {
       try {
         const result = await navigator.permissions.query({ name: 'microphone' as PermissionName })
         setPermission(result.state as 'granted' | 'denied' | 'prompt')
-        
+
         result.addEventListener('change', () => {
           setPermission(result.state as 'granted' | 'denied' | 'prompt')
         })
@@ -158,89 +158,93 @@ const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
         setPermission(null)
       }
     }
-    
+
     // Initialize audio analyzer
     const initializeAnalyzer = (stream: MediaStream) => {
       try {
         const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
         const source = audioContext.createMediaStreamSource(stream)
         const analyser = audioContext.createAnalyser()
-        
+
         analyser.fftSize = 256
         analyser.smoothingTimeConstant = 0.8
         source.connect(analyser)
-        
+
         analyserRef.current = analyser
       } catch (error) {
         console.warn('Failed to initialize audio analyzer:', error)
       }
     }
-    
+
     // Update audio levels visualization
     const updateAudioLevels = () => {
-      if (!analyserRef.current) return
-      
+      if (!analyserRef.current) {
+        return
+      }
+
       const analyser = analyserRef.current
       const dataArray = new Uint8Array(analyser.frequencyBinCount)
       analyser.getByteFrequencyData(dataArray)
-      
+
       // Calculate average level
       const average = dataArray.reduce((sum, value) => sum + value, 0) / dataArray.length
       const normalizedLevel = average / 255
-      
+
       setAudioLevels(prev => {
         const newLevels = [...prev.slice(1), normalizedLevel]
         return newLevels
       })
-      
+
       animationFrameRef.current = requestAnimationFrame(updateAudioLevels)
     }
-    
+
     // Start recording
     const startRecording = async () => {
       try {
         // Check if already recording
-        if (isRecording && !isPaused) return
-        
+        if (isRecording && !isPaused) {
+          return
+        }
+
         // Resume if paused
         if (isRecording && isPaused) {
           resumeRecording()
           return
         }
-        
+
         setIsProcessing(true)
-        
+
         // Get microphone access
         const stream = await navigator.mediaDevices.getUserMedia({
           audio: {
             echoCancellation: true,
             noiseSuppression: true,
-            sampleRate: getRecordingSettings().sampleRate,
+            sampleRate: getRecordingSettings().sampleRate
           }
         })
-        
+
         streamRef.current = stream
-        
+
         // Initialize analyzer
         if (showLevels) {
           initializeAnalyzer(stream)
         }
-        
+
         // Create media recorder
         const mimeType = getMimeType()
         const mediaRecorder = new MediaRecorder(stream, {
           mimeType,
           audioBitsPerSecond: getRecordingSettings().bitRate
         })
-        
+
         audioChunksRef.current = []
-        
+
         mediaRecorder.ondataavailable = (event) => {
           if (event.data.size > 0) {
             audioChunksRef.current.push(event.data)
           }
         }
-        
+
         mediaRecorder.onstop = () => {
           const blob = new Blob(audioChunksRef.current, { type: mimeType })
           const url = URL.createObjectURL(blob)
@@ -255,29 +259,29 @@ const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
               timestamp: Date.now() - (audioLevels.length - index) * 100
             })) : undefined
           }
-          
+
           setCurrentRecording(recording)
           setRecordings(prev => [...prev, recording])
           setIsRecording(false)
           setIsPaused(false)
           setIsProcessing(false)
-          
+
           onRecordingStop?.(recording)
-          
+
           // Stop audio visualization
           if (animationFrameRef.current) {
             cancelAnimationFrame(animationFrameRef.current)
           }
           setAudioLevels(new Array(20).fill(0))
         }
-        
+
         mediaRecorder.start()
         mediaRecorderRef.current = mediaRecorder
-        
+
         setIsRecording(true)
         setIsPaused(false)
         setIsProcessing(false)
-        
+
         // Start duration timer
         timerRef.current = setInterval(() => {
           setDuration(prev => {
@@ -288,12 +292,12 @@ const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
             return newDuration
           })
         }, 100)
-        
+
         // Start audio visualization
         if (showLevels) {
           updateAudioLevels()
         }
-        
+
         onRecordingStart?.()
       } catch (error) {
         setIsProcessing(false)
@@ -301,49 +305,55 @@ const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
         onError?.(err)
       }
     }
-    
+
     // Stop recording
     const stopRecording = () => {
-      if (!isRecording || !mediaRecorderRef.current) return
-      
+      if (!isRecording || !mediaRecorderRef.current) {
+        return
+      }
+
       mediaRecorderRef.current.stop()
-      
+
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop())
       }
-      
+
       if (timerRef.current) {
         clearInterval(timerRef.current)
       }
-      
+
       setDuration(0)
     }
-    
+
     // Pause recording
     const pauseRecording = () => {
-      if (!isRecording || isPaused || !mediaRecorderRef.current) return
-      
+      if (!isRecording || isPaused || !mediaRecorderRef.current) {
+        return
+      }
+
       mediaRecorderRef.current.pause()
       setIsPaused(true)
-      
+
       if (timerRef.current) {
         clearInterval(timerRef.current)
       }
-      
+
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current)
       }
-      
+
       onRecordingPause?.()
     }
-    
+
     // Resume recording
     const resumeRecording = () => {
-      if (!isRecording || !isPaused || !mediaRecorderRef.current) return
-      
+      if (!isRecording || !isPaused || !mediaRecorderRef.current) {
+        return
+      }
+
       mediaRecorderRef.current.resume()
       setIsPaused(false)
-      
+
       // Resume duration timer
       timerRef.current = setInterval(() => {
         setDuration(prev => {
@@ -354,15 +364,15 @@ const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
           return newDuration
         })
       }, 100)
-      
+
       // Resume audio visualization
       if (showLevels) {
         updateAudioLevels()
       }
-      
+
       onRecordingResume?.()
     }
-    
+
     // Delete recording
     const deleteRecording = (id: string) => {
       setRecordings(prev => {
@@ -372,24 +382,24 @@ const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
         }
         return prev.filter(r => r.id !== id)
       })
-      
+
       if (currentRecording?.id === id) {
         setCurrentRecording(null)
       }
     }
-    
+
     // Format duration
     const formatDuration = (seconds: number) => {
       const mins = Math.floor(seconds / 60)
       const secs = Math.floor(seconds % 60)
       return `${mins}:${secs.toString().padStart(2, '0')}`
     }
-    
+
     // Check permission on mount
     React.useEffect(() => {
       checkPermission()
     }, [])
-    
+
     // Cleanup on unmount
     React.useEffect(() => {
       return () => {
@@ -405,15 +415,19 @@ const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
         recordings.forEach(recording => URL.revokeObjectURL(recording.url))
       }
     }, [recordings])
-    
+
     const getState = () => {
-      if (isProcessing) return 'processing'
-      if (isRecording) return 'recording'
+      if (isProcessing) {
+        return 'processing'
+      }
+      if (isRecording) {
+        return 'recording'
+      }
       return 'idle'
     }
-    
+
     const state = getState()
-    
+
     return (
       <div ref={ref} className={cn('space-y-4', className)} {...props}>
         {/* Label */}
@@ -422,7 +436,7 @@ const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
             {label}
           </label>
         )}
-        
+
         {/* Recording Controls */}
         {renderControls ? (
           renderControls({
@@ -453,7 +467,7 @@ const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
                 <Mic className="h-6 w-6" />
               )}
             </button>
-            
+
             {/* Stop Button */}
             {isRecording && (
               <button
@@ -466,7 +480,7 @@ const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
                 <Square className="h-4 w-4" />
               </button>
             )}
-            
+
             {/* Duration Display */}
             {showDuration && (isRecording || currentRecording) && (
               <div className="text-sm font-medium text-foreground">
@@ -476,7 +490,7 @@ const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
             )}
           </div>
         )}
-        
+
         {/* Audio Levels Visualization */}
         {showLevels && isRecording && (
           <div className="flex items-center gap-1 h-8">
@@ -489,8 +503,8 @@ const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
                 <div
                   className={cn(
                     'h-full transition-all duration-100',
-                    level > 0.7 ? 'bg-destructive' :
-                    level > 0.4 ? 'bg-warning' : 'bg-success'
+                    level > 0.7 ? 'bg-destructive'
+                      : level > 0.4 ? 'bg-warning' : 'bg-success'
                   )}
                   style={{ width: `${level * 100}%` }}
                 />
@@ -498,7 +512,7 @@ const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
             ))}
           </div>
         )}
-        
+
         {/* Current Recording */}
         {currentRecording && (
           <div className="space-y-2">
@@ -514,7 +528,7 @@ const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
                     {currentRecording.timestamp.toLocaleTimeString()}
                   </div>
                 </div>
-                
+
                 {/* Playback Controls */}
                 {showPlayback && (
                   <audio
@@ -523,7 +537,7 @@ const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
                     className="h-8"
                   />
                 )}
-                
+
                 {/* Delete Button */}
                 <button
                   onClick={() => deleteRecording(currentRecording.id)}
@@ -535,7 +549,7 @@ const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
             )}
           </div>
         )}
-        
+
         {/* Permission Status */}
         {permission === 'denied' && (
           <div className="flex items-start gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
@@ -546,17 +560,17 @@ const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
             </div>
           </div>
         )}
-        
+
         {/* Helper Text */}
         {(helperText || errorText || successText || warningText) && (
           <div className={cn(
             'text-xs flex items-center gap-1',
-            errorText 
-              ? 'text-destructive' 
-              : successText 
-                ? 'text-success' 
-                : warningText 
-                  ? 'text-warning' 
+            errorText
+              ? 'text-destructive'
+              : successText
+                ? 'text-success'
+                : warningText
+                  ? 'text-warning'
                   : 'text-muted-foreground'
           )}>
             {errorText && <AlertCircle className="h-3 w-3" />}

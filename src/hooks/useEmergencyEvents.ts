@@ -14,7 +14,7 @@ export const useEmergencyEvents = (filters?: {
     queryKey: ['emergency-events', filters],
     queryFn: () => supabaseHelpers.getEmergencyEvents(filters),
     staleTime: 30 * 1000, // 30 seconds
-    refetchInterval: 60 * 1000, // 1 minute
+    refetchInterval: 60 * 1000 // 1 minute
   })
 }
 
@@ -35,11 +35,13 @@ export const useEmergencyEvent = (id: string) => {
         .eq('id', id)
         .single()
 
-      if (error) throw error
+      if (error) {
+        throw error
+      }
       return data
     },
     enabled: !!id,
-    staleTime: 10 * 1000, // 10 seconds
+    staleTime: 10 * 1000 // 10 seconds
   })
 }
 
@@ -56,7 +58,7 @@ export const useCreateEmergencyEvent = () => {
     },
     onError: (error) => {
       console.error('Failed to create emergency event:', error)
-    },
+    }
   })
 }
 
@@ -73,7 +75,7 @@ export const useUpdateEmergencyEvent = () => {
     },
     onError: (error) => {
       console.error('Failed to update emergency event:', error)
-    },
+    }
   })
 }
 
@@ -85,7 +87,7 @@ export const useConfirmEvent = () => {
       eventId,
       userId,
       confirmationType,
-      location,
+      location
     }: {
       eventId: string
       userId: string
@@ -100,7 +102,7 @@ export const useConfirmEvent = () => {
     },
     onError: (error) => {
       console.error('Failed to confirm event:', error)
-    },
+    }
   })
 }
 
@@ -109,7 +111,7 @@ export const useEventConfirmations = (eventId: string) => {
     queryKey: ['event-confirmations', eventId],
     queryFn: () => supabaseHelpers.getEventConfirmations(eventId),
     enabled: !!eventId,
-    staleTime: 15 * 1000, // 15 seconds
+    staleTime: 15 * 1000 // 15 seconds
   })
 }
 
@@ -117,7 +119,7 @@ export const useEmergencyTypes = () => {
   return useQuery({
     queryKey: ['emergency-types'],
     queryFn: () => supabaseHelpers.getEmergencyTypes(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000 // 5 minutes
   })
 }
 
@@ -130,10 +132,10 @@ export const useEmergencyEventsSubscription = (callback: (payload: any) => void)
 
       return {
         subscription,
-        unsubscribe: () => subscription.unsubscribe(),
+        unsubscribe: () => subscription.unsubscribe()
       }
     },
-    staleTime: Infinity, // Never refetch
+    staleTime: Infinity // Never refetch
   })
 }
 
@@ -145,7 +147,7 @@ export const getOptimisticEvent = (
   return {
     ...currentEvent,
     ...updates,
-    updated_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   }
 }
 
@@ -163,6 +165,6 @@ export const getOptimisticConfirmation = (
     trust_weight: 0.1,
     location: location ? `POINT(${location.lng} ${location.lat})` : null,
     distance_from_event: null,
-    created_at: new Date().toISOString(),
+    created_at: new Date().toISOString()
   }
 }

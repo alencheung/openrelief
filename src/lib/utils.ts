@@ -12,7 +12,7 @@ export function formatDate(date: string | Date): string {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit',
+    minute: '2-digit'
   }).format(dateObj)
 }
 
@@ -65,7 +65,7 @@ export function getEmergencyTypeColor(type: string): string {
     medical: 'rgb(236, 72, 153)',
     security: 'rgb(251, 191, 36)',
     natural: 'rgb(59, 130, 246)',
-    infrastructure: 'rgb(245, 158, 11)',
+    infrastructure: 'rgb(245, 158, 11)'
   }
   return colors[type] || 'rgb(107, 114, 128)'
 }
@@ -76,7 +76,7 @@ export function getEmergencyTypeIcon(type: string): string {
     medical: '🏥',
     security: '🚨',
     natural: '🌊',
-    infrastructure: '⚡',
+    infrastructure: '⚡'
   }
   return icons[type] || '⚠️'
 }
@@ -92,7 +92,7 @@ export function getSeverityColor(severity: number): string {
   return 'bg-blue-500'
 }
 
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends(...args: any[]) => any>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
@@ -109,7 +109,7 @@ export function debounce<T extends (...args: any[]) => any>(
   }
 }
 
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends(...args: any[]) => any>(
   func: T,
   limit: number
 ): (...args: Parameters<T>) => void {
@@ -210,7 +210,7 @@ export function parseGeoLocation(location: string): { lat: number; lng: number }
     if (match && match[1] && match[2]) {
       return {
         lng: parseFloat(match[1]),
-        lat: parseFloat(match[2]),
+        lat: parseFloat(match[2])
       }
     }
   } catch (error) {
@@ -235,9 +235,9 @@ export function calculateDistance(
   const Δφ = ((lat2 - lat1) * Math.PI) / 180
   const Δλ = ((lng2 - lng1) * Math.PI) / 180
 
-  const a =
-    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
+  const a
+    = Math.sin(Δφ / 2) * Math.sin(Δφ / 2)
+    + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 
   return R * c // Distance in meters
@@ -258,7 +258,7 @@ export function getBrowserInfo(): {
   name: string
   version: string
   isMobile: boolean
-} {
+  } {
   const userAgent = navigator.userAgent
   let browserName = 'Unknown'
   let browserVersion = 'Unknown'
@@ -281,7 +281,7 @@ export function getBrowserInfo(): {
   return {
     name: browserName,
     version: browserVersion,
-    isMobile,
+    isMobile
   }
 }
 

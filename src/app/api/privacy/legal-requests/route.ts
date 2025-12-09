@@ -1,6 +1,6 @@
 /**
  * Legal Requests API Endpoint
- * 
+ *
  * This endpoint handles GET, POST, PUT, and DELETE requests for legal requests,
  * allowing users to exercise their GDPR rights including data access,
  * rectification, erasure, portability, and objection.
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   try {
     // Get user session
     const session = await getServerSession()
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: 'Authentication required' },
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
   try {
     // Get user session
     const session = await getServerSession()
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: 'Authentication required' },
@@ -136,10 +136,10 @@ export async function POST(request: NextRequest) {
     const userRequests = legalRequestsDB.get(session.user.id) || []
 
     // Check for duplicate requests
-    const existingRequest = userRequests.find(req => 
-      req.type === type && 
-      req.status === 'pending' &&
-      req.title.toLowerCase() === title.toLowerCase()
+    const existingRequest = userRequests.find(req =>
+      req.type === type
+      && req.status === 'pending'
+      && req.title.toLowerCase() === title.toLowerCase()
     )
 
     if (existingRequest) {
@@ -198,7 +198,7 @@ export async function PUT(request: NextRequest) {
   try {
     // Get user session
     const session = await getServerSession()
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: 'Authentication required' },
@@ -220,10 +220,10 @@ export async function PUT(request: NextRequest) {
 
     // Get user's legal requests
     const userRequests = legalRequestsDB.get(session.user.id) || []
-    
+
     // Find the request to update
     const requestIndex = userRequests.findIndex(req => req.id === requestId)
-    
+
     if (requestIndex === -1) {
       return NextResponse.json(
         { error: 'Legal request not found' },
@@ -286,7 +286,7 @@ export async function PUT(request: NextRequest) {
 // Calculate response deadline based on request type
 function calculateResponseDeadline(type: string): Date {
   const deadline = new Date()
-  
+
   // GDPR requires response within 30 days, but we set earlier deadlines for better service
   switch (type) {
     case 'data_access':
@@ -307,14 +307,14 @@ function calculateResponseDeadline(type: string): Date {
     default:
       deadline.setDate(deadline.getDate() + 30) // 30 days default
   }
-  
+
   return deadline
 }
 
 // Calculate estimated completion time
 function calculateEstimatedCompletion(type: string): Date {
   const estimated = new Date()
-  
+
   switch (type) {
     case 'data_access':
       estimated.setDate(estimated.getDate() + 12)
@@ -334,28 +334,28 @@ function calculateEstimatedCompletion(type: string): Date {
     default:
       estimated.setDate(estimated.getDate() + 25)
   }
-  
+
   return estimated
 }
 
 // Validate if status transition is allowed
 function isValidStatusTransition(currentStatus: string, newStatus: string): boolean {
   const validTransitions: Record<string, string[]> = {
-    'pending': ['processing', 'completed', 'rejected'],
-    'processing': ['completed', 'rejected', 'appealed'],
-    'completed': ['appealed'],
-    'rejected': ['appealed'],
-    'appealed': ['processing', 'completed', 'rejected']
+    pending: ['processing', 'completed', 'rejected'],
+    processing: ['completed', 'rejected', 'appealed'],
+    completed: ['appealed'],
+    rejected: ['appealed'],
+    appealed: ['processing', 'completed', 'rejected']
   }
-  
+
   return validTransitions[currentStatus]?.includes(newStatus) || false
 }
 
 // Log legal request access for transparency
 async function logLegalRequestAccess(
-  userId: string, 
-  action: string, 
-  dataType: string, 
+  userId: string,
+  action: string,
+  dataType: string,
   metadata?: any
 ): Promise<void> {
   // In a real implementation, this would log to a secure audit database
@@ -377,7 +377,7 @@ async function logLegalRequestAccess(
   }
 
   console.log('Legal request access logged:', logEntry)
-  
+
   // In a real implementation, save to audit database
   // await saveToAuditDatabase(logEntry)
 }
@@ -392,7 +392,7 @@ async function notifyPrivacyTeam(request: LegalRequest, userId: string): Promise
     title: request.title,
     deadline: request.responseDeadline
   })
-  
+
   // In a real implementation:
   // await sendEmailToPrivacyTeam(request)
   // await createTaskInPrivacySystem(request)

@@ -1,6 +1,6 @@
 /**
  * Performance Monitoring System for Alert Dispatch
- * 
+ *
  * Monitors and optimizes emergency alert delivery performance
  * Ensures <100ms latency requirement is met for 50K+ users
  */
@@ -16,26 +16,26 @@ export interface PerformanceMetrics {
   p99Latency: number
   maxLatency: number
   minLatency: number
-  
+
   // Throughput metrics
   requestsPerSecond: number
   requestsPerMinute: number
   totalRequests: number
-  
+
   // Error metrics
   errorRate: number
   timeoutRate: number
   retryRate: number
-  
+
   // System metrics
   cpuUsage: number
   memoryUsage: number
   activeConnections: number
   queueSize: number
-  
+
   // Geographic performance
   regionalPerformance: Record<string, RegionalMetrics>
-  
+
   // Time-based metrics
   hourlyMetrics: HourlyMetric[]
   dailyMetrics: DailyMetric[]
@@ -91,17 +91,17 @@ interface PerformanceState {
   metrics: PerformanceMetrics
   thresholds: PerformanceThresholds
   alerts: PerformanceAlert[]
-  
+
   // Historical data
   latencyHistory: number[]
   throughputHistory: number[]
   errorHistory: number[]
-  
+
   // Monitoring status
   isMonitoring: boolean
   lastUpdateTime: number
   monitoringInterval: number
-  
+
   // Optimization status
   isOptimizing: boolean
   lastOptimization: number
@@ -122,22 +122,22 @@ interface PerformanceActions {
   startMonitoring: () => void
   stopMonitoring: () => void
   updateThresholds: (thresholds: Partial<PerformanceThresholds>) => void
-  
+
   // Metrics collection
   recordLatency: (latency: number, region?: string) => void
   recordRequest: (success: boolean, region?: string) => void
   recordError: (error: string, region?: string) => void
   recordSystemMetrics: (metrics: Partial<PerformanceMetrics>) => void
-  
+
   // Alert management
   addAlert: (alert: Omit<PerformanceAlert, 'id' | 'timestamp'>) => void
   resolveAlert: (alertId: string) => void
   clearAlerts: () => void
-  
+
   // Optimization
   triggerOptimization: (type: OptimizationResult['type']) => Promise<void>
   autoOptimize: () => Promise<void>
-  
+
   // Data management
   generateReport: (timeRange: '1h' | '24h' | '7d' | '30d') => PerformanceReport
   exportMetrics: (format: 'json' | 'csv') => string
@@ -187,7 +187,7 @@ const defaultThresholds: PerformanceThresholds = {
   minThroughput: 1000, // 1000 requests/second
   maxCpuUsage: 80, // 80% CPU usage
   maxMemoryUsage: 85, // 85% memory usage
-  maxQueueSize: 10000, // 10K queue size
+  maxQueueSize: 10000 // 10K queue size
 }
 
 // Initial state
@@ -210,7 +210,7 @@ const initialState: PerformanceState = {
     queueSize: 0,
     regionalPerformance: {},
     hourlyMetrics: [],
-    dailyMetrics: [],
+    dailyMetrics: []
   },
   thresholds: defaultThresholds,
   alerts: [],
@@ -222,7 +222,7 @@ const initialState: PerformanceState = {
   monitoringInterval: 5000, // 5 seconds
   isOptimizing: false,
   lastOptimization: 0,
-  optimizationHistory: [],
+  optimizationHistory: []
 }
 
 // Create performance monitoring store
@@ -234,7 +234,9 @@ export const usePerformanceMonitor = create<PerformanceState & PerformanceAction
 
         // Monitoring control
         startMonitoring: () => {
-          if (get().isMonitoring) return
+          if (get().isMonitoring) {
+            return
+          }
 
           console.log('Starting performance monitoring...')
           set({ isMonitoring: true })
@@ -249,7 +251,9 @@ export const usePerformanceMonitor = create<PerformanceState & PerformanceAction
         },
 
         stopMonitoring: () => {
-          if (!get().isMonitoring) return
+          if (!get().isMonitoring) {
+            return
+          }
 
           console.log('Stopping performance monitoring...')
           set({ isMonitoring: false })
@@ -264,17 +268,17 @@ export const usePerformanceMonitor = create<PerformanceState & PerformanceAction
 
         updateThresholds: (thresholds) => {
           set((state) => ({
-            thresholds: { ...state.thresholds, ...thresholds },
+            thresholds: { ...state.thresholds, ...thresholds }
           }))
         },
 
         // Metrics collection
         recordLatency: (latency, region) => {
           const { metrics, thresholds, latencyHistory } = get()
-          
+
           // Update latency history
           const newHistory = [...latencyHistory, latency].slice(-1000) // Keep last 1000 measurements
-          
+
           // Calculate statistics
           const sortedLatencies = [...newHistory].sort((a, b) => a - b)
           const average = sortedLatencies.reduce((sum, l) => sum + l, 0) / sortedLatencies.length
@@ -290,7 +294,7 @@ export const usePerformanceMonitor = create<PerformanceState & PerformanceAction
               severity: latency > thresholds.maxLatency * 2 ? 'critical' : 'high',
               message: `High latency detected: ${latency}ms (threshold: ${thresholds.maxLatency}ms)`,
               threshold: thresholds.maxLatency,
-              currentValue: latency,
+              currentValue: latency
             })
           }
 
@@ -302,14 +306,14 @@ export const usePerformanceMonitor = create<PerformanceState & PerformanceAction
               averageLatency: 0,
               requestCount: 0,
               errorRate: 0,
-              lastUpdated: Date.now(),
+              lastUpdated: Date.now()
             }
 
             regionalPerformance[region] = {
               ...existing,
               averageLatency: (existing.averageLatency + latency) / 2,
               requestCount: existing.requestCount + 1,
-              lastUpdated: Date.now(),
+              lastUpdated: Date.now()
             }
           }
 
@@ -321,16 +325,16 @@ export const usePerformanceMonitor = create<PerformanceState & PerformanceAction
               p99Latency: p99,
               maxLatency: max,
               minLatency: min,
-              regionalPerformance,
+              regionalPerformance
             },
             latencyHistory: newHistory,
-            lastUpdateTime: Date.now(),
+            lastUpdateTime: Date.now()
           }))
         },
 
         recordRequest: (success, region) => {
           const { metrics, thresholds, throughputHistory } = get()
-          
+
           // Update throughput metrics
           const now = Date.now()
           const recentRequests = throughputHistory.filter(
@@ -347,7 +351,7 @@ export const usePerformanceMonitor = create<PerformanceState & PerformanceAction
               severity: 'medium',
               message: `Low throughput: ${requestsPerSecond} req/s (minimum: ${thresholds.minThroughput} req/s)`,
               threshold: thresholds.minThroughput,
-              currentValue: requestsPerSecond,
+              currentValue: requestsPerSecond
             })
           }
 
@@ -363,16 +367,16 @@ export const usePerformanceMonitor = create<PerformanceState & PerformanceAction
               requestsPerSecond,
               requestsPerMinute,
               totalRequests: state.metrics.totalRequests + 1,
-              regionalPerformance,
+              regionalPerformance
             },
             throughputHistory: [...throughputHistory, now].slice(-1000),
-            lastUpdateTime: Date.now(),
+            lastUpdateTime: Date.now()
           }))
         },
 
         recordError: (error, region) => {
           const { metrics, thresholds, errorHistory } = get()
-          
+
           // Update error metrics
           const now = Date.now()
           const recentErrors = errorHistory.filter(
@@ -388,33 +392,33 @@ export const usePerformanceMonitor = create<PerformanceState & PerformanceAction
               severity: errorRate > thresholds.maxErrorRate * 2 ? 'critical' : 'high',
               message: `High error rate: ${errorRate.toFixed(2)}% (threshold: ${thresholds.maxErrorRate}%)`,
               threshold: thresholds.maxErrorRate,
-              currentValue: errorRate,
+              currentValue: errorRate
             })
           }
 
           set((state) => ({
             metrics: {
               ...state.metrics,
-              errorRate,
+              errorRate
             },
             errorHistory: [...errorHistory, now].slice(-1000),
-            lastUpdateTime: Date.now(),
+            lastUpdateTime: Date.now()
           }))
         },
 
         recordSystemMetrics: (systemMetrics) => {
           const { metrics, thresholds } = get()
-          
+
           // Check resource thresholds
           const alerts = []
-          
+
           if (systemMetrics.cpuUsage && systemMetrics.cpuUsage > thresholds.maxCpuUsage) {
             alerts.push({
               type: 'resource',
               severity: 'high',
               message: `High CPU usage: ${systemMetrics.cpuUsage}% (threshold: ${thresholds.maxCpuUsage}%)`,
               threshold: thresholds.maxCpuUsage,
-              currentValue: systemMetrics.cpuUsage,
+              currentValue: systemMetrics.cpuUsage
             })
           }
 
@@ -424,7 +428,7 @@ export const usePerformanceMonitor = create<PerformanceState & PerformanceAction
               severity: 'high',
               message: `High memory usage: ${systemMetrics.memoryUsage}% (threshold: ${thresholds.maxMemoryUsage}%)`,
               threshold: thresholds.maxMemoryUsage,
-              currentValue: systemMetrics.memoryUsage,
+              currentValue: systemMetrics.memoryUsage
             })
           }
 
@@ -434,7 +438,7 @@ export const usePerformanceMonitor = create<PerformanceState & PerformanceAction
               severity: 'medium',
               message: `Large queue size: ${systemMetrics.queueSize} (threshold: ${thresholds.maxQueueSize})`,
               threshold: thresholds.maxQueueSize,
-              currentValue: systemMetrics.queueSize,
+              currentValue: systemMetrics.queueSize
             })
           }
 
@@ -444,9 +448,9 @@ export const usePerformanceMonitor = create<PerformanceState & PerformanceAction
           set((state) => ({
             metrics: {
               ...state.metrics,
-              ...systemMetrics,
+              ...systemMetrics
             },
-            lastUpdateTime: Date.now(),
+            lastUpdateTime: Date.now()
           }))
         },
 
@@ -456,11 +460,11 @@ export const usePerformanceMonitor = create<PerformanceState & PerformanceAction
             ...alert,
             id: `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             timestamp: Date.now(),
-            resolved: false,
+            resolved: false
           }
 
           set((state) => ({
-            alerts: [newAlert, ...state.alerts].slice(0, 100), // Keep last 100 alerts
+            alerts: [newAlert, ...state.alerts].slice(0, 100) // Keep last 100 alerts
           }))
         },
 
@@ -468,7 +472,7 @@ export const usePerformanceMonitor = create<PerformanceState & PerformanceAction
           set((state) => ({
             alerts: state.alerts.map(alert =>
               alert.id === alertId ? { ...alert, resolved: true } : alert
-            ),
+            )
           }))
         },
 
@@ -479,7 +483,9 @@ export const usePerformanceMonitor = create<PerformanceState & PerformanceAction
         // Optimization
         triggerOptimization: async (type) => {
           const { isOptimizing } = get()
-          if (isOptimizing) return
+          if (isOptimizing) {
+            return
+          }
 
           set({ isOptimizing: true })
 
@@ -518,13 +524,13 @@ export const usePerformanceMonitor = create<PerformanceState & PerformanceAction
               type,
               success: true,
               improvement,
-              details,
+              details
             }
 
             set((state) => ({
               isOptimizing: false,
               lastOptimization: Date.now(),
-              optimizationHistory: [result, ...state.optimizationHistory].slice(0, 50),
+              optimizationHistory: [result, ...state.optimizationHistory].slice(0, 50)
             }))
 
             console.log(`Optimization completed: ${type} - ${improvement}% improvement`)
@@ -536,15 +542,17 @@ export const usePerformanceMonitor = create<PerformanceState & PerformanceAction
 
         autoOptimize: async () => {
           const { metrics, thresholds } = get()
-          
-          // Check if optimization is needed
-          const needsOptimization = 
-            metrics.averageLatency > thresholds.maxLatency * 0.8 ||
-            metrics.errorRate > thresholds.maxErrorRate * 0.8 ||
-            metrics.cpuUsage > thresholds.maxCpuUsage * 0.8 ||
-            metrics.memoryUsage > thresholds.maxMemoryUsage * 0.8
 
-          if (!needsOptimization) return
+          // Check if optimization is needed
+          const needsOptimization
+            = metrics.averageLatency > thresholds.maxLatency * 0.8
+            || metrics.errorRate > thresholds.maxErrorRate * 0.8
+            || metrics.cpuUsage > thresholds.maxCpuUsage * 0.8
+            || metrics.memoryUsage > thresholds.maxMemoryUsage * 0.8
+
+          if (!needsOptimization) {
+            return
+          }
 
           // Determine optimization type based on metrics
           let optimizationType: OptimizationResult['type'] = 'query_optimization'
@@ -563,11 +571,11 @@ export const usePerformanceMonitor = create<PerformanceState & PerformanceAction
         // Data management
         generateReport: (timeRange) => {
           const { metrics, alerts, latencyHistory, throughputHistory } = get()
-          
+
           // Filter data based on time range
           const now = Date.now()
           let timeFilter = (timestamp: number) => true
-          
+
           switch (timeRange) {
             case '1h':
               timeFilter = (timestamp) => now - timestamp < 60 * 60 * 1000
@@ -583,10 +591,10 @@ export const usePerformanceMonitor = create<PerformanceState & PerformanceAction
               break
           }
 
-          const filteredLatency = latencyHistory.filter((_, index) => 
+          const filteredLatency = latencyHistory.filter((_, index) =>
             timeFilter(now - index * 5000) // Assuming 5-second intervals
           )
-          
+
           const filteredThroughput = throughputHistory.filter(timeFilter)
 
           // Calculate statistics
@@ -598,10 +606,18 @@ export const usePerformanceMonitor = create<PerformanceState & PerformanceAction
 
           // Generate recommendations
           const recommendations = []
-          if (avgLatency > 80) recommendations.push('Consider query optimization')
-          if (metrics.errorRate > 0.5) recommendations.push('Review error handling')
-          if (metrics.cpuUsage > 70) recommendations.push('Scale up resources')
-          if (metrics.queueSize > 5000) recommendations.push('Increase processing capacity')
+          if (avgLatency > 80) {
+            recommendations.push('Consider query optimization')
+          }
+          if (metrics.errorRate > 0.5) {
+            recommendations.push('Review error handling')
+          }
+          if (metrics.cpuUsage > 70) {
+            recommendations.push('Scale up resources')
+          }
+          if (metrics.queueSize > 5000) {
+            recommendations.push('Increase processing capacity')
+          }
 
           return {
             timeRange,
@@ -610,44 +626,44 @@ export const usePerformanceMonitor = create<PerformanceState & PerformanceAction
               totalRequests: metrics.totalRequests,
               averageLatency: avgLatency,
               errorRate: metrics.errorRate,
-              uptime: 100 - metrics.errorRate, // Approximate uptime
+              uptime: 100 - metrics.errorRate // Approximate uptime
             },
             latency: {
               average: avgLatency,
               p50,
               p95,
               p99,
-              max: metrics.maxLatency,
+              max: metrics.maxLatency
             },
             throughput: {
               average: metrics.requestsPerSecond,
               peak: Math.max(...filteredThroughput),
-              minimum: Math.min(...filteredThroughput),
+              minimum: Math.min(...filteredThroughput)
             },
             errors: {
               rate: metrics.errorRate,
               count: Math.round(metrics.totalRequests * metrics.errorRate / 100),
-              topErrors: [], // Would be populated from error tracking
+              topErrors: [] // Would be populated from error tracking
             },
             regions: Object.entries(metrics.regionalPerformance).map(([region, perf]) => ({
               region,
               requests: perf.requestCount,
               latency: perf.averageLatency,
-              errorRate: perf.errorRate,
+              errorRate: perf.errorRate
             })),
             alerts: alerts.filter(alert => !alert.resolved),
-            recommendations,
+            recommendations
           }
         },
 
         exportMetrics: (format) => {
           const { metrics, alerts, latencyHistory } = get()
-          
+
           const data = {
             timestamp: new Date().toISOString(),
             metrics,
             alerts,
-            latencyHistory: latencyHistory.slice(-100), // Last 100 measurements
+            latencyHistory: latencyHistory.slice(-100) // Last 100 measurements
           }
 
           if (format === 'csv') {
@@ -666,7 +682,7 @@ export const usePerformanceMonitor = create<PerformanceState & PerformanceAction
             latencyHistory: [],
             throughputHistory: [],
             errorHistory: [],
-            alerts: [],
+            alerts: []
           })
         },
 
@@ -678,7 +694,7 @@ export const usePerformanceMonitor = create<PerformanceState & PerformanceAction
             const perf = (window as any).performance
             if (perf.memory) {
               get().recordSystemMetrics({
-                memoryUsage: (perf.memory.usedJSHeapSize / perf.memory.totalJSHeapSize) * 100,
+                memoryUsage: (perf.memory.usedJSHeapSize / perf.memory.totalJSHeapSize) * 100
               })
             }
           }
@@ -706,15 +722,15 @@ export const usePerformanceMonitor = create<PerformanceState & PerformanceAction
           // Simulate connection pooling optimization
           await new Promise(resolve => setTimeout(resolve, 800))
           return 10 // 10% improvement
-        },
+        }
       }),
       {
         name: 'performance-monitor-storage',
         partialize: (state) => ({
           thresholds: state.thresholds,
           alerts: state.alerts.filter(alert => !alert.resolved).slice(0, 50), // Only unresolved alerts
-          optimizationHistory: state.optimizationHistory.slice(0, 20),
-        }),
+          optimizationHistory: state.optimizationHistory.slice(0, 20)
+        })
       }
     )
   )
@@ -731,5 +747,5 @@ export const usePerformanceActions = () => usePerformanceMonitor(state => ({
   recordRequest: state.recordRequest,
   triggerOptimization: state.triggerOptimization,
   generateReport: state.generateReport,
-  exportMetrics: state.exportMetrics,
+  exportMetrics: state.exportMetrics
 }))

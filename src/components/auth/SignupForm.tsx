@@ -37,7 +37,9 @@ export default function SignupForm() {
 
   // Validate email
   const validateEmail = (value: string): string | null => {
-    if (!value.trim()) return 'Email is required'
+    if (!value.trim()) {
+      return 'Email is required'
+    }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
       return 'Please enter a valid email address'
     }
@@ -46,49 +48,63 @@ export default function SignupForm() {
 
   // Validate password
   const validatePassword = (value: string): string | null => {
-    if (!value) return 'Password is required'
-    if (value.length < 8) return 'Password must be at least 8 characters'
+    if (!value) {
+      return 'Password is required'
+    }
+    if (value.length < 8) {
+      return 'Password must be at least 8 characters'
+    }
     return null
   }
 
   // Validate confirm password
   const validateConfirmPassword = (value: string): string | null => {
-    if (!value) return 'Please confirm your password'
-    if (value !== password) return 'Passwords do not match'
+    if (!value) {
+      return 'Please confirm your password'
+    }
+    if (value !== password) {
+      return 'Passwords do not match'
+    }
     return null
   }
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     // Validate all fields
     const newErrors: Record<string, string> = {}
-    
+
     const emailError = validateEmail(email)
-    if (emailError) newErrors.email = emailError
-    
+    if (emailError) {
+      newErrors.email = emailError
+    }
+
     const passwordError = validatePassword(password)
-    if (passwordError) newErrors.password = passwordError
-    
+    if (passwordError) {
+      newErrors.password = passwordError
+    }
+
     const confirmPasswordError = validateConfirmPassword(confirmPassword)
-    if (confirmPasswordError) newErrors.confirmPassword = confirmPasswordError
-    
+    if (confirmPasswordError) {
+      newErrors.confirmPassword = confirmPasswordError
+    }
+
     if (!agreedToTerms) {
       newErrors.terms = 'You must agree to the terms and conditions'
     }
-    
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors)
       return
     }
-    
+
     setIsLoading(true)
     setErrors({})
 
     try {
       await signUp(email, password)
-      
+
       // Redirect to dashboard or home page after successful signup
       router.push('/')
     } catch (err) {
@@ -103,39 +119,39 @@ export default function SignupForm() {
 
   return (
     <div className={cn(
-      "min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5",
-      isMobile ? "p-4 safe-area-inset-all" : "p-4"
+      'min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5',
+      isMobile ? 'p-4 safe-area-inset-all' : 'p-4'
     )}>
       <div className={cn(
-        "w-full",
-        isMobile ? "max-w-sm" : "max-w-md"
+        'w-full',
+        isMobile ? 'max-w-sm' : 'max-w-md'
       )}>
         <EnhancedCard className={cn(
-          "shadow-xl",
-          isMobile && "rounded-none border-0"
+          'shadow-xl',
+          isMobile && 'rounded-none border-0'
         )}>
           <EnhancedCardHeader className={cn(
-            "text-center",
-            isMobile ? "pb-6 pt-6" : "pb-8 pt-8"
+            'text-center',
+            isMobile ? 'pb-6 pt-6' : 'pb-8 pt-8'
           )}>
             <EnhancedCardTitle className={cn(
-              isMobile ? "text-xl" : "text-2xl"
+              isMobile ? 'text-xl' : 'text-2xl'
             )}>
               Create Account
             </EnhancedCardTitle>
             <EnhancedCardDescription className={cn(
-              isMobile ? "text-sm" : "text-base"
+              isMobile ? 'text-sm' : 'text-base'
             )}>
               Join OpenRelief to report and track emergencies in your area
             </EnhancedCardDescription>
           </EnhancedCardHeader>
-          
+
           <EnhancedCardContent className={cn(
-            isMobile ? "px-4 pb-4" : ""
+            isMobile ? 'px-4 pb-4' : ''
           )}>
             <form onSubmit={handleSubmit} className={cn(
-              "space-y-6",
-              isMobile && "space-y-4"
+              'space-y-6',
+              isMobile && 'space-y-4'
             )}>
               {/* Email Field */}
               <EnhancedInput
@@ -150,7 +166,7 @@ export default function SignupForm() {
                 errorText={errors.email}
                 validateOnChange
                 validator={validateEmail}
-                size={isMobile ? "default" : "default"}
+                size={isMobile ? 'default' : 'default'}
                 leftIcon={
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 4 4 0 00-8zm0 0a4 4 0 10-8 4 4 0 00-8z" />
@@ -173,7 +189,7 @@ export default function SignupForm() {
                 errorText={errors.password}
                 validateOnChange
                 validator={validatePassword}
-                size={isMobile ? "default" : "default"}
+                size={isMobile ? 'default' : 'default'}
                 leftIcon={
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
@@ -207,7 +223,7 @@ export default function SignupForm() {
                 errorText={errors.confirmPassword}
                 validateOnChange
                 validator={validateConfirmPassword}
-                size={isMobile ? "default" : "default"}
+                size={isMobile ? 'default' : 'default'}
                 leftIcon={
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
@@ -225,7 +241,7 @@ export default function SignupForm() {
                   required
                   errorText={errors.terms}
                 />
-                
+
                 <EnhancedCheckbox
                   label="Send me emergency alerts and updates"
                   checked={emailNewsletter}
@@ -250,10 +266,10 @@ export default function SignupForm() {
                   loading={isLoading}
                   disabled={isLoading}
                   fullWidth
-                  size={isMobile ? "lg" : "lg"}
+                  size={isMobile ? 'lg' : 'lg'}
                   className={cn(
-                    "touch-target",
-                    isMobile && "min-h-[52px]"
+                    'touch-target',
+                    isMobile && 'min-h-[52px]'
                   )}
                 >
                   {isLoading ? 'Creating Account...' : 'Sign Up'}
@@ -261,15 +277,15 @@ export default function SignupForm() {
               </FormActions>
             </form>
           </EnhancedCardContent>
-          
+
           {/* Footer */}
           <div className={cn(
-            "px-6 py-4 bg-muted/30 border-t text-center",
-            isMobile && "px-4 py-3"
+            'px-6 py-4 bg-muted/30 border-t text-center',
+            isMobile && 'px-4 py-3'
           )}>
             <p className={cn(
-              "text-muted-foreground",
-              isMobile ? "text-xs" : "text-sm"
+              'text-muted-foreground',
+              isMobile ? 'text-xs' : 'text-sm'
             )}>
               Already have an account?{' '}
               <a
@@ -281,7 +297,7 @@ export default function SignupForm() {
             </p>
           </div>
         </EnhancedCard>
-        
+
         {/* Security Notice */}
         <div className="mt-6 text-center">
           <p className="text-xs text-muted-foreground">

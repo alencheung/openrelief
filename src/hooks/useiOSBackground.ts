@@ -1,6 +1,6 @@
 /**
  * React Hook for iOS Background Strategy
- * 
+ *
  * Provides easy integration with iOS background functionality
  * for emergency notifications and location services.
  */
@@ -13,24 +13,24 @@ interface UseiOSBackgroundReturn {
   config: iOSBackgroundConfig
   isInitialized: boolean
   isInitializing: boolean
-  
+
   // Queue status
   queueStatus: {
     queued: number
     processing: boolean
   }
-  
+
   // Actions
   initialize: () => Promise<boolean>
   updateConfig: (updates: Partial<iOSBackgroundConfig>) => void
-  
+
   // Emergency handling
   sendTestEmergency: (payload: Partial<EmergencyPushPayload>) => void
   clearEmergencyQueue: () => void
-  
+
   // Permissions
   requestPermissions: () => Promise<boolean>
-  
+
   // Background tasks
   triggerLocationCheck: () => Promise<void>
   triggerQueueProcessing: () => Promise<void>
@@ -41,14 +41,14 @@ export function useiOSBackground(): UseiOSBackgroundReturn {
     silentPushEnabled: false,
     backgroundLocationEnabled: false,
     batteryOptimizationHandled: false,
-    criticalAlertsEnabled: false,
+    criticalAlertsEnabled: false
   })
-  
+
   const [isInitialized, setIsInitialized] = useState(false)
   const [isInitializing, setIsInitializing] = useState(false)
   const [queueStatus, setQueueStatus] = useState({
     queued: 0,
-    processing: false,
+    processing: false
   })
 
   const initializationRef = useRef(false)
@@ -61,17 +61,17 @@ export function useiOSBackground(): UseiOSBackgroundReturn {
     }
 
     setIsInitializing(true)
-    
+
     try {
       const success = await iOSBackgroundManager.initialize()
       setIsInitialized(success)
-      
+
       if (success) {
         const managerConfig = iOSBackgroundManager.getConfig()
         setConfig(managerConfig)
         initializationRef.current = true
       }
-      
+
       return success
     } catch (error) {
       console.error('Failed to initialize iOS background strategy:', error)
@@ -98,7 +98,7 @@ export function useiOSBackground(): UseiOSBackgroundReturn {
       requiresAction: payload.requiresAction ?? true,
       timestamp: Date.now(),
       trustWeight: 1.0,
-      ...payload,
+      ...payload
     }
 
     // Simulate receiving the notification
@@ -112,10 +112,10 @@ export function useiOSBackground(): UseiOSBackgroundReturn {
         location: testPayload.location ? JSON.stringify(testPayload.location) : undefined,
         requiresAction: testPayload.requiresAction.toString(),
         timestamp: testPayload.timestamp.toString(),
-        trustWeight: testPayload.trustWeight.toString(),
+        trustWeight: testPayload.trustWeight.toString()
       },
       foreground: true,
-      userInteraction: false,
+      userInteraction: false
     })
   }, [])
 
@@ -131,13 +131,13 @@ export function useiOSBackground(): UseiOSBackgroundReturn {
       // This would integrate with the iOSBackgroundManager
       // For now, we'll simulate permission request
       console.log('Requesting iOS background permissions...')
-      
+
       // In a real implementation, this would:
       // 1. Request location permission
       // 2. Request notification permission
       // 3. Request background app refresh
       // 4. Request motion permission
-      
+
       return true
     } catch (error) {
       console.error('Failed to request permissions:', error)
@@ -202,7 +202,7 @@ export function useiOSBackground(): UseiOSBackgroundReturn {
     clearEmergencyQueue,
     requestPermissions,
     triggerLocationCheck,
-    triggerQueueProcessing,
+    triggerQueueProcessing
   }
 }
 
@@ -213,7 +213,7 @@ export function useEmergencyNotifications() {
 
   const handleEmergencyNotification = useCallback((payload: EmergencyPushPayload) => {
     setNotifications(prev => [payload, ...prev].slice(0, 50)) // Keep last 50
-    
+
     // Set as active if critical
     if (payload.severity === 'critical') {
       setActiveEmergency(payload)
@@ -235,7 +235,7 @@ export function useEmergencyNotifications() {
     activeEmergency,
     handleEmergencyNotification,
     dismissEmergency,
-    clearAllNotifications,
+    clearAllNotifications
   }
 }
 
@@ -251,7 +251,7 @@ export function useiOSSpecificFeatures() {
       const monitorBattery = async () => {
         try {
           const battery = await (navigator as any).getBattery()
-          
+
           setBatteryLevel(battery.level * 100)
           setIsCharging(battery.charging)
 
@@ -283,6 +283,6 @@ export function useiOSSpecificFeatures() {
     isCharging,
     backgroundAppRefreshEnabled,
     isLowPowerMode: batteryLevel !== null && batteryLevel < 20,
-    shouldThrottleBackgroundTasks: batteryLevel !== null && batteryLevel < 10 && !isCharging,
+    shouldThrottleBackgroundTasks: batteryLevel !== null && batteryLevel < 10 && !isCharging
   }
 }

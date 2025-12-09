@@ -1,12 +1,12 @@
 /**
  * Real-time Compliance Monitoring System
- * 
+ *
  * This module provides automated compliance rule checking, real-time violation detection,
  * privacy budget monitoring, and compliance reporting capabilities.
  */
 
-import { auditLogger, AuditEventType, AuditSeverity, ComplianceFramework } from './audit-logger';
-import { supabaseAdmin } from '@/lib/supabase';
+import { auditLogger, AuditEventType, AuditSeverity, ComplianceFramework } from './audit-logger'
+import { supabaseAdmin } from '@/lib/supabase'
 
 // Compliance rule types
 export enum ComplianceRuleType {
@@ -110,14 +110,14 @@ export interface DataRetentionStatus {
 }
 
 class ComplianceMonitor {
-  private rules: Map<string, ComplianceRule> = new Map();
-  private violations: Map<string, ComplianceViolation> = new Map();
-  private monitoringInterval: NodeJS.Timeout | null = null;
-  private isRunning = false;
+  private rules: Map<string, ComplianceRule> = new Map()
+  private violations: Map<string, ComplianceViolation> = new Map()
+  private monitoringInterval: NodeJS.Timeout | null = null
+  private isRunning = false
 
   constructor() {
-    this.initializeDefaultRules();
-    this.startMonitoring();
+    this.initializeDefaultRules()
+    this.startMonitoring()
   }
 
   /**
@@ -220,28 +220,30 @@ class ComplianceMonitor {
         violationThreshold: 1,
         gracePeriod: 0
       }
-    ];
+    ]
 
     for (const rule of defaultRules) {
-      this.rules.set(rule.id, rule);
+      this.rules.set(rule.id, rule)
     }
 
     // Load custom rules from database
-    await this.loadCustomRules();
+    await this.loadCustomRules()
   }
 
   /**
    * Start compliance monitoring
    */
   startMonitoring(): void {
-    if (this.isRunning) return;
+    if (this.isRunning) {
+      return
+    }
 
-    this.isRunning = true;
+    this.isRunning = true
     this.monitoringInterval = setInterval(async () => {
-      await this.runComplianceChecks();
-    }, 5 * 60 * 1000); // Run every 5 minutes
+      await this.runComplianceChecks()
+    }, 5 * 60 * 1000) // Run every 5 minutes
 
-    console.log('Compliance monitoring started');
+    console.log('Compliance monitoring started')
   }
 
   /**
@@ -249,12 +251,12 @@ class ComplianceMonitor {
    */
   stopMonitoring(): void {
     if (this.monitoringInterval) {
-      clearInterval(this.monitoringInterval);
-      this.monitoringInterval = null;
+      clearInterval(this.monitoringInterval)
+      this.monitoringInterval = null
     }
 
-    this.isRunning = false;
-    console.log('Compliance monitoring stopped');
+    this.isRunning = false
+    console.log('Compliance monitoring stopped')
   }
 
   /**
@@ -262,19 +264,19 @@ class ComplianceMonitor {
    */
   private async runComplianceChecks(): Promise<void> {
     try {
-      const enabledRules = Array.from(this.rules.values()).filter(rule => rule.enabled);
+      const enabledRules = Array.from(this.rules.values()).filter(rule => rule.enabled)
 
       for (const rule of enabledRules) {
-        const shouldCheck = await this.shouldCheckRule(rule);
+        const shouldCheck = await this.shouldCheckRule(rule)
         if (shouldCheck) {
-          await this.checkRule(rule);
+          await this.checkRule(rule)
         }
       }
 
       // Update overall compliance status
-      await this.updateComplianceStatus();
+      await this.updateComplianceStatus()
     } catch (error) {
-      console.error('Error running compliance checks:', error);
+      console.error('Error running compliance checks:', error)
       await auditLogger.logEvent({
         eventType: AuditEventType.SYSTEM_ERROR,
         severity: AuditSeverity.MEDIUM,
@@ -282,7 +284,7 @@ class ComplianceMonitor {
         resource: 'compliance_monitor',
         privacyImpact: 'low',
         metadata: { error: error.message }
-      });
+      })
     }
   }
 
@@ -290,12 +292,14 @@ class ComplianceMonitor {
    * Check if a rule should be run based on its interval
    */
   private async shouldCheckRule(rule: ComplianceRule): Promise<boolean> {
-    if (!rule.lastChecked) return true;
+    if (!rule.lastChecked) {
+      return true
+    }
 
-    const timeSinceLastCheck = Date.now() - rule.lastChecked.getTime();
-    const checkIntervalMs = rule.checkInterval * 60 * 1000;
+    const timeSinceLastCheck = Date.now() - rule.lastChecked.getTime()
+    const checkIntervalMs = rule.checkInterval * 60 * 1000
 
-    return timeSinceLastCheck >= checkIntervalMs;
+    return timeSinceLastCheck >= checkIntervalMs
   }
 
   /**
@@ -303,40 +307,39 @@ class ComplianceMonitor {
    */
   private async checkRule(rule: ComplianceRule): Promise<void> {
     try {
-      let violations: ComplianceViolation[] = [];
+      let violations: ComplianceViolation[] = []
 
       switch (rule.type) {
         case ComplianceRuleType.DATA_RETENTION:
-          violations = await this.checkDataRetention(rule);
-          break;
+          violations = await this.checkDataRetention(rule)
+          break
         case ComplianceRuleType.PRIVACY_BUDGET:
-          violations = await this.checkPrivacyBudget(rule);
-          break;
+          violations = await this.checkPrivacyBudget(rule)
+          break
         case ComplianceRuleType.ACCESS_CONTROL:
-          violations = await this.checkAccessControl(rule);
-          break;
+          violations = await this.checkAccessControl(rule)
+          break
         case ComplianceRuleType.CONSENT_MANAGEMENT:
-          violations = await this.checkConsentManagement(rule);
-          break;
+          violations = await this.checkConsentManagement(rule)
+          break
         case ComplianceRuleType.LEGAL_REQUEST_TIMELINE:
-          violations = await this.checkLegalRequestTimeline(rule);
-          break;
+          violations = await this.checkLegalRequestTimeline(rule)
+          break
         default:
-          console.warn(`Unknown compliance rule type: ${rule.type}`);
-          return;
+          console.warn(`Unknown compliance rule type: ${rule.type}`)
+          return
       }
 
       // Process violations
       for (const violation of violations) {
-        await this.processViolation(violation, rule);
+        await this.processViolation(violation, rule)
       }
 
       // Update rule last checked time
-      rule.lastChecked = new Date();
-      await this.saveRule(rule);
-
+      rule.lastChecked = new Date()
+      await this.saveRule(rule)
     } catch (error) {
-      console.error(`Error checking rule ${rule.id}:`, error);
+      console.error(`Error checking rule ${rule.id}:`, error)
     }
   }
 
@@ -344,22 +347,22 @@ class ComplianceMonitor {
    * Check data retention compliance
    */
   private async checkDataRetention(rule: ComplianceRule): Promise<ComplianceViolation[]> {
-    const violations: ComplianceViolation[] = [];
-    const { maxRetentionDays, dataTypes } = rule.parameters;
+    const violations: ComplianceViolation[] = []
+    const { maxRetentionDays, dataTypes } = rule.parameters
 
     for (const dataType of dataTypes) {
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - maxRetentionDays);
+      const cutoffDate = new Date()
+      cutoffDate.setDate(cutoffDate.getDate() - maxRetentionDays)
 
       // Query expired records
       const { data: expiredRecords, error } = await supabaseAdmin
         .from(dataType)
         .select('id, created_at, user_id')
-        .lt('created_at', cutoffDate.toISOString());
+        .lt('created_at', cutoffDate.toISOString())
 
       if (error) {
-        console.error(`Error checking data retention for ${dataType}:`, error);
-        continue;
+        console.error(`Error checking data retention for ${dataType}:`, error)
+        continue
       }
 
       if (expiredRecords && expiredRecords.length > 0) {
@@ -379,39 +382,39 @@ class ComplianceMonitor {
             maxRetentionDays,
             cutoffDate: cutoffDate.toISOString()
           }
-        });
+        })
       }
     }
 
-    return violations;
+    return violations
   }
 
   /**
    * Check privacy budget compliance
    */
   private async checkPrivacyBudget(rule: ComplianceRule): Promise<ComplianceViolation[]> {
-    const violations: ComplianceViolation[] = [];
-    const { warningThreshold, criticalThreshold } = rule.parameters;
+    const violations: ComplianceViolation[] = []
+    const { warningThreshold, criticalThreshold } = rule.parameters
 
     // Get users with high privacy budget usage
     const { data: users, error } = await supabaseAdmin
       .from('privacy_budget')
       .select('user_id, used_budget, total_budget')
-      .gte('used_budget', warningThreshold);
+      .gte('used_budget', warningThreshold)
 
     if (error) {
-      console.error('Error checking privacy budget:', error);
-      return violations;
+      console.error('Error checking privacy budget:', error)
+      return violations
     }
 
     for (const user of users || []) {
-      const usagePercentage = user.used_budget / user.total_budget;
-      let severity = ViolationSeverity.LOW;
+      const usagePercentage = user.used_budget / user.total_budget
+      let severity = ViolationSeverity.LOW
 
       if (usagePercentage >= criticalThreshold) {
-        severity = ViolationSeverity.CRITICAL;
+        severity = ViolationSeverity.CRITICAL
       } else if (usagePercentage >= warningThreshold) {
-        severity = ViolationSeverity.MEDIUM;
+        severity = ViolationSeverity.MEDIUM
       }
 
       violations.push({
@@ -430,36 +433,36 @@ class ComplianceMonitor {
           totalBudget: user.total_budget,
           usagePercentage: usagePercentage * 100
         }
-      });
+      })
     }
 
-    return violations;
+    return violations
   }
 
   /**
    * Check access control compliance
    */
   private async checkAccessControl(rule: ComplianceRule): Promise<ComplianceViolation[]> {
-    const violations: ComplianceViolation[] = [];
-    const { maxFailedAttempts } = rule.parameters;
+    const violations: ComplianceViolation[] = []
+    const { maxFailedAttempts } = rule.parameters
 
     // Check for recent unauthorized access attempts
     const { data: failedAttempts, error } = await supabaseAdmin
       .from('audit_log')
       .select('user_id, ip_address, timestamp')
       .eq('action', 'login_failure')
-      .gte('timestamp', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+      .gte('timestamp', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
 
     if (error) {
-      console.error('Error checking access control:', error);
-      return violations;
+      console.error('Error checking access control:', error)
+      return violations
     }
 
     // Group by IP address
-    const attemptsByIP = new Map<string, number>();
+    const attemptsByIP = new Map<string, number>()
     for (const attempt of failedAttempts || []) {
-      const ip = attempt.ip_address || 'unknown';
-      attemptsByIP.set(ip, (attemptsByIP.get(ip) || 0) + 1);
+      const ip = attempt.ip_address || 'unknown'
+      attemptsByIP.set(ip, (attemptsByIP.get(ip) || 0) + 1)
     }
 
     // Check for IPs with excessive failed attempts
@@ -479,33 +482,33 @@ class ComplianceMonitor {
             failedAttempts: count,
             timeWindow: '24 hours'
           }
-        });
+        })
       }
     }
 
-    return violations;
+    return violations
   }
 
   /**
    * Check consent management compliance
    */
   private async checkConsentManagement(rule: ComplianceRule): Promise<ComplianceViolation[]> {
-    const violations: ComplianceViolation[] = [];
-    const { consentValidityDays } = rule.parameters;
+    const violations: ComplianceViolation[] = []
+    const { consentValidityDays } = rule.parameters
 
     // Check for expired consents
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - consentValidityDays);
+    const cutoffDate = new Date()
+    cutoffDate.setDate(cutoffDate.getDate() - consentValidityDays)
 
     const { data: expiredConsents, error } = await supabaseAdmin
       .from('user_consents')
       .select('user_id, consent_type, granted_at')
       .lt('granted_at', cutoffDate.toISOString())
-      .eq('status', 'active');
+      .eq('status', 'active')
 
     if (error) {
-      console.error('Error checking consent management:', error);
-      return violations;
+      console.error('Error checking consent management:', error)
+      return violations
     }
 
     if (expiredConsents && expiredConsents.length > 0) {
@@ -524,36 +527,36 @@ class ComplianceMonitor {
           consentValidityDays,
           cutoffDate: cutoffDate.toISOString()
         }
-      });
+      })
     }
 
-    return violations;
+    return violations
   }
 
   /**
    * Check legal request timeline compliance
    */
   private async checkLegalRequestTimeline(rule: ComplianceRule): Promise<ComplianceViolation[]> {
-    const violations: ComplianceViolation[] = [];
-    const { maxResponseDays, warningDays } = rule.parameters;
+    const violations: ComplianceViolation[] = []
+    const { maxResponseDays, warningDays } = rule.parameters
 
     // Get pending legal requests
     const { data: pendingRequests, error } = await supabaseAdmin
       .from('legal_requests')
       .select('id, user_id, type, created_at, status')
-      .eq('status', 'pending');
+      .eq('status', 'pending')
 
     if (error) {
-      console.error('Error checking legal request timeline:', error);
-      return violations;
+      console.error('Error checking legal request timeline:', error)
+      return violations
     }
 
-    const now = new Date();
+    const now = new Date()
 
     for (const request of pendingRequests || []) {
       const daysSinceCreation = Math.floor(
         (now.getTime() - new Date(request.created_at).getTime()) / (1000 * 60 * 60 * 24)
-      );
+      )
 
       if (daysSinceCreation >= maxResponseDays) {
         violations.push({
@@ -572,7 +575,7 @@ class ComplianceMonitor {
             daysSinceCreation,
             maxResponseDays
           }
-        });
+        })
       } else if (daysSinceCreation >= warningDays) {
         violations.push({
           id: `violation_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -591,11 +594,11 @@ class ComplianceMonitor {
             maxResponseDays,
             warningLevel: true
           }
-        });
+        })
       }
     }
 
-    return violations;
+    return violations
   }
 
   /**
@@ -603,11 +606,11 @@ class ComplianceMonitor {
    */
   private async processViolation(violation: ComplianceViolation, rule: ComplianceRule): Promise<void> {
     // Check if this is a new violation or an existing one
-    const existingViolation = this.violations.get(violation.id);
+    const existingViolation = this.violations.get(violation.id)
 
     if (!existingViolation) {
       // New violation - log it and notify
-      this.violations.set(violation.id, violation);
+      this.violations.set(violation.id, violation)
 
       await auditLogger.logEvent({
         eventType: AuditEventType.COMPLIANCE_CHECK,
@@ -623,14 +626,14 @@ class ComplianceMonitor {
           severity: violation.severity,
           description: violation.description
         }
-      });
+      })
 
       // Save to database
-      await this.saveViolation(violation);
+      await this.saveViolation(violation)
 
       // Send notifications for critical violations
       if (violation.severity === ViolationSeverity.CRITICAL) {
-        await this.sendCriticalViolationAlert(violation);
+        await this.sendCriticalViolationAlert(violation)
       }
     }
   }
@@ -641,15 +644,15 @@ class ComplianceMonitor {
   private mapViolationSeverityToAuditSeverity(severity: ViolationSeverity): AuditSeverity {
     switch (severity) {
       case ViolationSeverity.LOW:
-        return AuditSeverity.LOW;
+        return AuditSeverity.LOW
       case ViolationSeverity.MEDIUM:
-        return AuditSeverity.MEDIUM;
+        return AuditSeverity.MEDIUM
       case ViolationSeverity.HIGH:
-        return AuditSeverity.HIGH;
+        return AuditSeverity.HIGH
       case ViolationSeverity.CRITICAL:
-        return AuditSeverity.CRITICAL;
+        return AuditSeverity.CRITICAL
       default:
-        return AuditSeverity.MEDIUM;
+        return AuditSeverity.MEDIUM
     }
   }
 
@@ -658,8 +661,8 @@ class ComplianceMonitor {
    */
   private async sendCriticalViolationAlert(violation: ComplianceViolation): Promise<void> {
     // In a real implementation, this would send notifications to compliance team
-    console.error('CRITICAL COMPLIANCE VIOLATION:', violation);
-    
+    console.error('CRITICAL COMPLIANCE VIOLATION:', violation)
+
     // Log the alert
     await auditLogger.logEvent({
       eventType: AuditEventType.SECURITY_INCIDENT,
@@ -673,7 +676,7 @@ class ComplianceMonitor {
         affectedUsers: violation.affectedUsers,
         affectedResources: violation.affectedResources
       }
-    });
+    })
   }
 
   /**
@@ -708,54 +711,54 @@ class ComplianceMonitor {
       activeViolations: 0,
       criticalViolations: 0,
       lastUpdated: new Date()
-    };
+    }
 
     // Count violations by framework and severity
     for (const violation of this.violations.values()) {
       if (violation.status === 'active') {
-        status.activeViolations++;
-        
+        status.activeViolations++
+
         if (violation.severity === ViolationSeverity.CRITICAL) {
-          status.criticalViolations++;
+          status.criticalViolations++
         }
 
-        const framework = status.frameworks[violation.framework];
+        const framework = status.frameworks[violation.framework]
         if (framework) {
-          framework.violations++;
+          framework.violations++
         }
       }
     }
 
     // Calculate scores and determine status
     for (const [framework, frameworkStatus] of Object.entries(status.frameworks)) {
-      const violations = frameworkStatus.violations;
-      
+      const violations = frameworkStatus.violations
+
       if (violations === 0) {
-        frameworkStatus.score = 100;
-        frameworkStatus.status = 'compliant';
+        frameworkStatus.score = 100
+        frameworkStatus.status = 'compliant'
       } else if (violations <= 2) {
-        frameworkStatus.score = 80;
-        frameworkStatus.status = 'warning';
+        frameworkStatus.score = 80
+        frameworkStatus.status = 'warning'
       } else {
-        frameworkStatus.score = 50;
-        frameworkStatus.status = 'non_compliant';
+        frameworkStatus.score = 50
+        frameworkStatus.status = 'non_compliant'
       }
     }
 
     // Calculate overall score
-    const frameworkScores = Object.values(status.frameworks).map(f => f.score);
-    status.score = Math.floor(frameworkScores.reduce((a, b) => a + b, 0) / frameworkScores.length);
+    const frameworkScores = Object.values(status.frameworks).map(f => f.score)
+    status.score = Math.floor(frameworkScores.reduce((a, b) => a + b, 0) / frameworkScores.length)
 
     if (status.criticalViolations > 0) {
-      status.overall = 'non_compliant';
+      status.overall = 'non_compliant'
     } else if (status.activeViolations > 0) {
-      status.overall = 'warning';
+      status.overall = 'warning'
     } else {
-      status.overall = 'compliant';
+      status.overall = 'compliant'
     }
 
     // Save status to database
-    await this.saveComplianceStatus(status);
+    await this.saveComplianceStatus(status)
   }
 
   /**
@@ -768,7 +771,7 @@ class ComplianceMonitor {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .single()
 
       if (error || !data) {
         // Return default status if none found
@@ -784,13 +787,13 @@ class ComplianceMonitor {
           activeViolations: 0,
           criticalViolations: 0,
           lastUpdated: new Date()
-        };
+        }
       }
 
-      return data as ComplianceStatus;
+      return data as ComplianceStatus
     } catch (error) {
-      console.error('Error getting compliance status:', error);
-      throw error;
+      console.error('Error getting compliance status:', error)
+      throw error
     }
   }
 
@@ -803,14 +806,16 @@ class ComplianceMonitor {
         .from('compliance_violations')
         .select('*')
         .eq('status', 'active')
-        .order('detected_at', { ascending: false });
+        .order('detected_at', { ascending: false })
 
-      if (error) throw error;
+      if (error) {
+        throw error
+      }
 
-      return data || [];
+      return data || []
     } catch (error) {
-      console.error('Error getting active violations:', error);
-      throw error;
+      console.error('Error getting active violations:', error)
+      throw error
     }
   }
 
@@ -826,16 +831,18 @@ class ComplianceMonitor {
           acknowledged_by: userId,
           acknowledged_at: new Date().toISOString()
         })
-        .eq('id', violationId);
+        .eq('id', violationId)
 
-      if (error) throw error;
+      if (error) {
+        throw error
+      }
 
       // Update local cache
-      const violation = this.violations.get(violationId);
+      const violation = this.violations.get(violationId)
       if (violation) {
-        violation.status = 'acknowledged';
-        violation.acknowledgedBy = userId;
-        violation.acknowledgedAt = new Date();
+        violation.status = 'acknowledged'
+        violation.acknowledgedBy = userId
+        violation.acknowledgedAt = new Date()
       }
 
       await auditLogger.logEvent({
@@ -846,10 +853,10 @@ class ComplianceMonitor {
         resource: 'compliance_monitor',
         privacyImpact: 'low',
         metadata: { violationId }
-      });
+      })
     } catch (error) {
-      console.error('Error acknowledging violation:', error);
-      throw error;
+      console.error('Error acknowledging violation:', error)
+      throw error
     }
   }
 
@@ -866,17 +873,19 @@ class ComplianceMonitor {
           resolved_at: new Date().toISOString(),
           resolution
         })
-        .eq('id', violationId);
+        .eq('id', violationId)
 
-      if (error) throw error;
+      if (error) {
+        throw error
+      }
 
       // Update local cache
-      const violation = this.violations.get(violationId);
+      const violation = this.violations.get(violationId)
       if (violation) {
-        violation.status = 'resolved';
-        violation.resolvedBy = userId;
-        violation.resolvedAt = new Date();
-        violation.resolution = resolution;
+        violation.status = 'resolved'
+        violation.resolvedBy = userId
+        violation.resolvedAt = new Date()
+        violation.resolution = resolution
       }
 
       await auditLogger.logEvent({
@@ -887,10 +896,10 @@ class ComplianceMonitor {
         resource: 'compliance_monitor',
         privacyImpact: 'low',
         metadata: { violationId, resolution }
-      });
+      })
     } catch (error) {
-      console.error('Error resolving violation:', error);
-      throw error;
+      console.error('Error resolving violation:', error)
+      throw error
     }
   }
 
@@ -915,9 +924,9 @@ class ComplianceMonitor {
           grace_period: rule.gracePeriod,
           last_checked: rule.lastChecked?.toISOString(),
           updated_at: new Date().toISOString()
-        });
+        })
     } catch (error) {
-      console.error('Error saving rule:', error);
+      console.error('Error saving rule:', error)
     }
   }
 
@@ -946,9 +955,9 @@ class ComplianceMonitor {
           resolution: violation.resolution,
           metadata: violation.metadata,
           created_at: new Date().toISOString()
-        });
+        })
     } catch (error) {
-      console.error('Error saving violation:', error);
+      console.error('Error saving violation:', error)
     }
   }
 
@@ -968,9 +977,9 @@ class ComplianceMonitor {
           critical_violations: status.criticalViolations,
           last_updated: status.lastUpdated.toISOString(),
           created_at: new Date().toISOString()
-        });
+        })
     } catch (error) {
-      console.error('Error saving compliance status:', error);
+      console.error('Error saving compliance status:', error)
     }
   }
 
@@ -981,9 +990,11 @@ class ComplianceMonitor {
     try {
       const { data, error } = await supabaseAdmin
         .from('compliance_rules')
-        .select('*');
+        .select('*')
 
-      if (error) throw error;
+      if (error) {
+        throw error
+      }
 
       for (const ruleData of data || []) {
         const rule: ComplianceRule = {
@@ -999,17 +1010,17 @@ class ComplianceMonitor {
           violationThreshold: ruleData.violation_threshold,
           gracePeriod: ruleData.grace_period,
           lastChecked: ruleData.last_checked ? new Date(ruleData.last_checked) : undefined
-        };
+        }
 
-        this.rules.set(rule.id, rule);
+        this.rules.set(rule.id, rule)
       }
     } catch (error) {
-      console.error('Error loading custom rules:', error);
+      console.error('Error loading custom rules:', error)
     }
   }
 }
 
 // Global compliance monitor instance
-export const complianceMonitor = new ComplianceMonitor();
+export const complianceMonitor = new ComplianceMonitor()
 
-export default complianceMonitor;
+export default complianceMonitor

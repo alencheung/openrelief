@@ -2,7 +2,7 @@
 export {
   SkipLinks,
   DefaultSkipLinks,
-  useSkipLinks,
+  useSkipLinks
 } from './SkipLinks'
 
 export {
@@ -10,7 +10,7 @@ export {
   useFocusTrapElement,
   withFocusTrap,
   createTemporaryFocusTrap,
-  useFocusTrapStack,
+  useFocusTrapStack
 } from './FocusTrap'
 
 export {
@@ -23,38 +23,38 @@ export {
   ScreenReaderTableCaption,
   ScreenReaderFigureDescription,
   useScreenReaderAnnouncer,
-  useScreenReaderFocus,
+  useScreenReaderFocus
 } from './ScreenReaderOnly'
 
 export {
   KeyboardHelp,
   DefaultKeyboardHelp,
-  useKeyboardHelp,
+  useKeyboardHelp
 } from './KeyboardHelp'
 
 export {
   AccessibilityPanel,
-  useAccessibilitySettings,
+  useAccessibilitySettings
 } from './AccessibilityPanel'
 
 export {
   EmergencyAccessibility,
-  useEmergencyAccessibility,
+  useEmergencyAccessibility
 } from './EmergencyAccessibility'
 
 export {
   MotorAccessibility,
-  useMotorAccessibility,
+  useMotorAccessibility
 } from './MotorAccessibility'
 
 // Re-export types
 export type {
   SkipLink,
-  SkipLinksProps,
+  SkipLinksProps
 } from './SkipLinks'
 
 export type {
-  FocusTrapProps,
+  FocusTrapProps
 } from './FocusTrap'
 
 export type {
@@ -65,25 +65,25 @@ export type {
   ScreenReaderFieldErrorProps,
   ScreenReaderFieldSuccessProps,
   ScreenReaderTableCaptionProps,
-  ScreenReaderFigureDescriptionProps,
+  ScreenReaderFigureDescriptionProps
 } from './ScreenReaderOnly'
 
 export type {
   KeyboardShortcut,
-  KeyboardHelpProps,
+  KeyboardHelpProps
 } from './KeyboardHelp'
 
 export type {
   AccessibilitySettings,
-  AccessibilityPanelProps,
+  AccessibilityPanelProps
 } from './AccessibilityPanel'
 
 export type {
   EmergencyAccessibilityProps,
-  EmergencyAccessibilitySettings,
+  EmergencyAccessibilitySettings
 } from './EmergencyAccessibility'
 
 export type {
   MotorAccessibilityProps,
-  MotorAccessibilitySettings,
+  MotorAccessibilitySettings
 } from './MotorAccessibility'

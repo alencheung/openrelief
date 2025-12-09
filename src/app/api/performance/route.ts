@@ -1,6 +1,6 @@
 /**
  * Performance Monitoring API Endpoint
- * 
+ *
  * This API provides comprehensive access to performance monitoring data,
  * controls, and configuration for the OpenRelief performance optimization system.
  * It supports real-time monitoring, historical data, and emergency controls.
@@ -113,12 +113,12 @@ function createAPIResponse<T>(
 function validateAPIKey(request: NextRequest): boolean {
   const apiKey = request.headers.get('x-api-key')
   const validKey = process.env.PERFORMANCE_API_KEY
-  
+
   // In development, skip validation
   if (process.env.NODE_ENV === 'development') {
     return true
   }
-  
+
   return apiKey === validKey
 }
 
@@ -135,7 +135,7 @@ async function parseRequestBody<T>(request: NextRequest): Promise<T | null> {
 // GET handler - Retrieve performance data
 export async function GET(request: NextRequest): Promise<NextResponse<PerformanceAPIResponse>> {
   const requestId = generateRequestId()
-  
+
   try {
     // Validate API key
     if (!validateAPIKey(request)) {
@@ -242,7 +242,6 @@ export async function GET(request: NextRequest): Promise<NextResponse<Performanc
     return NextResponse.json(
       createAPIResponse(true, data, undefined, requestId)
     )
-
   } catch (error) {
     console.error('[PerformanceAPI] GET error:', error)
     return NextResponse.json(
@@ -255,7 +254,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<Performanc
 // POST handler - Execute performance actions
 export async function POST(request: NextRequest): Promise<NextResponse<PerformanceAPIResponse>> {
   const requestId = generateRequestId()
-  
+
   try {
     // Validate API key
     if (!validateAPIKey(request)) {
@@ -347,7 +346,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<Performan
     return NextResponse.json(
       createAPIResponse(true, data, undefined, requestId)
     )
-
   } catch (error) {
     console.error('[PerformanceAPI] POST error:', error)
     return NextResponse.json(
@@ -360,7 +358,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<Performan
 // PUT handler - Update performance resources
 export async function PUT(request: NextRequest): Promise<NextResponse<PerformanceAPIResponse>> {
   const requestId = generateRequestId()
-  
+
   try {
     // Validate API key
     if (!validateAPIKey(request)) {
@@ -408,7 +406,6 @@ export async function PUT(request: NextRequest): Promise<NextResponse<Performanc
     return NextResponse.json(
       createAPIResponse(true, data, undefined, requestId)
     )
-
   } catch (error) {
     console.error('[PerformanceAPI] PUT error:', error)
     return NextResponse.json(
@@ -421,7 +418,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse<Performanc
 // DELETE handler - Remove performance resources
 export async function DELETE(request: NextRequest): Promise<NextResponse<PerformanceAPIResponse>> {
   const requestId = generateRequestId()
-  
+
   try {
     // Validate API key
     if (!validateAPIKey(request)) {
@@ -472,7 +469,6 @@ export async function DELETE(request: NextRequest): Promise<NextResponse<Perform
     return NextResponse.json(
       createAPIResponse(true, data, undefined, requestId)
     )
-
   } catch (error) {
     console.error('[PerformanceAPI] DELETE error:', error)
     return NextResponse.json(
@@ -486,12 +482,12 @@ export async function DELETE(request: NextRequest): Promise<NextResponse<Perform
 
 async function getPerformanceMetrics(request: PerformanceMetricsRequest): Promise<any> {
   const dashboardData = performanceDashboard.getData()
-  
+
   // Filter by time range if specified
   if (request.timeRange) {
     const startDate = new Date(request.timeRange.start)
     const endDate = new Date(request.timeRange.end)
-    
+
     // In a real implementation, this would filter historical data
     // For now, just return current data with time range info
     return {
@@ -504,13 +500,13 @@ async function getPerformanceMetrics(request: PerformanceMetricsRequest): Promis
   // Filter by specific metrics if specified
   if (request.metrics && request.metrics.length > 0) {
     const filteredData: any = {}
-    
+
     request.metrics.forEach(metric => {
       if (dashboardData[metric as keyof typeof dashboardData]) {
         filteredData[metric] = dashboardData[metric as keyof typeof dashboardData]
       }
     })
-    
+
     return {
       metrics: filteredData,
       filtered: true
@@ -581,7 +577,7 @@ async function handlePerformanceTestAction(request: PerformanceTestRequest): Pro
 async function handleOptimizationAction(request: OptimizationRequest): Promise<any> {
   try {
     await performanceIntegration.applyOptimization(request.strategy)
-    
+
     return {
       strategy: request.strategy,
       parameters: request.parameters,
@@ -646,7 +642,7 @@ async function handleAlertManagementAction(request: AlertManagementRequest): Pro
 async function handleReportGenerationAction(request: ReportRequest): Promise<any> {
   try {
     const report = await performanceIntegration.generateReport(request.type)
-    
+
     // Handle different formats
     if (request.format === 'pdf' || request.format === 'html') {
       // In a real implementation, this would generate actual PDF/HTML files
@@ -692,7 +688,7 @@ async function handleBaselineUpdate(baselineData: any): Promise<any> {
   try {
     const version = baselineData.version || `v${Date.now()}`
     await performanceRegressionTesting.updateBaseline(version, baselineData)
-    
+
     return {
       version,
       status: 'updated',
@@ -728,7 +724,7 @@ async function handleCacheClear(cacheId?: string): Promise<any> {
       // Clear all caches
       const serviceWorker = (await import('@/lib/pwa/service-worker-optimizer')).serviceWorkerOptimizer
       await serviceWorker.clearAllCaches()
-      
+
       return {
         action: 'cleared_all',
         timestamp: new Date().toISOString()
@@ -749,7 +745,7 @@ async function handleCacheClear(cacheId?: string): Promise<any> {
 async function handleAlertDelete(alertId: string): Promise<any> {
   try {
     await performanceDashboard.resolveAlert(alertId, 'system', 'Deleted via API')
-    
+
     return {
       alertId,
       action: 'deleted',
@@ -763,7 +759,7 @@ async function handleAlertDelete(alertId: string): Promise<any> {
 async function handleTestStop(testId: string): Promise<any> {
   try {
     const results = await loadTestingFramework.stopLoadTest(testId)
-    
+
     return {
       testId,
       action: 'stopped',
@@ -777,7 +773,7 @@ async function handleTestStop(testId: string): Promise<any> {
 
 async function getSystemHealth(): Promise<any> {
   const status = performanceIntegration.getStatus()
-  
+
   return {
     overall: status.components.every(c => c.healthy) ? 'healthy' : 'degraded',
     components: status.components,
@@ -791,7 +787,7 @@ function convertToCSV(data: any): string {
   // Simple CSV conversion - in a real implementation, this would be more sophisticated
   const headers = Object.keys(data.metrics || {})
   const rows = [headers.join(',')]
-  
+
   // Add data row
   const values = headers.map(header => {
     const value = data.metrics[header]
@@ -801,7 +797,7 @@ function convertToCSV(data: any): string {
     return value
   })
   rows.push(values.join(','))
-  
+
   return rows.join('\n')
 }
 

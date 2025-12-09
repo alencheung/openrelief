@@ -1,6 +1,6 @@
 /**
  * Privacy Settings API Endpoint
- * 
+ *
  * This endpoint handles GET and POST requests for privacy settings,
  * allowing users to retrieve and update their privacy preferences.
  */
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
   try {
     // Get user session
     const session = await getServerSession()
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: 'Authentication required' },
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
 
     // Get user's privacy settings from database
     let settings = privacySettingsDB.get(session.user.id)
-    
+
     // If no settings exist, return default settings
     if (!settings) {
       settings = defaultPrivacySettings
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
   try {
     // Get user session
     const session = await getServerSession()
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: 'Authentication required' },
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
 
     // Get current settings for comparison
     const currentSettings = privacySettingsDB.get(session.user.id) || defaultPrivacySettings
-    
+
     // Merge with current settings (only update provided fields)
     const updatedSettings: PrivacySettings = {
       ...currentSettings,
@@ -124,8 +124,8 @@ export async function POST(request: NextRequest) {
 
     // Log the update for transparency
     await logPrivacyAccess(
-      session.user.id, 
-      'settings_update', 
+      session.user.id,
+      'settings_update',
       'privacy_settings',
       {
         previousSettings: currentSettings,
@@ -181,15 +181,15 @@ function validatePrivacySettings(settings: any): string | null {
     return 'locationSharing must be a boolean'
   }
 
-  if (typeof settings.locationPrecision !== 'number' || 
-      settings.locationPrecision < 1 || 
-      settings.locationPrecision > 5) {
+  if (typeof settings.locationPrecision !== 'number'
+      || settings.locationPrecision < 1
+      || settings.locationPrecision > 5) {
     return 'locationPrecision must be a number between 1 and 5'
   }
 
-  if (typeof settings.dataRetentionDays !== 'number' || 
-      settings.dataRetentionDays < 7 || 
-      settings.dataRetentionDays > 365) {
+  if (typeof settings.dataRetentionDays !== 'number'
+      || settings.dataRetentionDays < 7
+      || settings.dataRetentionDays > 365) {
     return 'dataRetentionDays must be a number between 7 and 365'
   }
 
@@ -214,44 +214,44 @@ function validatePrivacySettings(settings: any): string | null {
   }
 
   // Validate optional fields if present
-  if (settings.researchParticipation !== undefined && 
-      typeof settings.researchParticipation !== 'boolean') {
+  if (settings.researchParticipation !== undefined
+      && typeof settings.researchParticipation !== 'boolean') {
     return 'researchParticipation must be a boolean'
   }
 
-  if (settings.thirdPartyAnalytics !== undefined && 
-      typeof settings.thirdPartyAnalytics !== 'boolean') {
+  if (settings.thirdPartyAnalytics !== undefined
+      && typeof settings.thirdPartyAnalytics !== 'boolean') {
     return 'thirdPartyAnalytics must be a boolean'
   }
 
-  if (settings.automatedDataCleanup !== undefined && 
-      typeof settings.automatedDataCleanup !== 'boolean') {
+  if (settings.automatedDataCleanup !== undefined
+      && typeof settings.automatedDataCleanup !== 'boolean') {
     return 'automatedDataCleanup must be a boolean'
   }
 
-  if (settings.privacyBudgetAlerts !== undefined && 
-      typeof settings.privacyBudgetAlerts !== 'boolean') {
+  if (settings.privacyBudgetAlerts !== undefined
+      && typeof settings.privacyBudgetAlerts !== 'boolean') {
     return 'privacyBudgetAlerts must be a boolean'
   }
 
-  if (settings.legalNotifications !== undefined && 
-      typeof settings.legalNotifications !== 'boolean') {
+  if (settings.legalNotifications !== undefined
+      && typeof settings.legalNotifications !== 'boolean') {
     return 'legalNotifications must be a boolean'
   }
 
-  if (settings.consentManagement !== undefined && 
-      typeof settings.consentManagement !== 'boolean') {
+  if (settings.consentManagement !== undefined
+      && typeof settings.consentManagement !== 'boolean') {
     return 'consentManagement must be a boolean'
   }
 
-  if (settings.realTimeMonitoring !== undefined && 
-      typeof settings.realTimeMonitoring !== 'boolean') {
+  if (settings.realTimeMonitoring !== undefined
+      && typeof settings.realTimeMonitoring !== 'boolean') {
     return 'realTimeMonitoring must be a boolean'
   }
 
-  if (settings.dataProcessingPurposes !== undefined && 
-      (!Array.isArray(settings.dataProcessingPurposes) ||
-       !settings.dataProcessingPurposes.every((p: any) => typeof p === 'string'))) {
+  if (settings.dataProcessingPurposes !== undefined
+      && (!Array.isArray(settings.dataProcessingPurposes)
+       || !settings.dataProcessingPurposes.every((p: any) => typeof p === 'string'))) {
     return 'dataProcessingPurposes must be an array of strings'
   }
 
@@ -260,7 +260,7 @@ function validatePrivacySettings(settings: any): string | null {
 
 // Check if settings have significant changes that require impact assessment
 function hasSignificantChanges(
-  current: PrivacySettings, 
+  current: PrivacySettings,
   updated: PrivacySettings
 ): boolean {
   const significantFields = [
@@ -276,9 +276,9 @@ function hasSignificantChanges(
 
 // Log privacy access for transparency
 async function logPrivacyAccess(
-  userId: string, 
-  action: string, 
-  dataType: string, 
+  userId: string,
+  action: string,
+  dataType: string,
   metadata?: any
 ): Promise<void> {
   // In a real implementation, this would log to a secure audit database
@@ -299,19 +299,19 @@ async function logPrivacyAccess(
   }
 
   console.log('Privacy access logged:', logEntry)
-  
+
   // In a real implementation, save to audit database
   // await saveToAuditDatabase(logEntry)
 }
 
 // Trigger privacy impact assessment
 async function triggerPrivacyImpactAssessment(
-  userId: string, 
+  userId: string,
   settings: PrivacySettings
 ): Promise<void> {
   // In a real implementation, this would trigger an automated assessment
   console.log('Privacy impact assessment triggered for user:', userId, settings)
-  
+
   // Calculate privacy score based on settings
   const enabledFeatures = [
     settings.anonymizeData,
@@ -320,10 +320,10 @@ async function triggerPrivacyImpactAssessment(
     settings.endToEndEncryption
   ].filter(Boolean).length
 
-  const privacyLevel = 
-    enabledFeatures === 4 ? 'maximum' :
-    enabledFeatures === 3 ? 'high' :
-    enabledFeatures === 2 ? 'medium' : 'basic'
+  const privacyLevel
+    = enabledFeatures === 4 ? 'maximum'
+      : enabledFeatures === 3 ? 'high'
+        : enabledFeatures === 2 ? 'medium' : 'basic'
 
   // In a real implementation, save assessment results to database
   console.log(`Privacy level for user ${userId}: ${privacyLevel}`)

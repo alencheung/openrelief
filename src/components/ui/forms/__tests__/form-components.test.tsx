@@ -2,7 +2,7 @@ import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, beforeEach } from 'vitest'
-import { 
+import {
   EnhancedInput,
   EnhancedTextarea,
   EnhancedSelect,
@@ -73,12 +73,12 @@ describe('Enhanced Form Components', () => {
       )
 
       const input = screen.getByTestId('test-input') as HTMLInputElement
-      
+
       // Test invalid input
       await userEvent.type(input, '123')
       expect(isValid).toBe(false)
       expect(errorMessage).toBe('Must be at least 5 characters')
-      
+
       // Test valid input
       await userEvent.type(input, '67890')
       expect(isValid).toBe(true)
@@ -140,7 +140,7 @@ describe('Enhanced Form Components', () => {
 
       const textarea = screen.getByTestId('test-textarea') as HTMLTextAreaElement
       await userEvent.type(textarea, 'Hello World')
-      
+
       expect(screen.getByText('11 / 100')).toBeInTheDocument()
     })
 
@@ -183,7 +183,7 @@ describe('Enhanced Form Components', () => {
 
       const trigger = screen.getByTestId('test-select')
       await userEvent.click(trigger)
-      
+
       expect(screen.getByText('Option 1')).toBeInTheDocument()
       expect(screen.getByText('Option 2')).toBeInTheDocument()
       expect(screen.getByText('Option 3')).toBeInTheDocument()
@@ -201,10 +201,10 @@ describe('Enhanced Form Components', () => {
 
       const trigger = screen.getByTestId('test-select')
       await userEvent.click(trigger)
-      
+
       const searchInput = screen.getByPlaceholderText('Search...')
       expect(searchInput).toBeInTheDocument()
-      
+
       await userEvent.type(searchInput, 'Option 1')
       expect(screen.getByText('Option 1')).toBeInTheDocument()
       expect(screen.queryByText('Option 2')).not.toBeInTheDocument()
@@ -222,10 +222,10 @@ describe('Enhanced Form Components', () => {
 
       const trigger = screen.getByTestId('test-select')
       await userEvent.click(trigger)
-      
+
       await userEvent.click(screen.getByText('Option 1'))
       await userEvent.click(screen.getByText('Option 2'))
-      
+
       expect(screen.getByText('Option 1')).toBeInTheDocument()
       expect(screen.getByText('Option 2')).toBeInTheDocument()
     })
@@ -253,7 +253,7 @@ describe('Enhanced Form Components', () => {
 
       const checkbox = screen.getByRole('checkbox')
       expect(checkbox).not.toBeChecked()
-      
+
       await userEvent.click(checkbox)
       expect(checkbox).toBeChecked()
     })
@@ -298,10 +298,10 @@ describe('Enhanced Form Components', () => {
 
       const radio1 = screen.getByLabelText('Radio 1')
       const radio2 = screen.getByLabelText('Radio 2')
-      
+
       expect(radio1).not.toBeChecked()
       expect(radio2).not.toBeChecked()
-      
+
       await userEvent.click(radio1)
       expect(radio1).toBeChecked()
       expect(radio2).not.toBeChecked()
@@ -323,7 +323,7 @@ describe('Enhanced Form Components', () => {
 
     it('handles file selection', async () => {
       const file = new File(['test'], 'test.txt', { type: 'text/plain' })
-      
+
       render(
         <EnhancedFileUpload
           label="Test File Upload"
@@ -343,7 +343,7 @@ describe('Enhanced Form Components', () => {
 
     it('validates file size', async () => {
       const largeFile = new File(['x'.repeat(11 * 1024 * 1024)], 'large.txt', { type: 'text/plain' })
-      
+
       render(
         <EnhancedFileUpload
           label="Test File Upload"
@@ -356,7 +356,7 @@ describe('Enhanced Form Components', () => {
       if (input) {
         await userEvent.upload(input, largeFile)
       }
-      
+
       // Should show error for oversized file
       expect(screen.getByText(/exceeds maximum size/)).toBeInTheDocument()
     })
@@ -379,7 +379,7 @@ describe('Enhanced Form Components', () => {
 
     it('updates value when moved', async () => {
       let newValue = 50
-      
+
       render(
         <EnhancedRangeSlider
           label="Test Range Slider"
@@ -504,7 +504,7 @@ describe('Enhanced Form Components', () => {
 
       const step1 = screen.getByText('Step 1')
       const step2 = screen.getByText('Step 2')
-      
+
       // Current step should be highlighted
       expect(step2.closest('[data-status="active"]')).toBeInTheDocument()
     })
@@ -521,9 +521,9 @@ describe('Enhanced Form Components', () => {
 
       const input = screen.getByTestId('accessible-input')
       input.focus()
-      
+
       expect(input).toHaveFocus()
-      
+
       // Test tab navigation
       await userEvent.tab()
       expect(document.activeElement).toBe(input)
@@ -564,7 +564,7 @@ describe('Enhanced Form Components', () => {
 
       const input = screen.getByTestId('validation-input')
       await userEvent.type(input, '123')
-      
+
       // Wait for announcement
       await waitFor(() => {
         expect(liveRegion.textContent).toContain('error')

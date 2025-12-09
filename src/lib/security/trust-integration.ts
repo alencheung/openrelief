@@ -1,6 +1,6 @@
 /**
  * Trust Score Integration for Attack Resistance
- * 
+ *
  * This module integrates trust scores with security decisions to provide
  * attack resistance based on user reputation and behavior patterns.
  * It implements dynamic trust scoring, reputation systems,
@@ -82,7 +82,7 @@ const TRUST_CONFIG = {
     high: { min: 0.6, max: 0.8 },
     very_high: { min: 0.8, max: 1.0 }
   },
-  
+
   // Trust thresholds
   thresholds: {
     very_low: {
@@ -121,7 +121,7 @@ const TRUST_CONFIG = {
       requirements: ['trusted_user']
     }
   },
-  
+
   // Factor weights
   factorWeights: {
     reportingAccuracy: 0.25,
@@ -134,7 +134,7 @@ const TRUST_CONFIG = {
     penaltyScore: -0.30,
     consistencyScore: 0.15
   },
-  
+
   // Decay and growth
   decay: {
     dailyDecayRate: 0.001,
@@ -143,7 +143,7 @@ const TRUST_CONFIG = {
     boostAmount: 0.05,
     boostDecayRate: 0.01
   },
-  
+
   // Attack resistance
   attackResistance: {
     trustWeightMultiplier: 2.0,
@@ -162,12 +162,12 @@ export class TrustScoreManager {
   private trustScores: Map<string, TrustScore> = new Map()
   private reputationCache: Map<string, Reputation> = new Map()
   private attackResistanceConfig: AttackResistanceConfig
-  
+
   constructor() {
     this.attackResistanceConfig = TRUST_CONFIG.attackResistance
     this.loadTrustScores()
   }
-  
+
   /**
    * Calculate trust score for user action
    */
@@ -184,23 +184,23 @@ export class TrustScoreManager {
     try {
       const currentScore = await this.getUserTrustScore(userId)
       const previousScore = currentScore.overall
-      
+
       // Get action-specific impact
       const actionImpact = this.getActionImpact(action, context)
-      
+
       // Update trust factors
       const updatedFactors = await this.updateTrustFactors(
         currentScore.factors,
         action,
         actionImpact
       )
-      
+
       // Calculate new overall score
       const newScore = this.calculateOverallScore(updatedFactors)
-      
+
       // Apply decay and growth
       const adjustedScore = this.applyDecayAndGrowth(newScore, userId, action)
-      
+
       // Create history entry
       const historyEntry: TrustScoreHistory = {
         timestamp: new Date(),
@@ -210,7 +210,7 @@ export class TrustScoreManager {
         reason: actionImpact.reason,
         impact: actionImpact.impact
       }
-      
+
       // Update trust score
       const updatedScore: TrustScore = {
         ...currentScore,
@@ -221,16 +221,16 @@ export class TrustScoreManager {
         lastUpdated: new Date(),
         confidence: this.calculateConfidence(updatedFactors)
       }
-      
+
       // Save to cache and database
       this.trustScores.set(userId, updatedScore)
       await this.saveTrustScore(updatedScore)
-      
+
       // Log significant changes
       if (Math.abs(adjustedScore - previousScore) > 0.1) {
         await this.logTrustScoreChange(userId, previousScore, adjustedScore, action)
       }
-      
+
       return {
         newScore: adjustedScore,
         previousScore,
@@ -242,7 +242,7 @@ export class TrustScoreManager {
       throw error
     }
   }
-  
+
   /**
    * Get user's trust threshold level
    */
@@ -251,9 +251,9 @@ export class TrustScoreManager {
     if (!trustScore) {
       return TRUST_CONFIG.thresholds.very_low
     }
-    
+
     const score = trustScore.overall
-    
+
     // Find appropriate threshold
     for (const [level, threshold] of Object.entries(TRUST_CONFIG.thresholds)) {
       if (score >= threshold.minScore && score <= threshold.maxScore) {
@@ -263,10 +263,10 @@ export class TrustScoreManager {
         }
       }
     }
-    
+
     return TRUST_CONFIG.thresholds.very_low
   }
-  
+
   /**
    * Check if user can perform action based on trust
    */
@@ -283,7 +283,7 @@ export class TrustScoreManager {
     try {
       const threshold = this.getTrustThreshold(userId)
       const trustScore = this.trustScores.get(userId)
-      
+
       if (!trustScore) {
         return {
           allowed: false,
@@ -291,7 +291,7 @@ export class TrustScoreManager {
           requirements: ['trust_score_required']
         }
       }
-      
+
       // Check emergency mode
       if (this.attackResistanceConfig.emergencyMode) {
         // In emergency mode, relax some restrictions for trusted users
@@ -299,13 +299,13 @@ export class TrustScoreManager {
           return { allowed: true }
         }
       }
-      
+
       // Check action permissions
       const actionPermissions = this.getActionPermissions(action)
-      const hasPermission = threshold.permissions.some(perm => 
+      const hasPermission = threshold.permissions.some(perm =>
         actionPermissions.includes(perm)
       )
-      
+
       if (!hasPermission) {
         return {
           allowed: false,
@@ -314,7 +314,7 @@ export class TrustScoreManager {
           restrictions: threshold.restrictions
         }
       }
-      
+
       // Check for additional requirements
       const requirements = await this.checkRequirements(userId, threshold.requirements, context)
       if (!requirements.met) {
@@ -325,7 +325,7 @@ export class TrustScoreManager {
           restrictions: threshold.restrictions
         }
       }
-      
+
       return {
         allowed: true,
         requirements: threshold.requirements,
@@ -339,7 +339,7 @@ export class TrustScoreManager {
       }
     }
   }
-  
+
   /**
    * Apply trust-based attack resistance
    */
@@ -362,17 +362,17 @@ export class TrustScoreManager {
           resistance: 'no_trust_data'
         }
       }
-      
+
       const threshold = this.getTrustThreshold(userId)
-      
+
       // Calculate trust weight for this action
       let trustWeight = trustScore.overall
-      
+
       // Apply multiplier for attack resistance
       if (this.attackResistanceConfig.trustWeightMultiplier > 1) {
         trustWeight = Math.min(1.0, trustWeight * this.attackResistanceConfig.trustWeightMultiplier)
       }
-      
+
       // Check for Sybil attack indicators
       const sybilResistance = await this.checkSybilResistance(userId, trustScore, action)
       if (!sybilResistance.safe) {
@@ -387,20 +387,20 @@ export class TrustScoreManager {
           }
         }
       }
-      
+
       // Apply consensus-based resistance
       const consensusResistance = this.applyConsensusResistance(userId, trustScore, action, data)
-      
+
       // Apply reputation-based resistance
       const reputationResistance = this.applyReputationResistance(userId, trustScore)
-      
+
       // Determine overall resistance
       const resistance = this.determineOverallResistance(
         sybilResistance,
         consensusResistance,
         reputationResistance
       )
-      
+
       // Adjust data based on trust level
       let adjustedData = data
       if (trustScore.overall < this.attackResistanceConfig.sybilThreshold) {
@@ -411,7 +411,7 @@ export class TrustScoreManager {
           requiresVerification: true
         }
       }
-      
+
       return {
         allowed: resistance !== 'blocked',
         trustWeight,
@@ -427,7 +427,7 @@ export class TrustScoreManager {
       }
     }
   }
-  
+
   /**
    * Get trust-based rate limiting parameters
    */
@@ -444,9 +444,9 @@ export class TrustScoreManager {
         penaltyMultiplier: 2.0
       }
     }
-    
+
     const threshold = this.getTrustThreshold(userId)
-    
+
     // Adjust rate limiting based on trust level
     const rateLimits = {
       very_low: { maxRequests: 10, windowMs: 15 * 60 * 1000, penaltyMultiplier: 2.0 },
@@ -455,28 +455,28 @@ export class TrustScoreManager {
       high: { maxRequests: 100, windowMs: 15 * 60 * 1000, penaltyMultiplier: 1.0 },
       very_high: { maxRequests: 200, windowMs: 15 * 60 * 1000, penaltyMultiplier: 0.8 }
     }
-    
+
     return rateLimits[threshold.level] || rateLimits.medium
   }
-  
+
   /**
    * Private helper methods
    */
-  
+
   private async getUserTrustScore(userId: string): Promise<TrustScore> {
     // Check cache first
     const cached = this.trustScores.get(userId)
     if (cached) {
       return cached
     }
-    
+
     // Load from database
     const { data, error } = await supabaseAdmin
       .from('user_trust_scores')
       .select('*')
       .eq('user_id', userId)
       .single()
-    
+
     if (error || !data) {
       // Return default trust score for new users
       const defaultScore: TrustScore = {
@@ -507,11 +507,11 @@ export class TrustScoreManager {
         lastUpdated: new Date(),
         confidence: 0.5
       }
-      
+
       this.trustScores.set(userId, defaultScore)
       return defaultScore
     }
-    
+
     const trustScore: TrustScore = {
       userId,
       overall: data.overall_score,
@@ -521,11 +521,11 @@ export class TrustScoreManager {
       lastUpdated: new Date(data.updated_at),
       confidence: data.confidence || 0.5
     }
-    
+
     this.trustScores.set(userId, trustScore)
     return trustScore
   }
-  
+
   private getActionImpact(action: string, context: any): {
     impact: number
     reason: string
@@ -540,41 +540,41 @@ export class TrustScoreManager {
       penalty: { impact: -0.05, reason: 'Penalty applied', factor: 'penaltyScore' },
       boost: { impact: 0.05, reason: 'Trust boost applied', factor: 'communityEndorsement' }
     }
-    
+
     return impacts[action] || impacts.penalty
   }
-  
+
   private async updateTrustFactors(
     currentFactors: TrustFactors,
     action: string,
     actionImpact: any
   ): Promise<TrustFactors> {
     const updatedFactors = { ...currentFactors }
-    
+
     // Update specific factor based on action
     if (actionImpact.factor) {
       const currentValue = updatedFactors[actionImpact.factor] || 0
       const newValue = Math.max(0, Math.min(1, currentValue + actionImpact.impact))
       updatedFactors[actionImpact.factor] = newValue
     }
-    
+
     // Update contribution frequency
     if (['report', 'confirm', 'dispute'].includes(action)) {
-      updatedFactors.contributionFrequency = Math.min(1, 
+      updatedFactors.contributionFrequency = Math.min(1,
         updatedFactors.contributionFrequency + 0.01)
     }
-    
+
     // Update consistency score
     updatedFactors.consistencyScore = this.calculateConsistencyScore(updatedFactors)
-    
+
     return updatedFactors
   }
-  
+
   private calculateOverallScore(factors: TrustFactors): number {
     const weights = TRUST_CONFIG.factorWeights
-    
+
     let score = 0
-    
+
     // Calculate weighted sum
     score += factors.reportingAccuracy * weights.reportingAccuracy
     score += factors.confirmationAccuracy * weights.confirmationAccuracy
@@ -585,19 +585,19 @@ export class TrustScoreManager {
     score += factors.communityEndorsement * weights.communityEndorsement
     score += factors.penaltyScore * weights.penaltyScore
     score += factors.consistencyScore * weights.consistencyScore
-    
+
     // Normalize to 0-1 range
     return Math.max(0, Math.min(1, score))
   }
-  
+
   private applyDecayAndGrowth(score: number, userId: string, action: string): number {
     const now = Date.now()
     const lastActivity = this.trustScores.get(userId)?.lastUpdated.getTime() || now
-    
+
     const daysSinceLastActivity = (now - lastActivity) / (24 * 60 * 60 * 1000)
-    
+
     let adjustedScore = score
-    
+
     // Apply decay for inactivity
     if (daysSinceLastActivity > TRUST_CONFIG.decay.inactivityThreshold) {
       const decayAmount = Math.min(
@@ -606,21 +606,21 @@ export class TrustScoreManager {
       )
       adjustedScore = Math.max(0.1, score - decayAmount)
     }
-    
+
     // Apply growth for positive actions
     if (['report', 'confirm', 'endorse'].includes(action)) {
-      const boostAmount = TRUST_CONFIG.decay.boostAmount * 
-        Math.exp(-daysSinceLastActivity * TRUST_CONFIG.decay.boostDecayRate)
+      const boostAmount = TRUST_CONFIG.decay.boostAmount
+        * Math.exp(-daysSinceLastActivity * TRUST_CONFIG.decay.boostDecayRate)
       adjustedScore = Math.min(1.0, adjustedScore + boostAmount)
     }
-    
+
     return adjustedScore
   }
-  
+
   private calculateConfidence(factors: TrustFactors): number {
     // Calculate confidence based on data availability and consistency
     let confidence = 0.5 // Base confidence
-    
+
     // More data points = higher confidence
     const dataPoints = [
       factors.reportingAccuracy > 0,
@@ -631,15 +631,15 @@ export class TrustScoreManager {
       factors.contributionFrequency > 0,
       factors.communityEndorsement > 0
     ].filter(Boolean).length
-    
+
     confidence += (dataPoints / 7) * 0.4 // Up to 0.4 for data
-    
+
     // Consistency increases confidence
     confidence += factors.consistencyScore * 0.1
-    
+
     return Math.min(1.0, confidence)
   }
-  
+
   private async updateReputation(userId: string, score: number, action: string): Promise<Reputation> {
     const currentReputation = this.reputationCache.get(userId) || {
       globalScore: 0.5,
@@ -650,40 +650,40 @@ export class TrustScoreManager {
       disputes: 0,
       lastActivity: new Date()
     }
-    
+
     // Update reputation based on action
     const updatedReputation = { ...currentReputation }
-    
+
     if (action === 'report') {
       updatedReputation.reports++
-      updatedReputation.communityScore = Math.min(1.0, 
+      updatedReputation.communityScore = Math.min(1.0,
         updatedReputation.communityScore + 0.01)
     } else if (action === 'confirm') {
-      updatedReputation.communityScore = Math.min(1.0, 
+      updatedReputation.communityScore = Math.min(1.0,
         updatedReputation.communityScore + 0.02)
     } else if (action === 'dispute') {
       updatedReputation.disputes++
-      updatedReputation.communityScore = Math.max(0.1, 
+      updatedReputation.communityScore = Math.max(0.1,
         updatedReputation.communityScore - 0.01)
     } else if (action === 'endorse') {
       updatedReputation.endorsements++
-      updatedReputation.communityScore = Math.min(1.0, 
+      updatedReputation.communityScore = Math.min(1.0,
         updatedReputation.communityScore + 0.03)
     }
-    
+
     // Update global score
     updatedReputation.globalScore = (
-      updatedReputation.communityScore * 0.6 +
-      updatedReputation.domainScore * 0.3 +
-      updatedReputation.endorsements * 0.1
+      updatedReputation.communityScore * 0.6
+      + updatedReputation.domainScore * 0.3
+      + updatedReputation.endorsements * 0.1
     )
-    
+
     updatedReputation.lastActivity = new Date()
-    
+
     this.reputationCache.set(userId, updatedReputation)
     return updatedReputation
   }
-  
+
   private getActionPermissions(action: string): string[] {
     const permissions = {
       read_public: ['read', 'view', 'access'],
@@ -693,10 +693,10 @@ export class TrustScoreManager {
       moderate: ['moderate', 'review', 'flag'],
       admin: ['admin', 'manage', 'delete', 'ban']
     }
-    
+
     return permissions[action] || []
   }
-  
+
   private async checkRequirements(
     userId: string,
     requirements: string[],
@@ -706,7 +706,7 @@ export class TrustScoreManager {
     if (!trustScore) {
       return { met: false, reason: 'Trust score not found' }
     }
-    
+
     // Check MFA requirement
     if (requirements.includes('mfa_required')) {
       const mfaEnabled = await this.checkMFAEnabled(userId)
@@ -714,7 +714,7 @@ export class TrustScoreManager {
         return { met: false, reason: 'MFA required but not enabled' }
       }
     }
-    
+
     // Check manual review requirement
     if (requirements.includes('manual_review')) {
       const needsReview = trustScore.overall < 0.3
@@ -722,7 +722,7 @@ export class TrustScoreManager {
         return { met: false, reason: 'Manual review required' }
       }
     }
-    
+
     // Check trusted user requirement
     if (requirements.includes('trusted_user')) {
       const isTrusted = trustScore.overall >= 0.8
@@ -730,20 +730,20 @@ export class TrustScoreManager {
         return { met: false, reason: 'Trusted user status required' }
       }
     }
-    
+
     return { met: true }
   }
-  
+
   private async checkMFAEnabled(userId: string): Promise<boolean> {
     const { data, error } = await supabaseAdmin
       .from('user_profiles')
       .select('mfa_enabled')
       .eq('user_id', userId)
       .single()
-    
+
     return !error && data?.mfa_enabled || false
   }
-  
+
   private async checkSybilResistance(
     userId: string,
     trustScore: TrustScore,
@@ -756,47 +756,59 @@ export class TrustScoreManager {
       suspiciousPatterns: await this.checkSuspiciousPatterns(userId, action),
       networkAnomalies: await this.checkNetworkAnomalies(userId)
     }
-    
+
     // Calculate overall risk
     let risk = 0
-    if (riskFactors.lowTrustScore) risk += 0.3
-    if (riskFactors.rapidScoreChanges) risk += 0.2
-    if (riskFactors.suspiciousPatterns) risk += 0.3
-    if (riskFactors.networkAnomalies) risk += 0.2
-    
+    if (riskFactors.lowTrustScore) {
+      risk += 0.3
+    }
+    if (riskFactors.rapidScoreChanges) {
+      risk += 0.2
+    }
+    if (riskFactors.suspiciousPatterns) {
+      risk += 0.3
+    }
+    if (riskFactors.networkAnomalies) {
+      risk += 0.2
+    }
+
     const safe = risk < 0.5
-    
+
     return { safe, risk }
   }
-  
+
   private checkRapidScoreChanges(trustScore: TrustScore): boolean {
-    if (trustScore.history.length < 5) return false
-    
+    if (trustScore.history.length < 5) {
+      return false
+    }
+
     const recentChanges = trustScore.history.slice(-5)
     const scoreChanges = recentChanges.map((entry, index) => {
-      if (index === 0) return 0
+      if (index === 0) {
+        return 0
+      }
       return Math.abs(entry.score - recentChanges[index - 1].score)
     })
-    
+
     const avgChange = scoreChanges.reduce((sum, change) => sum + change, 0) / scoreChanges.length
     const maxChange = Math.max(...scoreChanges)
-    
+
     // Flag if average change is high or there are very large changes
     return avgChange > 0.1 || maxChange > 0.2
   }
-  
+
   private async checkSuspiciousPatterns(userId: string, action: string): Promise<boolean> {
     // This would integrate with the Sybil prevention system
     // For now, return false (no suspicious patterns detected)
     return false
   }
-  
+
   private async checkNetworkAnomalies(userId: string): Promise<boolean> {
     // This would check for unusual network patterns
     // For now, return false (no anomalies detected)
     return false
   }
-  
+
   private applyConsensusResistance(
     userId: string,
     trustScore: TrustScore,
@@ -807,10 +819,10 @@ export class TrustScoreManager {
     if (action === 'vote' && trustScore.overall < this.attackResistanceConfig.consensusThreshold) {
       return 'consensus_limited'
     }
-    
+
     return 'consensus_allowed'
   }
-  
+
   private applyReputationResistance(
     userId: string,
     trustScore: TrustScore
@@ -819,10 +831,10 @@ export class TrustScoreManager {
     if (trustScore.reputation.globalScore < this.attackResistanceConfig.reputationThreshold) {
       return 'reputation_limited'
     }
-    
+
     return 'reputation_allowed'
   }
-  
+
   private determineOverallResistance(
     sybil: { safe: boolean; risk: number },
     consensus: string,
@@ -831,14 +843,14 @@ export class TrustScoreManager {
     if (!sybil.safe || sybil.risk > 0.5) {
       return 'blocked'
     }
-    
+
     if (consensus === 'consensus_limited' || reputation === 'reputation_limited') {
       return 'limited'
     }
-    
+
     return 'allowed'
   }
-  
+
   private async logTrustScoreChange(
     userId: string,
     previousScore: number,
@@ -860,7 +872,7 @@ export class TrustScoreManager {
       }
     )
   }
-  
+
   private async saveTrustScore(trustScore: TrustScore): Promise<void> {
     await supabaseAdmin
       .from('user_trust_scores')
@@ -873,15 +885,17 @@ export class TrustScoreManager {
         updated_at: new Date().toISOString()
       })
   }
-  
+
   private async loadTrustScores(): Promise<void> {
     try {
       const { data, error } = await supabaseAdmin
         .from('user_trust_scores')
         .select('*')
-      
-      if (error) throw error
-      
+
+      if (error) {
+        throw error
+      }
+
       for (const scoreData of data || []) {
         const trustScore: TrustScore = {
           userId: scoreData.user_id,
@@ -892,7 +906,7 @@ export class TrustScoreManager {
           lastUpdated: new Date(scoreData.updated_at),
           confidence: scoreData.confidence || 0.5
         }
-        
+
         this.trustScores.set(scoreData.user_id, trustScore)
       }
     } catch (error) {

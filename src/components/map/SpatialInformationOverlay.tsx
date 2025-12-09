@@ -3,12 +3,12 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
-import { 
-  Navigation, 
-  Clock, 
-  MapPin, 
-  Route, 
-  Ruler, 
+import {
+  Navigation,
+  Clock,
+  MapPin,
+  Route,
+  Ruler,
   Compass,
   Eye,
   EyeOff,
@@ -29,25 +29,25 @@ const spatialOverlayVariants = cva(
         'top-right': 'top-4 right-4',
         'bottom-left': 'bottom-4 left-4',
         'bottom-right': 'bottom-4 right-4',
-        'center': 'top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2',
+        center: 'top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2'
       },
       size: {
         sm: 'max-w-xs',
         md: 'max-w-sm',
         lg: 'max-w-md',
-        xl: 'max-w-lg',
+        xl: 'max-w-lg'
       },
       variant: {
         default: 'p-4',
         compact: 'p-3',
-        minimal: 'p-2',
+        minimal: 'p-2'
       }
     },
     defaultVariants: {
       position: 'top-right',
       size: 'sm',
-      variant: 'compact',
-    },
+      variant: 'compact'
+    }
   }
 )
 
@@ -94,7 +94,9 @@ const DistanceIndicator: React.FC<DistanceIndicatorProps> = ({
   unitSystem,
   animated = false
 }) => {
-  if (!distance) return null
+  if (!distance) {
+    return null
+  }
 
   const formatDistance = (dist: number) => {
     if (unitSystem === 'metric') {
@@ -141,7 +143,9 @@ const TimeEstimate: React.FC<TimeEstimateProps> = ({
   transportMode = 'driving',
   animated = false
 }) => {
-  if (!time) return null
+  if (!time) {
+    return null
+  }
 
   const formatTime = (minutes: number) => {
     if (minutes < 60) {
@@ -188,7 +192,9 @@ const AreaRadius: React.FC<AreaRadiusProps> = ({
   unitSystem,
   animated = false
 }) => {
-  if (!radius) return null
+  if (!radius) {
+    return null
+  }
 
   const formatRadius = (r: number) => {
     if (unitSystem === 'metric') {
@@ -231,7 +237,9 @@ const CoordinatesDisplay: React.FC<CoordinatesDisplayProps> = ({
   coordinates,
   precision = 6
 }) => {
-  if (!coordinates) return null
+  if (!coordinates) {
+    return null
+  }
 
   const formatCoordinate = (coord: number, isLatitude: boolean) => {
     const absolute = Math.abs(coord)
@@ -239,10 +247,10 @@ const CoordinatesDisplay: React.FC<CoordinatesDisplayProps> = ({
     const minutesNotTruncated = (absolute - degrees) * 60
     const minutes = Math.floor(minutesNotTruncated)
     const seconds = ((minutesNotTruncated - minutes) * 60).toFixed(precision)
-    const direction = isLatitude 
+    const direction = isLatitude
       ? (coord >= 0 ? 'N' : 'S')
       : (coord >= 0 ? 'E' : 'W')
-    
+
     return `${degrees}°${minutes}'${seconds}"${direction}`
   }
 
@@ -268,7 +276,9 @@ const BearingDisplay: React.FC<BearingDisplayProps> = ({
   bearing,
   animated = false
 }) => {
-  if (!bearing) return null
+  if (!bearing) {
+    return null
+  }
 
   const getBearingDirection = (b: number) => {
     const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
@@ -303,7 +313,9 @@ const SpeedDisplay: React.FC<SpeedDisplayProps> = ({
   unitSystem,
   animated = false
 }) => {
-  if (!speed) return null
+  if (!speed) {
+    return null
+  }
 
   const formatSpeed = (s: number) => {
     if (unitSystem === 'metric') {
@@ -340,7 +352,9 @@ const AccuracyDisplay: React.FC<AccuracyDisplayProps> = ({
   accuracy,
   unitSystem
 }) => {
-  if (!accuracy) return null
+  if (!accuracy) {
+    return null
+  }
 
   const formatAccuracy = (a: number) => {
     if (unitSystem === 'metric') {
@@ -578,8 +592,8 @@ const SpatialInformationOverlay: React.FC<SpatialInformationOverlayProps> = ({
 
 SpatialInformationOverlay.displayName = 'SpatialInformationOverlay'
 
-export { 
-  SpatialInformationOverlay, 
+export {
+  SpatialInformationOverlay,
   spatialOverlayVariants,
   DistanceIndicator,
   TimeEstimate,

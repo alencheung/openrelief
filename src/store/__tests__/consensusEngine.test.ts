@@ -170,7 +170,7 @@ describe('Consensus Engine', () => {
 
       const votes: VoteResult[] = highTrustUsers.map(user => ({
         userId: user.id,
-        voteType: 'confirm' as const,
+        voteType: 'confirm',
         trustWeight: user.trustScore,
         timestamp: new Date().toISOString(),
       }))

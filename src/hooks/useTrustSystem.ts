@@ -1,6 +1,6 @@
 /**
  * Hook for Trust System Operations
- * 
+ *
  * This hook provides access to trust system functionality including
  * score calculations, user permissions, and consensus participation.
  */
@@ -54,7 +54,7 @@ export interface ConsensusParticipation {
 // Main hook for trust system operations
 export const useTrustSystem = (userId?: string) => {
   const queryClient = useQueryClient()
-  
+
   // Store-based state
   const currentUserScore = useTrustScore(userId)
   const thresholds = useTrustThresholds()
@@ -66,14 +66,16 @@ export const useTrustSystem = (userId?: string) => {
     canConfirm: currentUserScore !== null && currentUserScore.score >= thresholds.confirming,
     canDispute: currentUserScore !== null && currentUserScore.score >= thresholds.disputing,
     isHighTrust: currentUserScore !== null && currentUserScore.score >= thresholds.highTrust,
-    isLowTrust: currentUserScore !== null && currentUserScore.score <= thresholds.lowTrust,
+    isLowTrust: currentUserScore !== null && currentUserScore.score <= thresholds.lowTrust
   }
 
   // Query for trust score calculation
   const { data: trustCalculation, isLoading: isCalculating } = useQuery({
     queryKey: ['trust-calculation', userId],
     queryFn: async () => {
-      if (!userId) return null
+      if (!userId) {
+        return null
+      }
 
       const { data, error } = await supabase
         .from('trust_scores')
@@ -84,26 +86,32 @@ export const useTrustSystem = (userId?: string) => {
         .eq('user_id', userId)
         .single()
 
-      if (error) throw error
-      if (!data) return null
+      if (error) {
+        throw error
+      }
+      if (!data) {
+        return null
+      }
 
       return {
         userId: data.user_id,
         score: data.overall_score,
         confidence: calculateConfidence(data),
         factors: data.trust_score_factors,
-        lastUpdated: data.last_updated,
+        lastUpdated: data.last_updated
       }
     },
     enabled: !!userId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000 // 5 minutes
   })
 
   // Query for trust history
   const { data: trustHistory, isLoading: isLoadingHistory } = useQuery({
     queryKey: ['trust-history', userId],
     queryFn: async () => {
-      if (!userId) return []
+      if (!userId) {
+        return []
+      }
 
       const { data, error } = await supabase
         .from('trust_score_history')
@@ -112,18 +120,22 @@ export const useTrustSystem = (userId?: string) => {
         .order('created_at', { ascending: false })
         .limit(50)
 
-      if (error) throw error
+      if (error) {
+        throw error
+      }
       return data || []
     },
     enabled: !!userId,
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 10 * 60 * 1000 // 10 minutes
   })
 
   // Query for consensus participation
   const { data: consensusParticipation, isLoading: isLoadingConsensus } = useQuery({
     queryKey: ['consensus-participation', userId],
     queryFn: async () => {
-      if (!userId) return []
+      if (!userId) {
+        return []
+      }
 
       const { data, error } = await supabase
         .from('event_confirmations')
@@ -135,7 +147,9 @@ export const useTrustSystem = (userId?: string) => {
         .order('created_at', { ascending: false })
         .limit(100)
 
-      if (error) throw error
+      if (error) {
+        throw error
+      }
       return data?.map(confirmation => ({
         eventId: confirmation.event_id,
         userId: confirmation.user_id,
@@ -144,12 +158,12 @@ export const useTrustSystem = (userId?: string) => {
         timestamp: confirmation.created_at,
         location: confirmation.location ? {
           lat: parseFloat(confirmation.location.split(' ')[1]),
-          lng: parseFloat(confirmation.location.split(' ')[0]),
-        } : undefined,
+          lng: parseFloat(confirmation.location.split(' ')[0])
+        } : undefined
       })) || []
     },
     enabled: !!userId,
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 2 * 60 * 1000 // 2 minutes
   })
 
   // Mutation for updating trust score
@@ -159,7 +173,7 @@ export const useTrustSystem = (userId?: string) => {
       eventId,
       actionType,
       outcome,
-      metadata,
+      metadata
     }: {
       userId: string
       eventId: string
@@ -183,7 +197,7 @@ export const useTrustSystem = (userId?: string) => {
     },
     onError: (error) => {
       console.error('Failed to update trust score:', error)
-    },
+    }
   })
 
   // Mutation for recalculating trust score
@@ -196,15 +210,17 @@ export const useTrustSystem = (userId?: string) => {
     },
     onError: (error) => {
       console.error('Failed to recalculate trust score:', error)
-    },
+    }
   })
 
   // Helper function to calculate confidence
   const calculateConfidence = (trustData: any): number => {
-    if (!trustData.trust_score_factors) return 0.5
+    if (!trustData.trust_score_factors) {
+      return 0.5
+    }
 
     const factors = trustData.trust_score_factors
-    const factorCount = Object.keys(factors).filter(key => 
+    const factorCount = Object.keys(factors).filter(key =>
       factors[key] !== null && factors[key] !== undefined
     ).length
 
@@ -213,8 +229,8 @@ export const useTrustSystem = (userId?: string) => {
 
     // Adjust based on consistency
     const consistency = 1 - Math.abs(
-      (factors.reporting_accuracy || 0.5) - 
-      (factors.confirmation_accuracy || 0.5)
+      (factors.reporting_accuracy || 0.5)
+      - (factors.confirmation_accuracy || 0.5)
     )
 
     return Math.max(0.1, Math.min(0.95, (dataCompleteness + consistency) / 2))
@@ -222,23 +238,37 @@ export const useTrustSystem = (userId?: string) => {
 
   // Helper function to get trust trend
   const getTrustTrend = (history: TrustHistoryEntry[]): 'increasing' | 'decreasing' | 'stable' => {
-    if (history.length < 2) return 'stable'
+    if (history.length < 2) {
+      return 'stable'
+    }
 
     const recent = history.slice(0, 10) // Last 10 entries
     const scoreChanges = recent.map(entry => entry.change)
     const averageChange = scoreChanges.reduce((sum, change) => sum + change, 0) / scoreChanges.length
 
-    if (averageChange > 0.01) return 'increasing'
-    if (averageChange < -0.01) return 'decreasing'
+    if (averageChange > 0.01) {
+      return 'increasing'
+    }
+    if (averageChange < -0.01) {
+      return 'decreasing'
+    }
     return 'stable'
   }
 
   // Helper function to get trust level
   const getTrustLevel = (score: number): 'very-low' | 'low' | 'medium' | 'high' | 'very-high' => {
-    if (score < 0.2) return 'very-low'
-    if (score < 0.4) return 'low'
-    if (score < 0.6) return 'medium'
-    if (score < 0.8) return 'high'
+    if (score < 0.2) {
+      return 'very-low'
+    }
+    if (score < 0.4) {
+      return 'low'
+    }
+    if (score < 0.6) {
+      return 'medium'
+    }
+    if (score < 0.8) {
+      return 'high'
+    }
     return 'very-high'
   }
 
@@ -249,23 +279,23 @@ export const useTrustSystem = (userId?: string) => {
     trustCalculation,
     trustHistory,
     consensusParticipation,
-    
+
     // Loading states
     isCalculating,
     isLoadingHistory,
     isLoadingConsensus,
-    
+
     // Mutations
     updateTrustMutation,
     recalculateTrustMutation,
-    
+
     // Helper functions
     calculateConfidence,
     getTrustTrend,
     getTrustLevel,
-    
+
     // Store actions
-    trustActions,
+    trustActions
   }
 }
 

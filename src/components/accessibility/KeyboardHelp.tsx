@@ -6,22 +6,27 @@ import { cn } from '@/lib/utils'
 import { X, Keyboard, ChevronDown, ChevronUp } from 'lucide-react'
 
 export interface KeyboardShortcut {
+
   /**
    * Key combination (e.g., 'Ctrl+K', 'Enter', 'Space')
    */
   keys: string
+
   /**
    * Description of what the shortcut does
    */
   description: string
+
   /**
    * Category of shortcut
    */
   category?: string
+
   /**
    * Whether shortcut is currently enabled
    */
   enabled?: boolean
+
   /**
    * Additional context or notes
    */
@@ -29,30 +34,37 @@ export interface KeyboardShortcut {
 }
 
 export interface KeyboardHelpProps {
+
   /**
    * Array of keyboard shortcuts to display
    */
   shortcuts: KeyboardShortcut[]
+
   /**
    * Whether the help dialog is open
    */
   isOpen: boolean
+
   /**
    * Callback when help dialog is opened/closed
    */
   onOpenChange: (open: boolean) => void
+
   /**
    * CSS class name for the dialog
    */
   className?: string
+
   /**
    * Whether to show categories
    */
   showCategories?: boolean
+
   /**
    * Whether to show search functionality
    */
   showSearch?: boolean
+
   /**
    * Whether to group shortcuts by category
    */
@@ -61,7 +73,7 @@ export interface KeyboardHelpProps {
 
 /**
  * KeyboardHelp component for displaying keyboard shortcuts
- * 
+ *
  * Provides an accessible dialog that lists all available keyboard
  * shortcuts in the application, helping users discover and learn
  * navigation and interaction methods.
@@ -73,7 +85,7 @@ export function KeyboardHelp({
   className,
   showCategories = true,
   showSearch = true,
-  groupByCategory = true,
+  groupByCategory = true
 }: KeyboardHelpProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
@@ -81,7 +93,7 @@ export function KeyboardHelp({
   // Register keyboard shortcut to open help
   const { registerShortcut } = useKeyboardNavigation({
     enabled: true,
-    enableHelp: false, // We'll handle this ourselves
+    enableHelp: false // We'll handle this ourselves
   })
 
   // Register '?' shortcut to open help
@@ -90,14 +102,14 @@ export function KeyboardHelp({
       key: '?',
       action: () => onOpenChange(true),
       description: 'Open keyboard shortcuts help',
-      preventDefault: true,
+      preventDefault: true
     })
 
     registerShortcut({
       key: 'Escape',
       action: () => isOpen && onOpenChange(false),
       description: 'Close keyboard shortcuts help',
-      preventDefault: true,
+      preventDefault: true
     })
   }, [registerShortcut, isOpen, onOpenChange])
 
@@ -110,11 +122,11 @@ export function KeyboardHelp({
     }
 
     const query = searchQuery.toLowerCase()
-    return shortcuts.filter(shortcut => 
-      shortcut.keys.toLowerCase().includes(query) ||
-      shortcut.description.toLowerCase().includes(query) ||
-      shortcut.category?.toLowerCase().includes(query) ||
-      shortcut.context?.toLowerCase().includes(query)
+    return shortcuts.filter(shortcut =>
+      shortcut.keys.toLowerCase().includes(query)
+      || shortcut.description.toLowerCase().includes(query)
+      || shortcut.category?.toLowerCase().includes(query)
+      || shortcut.context?.toLowerCase().includes(query)
     )
   }, [shortcuts, searchQuery])
 
@@ -123,7 +135,7 @@ export function KeyboardHelp({
    */
   const groupedShortcuts = useCallback(() => {
     const filtered = filteredShortcuts()
-    
+
     if (!groupByCategory) {
       return { '': filtered }
     }
@@ -171,7 +183,7 @@ export function KeyboardHelp({
    */
   const formatKeys = (keys: string): JSX.Element => {
     const parts = keys.split('+').map(part => part.trim())
-    
+
     return (
       <span className="inline-flex items-center gap-1">
         {parts.map((part, index) => (
@@ -352,25 +364,25 @@ export const defaultShortcuts: KeyboardShortcut[] = [
     keys: 'Tab',
     description: 'Navigate to next focusable element',
     category: 'Navigation',
-    enabled: true,
+    enabled: true
   },
   {
     keys: 'Shift+Tab',
     description: 'Navigate to previous focusable element',
     category: 'Navigation',
-    enabled: true,
+    enabled: true
   },
   {
     keys: 'Arrow Keys',
     description: 'Navigate within lists, menus, and grids',
     category: 'Navigation',
-    enabled: true,
+    enabled: true
   },
   {
     keys: 'Home/End',
     description: 'Jump to first/last item in list',
     category: 'Navigation',
-    enabled: true,
+    enabled: true
   },
 
   // Map controls
@@ -378,27 +390,27 @@ export const defaultShortcuts: KeyboardShortcut[] = [
     keys: '+/=',
     description: 'Zoom in on map',
     category: 'Map Controls',
-    enabled: true,
+    enabled: true
   },
   {
     keys: '-/_',
     description: 'Zoom out on map',
     category: 'Map Controls',
-    enabled: true,
+    enabled: true
   },
   {
     keys: 'Arrow Keys',
     description: 'Pan map',
     category: 'Map Controls',
     enabled: true,
-    context: 'When map is focused',
+    context: 'When map is focused'
   },
   {
     keys: 'C',
     description: 'Center map on user location',
     category: 'Map Controls',
     enabled: true,
-    context: 'When map is focused',
+    context: 'When map is focused'
   },
 
   // Emergency reporting
@@ -406,14 +418,14 @@ export const defaultShortcuts: KeyboardShortcut[] = [
     keys: 'Ctrl+E',
     description: 'Open emergency report form',
     category: 'Emergency Reporting',
-    enabled: true,
+    enabled: true
   },
   {
     keys: 'Ctrl+S',
     description: 'Submit emergency report',
     category: 'Emergency Reporting',
     enabled: true,
-    context: 'When in emergency form',
+    context: 'When in emergency form'
   },
 
   // General
@@ -421,20 +433,20 @@ export const defaultShortcuts: KeyboardShortcut[] = [
     keys: 'Escape',
     description: 'Close dialogs, cancel actions',
     category: 'General',
-    enabled: true,
+    enabled: true
   },
   {
     keys: 'Enter/Space',
     description: 'Activate buttons, links, and controls',
     category: 'General',
-    enabled: true,
+    enabled: true
   },
   {
     keys: '?',
     description: 'Show keyboard shortcuts help',
     category: 'General',
-    enabled: true,
-  },
+    enabled: true
+  }
 ]
 
 /**
@@ -467,6 +479,6 @@ export function useKeyboardHelp(shortcuts: KeyboardShortcut[] = defaultShortcuts
     open,
     close,
     toggle,
-    shortcuts,
+    shortcuts
   }
 }

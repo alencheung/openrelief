@@ -1,6 +1,6 @@
 /**
  * Performance Integration Layer
- * 
+ *
  * This module provides a unified interface for all performance optimization components,
  * enabling seamless coordination between monitoring, optimization, testing, and alerting systems.
  * It serves as the central hub for performance management in OpenRelief.
@@ -422,7 +422,9 @@ class PerformanceIntegration {
    * Activate emergency mode
    */
   async activateEmergencyMode(reason?: string): Promise<void> {
-    if (this.emergencyMode) return
+    if (this.emergencyMode) {
+      return
+    }
 
     try {
       this.emergencyMode = true
@@ -453,7 +455,9 @@ class PerformanceIntegration {
    * Deactivate emergency mode
    */
   async deactivateEmergencyMode(reason?: string): Promise<void> {
-    if (!this.emergencyMode) return
+    if (!this.emergencyMode) {
+      return
+    }
 
     try {
       this.emergencyMode = false
@@ -502,7 +506,7 @@ class PerformanceIntegration {
       this.status.metrics.testsRun++
 
       console.log(`[PerformanceIntegration] Performance test completed: ${testScenario}`)
-      
+
       return loadTestId
     } catch (error) {
       console.error('[PerformanceIntegration] Performance test failed:', error)
@@ -568,7 +572,7 @@ class PerformanceIntegration {
    * Get active alerts
    */
   getActiveAlerts(): IntegrationAlert[] {
-    return this.alertHistory.filter(alert => 
+    return this.alertHistory.filter(alert =>
       alert.timestamp.getTime() > (Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
     )
   }
@@ -578,16 +582,16 @@ class PerformanceIntegration {
    */
   updateConfig(config: Partial<PerformanceIntegrationConfig>): void {
     this.config = { ...this.config, ...config }
-    
+
     // Restart components if needed
     if (config.monitoring) {
       this.restartMonitoring()
     }
-    
+
     if (config.optimization) {
       this.restartOptimization()
     }
-    
+
     if (config.testing) {
       this.restartTesting()
     }
@@ -1006,7 +1010,9 @@ class PerformanceIntegration {
   }
 
   private startIntegration(): void {
-    if (!this.config.enabled) return
+    if (!this.config.enabled) {
+      return
+    }
 
     this.startMonitoring()
     this.startOptimization()
@@ -1016,7 +1022,9 @@ class PerformanceIntegration {
   }
 
   private startMonitoring(): void {
-    if (!this.config.monitoring.enabled) return
+    if (!this.config.monitoring.enabled) {
+      return
+    }
 
     this.monitoringTimer = setInterval(async () => {
       await this.collectMetrics()
@@ -1028,7 +1036,9 @@ class PerformanceIntegration {
   }
 
   private startOptimization(): void {
-    if (!this.config.optimization.enabled) return
+    if (!this.config.optimization.enabled) {
+      return
+    }
 
     this.optimizationTimer = setInterval(async () => {
       if (this.config.optimization.autoOptimize) {
@@ -1040,7 +1050,9 @@ class PerformanceIntegration {
   }
 
   private startTesting(): void {
-    if (!this.config.testing.enabled) return
+    if (!this.config.testing.enabled) {
+      return
+    }
 
     this.testingTimer = setInterval(async () => {
       if (this.shouldRunScheduledTest()) {
@@ -1052,7 +1064,9 @@ class PerformanceIntegration {
   }
 
   private startReporting(): void {
-    if (!this.config.reporting.enabled) return
+    if (!this.config.reporting.enabled) {
+      return
+    }
 
     this.reportingTimer = setInterval(async () => {
       if (this.shouldGenerateReport()) {
@@ -1082,7 +1096,7 @@ class PerformanceIntegration {
   private async collectMetrics(): Promise<void> {
     try {
       const now = Date.now()
-      
+
       // Update uptime
       this.status.metrics.uptime = now
 
@@ -1100,7 +1114,6 @@ class PerformanceIntegration {
 
       // Update aggregated metrics
       this.updateAggregatedMetrics()
-
     } catch (error) {
       console.error('[PerformanceIntegration] Failed to collect metrics:', error)
     }
@@ -1120,7 +1133,7 @@ class PerformanceIntegration {
     const dashboard = this.components.get('performanceDashboard')
     if (dashboard && typeof dashboard.getData === 'function') {
       const data = dashboard.getData()
-      
+
       this.status.metrics.totalRequests = data.api.requestsPerSecond * this.status.metrics.uptime / 1000
       this.status.metrics.averageResponseTime = data.api.averageResponseTime
       this.status.metrics.errorRate = data.api.errorRate
@@ -1130,7 +1143,9 @@ class PerformanceIntegration {
   private async checkAlertConditions(): Promise<void> {
     try {
       for (const rule of this.config.alerting.rules) {
-        if (!rule.enabled) continue
+        if (!rule.enabled) {
+          continue
+        }
 
         const shouldAlert = await this.evaluateAlertCondition(rule.condition)
         if (shouldAlert) {
@@ -1145,7 +1160,9 @@ class PerformanceIntegration {
   private async evaluateAlertCondition(condition: AlertCondition): Promise<boolean> {
     // Get current metric value
     const currentValue = await this.getMetricValue(condition.metric)
-    if (currentValue === null) return false
+    if (currentValue === null) {
+      return false
+    }
 
     // Evaluate condition
     switch (condition.operator) {
@@ -1169,7 +1186,7 @@ class PerformanceIntegration {
       const dashboard = this.components.get('performanceDashboard')
       if (dashboard && typeof dashboard.getData === 'function') {
         const data = dashboard.getData()
-        
+
         switch (metric) {
           case 'response_time_p95':
             return data.api.p95ResponseTime
@@ -1209,7 +1226,6 @@ class PerformanceIntegration {
       }
 
       this.status.metrics.alertsGenerated++
-
     } catch (error) {
       console.error(`[PerformanceIntegration] Failed to trigger alert for rule ${rule.name}:`, error)
     }
@@ -1251,7 +1267,6 @@ class PerformanceIntegration {
       }
 
       this.status.components = components
-
     } catch (error) {
       console.error('[PerformanceIntegration] Failed to update component status:', error)
     }
@@ -1260,7 +1275,9 @@ class PerformanceIntegration {
   private async checkOptimizationOpportunities(): Promise<void> {
     try {
       for (const strategy of this.config.optimization.strategies) {
-        if (!strategy.enabled) continue
+        if (!strategy.enabled) {
+          continue
+        }
 
         const shouldApply = this.checkOptimizationConditions(strategy.conditions)
         if (shouldApply) {
@@ -1276,14 +1293,20 @@ class PerformanceIntegration {
     // Check if all conditions are met
     for (const condition of conditions) {
       const currentValue = this.getMetricValue(condition.metric)
-      if (currentValue === null) return false
+      if (currentValue === null) {
+        return false
+      }
 
       switch (condition.operator) {
         case '>':
-          if (currentValue <= condition.threshold) return false
+          if (currentValue <= condition.threshold) {
+            return false
+          }
           break
         case '<':
-          if (currentValue >= condition.threshold) return false
+          if (currentValue >= condition.threshold) {
+            return false
+          }
           break
         default:
           return false
@@ -1351,15 +1374,17 @@ class PerformanceIntegration {
   }
 
   private shouldRunScheduledTest(): boolean {
-    if (!this.config.testing.schedule.enabled) return false
+    if (!this.config.testing.schedule.enabled) {
+      return false
+    }
 
     const now = new Date()
     const scheduleTime = this.config.testing.schedule.time
     const [hours, minutes] = scheduleTime.split(':').map(Number)
-    
+
     const scheduledTime = new Date(now)
     scheduledTime.setHours(hours, minutes, 0, 0)
-    
+
     // Check if we're within 1 hour of scheduled time
     const timeDiff = Math.abs(now.getTime() - scheduledTime.getTime())
     return timeDiff < 3600000 // 1 hour
@@ -1378,15 +1403,17 @@ class PerformanceIntegration {
   }
 
   private shouldGenerateReport(): boolean {
-    if (!this.config.reporting.schedule.enabled) return false
+    if (!this.config.reporting.schedule.enabled) {
+      return false
+    }
 
     const now = new Date()
     const scheduleTime = this.config.reporting.schedule.time
     const [hours, minutes] = scheduleTime.split(':').map(Number)
-    
+
     const scheduledTime = new Date(now)
     scheduledTime.setHours(hours, minutes, 0, 0)
-    
+
     // Check if we're within 1 hour of scheduled time
     const timeDiff = Math.abs(now.getTime() - scheduledTime.getTime())
     return timeDiff < 3600000 // 1 hour
@@ -1396,7 +1423,7 @@ class PerformanceIntegration {
     try {
       // Generate daily performance report
       const report = await this.generateReport('performance')
-      
+
       // Send to recipients
       for (const recipient of this.config.reporting.recipients) {
         await this.sendReport(report, recipient)
@@ -1423,7 +1450,6 @@ class PerformanceIntegration {
 
       // Notify components
       await this.notifyEmergencyModeChange(true)
-
     } catch (error) {
       console.error('[PerformanceIntegration] Failed to apply emergency optimizations:', error)
     }
@@ -1432,7 +1458,7 @@ class PerformanceIntegration {
   private async revertEmergencyOptimizations(): Promise<void> {
     try {
       // Revert emergency optimizations
-      const emergencyOptimizations = this.optimizationHistory.filter(o => 
+      const emergencyOptimizations = this.optimizationHistory.filter(o =>
         o.status === 'active' && this.isEmergencyOptimization(o.type)
       )
 
@@ -1442,7 +1468,6 @@ class PerformanceIntegration {
 
       // Notify components
       await this.notifyEmergencyModeChange(false)
-
     } catch (error) {
       console.error('[PerformanceIntegration] Failed to revert emergency optimizations:', error)
     }
@@ -1450,7 +1475,9 @@ class PerformanceIntegration {
 
   private isEmergencyOptimization(type: string): boolean {
     const emergencyLevel = this.config.emergencyMode.priorityLevels.find(l => l.name === 'emergency')
-    if (!emergencyLevel) return false
+    if (!emergencyLevel) {
+      return false
+    }
 
     return emergencyLevel.optimizations.includes(type)
   }
@@ -1475,7 +1502,6 @@ class PerformanceIntegration {
       } else if (dashboard && typeof dashboard.deactivateEmergencyMode === 'function' && !active) {
         await dashboard.deactivateEmergencyMode()
       }
-
     } catch (error) {
       console.error('[PerformanceIntegration] Failed to notify emergency mode change:', error)
     }
@@ -1489,15 +1515,15 @@ class PerformanceIntegration {
     }
 
     this.alertHistory.push(integrationAlert)
-    
+
     // Update status
     this.status.alerts.recent = this.alertHistory.slice(-10)
-    this.status.alerts.active = this.alertHistory.filter(a => 
+    this.status.alerts.active = this.alertHistory.filter(a =>
       a.timestamp.getTime() > (Date.now() - 24 * 60 * 60 * 1000)
     ).length
-    this.status.alerts.critical = this.alertHistory.filter(a => 
-      a.severity === 'critical' && 
-      a.timestamp.getTime() > (Date.now() - 24 * 60 * 60 * 1000)
+    this.status.alerts.critical = this.alertHistory.filter(a =>
+      a.severity === 'critical'
+      && a.timestamp.getTime() > (Date.now() - 24 * 60 * 60 * 1000)
     ).length
 
     // Send to dashboard
@@ -1518,10 +1544,10 @@ class PerformanceIntegration {
     // Update optimization status
     this.status.optimizations.total = this.optimizationHistory.filter(o => o.status === 'active').length
     this.status.optimizations.byType = {}
-    
+
     for (const optimization of this.optimizationHistory.filter(o => o.status === 'active')) {
-      this.status.optimizations.byType[optimization.type] = 
-        (this.status.optimizations.byType[optimization.type] || 0) + 1
+      this.status.optimizations.byType[optimization.type]
+        = (this.status.optimizations.byType[optimization.type] || 0) + 1
     }
 
     this.status.optimizations.details = this.optimizationHistory.filter(o => o.status === 'active')
@@ -1559,7 +1585,7 @@ class PerformanceIntegration {
   private async generateTestingReport(): Promise<any> {
     const loadTesting = this.components.get('loadTestingFramework')
     const regressionTesting = this.components.get('performanceRegressionTesting')
-    
+
     return {
       loadTesting: loadTesting ? loadTesting.getTestHistory() : [],
       regressionTesting: regressionTesting ? regressionTesting.getTestHistory() : []
