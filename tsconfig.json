@@ -84,6 +84,8 @@
     "build",
     "coverage",
     "cypress",
-    "playwright"
+    "playwright",
+    "**/test-utils/**",
+    "**/node_modules/**"
   ]
 }
