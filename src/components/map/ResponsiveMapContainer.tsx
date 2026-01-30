@@ -171,7 +171,7 @@ export const responsiveUtils = {
   isLandscape: (orientation: Orientation) => orientation === 'landscape',
   
   // Get responsive value based on breakpoint
-  getResponsiveValue: <T>(breakpoint: Breakpoint, values: {
+  getResponsiveValue: <T,>(breakpoint: Breakpoint, values: {
     mobile?: T
     tablet?: T
     desktop: T
