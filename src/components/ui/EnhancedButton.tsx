@@ -124,10 +124,12 @@ const EnhancedButton = React.forwardRef<HTMLButtonElement, EnhancedButtonProps>(
         
         {/* Loading state */}
         {loading && (
-          <span className="sr-only" aria-live="polite">
-            Loading, please wait
-          </span>
-          <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+          <>
+            <span className="sr-only" aria-live="polite">
+              Loading, please wait
+            </span>
+            <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+          </>
         )}
         
         {/* Left icon */}

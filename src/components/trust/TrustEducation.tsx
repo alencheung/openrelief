@@ -86,7 +86,7 @@ export function TrustEducation({ compact = false, className }: TrustEducationPro
             <Card>
               <CardContent className="p-4">
                 <AlertTriangle className="h-8 w-8 text-red-600 mb-2" />
-                <h5 className="font-medium">Low Trust (<30%)</h5>
+                <h5 className="font-medium">Low Trust (&lt;30%)</h5>
                 <p className="text-xs text-muted-foreground">
                   Limited reporting capabilities, reports require verification
                 </p>
