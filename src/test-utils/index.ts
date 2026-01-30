@@ -30,7 +30,7 @@ const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
   return (
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+        <ThemeProvider className="class" defaultTheme="light" enableSystem={false}>
           <ConfigProvider>
             <Providers>
               {children}
