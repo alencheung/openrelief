@@ -76,7 +76,7 @@ export interface UserBehavior {
   }
   networkConditions: {
     fast3G: number // percentage
-    4G: number // percentage
+"4G": number // percentage
     broadband: number // percentage
   }
 }
@@ -444,7 +444,7 @@ class LoadTestingFramework {
         },
         networkConditions: {
           fast3G: 10,
-          4G: 40,
+"4G": 40,
           broadband: 50
         }
       },
