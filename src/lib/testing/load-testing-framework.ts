@@ -508,7 +508,7 @@ class LoadTestingFramework {
         pageViews: { min: 1, max: 3 },
         interactionPattern: 'aggressive',
         deviceDistribution: { mobile: 70, desktop: 25, tablet: 5 },
-        networkConditions: { fast3G: 5, 4G: 35, broadband: 60 }
+        networkConditions: { fast3G: 5, "4G": 35, broadband: 60 }
       },
       performanceTargets: {
         responseTime: { p50: 50, p95: 100, p99: 200 },
@@ -572,7 +572,7 @@ class LoadTestingFramework {
         pageViews: { min: 10, max: 30 },
         interactionPattern: 'realistic',
         deviceDistribution: { mobile: 50, desktop: 40, tablet: 10 },
-        networkConditions: { fast3G: 15, 4G: 45, broadband: 40 }
+        networkConditions: { fast3G: 15, "4G": 45, broadband: 40 }
       },
       performanceTargets: {
         responseTime: { p50: 150, p95: 300, p99: 600 },
@@ -684,7 +684,7 @@ class LoadTestingFramework {
     return 'desktop'
   }
 
-  private selectNetworkType(distribution: { fast3G: number; 4G: number; broadband: number }): 'fast3G' | '4G' | 'broadband' {
+  private selectNetworkType(distribution: { fast3G: number; "4G": number; broadband: number }): 'fast3G' | '4G' | 'broadband' {
     const random = Math.random() * 100
     if (random < distribution.fast3G) return 'fast3G'
     if (random < distribution.fast3G + distribution['4G']) return '4G'
