@@ -1,17 +1,17 @@
 /**
  * Privacy Education and Guidance Component for OpenRelief
- * 
+ *
  * This component provides interactive privacy tutorials, data minimization recommendations,
  * privacy setting suggestions, risk assessment tools, and best practices guidance.
  */
 
-'use client';
+'use client'
 
-import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { StatusIndicator } from '@/components/ui/StatusIndicator';
-import { useToast } from '@/hooks/use-toast';
+import React, { useState, useEffect } from 'react'
+import { Card } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
+import { StatusIndicator } from '@/components/ui/StatusIndicator'
+import { useToast } from '@/hooks/use-toast'
 import {
   BookOpen,
   Shield,
@@ -50,94 +50,102 @@ import {
   Share2,
   Filter,
   Search
-} from 'lucide-react';
+} from 'lucide-react'
 
 // Types for privacy education
 interface Tutorial {
-  id: string;
-  title: string;
-  description: string;
-  duration: number; // in minutes
-  category: 'basics' | 'advanced' | 'emergency' | 'legal';
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
-  completed: boolean;
-  progress: number; // 0-100
-  topics: string[];
-  interactiveElements: boolean;
-  lastAccessed?: Date;
+  id: string
+  title: string
+  description: string
+  duration: number // in minutes
+  category: 'basics' | 'advanced' | 'emergency' | 'legal'
+  difficulty: 'beginner' | 'intermediate' | 'advanced'
+  completed: boolean
+  progress: number // 0-100
+  topics: string[]
+  interactiveElements: boolean
+  lastAccessed?: Date
 }
 
 interface Recommendation {
-  id: string;
-  type: 'data_minimization' | 'privacy_setting' | 'security_enhancement';
-  title: string;
-  description: string;
-  impact: 'low' | 'medium' | 'high';
-  effort: 'easy' | 'moderate' | 'difficult';
-  priority: number; // 1-10
-  implemented: boolean;
-  savings: string; // Time, data, or cost savings
+  id: string
+  type: 'data_minimization' | 'privacy_setting' | 'security_enhancement'
+  title: string
+  description: string
+  impact: 'low' | 'medium' | 'high'
+  effort: 'easy' | 'moderate' | 'difficult'
+  priority: number // 1-10
+  implemented: boolean
+  savings: string // Time, data, or cost savings
 }
 
 interface RiskAssessment {
-  id: string;
-  category: 'data_sharing' | 'location_privacy' | 'communication' | 'third_party' | 'legal_compliance';
-  title: string;
-  description: string;
-  currentRisk: 'low' | 'medium' | 'high' | 'critical';
+  id: string
+  category:
+    | 'data_sharing'
+    | 'location_privacy'
+    | 'communication'
+    | 'third_party'
+    | 'legal_compliance'
+  title: string
+  description: string
+  currentRisk: 'low' | 'medium' | 'high' | 'critical'
   factors: {
-    name: string;
-    risk: 'low' | 'medium' | 'high' | 'critical';
-    weight: number;
-    description: string;
-  }[];
-  score: number; // 0-100
-  recommendations: string[];
-  lastAssessed: Date;
+    name: string
+    risk: 'low' | 'medium' | 'high' | 'critical'
+    weight: number
+    description: string
+  }[]
+  score: number // 0-100
+  recommendations: string[]
+  lastAssessed: Date
 }
 
 interface BestPractice {
-  id: string;
-  category: 'data_protection' | 'emergency_response' | 'digital_security' | 'user_rights';
-  title: string;
-  description: string;
-  importance: 'essential' | 'recommended' | 'advanced';
+  id: string
+  category: 'data_protection' | 'emergency_response' | 'digital_security' | 'user_rights'
+  title: string
+  description: string
+  importance: 'essential' | 'recommended' | 'advanced'
   implementation: {
-    steps: string[];
-    timeRequired: string;
-    difficulty: 'easy' | 'moderate' | 'difficult';
-    resources: string[];
-  };
-  benefits: string[];
-  examples: string[];
-  relatedTopics: string[];
+    steps: string[]
+    timeRequired: string
+    difficulty: 'easy' | 'moderate' | 'difficult'
+    resources: string[]
+  }
+  benefits: string[]
+  examples: string[]
+  relatedTopics: string[]
 }
 
 interface PrivacySetting {
-  id: string;
-  name: string;
-  description: string;
-  currentValue: boolean | string | number;
-  recommendedValue: boolean | string | number;
-  impact: 'low' | 'medium' | 'high';
-  category: 'security' | 'privacy' | 'data_management';
-  lastReviewed: Date;
+  id: string
+  name: string
+  description: string
+  currentValue: boolean | string | number
+  recommendedValue: boolean | string | number
+  impact: 'low' | 'medium' | 'high'
+  category: 'security' | 'privacy' | 'data_management'
+  lastReviewed: Date
 }
 
 const PrivacyEducation: React.FC = () => {
-  const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<'tutorials' | 'recommendations' | 'assessment' | 'practices' | 'settings'>('tutorials');
-  const [selectedTutorial, setSelectedTutorial] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterCategory, setFilterCategory] = useState<string>('all');
-  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast()
+  const [activeTab, setActiveTab] = useState<
+    'tutorials' | 'recommendations' | 'assessment' | 'practices' | 'settings'
+  >('tutorials')
+  const [selectedTutorial, setSelectedTutorial] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filterCategory, setFilterCategory] = useState<string>('all')
+  const [isLoading, setIsLoading] = useState(false)
 
   // Mock data for demonstration
   const [tutorials, setTutorials] = useState<Tutorial[]>([
     {
       id: 'tut-001',
       title: 'Privacy Basics: Understanding Your Rights',
-      description: 'Learn about your fundamental privacy rights and how they apply to emergency response services',
+      description:
+        'Learn about your fundamental privacy rights and how they apply to emergency response services',
       duration: 15,
       category: 'basics',
       difficulty: 'beginner',
@@ -150,7 +158,8 @@ const PrivacyEducation: React.FC = () => {
     {
       id: 'tut-002',
       title: 'Location Privacy Zones Setup',
-      description: 'Step-by-step guide to setting up and managing privacy zones for different locations',
+      description:
+        'Step-by-step guide to setting up and managing privacy zones for different locations',
       duration: 20,
       category: 'advanced',
       difficulty: 'intermediate',
@@ -163,7 +172,8 @@ const PrivacyEducation: React.FC = () => {
     {
       id: 'tut-003',
       title: 'Emergency Data Sharing Configuration',
-      description: 'Configure how your data is shared during emergency situations and with trusted partners',
+      description:
+        'Configure how your data is shared during emergency situations and with trusted partners',
       duration: 12,
       category: 'emergency',
       difficulty: 'beginner',
@@ -176,7 +186,8 @@ const PrivacyEducation: React.FC = () => {
     {
       id: 'tut-004',
       title: 'Legal Rights Exercise Guide',
-      description: 'Complete guide to exercising your GDPR rights including access, correction, and erasure',
+      description:
+        'Complete guide to exercising your GDPR rights including access, correction, and erasure',
       duration: 25,
       category: 'legal',
       difficulty: 'advanced',
@@ -186,14 +197,15 @@ const PrivacyEducation: React.FC = () => {
       interactiveElements: true,
       lastAccessed: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000)
     }
-  ]);
+  ])
 
   const [recommendations, setRecommendations] = useState<Recommendation[]>([
     {
       id: 'rec-001',
       type: 'data_minimization',
       title: 'Enable Location Precision Reduction',
-      description: 'Reduce location precision from exact coordinates to neighborhood-level for better privacy',
+      description:
+        'Reduce location precision from exact coordinates to neighborhood-level for better privacy',
       impact: 'low',
       effort: 'easy',
       priority: 8,
@@ -204,7 +216,8 @@ const PrivacyEducation: React.FC = () => {
       id: 'rec-002',
       type: 'privacy_setting',
       title: 'Activate Differential Privacy',
-      description: 'Enable mathematical noise addition to protect your data while maintaining utility',
+      description:
+        'Enable mathematical noise addition to protect your data while maintaining utility',
       impact: 'medium',
       effort: 'moderate',
       priority: 9,
@@ -233,7 +246,7 @@ const PrivacyEducation: React.FC = () => {
       implemented: false,
       savings: 'Reduces data storage costs by 40%'
     }
-  ]);
+  ])
 
   const [riskAssessments, setRiskAssessments] = useState<RiskAssessment[]>([
     {
@@ -318,14 +331,15 @@ const PrivacyEducation: React.FC = () => {
       ],
       lastAssessed: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
     }
-  ]);
+  ])
 
   const [bestPractices, setBestPractices] = useState<BestPractice[]>([
     {
       id: 'prac-001',
       category: 'data_protection',
       title: 'Data Minimization Principle',
-      description: 'Collect and process only the minimum amount of personal data necessary for emergency response',
+      description:
+        'Collect and process only the minimum amount of personal data necessary for emergency response',
       importance: 'essential',
       implementation: {
         steps: [
@@ -355,7 +369,8 @@ const PrivacyEducation: React.FC = () => {
       id: 'prac-002',
       category: 'emergency_response',
       title: 'Emergency Data Prioritization',
-      description: 'Establish clear protocols for prioritizing and sharing different types of emergency data',
+      description:
+        'Establish clear protocols for prioritizing and sharing different types of emergency data',
       importance: 'essential',
       implementation: {
         steps: [
@@ -366,7 +381,11 @@ const PrivacyEducation: React.FC = () => {
         ],
         timeRequired: '1-2 weeks',
         difficulty: 'moderate',
-        resources: ['Emergency response expertise', 'Protocol development', 'Trust management system']
+        resources: [
+          'Emergency response expertise',
+          'Protocol development',
+          'Trust management system'
+        ]
       },
       benefits: [
         'Faster emergency response',
@@ -385,7 +404,8 @@ const PrivacyEducation: React.FC = () => {
       id: 'prac-003',
       category: 'digital_security',
       title: 'Multi-Factor Authentication',
-      description: 'Implement multiple layers of authentication to protect account access and sensitive data',
+      description:
+        'Implement multiple layers of authentication to protect account access and sensitive data',
       importance: 'recommended',
       implementation: {
         steps: [
@@ -411,7 +431,7 @@ const PrivacyEducation: React.FC = () => {
       ],
       relatedTopics: ['Account Security', 'Authentication', 'Digital Protection']
     }
-  ]);
+  ])
 
   const [privacySettings, setPrivacySettings] = useState<PrivacySetting[]>([
     {
@@ -444,63 +464,68 @@ const PrivacyEducation: React.FC = () => {
       category: 'security',
       lastReviewed: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
     }
-  ]);
+  ])
 
   // Start tutorial
   const startTutorial = (id: string) => {
-    setSelectedTutorial(id);
-  };
+    setSelectedTutorial(id)
+  }
 
   // Implement recommendation
   const implementRecommendation = async (id: string) => {
-    setIsLoading(true);
+    setIsLoading(true)
     try {
       // In a real implementation, apply the recommendation
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
       setRecommendations(prev =>
-        prev.map(rec =>
-          rec.id === id 
-            ? { ...rec, implemented: true }
-            : rec
-        )
-      );
-      
+        prev.map(rec => (rec.id === id ? { ...rec, implemented: true } : rec))
+      )
+
       toast({
-        title: "Recommendation Applied",
-        description: "The privacy recommendation has been successfully implemented."
-      });
+        title: 'Recommendation Applied',
+        description: 'The privacy recommendation has been successfully implemented.'
+      })
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to apply recommendation",
-        variant: "destructive"
-      });
+        title: 'Error',
+        description: 'Failed to apply recommendation',
+        variant: 'destructive'
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   // Get risk color
   const getRiskColor = (risk: string) => {
     switch (risk) {
-      case 'low': return 'green';
-      case 'medium': return 'yellow';
-      case 'high': return 'orange';
-      case 'critical': return 'red';
-      default: return 'gray';
+      case 'low':
+        return 'green'
+      case 'medium':
+        return 'yellow'
+      case 'high':
+        return 'orange'
+      case 'critical':
+        return 'red'
+      default:
+        return 'gray'
     }
-  };
+  }
 
   // Get importance color
   const getImportanceColor = (importance: string) => {
     switch (importance) {
-      case 'essential': return 'red';
-      case 'recommended': return 'blue';
-      case 'advanced': return 'green';
-      default: return 'gray';
+      case 'essential':
+        return 'red'
+      case 'recommended':
+        return 'blue'
+      case 'advanced':
+        return 'green'
+      default:
+        return 'gray'
     }
-  };
+  }
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
@@ -516,23 +541,31 @@ const PrivacyEducation: React.FC = () => {
 
       {/* Tab Navigation */}
       <div className="flex space-x-1 border-b overflow-x-auto">
-        {(['tutorials', 'recommendations', 'assessment', 'practices', 'settings'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 font-medium capitalize whitespace-nowrap ${
-              activeTab === tab
-                ? 'border-b-2 border-blue-500 text-blue-600'
-                : 'text-gray-600 hover:text-gray-800'
-            }`}
-          >
-            {tab === 'tutorials' ? 'Interactive Tutorials' :
-             tab === 'recommendations' ? 'Smart Recommendations' :
-             tab === 'assessment' ? 'Risk Assessment' :
-             tab === 'practices' ? 'Best Practices' :
-             tab === 'settings' ? 'Privacy Settings' : tab}
-          </button>
-        ))}
+        {(['tutorials', 'recommendations', 'assessment', 'practices', 'settings'] as const).map(
+          tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 font-medium capitalize whitespace-nowrap ${
+                activeTab === tab
+                  ? 'border-b-2 border-blue-500 text-blue-600'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              {tab === 'tutorials'
+                ? 'Interactive Tutorials'
+                : tab === 'recommendations'
+                  ? 'Smart Recommendations'
+                  : tab === 'assessment'
+                    ? 'Risk Assessment'
+                    : tab === 'practices'
+                      ? 'Best Practices'
+                      : tab === 'settings'
+                        ? 'Privacy Settings'
+                        : tab}
+            </button>
+          )
+        )}
       </div>
 
       {/* Tutorials Tab */}
@@ -546,7 +579,7 @@ const PrivacyEducation: React.FC = () => {
                   <Filter className="h-4 w-4 text-gray-600" />
                   <select
                     value={filterCategory}
-                    onChange={(e) => setFilterCategory(e.target.value)}
+                    onChange={e => setFilterCategory(e.target.value)}
                     className="border rounded px-2 py-1 text-sm"
                   >
                     <option value="all">All Categories</option>
@@ -556,31 +589,34 @@ const PrivacyEducation: React.FC = () => {
                     <option value="legal">Legal</option>
                   </select>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
                   <Search className="h-4 w-4 text-gray-600" />
                   <input
                     type="text"
                     placeholder="Search tutorials..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={e => setSearchQuery(e.target.value)}
                     className="border rounded px-2 py-1 text-sm"
                   />
                 </div>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {tutorials
-                .filter(tutorial => 
-                  (filterCategory === 'all' || tutorial.category === filterCategory) &&
-                  (searchQuery === '' || 
-                    tutorial.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    tutorial.description.toLowerCase().includes(searchQuery.toLowerCase())
-                  )
+                .filter(
+                  tutorial =>
+                    (filterCategory === 'all' || tutorial.category === filterCategory) &&
+                    (searchQuery === '' ||
+                      tutorial.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      tutorial.description.toLowerCase().includes(searchQuery.toLowerCase()))
                 )
-                .map((tutorial) => (
-                  <div key={tutorial.id} className="border rounded-lg p-4 hover:shadow-lg transition-shadow">
+                .map(tutorial => (
+                  <div
+                    key={tutorial.id}
+                    className="border rounded-lg p-4 hover:shadow-lg transition-shadow"
+                  >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center space-x-2">
                         <div className="p-2 bg-blue-100 rounded-lg">
@@ -609,40 +645,38 @@ const PrivacyEducation: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    
+
                     <p className="text-gray-600 mb-3">{tutorial.description}</p>
-                    
+
                     <div className="mb-3">
                       <h4 className="font-medium mb-2">Topics Covered:</h4>
                       <div className="flex flex-wrap gap-2">
-                        {tutorial.topics.map((topic) => (
-                          <span key={topic} className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">
+                        {tutorial.topics.map(topic => (
+                          <span
+                            key={topic}
+                            className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs"
+                          >
                             {topic}
                           </span>
                         ))}
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center justify-between">
-                      <div className="text-sm text-gray-600">
-                        Progress: {tutorial.progress}%
-                      </div>
+                      <div className="text-sm text-gray-600">Progress: {tutorial.progress}%</div>
                       <div className="flex items-center space-x-2">
                         <div className="w-20 bg-gray-200 rounded-full h-2">
-                          <div 
+                          <div
                             className="bg-blue-600 h-2 rounded-full"
                             style={{ width: `${tutorial.progress}%` }}
                           ></div>
                         </div>
-                        <Button 
-                          size="sm" 
-                          onClick={() => startTutorial(tutorial.id)}
-                        >
+                        <Button size="sm" onClick={() => startTutorial(tutorial.id)}>
                           {tutorial.completed ? 'Review' : 'Start'}
                         </Button>
                       </div>
                     </div>
-                    
+
                     {tutorial.lastAccessed && (
                       <div className="text-xs text-gray-500 pt-2 border-t">
                         Last accessed: {tutorial.lastAccessed.toLocaleDateString()}
@@ -666,9 +700,9 @@ const PrivacyEducation: React.FC = () => {
                 <span>AI-powered suggestions</span>
               </div>
             </div>
-            
+
             <div className="space-y-4">
-              {recommendations.map((rec) => (
+              {recommendations.map(rec => (
                 <div key={rec.id} className="border rounded-lg p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center space-x-2">
@@ -697,9 +731,9 @@ const PrivacyEducation: React.FC = () => {
                       )}
                     </div>
                   </div>
-                  
+
                   <p className="text-gray-800 mb-3">{rec.description}</p>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-3">
                     <div>
                       <span className="text-gray-600">Effort Level:</span>
@@ -714,10 +748,10 @@ const PrivacyEducation: React.FC = () => {
                       <div className="font-medium">{rec.savings}</div>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between pt-3 border-t">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => implementRecommendation(rec.id)}
                       disabled={rec.implemented || isLoading}
@@ -725,9 +759,7 @@ const PrivacyEducation: React.FC = () => {
                       {rec.implemented ? 'View Details' : 'Implement'}
                     </Button>
                     {rec.savings && (
-                      <span className="text-sm text-green-600 font-medium">
-                        Save {rec.savings}
-                      </span>
+                      <span className="text-sm text-green-600 font-medium">Save {rec.savings}</span>
                     )}
                   </div>
                 </div>
@@ -748,9 +780,9 @@ const PrivacyEducation: React.FC = () => {
                 <span>Identify and mitigate risks</span>
               </div>
             </div>
-            
+
             <div className="space-y-4">
-              {riskAssessments.map((assessment) => (
+              {riskAssessments.map(assessment => (
                 <div key={assessment.id} className="border rounded-lg p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center space-x-2">
@@ -761,45 +793,57 @@ const PrivacyEducation: React.FC = () => {
                           <span className="text-sm text-gray-600">Risk Score:</span>
                           <div className="flex items-center space-x-2">
                             <span className="text-2xl font-bold">{assessment.score}</span>
-                            <StatusIndicator status={getRiskColor(assessment.currentRisk)} text={assessment.currentRisk} />
+                            <StatusIndicator
+                              status={getRiskColor(assessment.currentRisk)}
+                              text={assessment.currentRisk}
+                            />
                           </div>
                         </div>
                       </div>
                     </div>
                     <div className="text-sm text-gray-600">
-                      {assessment.lastAssessed && `Last assessed: ${formatTimeAgo(assessment.lastAssessed)}`}
+                      {assessment.lastAssessed &&
+                        `Last assessed: ${formatTimeAgo(assessment.lastAssessed)}`}
                     </div>
                   </div>
-                  
+
                   <p className="text-gray-800 mb-3">{assessment.description}</p>
-                  
+
                   <div className="mb-3">
                     <h4 className="font-medium mb-2">Risk Factors:</h4>
                     <div className="space-y-2">
                       {assessment.factors.map((factor, index) => (
-                        <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                          <span className="text-sm font-medium">{factor.name}</span>
-                          <div className="flex items-center space-x-2">
-                            <div className="w-20 bg-gray-200 rounded-full h-2">
-                              <div 
-                                className={`h-2 rounded-full ${
-                                  factor.risk === 'critical' ? 'bg-red-600' :
-                                  factor.risk === 'high' ? 'bg-orange-600' :
-                                  factor.risk === 'medium' ? 'bg-yellow-600' : 'bg-green-600'
-                                }`}
-                                style={{ width: `${factor.weight * 100}%` }}
-                              ></div>
+                        <div key={index} className="space-y-1">
+                          <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                            <span className="text-sm font-medium">{factor.name}</span>
+                            <div className="flex items-center space-x-2">
+                              <div className="w-20 bg-gray-200 rounded-full h-2">
+                                <div
+                                  className={`h-2 rounded-full ${
+                                    factor.risk === 'critical'
+                                      ? 'bg-red-600'
+                                      : factor.risk === 'high'
+                                        ? 'bg-orange-600'
+                                        : factor.risk === 'medium'
+                                          ? 'bg-yellow-600'
+                                          : 'bg-green-600'
+                                  }`}
+                                  style={{ width: `${factor.weight * 100}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-sm text-gray-600">{factor.weight}</span>
+                              <StatusIndicator
+                                status={getRiskColor(factor.risk)}
+                                text={factor.risk}
+                              />
                             </div>
-                            <span className="text-sm text-gray-600">{factor.weight}</span>
-                            <StatusIndicator status={getRiskColor(factor.risk)} text={factor.risk} />
                           </div>
+                          <div className="flex-1 text-sm text-gray-600">{factor.description}</div>
                         </div>
-                        <div className="flex-1 text-sm text-gray-600">{factor.description}</div>
-                      </div>
-                    ))}
+                      ))}
                     </div>
                   </div>
-                  
+
                   <div className="mb-3">
                     <h4 className="font-medium mb-2">Recommendations:</h4>
                     <div className="space-y-1">
@@ -830,9 +874,9 @@ const PrivacyEducation: React.FC = () => {
                 <span>Industry standards & guidelines</span>
               </div>
             </div>
-            
+
             <div className="space-y-6">
-              {bestPractices.map((practice) => (
+              {bestPractices.map(practice => (
                 <div key={practice.id} className="border rounded-lg p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center space-x-2">
@@ -843,7 +887,10 @@ const PrivacyEducation: React.FC = () => {
                           <span className="text-sm text-gray-600 capitalize">
                             {practice.importance}
                           </span>
-                          <StatusIndicator status={getImportanceColor(practice.importance)} text={practice.importance} />
+                          <StatusIndicator
+                            status={getImportanceColor(practice.importance)}
+                            text={practice.importance}
+                          />
                         </div>
                       </div>
                     </div>
@@ -851,9 +898,9 @@ const PrivacyEducation: React.FC = () => {
                       Category: {practice.category.replace('_', ' ')}
                     </div>
                   </div>
-                  
+
                   <p className="text-gray-800 mb-3">{practice.description}</p>
-                  
+
                   <div className="mb-3">
                     <h4 className="font-medium mb-2">Implementation:</h4>
                     <div className="space-y-2 text-sm">
@@ -863,13 +910,18 @@ const PrivacyEducation: React.FC = () => {
                       </div>
                       <div className="mb-2">
                         <span className="text-gray-600">Difficulty:</span>
-                        <div className="font-medium capitalize">{practice.implementation.difficulty}</div>
+                        <div className="font-medium capitalize">
+                          {practice.implementation.difficulty}
+                        </div>
                       </div>
                       <div>
                         <span className="text-gray-600">Resources:</span>
                         <div className="flex flex-wrap gap-1 mt-1">
-                          {practice.implementation.resources.map((resource) => (
-                            <span key={resource} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                          {practice.implementation.resources.map(resource => (
+                            <span
+                              key={resource}
+                              className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs"
+                            >
                               {resource}
                             </span>
                           ))}
@@ -877,11 +929,11 @@ const PrivacyEducation: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="mb-3">
                     <h4 className="font-medium mb-2">Benefits:</h4>
                     <div className="space-y-1">
-                      {practice.benefits.map((benefit) => (
+                      {practice.benefits.map(benefit => (
                         <div key={benefit} className="flex items-start space-x-2">
                           <ThumbsUp className="h-4 w-4 text-green-600 mt-1" />
                           <span className="text-sm">{benefit}</span>
@@ -889,11 +941,11 @@ const PrivacyEducation: React.FC = () => {
                       ))}
                     </div>
                   </div>
-                  
+
                   <div className="mb-3">
                     <h4 className="font-medium mb-2">Examples:</h4>
                     <div className="space-y-1">
-                      {practice.examples.map((example) => (
+                      {practice.examples.map(example => (
                         <div key={example} className="flex items-start space-x-2">
                           <Star className="h-4 w-4 text-blue-600 mt-1" />
                           <span className="text-sm">{example}</span>
@@ -901,7 +953,7 @@ const PrivacyEducation: React.FC = () => {
                       ))}
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between pt-3 border-t">
                     <Button variant="outline" size="sm">
                       <ExternalLink className="h-4 w-4 mr-2" />
@@ -910,8 +962,11 @@ const PrivacyEducation: React.FC = () => {
                     <div className="flex items-center space-x-2">
                       <span className="text-sm text-gray-600">Related:</span>
                       <div className="flex flex-wrap gap-1">
-                        {practice.relatedTopics.map((topic) => (
-                          <span key={topic} className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">
+                        {practice.relatedTopics.map(topic => (
+                          <span
+                            key={topic}
+                            className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs"
+                          >
                             {topic}
                           </span>
                         ))}
@@ -936,9 +991,9 @@ const PrivacyEducation: React.FC = () => {
                 <span>Optimize your configuration</span>
               </div>
             </div>
-            
+
             <div className="space-y-4">
-              {privacySettings.map((setting) => (
+              {privacySettings.map(setting => (
                 <div key={setting.id} className="border rounded-lg p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center space-x-2">
@@ -949,31 +1004,34 @@ const PrivacyEducation: React.FC = () => {
                       </div>
                     </div>
                     <div className="text-sm text-gray-600">
-                      {setting.lastReviewed && `Last reviewed: ${formatTimeAgo(setting.lastReviewed)}`}
+                      {setting.lastReviewed &&
+                        `Last reviewed: ${formatTimeAgo(setting.lastReviewed)}`}
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-3">
                     <div>
                       <span className="text-gray-600">Current Value:</span>
                       <div className="font-medium">
-                        {typeof setting.currentValue === 'boolean' 
-                          ? (setting.currentValue ? 'Enabled' : 'Disabled')
-                          : setting.currentValue.toString()
-                        }
+                        {typeof setting.currentValue === 'boolean'
+                          ? setting.currentValue
+                            ? 'Enabled'
+                            : 'Disabled'
+                          : setting.currentValue.toString()}
                       </div>
                     </div>
                     <div>
                       <span className="text-gray-600">Recommended:</span>
                       <div className="font-medium text-green-600">
-                        {typeof setting.recommendedValue === 'boolean' 
-                          ? (setting.recommendedValue ? 'Enable' : 'Disable')
-                          : setting.recommendedValue.toString()
-                        }
+                        {typeof setting.recommendedValue === 'boolean'
+                          ? setting.recommendedValue
+                            ? 'Enable'
+                            : 'Disable'
+                          : setting.recommendedValue.toString()}
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between pt-3 border-t">
                     <Button variant="outline" size="sm">
                       <Eye className="h-4 w-4 mr-2" />
@@ -981,7 +1039,10 @@ const PrivacyEducation: React.FC = () => {
                     </Button>
                     <div className="flex items-center space-x-2">
                       <span className="text-sm text-gray-600">Impact:</span>
-                      <StatusIndicator status={getRiskColor(setting.impact)} text={setting.impact} />
+                      <StatusIndicator
+                        status={getRiskColor(setting.impact)}
+                        text={setting.impact}
+                      />
                     </div>
                   </div>
                 </div>
@@ -991,7 +1052,7 @@ const PrivacyEducation: React.FC = () => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default PrivacyEducation;
+export default PrivacyEducation

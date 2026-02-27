@@ -122,7 +122,7 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       signUp: async (email: string, password: string) => {
-        console.log('🔍 DEBUG: signUp called in authStore', { email, passwordLength: password.length })
+        console.log('🔍 DEBUG: signUp called in authStore', { email })
         set({ isLoading: true, error: null })
 
         try {
@@ -226,28 +226,29 @@ export const useAuthStore = create<AuthStore>()(
     }),
     {
       name: 'auth-storage',
-      partialize: (state) => ({
+      partialize: state => ({
         user: state.user,
-        isAuthenticated: state.isAuthenticated,
-        session: state.session
+        isAuthenticated: state.isAuthenticated
       })
     }
   )
 )
 
 // Selectors for common use cases
-export const useAuth = () => useAuthStore(state => ({
-  user: state.user,
-  isAuthenticated: state.isAuthenticated,
-  isLoading: state.isLoading,
-  error: state.error
-}))
+export const useAuth = () =>
+  useAuthStore(state => ({
+    user: state.user,
+    isAuthenticated: state.isAuthenticated,
+    isLoading: state.isLoading,
+    error: state.error
+  }))
 
-export const useAuthActions = () => useAuthStore(state => ({
-  signIn: state.signIn,
-  signUp: state.signUp,
-  signOut: state.signOut,
-  updateUser: state.updateUser,
-  clearError: state.clearError,
-  setLoading: state.setLoading
-}))
+export const useAuthActions = () =>
+  useAuthStore(state => ({
+    signIn: state.signIn,
+    signUp: state.signUp,
+    signOut: state.signOut,
+    updateUser: state.updateUser,
+    clearError: state.clearError,
+    setLoading: state.setLoading
+  }))

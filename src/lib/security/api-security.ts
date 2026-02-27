@@ -1,6 +1,6 @@
 /**
  * API Endpoint Security System
- * 
+ *
  * This module provides comprehensive security for API endpoints including:
  * - Request validation and sanitization
  * - Authentication and authorization
@@ -67,16 +67,16 @@ interface APISecurityResult {
 export class APISecurityManager {
   private static instance: APISecurityManager
   private securityConfigs: Map<string, APISecurityConfig> = new Map()
-  
+
   private constructor() {}
-  
+
   static getInstance(): APISecurityManager {
     if (!APISecurityManager.instance) {
       APISecurityManager.instance = new APISecurityManager()
     }
     return APISecurityManager.instance
   }
-  
+
   /**
    * Register security configuration for an endpoint
    */
@@ -88,7 +88,7 @@ export class APISecurityManager {
       ...config
     })
   }
-  
+
   /**
    * Secure API endpoint handler
    */
@@ -99,18 +99,18 @@ export class APISecurityManager {
   ): Promise<NextResponse> {
     const pathname = new URL(request.url).pathname
     const securityConfig = config || this.securityConfigs.get(pathname) || {}
-    
+
     try {
       // Perform security checks
       const securityResult = await this.performSecurityChecks(request, securityConfig)
-      
+
       if (!securityResult.allowed) {
         return securityResult.response!
       }
-      
+
       // Execute the actual handler
       const response = await handler(request, securityResult.securityContext!)
-      
+
       // Apply security to response
       return this.secureResponse(response, securityConfig, securityResult.securityContext!)
     } catch (error) {
@@ -118,7 +118,7 @@ export class APISecurityManager {
       return this.createErrorResponse('Internal security error', 500, 'security_error')
     }
   }
-  
+
   /**
    * Perform comprehensive security checks
    */
@@ -129,7 +129,7 @@ export class APISecurityManager {
     const pathname = new URL(request.url).pathname
     const ipAddress = this.getClientIP(request)
     const userAgent = request.headers.get('user-agent') || 'unknown'
-    
+
     // Initialize security context
     const securityContext: SecurityContext = {
       authenticated: false,
@@ -139,7 +139,7 @@ export class APISecurityManager {
       ipAddress,
       userAgent
     }
-    
+
     // Check CORS if enabled
     if (config.enableCORS) {
       const corsCheck = this.checkCORS(request, config)
@@ -150,7 +150,7 @@ export class APISecurityManager {
         }
       }
     }
-    
+
     // Extract and validate session
     if (config.requireAuth) {
       const authResult = await this.authenticateRequest(request)
@@ -160,44 +160,57 @@ export class APISecurityManager {
           response: authResult.response
         }
       }
-      
+
       Object.assign(securityContext, authResult.securityContext!)
     }
-    
+
     // Check MFA requirement
     if (config.requireMFA && securityContext.authenticated && !securityContext.mfaVerified) {
       return {
         allowed: false,
-        response: this.createErrorResponse('Multi-factor authentication required', 401, 'mfa_required')
+        response: this.createErrorResponse(
+          'Multi-factor authentication required',
+          401,
+          'mfa_required'
+        )
       }
     }
-    
+
     // Check trust score requirement
-    if (config.minTrustScore && securityContext.trustScore && securityContext.trustScore < config.minTrustScore) {
+    if (
+      config.minTrustScore &&
+      securityContext.trustScore &&
+      securityContext.trustScore < config.minTrustScore
+    ) {
       return {
         allowed: false,
         response: this.createErrorResponse('Insufficient trust score', 403, 'insufficient_trust')
       }
     }
-    
+
     // Check role-based access
     if (config.allowedRoles && securityContext.permissions.length > 0) {
-      const hasRequiredRole = config.allowedRoles.some(role => 
+      const hasRequiredRole = config.allowedRoles.some(role =>
         securityContext.permissions.includes(role)
       )
-      
+
       if (!hasRequiredRole) {
         return {
           allowed: false,
-          response: this.createErrorResponse('Insufficient permissions', 403, 'insufficient_permissions')
+          response: this.createErrorResponse(
+            'Insufficient permissions',
+            403,
+            'insufficient_permissions'
+          )
+        }
       }
     }
-    
+
     // Validate input if schema provided
     let validationResult: ValidationResult | undefined
     if (config.inputSchema) {
       validationResult = await validateApiInput(config.inputSchema)(request)
-      
+
       if (!validationResult.isValid) {
         await this.logInputValidationFailure(request, validationResult)
         return {
@@ -209,7 +222,7 @@ export class APISecurityManager {
         }
       }
     }
-    
+
     // Sybil attack prevention
     if (config.validateSybil && securityContext.userId) {
       const sybilCheck = await this.checkSybilAttack(securityContext.userId, request)
@@ -219,13 +232,13 @@ export class APISecurityManager {
           response: sybilCheck.response
         }
       }
-      
+
       securityContext.riskLevel = sybilCheck.riskLevel
     }
-    
+
     // Log the request
     await this.logSecureRequest(request, securityContext, config)
-    
+
     return {
       allowed: true,
       securityContext,
@@ -233,7 +246,7 @@ export class APISecurityManager {
       securityFlags: validationResult?.securityFlags.map(flag => flag.type) || []
     }
   }
-  
+
   /**
    * Authenticate request
    */
@@ -243,22 +256,23 @@ export class APISecurityManager {
     securityContext?: SecurityContext
   }> {
     // Get session token from headers or cookies
-    const sessionToken = request.headers.get('authorization')?.replace('Bearer ', '') ||
-                         request.cookies.get('session-token')?.value
-    
+    const sessionToken =
+      request.headers.get('authorization')?.replace('Bearer ', '') ||
+      request.cookies.get('session-token')?.value
+
     if (!sessionToken) {
       return {
         allowed: false,
         response: this.createErrorResponse('Authentication required', 401, 'auth_required')
       }
     }
-    
+
     // Validate session
     const sessionValidation = await authSecurityManager.validateSession(sessionToken, {
       ipAddress: this.getClientIP(request),
       userAgent: request.headers.get('user-agent') || 'unknown'
     })
-    
+
     if (!sessionValidation.valid) {
       if (sessionValidation.requiresReauth) {
         return {
@@ -266,29 +280,29 @@ export class APISecurityManager {
           response: this.createErrorResponse('Re-authentication required', 401, 'reauth_required')
         }
       }
-      
+
       return {
         allowed: false,
         response: this.createErrorResponse('Invalid session', 401, 'invalid_session')
       }
     }
-    
+
     const session = sessionValidation.session!
-    
+
     // Get user permissions and trust score
     const { data: userProfile, error } = await supabaseAdmin
       .from('user_profiles')
       .select('trust_score, role, permissions')
       .eq('user_id', session.userId)
       .single()
-    
+
     if (error || !userProfile) {
       return {
         allowed: false,
         response: this.createErrorResponse('User profile not found', 404, 'user_not_found')
       }
     }
-    
+
     const securityContext: SecurityContext = {
       authenticated: true,
       userId: session.userId,
@@ -300,28 +314,31 @@ export class APISecurityManager {
       ipAddress: session.ipAddress,
       userAgent: session.userAgent
     }
-    
+
     // Check for security flags in session
     if (session.securityFlags.length > 0) {
       await this.handleSessionSecurityFlags(session, securityContext)
     }
-    
+
     return {
       allowed: true,
       securityContext
     }
   }
-  
+
   /**
    * Check CORS
    */
-  private checkCORS(request: NextRequest, config: APISecurityConfig): {
+  private checkCORS(
+    request: NextRequest,
+    config: APISecurityConfig
+  ): {
     allowed: boolean
     response?: NextResponse
   } {
     const origin = request.headers.get('origin')
     const method = request.method
-    
+
     // Check if origin is allowed
     if (origin && config.allowedOrigins) {
       if (!config.allowedOrigins.includes(origin)) {
@@ -331,7 +348,7 @@ export class APISecurityManager {
         }
       }
     }
-    
+
     // Check if method is allowed
     const allowedMethods = ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
     if (!allowedMethods.includes(method)) {
@@ -340,14 +357,17 @@ export class APISecurityManager {
         response: this.createErrorResponse('Method not allowed', 405, 'method_not_allowed')
       }
     }
-    
+
     return { allowed: true }
   }
-  
+
   /**
    * Check for Sybil attack patterns
    */
-  private async checkSybilAttack(userId: string, request: NextRequest): Promise<{
+  private async checkSybilAttack(
+    userId: string,
+    request: NextRequest
+  ): Promise<{
     allowed: boolean
     response?: NextResponse
     riskLevel?: 'low' | 'medium' | 'high' | 'critical'
@@ -355,7 +375,7 @@ export class APISecurityManager {
     try {
       // Analyze user behavior
       const userRisk = sybilPreventionEngine.getUserRiskAssessment(userId)
-      
+
       // Block high-risk users
       if (userRisk.riskLevel === 'critical') {
         await securityMonitor.createAlert(
@@ -365,23 +385,31 @@ export class APISecurityManager {
           `Risk score: ${userRisk.riskScore}, Flags: ${userRisk.flags.length}`,
           'api_security'
         )
-        
+
         return {
           allowed: false,
-          response: this.createErrorResponse('Access denied due to security concerns', 403, 'high_risk_user'),
+          response: this.createErrorResponse(
+            'Access denied due to security concerns',
+            403,
+            'high_risk_user'
+          ),
           riskLevel: userRisk.riskLevel
         }
       }
-      
+
       // Require additional verification for high-risk users
       if (userRisk.riskLevel === 'high') {
         return {
           allowed: false,
-          response: this.createErrorResponse('Additional verification required', 401, 'additional_verification'),
+          response: this.createErrorResponse(
+            'Additional verification required',
+            401,
+            'additional_verification'
+          ),
           riskLevel: userRisk.riskLevel
         }
       }
-      
+
       return {
         allowed: true,
         riskLevel: userRisk.riskLevel
@@ -392,11 +420,14 @@ export class APISecurityManager {
       return { allowed: true }
     }
   }
-  
+
   /**
    * Handle session security flags
    */
-  private async handleSessionSecurityFlags(session: any, securityContext: SecurityContext): Promise<void> {
+  private async handleSessionSecurityFlags(
+    session: any,
+    securityContext: SecurityContext
+  ): Promise<void> {
     for (const flag of session.securityFlags) {
       switch (flag.type) {
         case 'ip_change':
@@ -408,7 +439,7 @@ export class APISecurityManager {
             'api_security'
           )
           break
-          
+
         case 'device_change':
           await securityMonitor.createAlert(
             'suspicious_login' as any,
@@ -418,7 +449,7 @@ export class APISecurityManager {
             'api_security'
           )
           break
-          
+
         case 'concurrent_sessions':
           await securityMonitor.createAlert(
             'suspicious_activity' as any,
@@ -431,7 +462,7 @@ export class APISecurityManager {
       }
     }
   }
-  
+
   /**
    * Log input validation failures
    */
@@ -453,7 +484,7 @@ export class APISecurityManager {
       }
     )
   }
-  
+
   /**
    * Log secure request
    */
@@ -474,17 +505,17 @@ export class APISecurityManager {
       riskLevel: securityContext.riskLevel,
       timestamp: new Date().toISOString()
     }
-    
+
     await securityMonitor.createAlert(
       'api_access' as any,
-      config.auditLevel || 'medium' as any,
+      config.auditLevel || ('medium' as any),
       'API access logged',
       `${request.method} ${request.url}`,
       'api_security',
       auditData
     )
   }
-  
+
   /**
    * Apply security to response
    */
@@ -498,24 +529,27 @@ export class APISecurityManager {
     response.headers.set('X-Frame-Options', 'DENY')
     response.headers.set('X-XSS-Protection', '1; mode=block')
     response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
-    
+
     // Set cache control
     if (config.cacheControl) {
       response.headers.set('Cache-Control', config.cacheControl)
     }
-    
+
     // Add security context headers (for debugging)
     if (process.env.NODE_ENV === 'development') {
-      response.headers.set('X-Security-Context', JSON.stringify({
-        authenticated: securityContext.authenticated,
-        trustScore: securityContext.trustScore,
-        riskLevel: securityContext.riskLevel
-      }))
+      response.headers.set(
+        'X-Security-Context',
+        JSON.stringify({
+          authenticated: securityContext.authenticated,
+          trustScore: securityContext.trustScore,
+          riskLevel: securityContext.riskLevel
+        })
+      )
     }
-    
+
     return response
   }
-  
+
   /**
    * Create standardized error response
    */
@@ -531,10 +565,10 @@ export class APISecurityManager {
       timestamp: new Date().toISOString(),
       ...(details && { details })
     }
-    
+
     return NextResponse.json(errorResponse, { status })
   }
-  
+
   /**
    * Get client IP address
    */
@@ -542,7 +576,7 @@ export class APISecurityManager {
     const forwardedFor = request.headers.get('x-forwarded-for')
     const realIP = request.headers.get('x-real-ip')
     const cfConnectingIP = request.headers.get('cf-connecting-ip')
-    
+
     if (forwardedFor) {
       return forwardedFor.split(',')[0].trim()
     }
@@ -552,7 +586,7 @@ export class APISecurityManager {
     if (cfConnectingIP) {
       return cfConnectingIP
     }
-    
+
     return request.ip || 'unknown'
   }
 }
@@ -562,14 +596,14 @@ export class APISecurityManager {
  */
 export function secureAPI(config?: APISecurityConfig) {
   const securityManager = APISecurityManager.getInstance()
-  
-  return function(target: any, propertyName: string, descriptor: PropertyDescriptor) {
+
+  return function (target: any, propertyName: string, descriptor: PropertyDescriptor) {
     const method = descriptor.value
-    
-    descriptor.value = async function(request: NextRequest, ...args: any[]) {
+
+    descriptor.value = async function (request: NextRequest, ...args: any[]) {
       return securityManager.secureEndpoint(request, method.bind(this, request, ...args), config)
     }
-    
+
     return descriptor
   }
 }
@@ -579,7 +613,7 @@ export function secureAPI(config?: APISecurityConfig) {
  */
 export function withAPISecurity(config?: APISecurityConfig) {
   const securityManager = APISecurityManager.getInstance()
-  
+
   return (handler: (req: NextRequest, context: SecurityContext) => Promise<NextResponse>) => {
     return (request: NextRequest) => {
       return securityManager.secureEndpoint(request, handler, config)
@@ -593,9 +627,13 @@ export const API_SECURITY_CONFIGS = {
   public: {
     requireAuth: false,
     enableCORS: true,
+    allowedOrigins: process.env.ALLOWED_ORIGINS?.split(',') || [
+      'https://openrelief.org',
+      'https://staging.openrelief.org'
+    ],
     auditLevel: 'low' as const
   },
-  
+
   // Authentication endpoints
   auth: {
     requireAuth: false,
@@ -603,15 +641,13 @@ export const API_SECURITY_CONFIGS = {
     rateLimitTier: 'auth',
     auditLevel: 'high' as const,
     inputSchema: {
-      email: [
-        { name: 'email', required: true, type: 'email', maxLength: 254 }
-      ],
+      email: [{ name: 'email', required: true, type: 'email', maxLength: 254 }],
       password: [
         { name: 'password', required: true, type: 'string', minLength: 12, maxLength: 128 }
       ]
     }
   },
-  
+
   // Emergency endpoints
   emergency: {
     requireAuth: true,
@@ -622,20 +658,30 @@ export const API_SECURITY_CONFIGS = {
     auditLevel: 'high' as const,
     inputSchema: {
       title: [
-        { name: 'title', required: true, type: 'string', minLength: 5, maxLength: 200, sanitize: true }
+        {
+          name: 'title',
+          required: true,
+          type: 'string',
+          minLength: 5,
+          maxLength: 200,
+          sanitize: true
+        }
       ],
       description: [
-        { name: 'description', required: true, type: 'string', minLength: 10, maxLength: 2000, sanitize: true }
+        {
+          name: 'description',
+          required: true,
+          type: 'string',
+          minLength: 10,
+          maxLength: 2000,
+          sanitize: true
+        }
       ],
-      severity: [
-        { name: 'severity', required: true, type: 'number', min: 1, max: 10 }
-      ],
-      location: [
-        { name: 'location', required: true, type: 'object' }
-      ]
+      severity: [{ name: 'severity', required: true, type: 'number', min: 1, max: 10 }],
+      location: [{ name: 'location', required: true, type: 'object' }]
     }
   },
-  
+
   // Admin endpoints
   admin: {
     requireAuth: true,
@@ -645,7 +691,7 @@ export const API_SECURITY_CONFIGS = {
     auditLevel: 'critical' as const,
     validateSybil: true
   },
-  
+
   // General user endpoints
   user: {
     requireAuth: true,

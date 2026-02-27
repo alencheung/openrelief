@@ -1,10 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { Database } from '@/types/database'
 
-console.log('🔍 DEBUG: Initializing Supabase client')
-console.log('🔍 DEBUG: NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'SET' : 'NOT SET')
-console.log('🔍 DEBUG: NEXT_PUBLIC_SUPABASE_ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET')
-
 // Check if Supabase environment variables are configured
 const isSupabaseConfigured = !!(
   process.env.NEXT_PUBLIC_SUPABASE_URL

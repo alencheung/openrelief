@@ -13,6 +13,32 @@ import { performanceMonitor } from '../performance/performance-monitor'
 import { queryOptimizer } from '../database/query-optimizer'
 import { createClient } from '@supabase/supabase-js'
 
+const ALLOWED_EXTERNAL_DOMAINS = [
+  'api.sendgrid.net',
+  'api.twilio.com',
+  'api.pushover.net',
+  'fcm.googleapis.com',
+  'api.telegram.org'
+]
+
+function validateExternalUrl(url: string | undefined): { valid: boolean; error?: string } {
+  if (!url) {
+    return { valid: false, error: 'URL is not configured' }
+  }
+  try {
+    const parsed = new URL(url)
+    if (!ALLOWED_EXTERNAL_DOMAINS.includes(parsed.hostname)) {
+      return {
+        valid: false,
+        error: `Domain ${parsed.hostname} not in allowed list`
+      }
+    }
+    return { valid: true }
+  } catch {
+    return { valid: false, error: 'Invalid URL format' }
+  }
+}
+
 // Alert delivery channels
 export enum DeliveryChannel {
   PUSH_NOTIFICATION = 'push_notification',
@@ -24,10 +50,10 @@ export enum DeliveryChannel {
 
 // Alert priority levels
 export enum AlertPriority {
-  CRITICAL = 'critical',    // Life-threatening emergencies
-  HIGH = 'high',          // Serious emergencies
-  MEDIUM = 'medium',       // Moderate emergencies
-  LOW = 'low'             // Informational alerts
+  CRITICAL = 'critical', // Life-threatening emergencies
+  HIGH = 'high', // Serious emergencies
+  MEDIUM = 'medium', // Moderate emergencies
+  LOW = 'low' // Informational alerts
 }
 
 // Alert delivery status
@@ -88,11 +114,14 @@ interface DispatchMetrics {
   averageLatency: number
   p95Latency: number
   p99Latency: number
-  channelPerformance: Record<DeliveryChannel, {
-    total: number
-    success: number
-    avgLatency: number
-  }>
+  channelPerformance: Record<
+    DeliveryChannel,
+    {
+      total: number
+      success: number
+      avgLatency: number
+    }
+  >
 }
 
 class AlertDispatchOptimizer {
@@ -143,7 +172,9 @@ class AlertDispatchOptimizer {
   /**
    * Dispatch emergency alert with <100ms latency target
    */
-  async dispatchAlert(alert: Omit<EmergencyAlert, 'id' | 'deliveryAttempts' | 'retryCount'>): Promise<{
+  async dispatchAlert(
+    alert: Omit<EmergencyAlert, 'id' | 'deliveryAttempts' | 'retryCount'>
+  ): Promise<{
     success: boolean
     alertId: string
     estimatedDeliveryTime: number
@@ -225,7 +256,9 @@ class AlertDispatchOptimizer {
   /**
    * Batch dispatch multiple alerts
    */
-  async dispatchBatchAlerts(alerts: Omit<EmergencyAlert, 'id' | 'deliveryAttempts' | 'retryCount'>[]): Promise<{
+  async dispatchBatchAlerts(
+    alerts: Omit<EmergencyAlert, 'id' | 'deliveryAttempts' | 'retryCount'>[]
+  ): Promise<{
     successful: number
     failed: number
     averageLatency: number
@@ -345,9 +378,7 @@ class AlertDispatchOptimizer {
 
     // Process channels in parallel for critical alerts
     if (alert.priority === AlertPriority.CRITICAL) {
-      const channelPromises = alert.channels.map(channel =>
-        this.sendToChannel(alert, channel)
-      )
+      const channelPromises = alert.channels.map(channel => this.sendToChannel(alert, channel))
 
       const results = await Promise.allSettled(channelPromises)
 
@@ -373,7 +404,10 @@ class AlertDispatchOptimizer {
   /**
    * Send alert to specific channel
    */
-  private async sendToChannel(alert: EmergencyAlert, channel: DeliveryChannel): Promise<DeliveryAttempt> {
+  private async sendToChannel(
+    alert: EmergencyAlert,
+    channel: DeliveryChannel
+  ): Promise<DeliveryAttempt> {
     const startTime = performance.now()
     const attemptId = this.generateAttemptId()
 
@@ -535,7 +569,12 @@ class AlertDispatchOptimizer {
       }
 
       // Send via optimized email service
-      const response = await fetch(`${process.env.EMAIL_SERVICE_URL}/send`, {
+      const serviceUrl = process.env.EMAIL_SERVICE_URL
+      const validation = validateExternalUrl(serviceUrl)
+      if (!validation.valid) {
+        throw new Error(`Invalid email service URL: ${validation.error}`)
+      }
+      const response = await fetch(`${serviceUrl}/send`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${process.env.EMAIL_SERVICE_KEY}`,
@@ -589,7 +628,12 @@ class AlertDispatchOptimizer {
       }
 
       // Send via optimized SMS service
-      const response = await fetch(`${process.env.SMS_SERVICE_URL}/send`, {
+      const smsServiceUrl = process.env.SMS_SERVICE_URL
+      const smsValidation = validateExternalUrl(smsServiceUrl)
+      if (!smsValidation.valid) {
+        throw new Error(`Invalid SMS service URL: ${smsValidation.error}`)
+      }
+      const response = await fetch(`${smsServiceUrl}/send`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${process.env.SMS_SERVICE_KEY}`,
@@ -655,20 +699,18 @@ class AlertDispatchOptimizer {
 
     try {
       // Store in database for in-app retrieval
-      const { error } = await this.supabase
-        .from('user_notifications')
-        .insert({
-          user_id: alert.userId,
-          alert_id: alert.id,
-          event_id: alert.eventId,
-          type: alert.type,
-          title: alert.title,
-          message: alert.message,
-          priority: alert.priority,
-          data: alert.data,
-          read: false,
-          created_at: new Date().toISOString()
-        })
+      const { error } = await this.supabase.from('user_notifications').insert({
+        user_id: alert.userId,
+        alert_id: alert.id,
+        event_id: alert.eventId,
+        type: alert.type,
+        title: alert.title,
+        message: alert.message,
+        priority: alert.priority,
+        data: alert.data,
+        read: false,
+        created_at: new Date().toISOString()
+      })
 
       const success = !error
       const executionTime = performanceMonitor.endTimer(timerId, 'alert', 'in_app_send')
@@ -739,8 +781,9 @@ class AlertDispatchOptimizer {
       alert.deliveryAttempts.push(...attempts)
 
       // Check if any delivery was successful
-      const hasSuccessfulDelivery = attempts.some(attempt =>
-        attempt.status === DeliveryStatus.SENT || attempt.status === DeliveryStatus.DELIVERED
+      const hasSuccessfulDelivery = attempts.some(
+        attempt =>
+          attempt.status === DeliveryStatus.SENT || attempt.status === DeliveryStatus.DELIVERED
       )
 
       if (hasSuccessfulDelivery) {
@@ -806,7 +849,11 @@ class AlertDispatchOptimizer {
       .eq('id', alertId)
   }
 
-  private createFailedAttempt(alert: EmergencyAlert, channel: DeliveryChannel, error: string): DeliveryAttempt {
+  private createFailedAttempt(
+    alert: EmergencyAlert,
+    channel: DeliveryChannel,
+    error: string
+  ): DeliveryAttempt {
     return {
       id: this.generateAttemptId(),
       alertId: alert.id,
@@ -855,11 +902,16 @@ class AlertDispatchOptimizer {
 
   private getMaxRetries(priority: AlertPriority): number {
     switch (priority) {
-      case AlertPriority.CRITICAL: return 5
-      case AlertPriority.HIGH: return 3
-      case AlertPriority.MEDIUM: return 2
-      case AlertPriority.LOW: return 1
-      default: return 2
+      case AlertPriority.CRITICAL:
+        return 5
+      case AlertPriority.HIGH:
+        return 3
+      case AlertPriority.MEDIUM:
+        return 2
+      case AlertPriority.LOW:
+        return 1
+      default:
+        return 2
     }
   }
 
@@ -873,62 +925,92 @@ class AlertDispatchOptimizer {
 
   private estimateDeliveryTime(priority: AlertPriority): number {
     switch (priority) {
-      case AlertPriority.CRITICAL: return 100 // <100ms target
-      case AlertPriority.HIGH: return 500
-      case AlertPriority.MEDIUM: return 2000
-      case AlertPriority.LOW: return 5000
-      default: return 2000
+      case AlertPriority.CRITICAL:
+        return 100 // <100ms target
+      case AlertPriority.HIGH:
+        return 500
+      case AlertPriority.MEDIUM:
+        return 2000
+      case AlertPriority.LOW:
+        return 5000
+      default:
+        return 2000
     }
   }
 
   private getFCMPriority(priority: AlertPriority): string {
     switch (priority) {
-      case AlertPriority.CRITICAL: return 'high'
-      case AlertPriority.HIGH: return 'high'
-      case AlertPriority.MEDIUM: return 'normal'
-      case AlertPriority.LOW: return 'normal'
-      default: return 'normal'
+      case AlertPriority.CRITICAL:
+        return 'high'
+      case AlertPriority.HIGH:
+        return 'high'
+      case AlertPriority.MEDIUM:
+        return 'normal'
+      case AlertPriority.LOW:
+        return 'normal'
+      default:
+        return 'normal'
     }
   }
 
   private getAPNSPriority(priority: AlertPriority): string {
     switch (priority) {
-      case AlertPriority.CRITICAL: return '10'
-      case AlertPriority.HIGH: return '10'
-      case AlertPriority.MEDIUM: return '5'
-      case AlertPriority.LOW: return '5'
-      default: return '5'
+      case AlertPriority.CRITICAL:
+        return '10'
+      case AlertPriority.HIGH:
+        return '10'
+      case AlertPriority.MEDIUM:
+        return '5'
+      case AlertPriority.LOW:
+        return '5'
+      default:
+        return '5'
     }
   }
 
   private getEmailPriority(priority: AlertPriority): string {
     switch (priority) {
-      case AlertPriority.CRITICAL: return '1'
-      case AlertPriority.HIGH: return '2'
-      case AlertPriority.MEDIUM: return '3'
-      case AlertPriority.LOW: return '5'
-      default: return '3'
+      case AlertPriority.CRITICAL:
+        return '1'
+      case AlertPriority.HIGH:
+        return '2'
+      case AlertPriority.MEDIUM:
+        return '3'
+      case AlertPriority.LOW:
+        return '5'
+      default:
+        return '3'
     }
   }
 
   private getSMSPriority(priority: AlertPriority): string {
     switch (priority) {
-      case AlertPriority.CRITICAL: return 'urgent'
-      case AlertPriority.HIGH: return 'high'
-      case AlertPriority.MEDIUM: return 'normal'
-      case AlertPriority.LOW: return 'low'
-      default: return 'normal'
+      case AlertPriority.CRITICAL:
+        return 'urgent'
+      case AlertPriority.HIGH:
+        return 'high'
+      case AlertPriority.MEDIUM:
+        return 'normal'
+      case AlertPriority.LOW:
+        return 'low'
+      default:
+        return 'normal'
     }
   }
 
   private getTTL(priority: AlertPriority): number {
     // Time to live in seconds
     switch (priority) {
-      case AlertPriority.CRITICAL: return 3600 // 1 hour
-      case AlertPriority.HIGH: return 7200 // 2 hours
-      case AlertPriority.MEDIUM: return 86400 // 24 hours
-      case AlertPriority.LOW: return 604800 // 7 days
-      default: return 86400
+      case AlertPriority.CRITICAL:
+        return 3600 // 1 hour
+      case AlertPriority.HIGH:
+        return 7200 // 2 hours
+      case AlertPriority.MEDIUM:
+        return 86400 // 24 hours
+      case AlertPriority.LOW:
+        return 604800 // 7 days
+      default:
+        return 86400
     }
   }
 
@@ -958,7 +1040,11 @@ class AlertDispatchOptimizer {
     `
   }
 
-  private recordChannelPerformance(channel: DeliveryChannel, latency: number, success: boolean): void {
+  private recordChannelPerformance(
+    channel: DeliveryChannel,
+    latency: number,
+    success: boolean
+  ): void {
     if (!this.metrics.channelPerformance[channel]) {
       this.metrics.channelPerformance[channel] = {
         total: 0,
@@ -1024,7 +1110,10 @@ class AlertDispatchOptimizer {
       unit: 'ms',
       tags: {
         total_alerts: this.metrics.totalAlerts.toString(),
-        success_rate: ((this.metrics.successfulDeliveries / this.metrics.totalAlerts) * 100).toString(),
+        success_rate: (
+          (this.metrics.successfulDeliveries / this.metrics.totalAlerts) *
+          100
+        ).toString(),
         p95_latency: this.metrics.p95Latency.toString(),
         p99_latency: this.metrics.p99Latency.toString()
       }
@@ -1092,7 +1181,8 @@ export function useAlertDispatchOptimizer() {
     getUsersForAlert: alertDispatchOptimizer.getUsersForAlert.bind(alertDispatchOptimizer),
     getDispatchMetrics: alertDispatchOptimizer.getDispatchMetrics.bind(alertDispatchOptimizer),
     getQueueStatus: alertDispatchOptimizer.getQueueStatus.bind(alertDispatchOptimizer),
-    optimizeForEmergencyMode: alertDispatchOptimizer.optimizeForEmergencyMode.bind(alertDispatchOptimizer),
+    optimizeForEmergencyMode:
+      alertDispatchOptimizer.optimizeForEmergencyMode.bind(alertDispatchOptimizer),
     resetToNormalMode: alertDispatchOptimizer.resetToNormalMode.bind(alertDispatchOptimizer)
   }
 }

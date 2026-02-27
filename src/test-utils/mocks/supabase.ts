@@ -1,6 +1,6 @@
 /**
  * Enhanced Supabase mocks for OpenRelief emergency coordination system
- * 
+ *
  * This file provides comprehensive mocking for Supabase client, auth,
  * database operations, and real-time subscriptions.
  */
@@ -12,7 +12,7 @@ export const createMockSupabaseClient = () => {
   const mockDatabase: Record<string, any[]> = {}
   const mockAuth = {
     currentUser: null,
-    session: null,
+    session: null
   }
 
   const mockClient = {
@@ -23,7 +23,7 @@ export const createMockSupabaseClient = () => {
             id: 'test-user-id',
             email: 'test@example.com',
             user_metadata: { name: 'Test User' },
-            app_metadata: { role: 'citizen' },
+            app_metadata: { role: 'citizen' }
           }
           mockAuth.currentUser = user
           mockAuth.session = { user, access_token: 'mock-token', refresh_token: 'mock-refresh' }
@@ -41,21 +41,21 @@ export const createMockSupabaseClient = () => {
           id: 'new-user-id',
           email,
           user_metadata: options?.data || {},
-          app_metadata: { role: 'citizen' },
+          app_metadata: { role: 'citizen' }
         }
         mockAuth.currentUser = user
         mockAuth.session = { user, access_token: 'mock-token', refresh_token: 'mock-refresh' }
         return { data: { user, session: mockAuth.session }, error: null }
       }),
-      onAuthStateChange: jest.fn().mockImplementation((callback) => {
+      onAuthStateChange: jest.fn().mockImplementation(callback => {
         // Immediately call with current state
         callback('INITIAL_SESSION', mockAuth.session)
-        
+
         // Return unsubscribe function
         return jest.fn()
       }),
       getCurrentUser: jest.fn().mockResolvedValue({ data: mockAuth.currentUser, error: null }),
-      updateUser: jest.fn().mockImplementation(async (attributes) => {
+      updateUser: jest.fn().mockImplementation(async attributes => {
         if (mockAuth.currentUser) {
           mockAuth.currentUser = { ...mockAuth.currentUser, ...attributes }
           return { data: mockAuth.currentUser, error: null }
@@ -64,7 +64,7 @@ export const createMockSupabaseClient = () => {
       }),
       resetPasswordForEmail: jest.fn().mockResolvedValue({ data: {}, error: null }),
       refreshSession: jest.fn().mockResolvedValue({ data: mockAuth.session, error: null }),
-      getSession: jest.fn().mockResolvedValue({ data: mockAuth.session, error: null }),
+      getSession: jest.fn().mockResolvedValue({ data: mockAuth.session, error: null })
     },
 
     from: jest.fn().mockImplementation((table: string) => {
@@ -75,9 +75,9 @@ export const createMockSupabaseClient = () => {
       let queryBuilder = {
         data: null,
         error: null,
-        
+
         select: jest.fn().mockReturnThis(),
-        insert: jest.fn().mockImplementation((data) => {
+        insert: jest.fn().mockImplementation(data => {
           if (Array.isArray(data)) {
             mockDatabase[table].push(...data)
           } else {
@@ -87,7 +87,7 @@ export const createMockSupabaseClient = () => {
           }
           return Promise.resolve(queryBuilder)
         }),
-        update: jest.fn().mockImplementation((data) => {
+        update: jest.fn().mockImplementation(data => {
           queryBuilder.updateData = data
           return queryBuilder
         }),
@@ -118,22 +118,22 @@ export const createMockSupabaseClient = () => {
           queryBuilder.orderAscending = options.ascending !== false
           return queryBuilder
         }),
-        limit: jest.fn().mockImplementation((count) => {
+        limit: jest.fn().mockImplementation(count => {
           queryBuilder.limitCount = count
           return queryBuilder
         }),
         single: jest.fn().mockReturnThis(),
         maybeSingle: jest.fn().mockReturnThis(),
-        
+
         // Execute query
-        then: jest.fn().mockImplementation((callback) => {
+        then: jest.fn().mockImplementation(callback => {
           let results = [...mockDatabase[table]]
-          
+
           // Apply filters
           if (queryBuilder.eqColumn && queryBuilder.eqValue !== undefined) {
             results = results.filter(item => item[queryBuilder.eqColumn] === queryBuilder.eqValue)
           }
-          
+
           // Apply updates
           if (queryBuilder.updateData) {
             results = results.map(item => {
@@ -150,7 +150,7 @@ export const createMockSupabaseClient = () => {
               return item
             })
           }
-          
+
           // Apply deletions
           if (queryBuilder.deleteCalled) {
             mockDatabase[table] = mockDatabase[table].filter(
@@ -158,7 +158,7 @@ export const createMockSupabaseClient = () => {
             )
             results = []
           }
-          
+
           // Apply ordering
           if (queryBuilder.orderColumn) {
             results.sort((a, b) => {
@@ -171,17 +171,17 @@ export const createMockSupabaseClient = () => {
               }
             })
           }
-          
+
           // Apply limit
           if (queryBuilder.limitCount) {
             results = results.slice(0, queryBuilder.limitCount)
           }
-          
+
           // Apply range
           if (queryBuilder.rangeFrom !== undefined && queryBuilder.rangeTo !== undefined) {
             results = results.slice(queryBuilder.rangeFrom, queryBuilder.rangeTo + 1)
           }
-          
+
           // Handle single/maybeSingle
           if (queryBuilder.singleCalled) {
             if (results.length === 0) {
@@ -197,6 +197,34 @@ export const createMockSupabaseClient = () => {
             queryBuilder.data = results.length > 0 ? results[0] : null
           } else {
             queryBuilder.data = results
+          }
+
+          return Promise.resolve(callback(queryBuilder))
+        }),
+        catch: jest.fn().mockReturnThis()
+      }
+
+      // Add delete method to query builder
+      queryBuilder.delete = jest.fn().mockImplementation(() => {
+        queryBuilder.deleteCalled = true
+        return queryBuilder
+      })
+
+      // Add single method
+      queryBuilder.single = jest.fn().mockImplementation(() => {
+        queryBuilder.singleCalled = true
+        return queryBuilder
+      })
+
+      // Add maybeSingle method
+      queryBuilder.maybeSingle = jest.fn().mockImplementation(() => {
+        queryBuilder.maybeSingleCalled = true
+        return queryBuilder
+      })
+
+      return queryBuilder
+    }),
+
     storage: {
       from: jest.fn().mockImplementation((bucket: string) => ({
         upload: jest.fn().mockImplementation(async (path, file, options) => {
@@ -209,31 +237,31 @@ export const createMockSupabaseClient = () => {
               region: 'us-east-1',
               size: file.size || 1024,
               contentType: file.type || 'application/octet-stream',
-              createdAt: new Date().toISOString(),
+              createdAt: new Date().toISOString()
             },
-            error: null,
+            error: null
           }
           return mockUpload
         }),
-        download: jest.fn().mockImplementation(async (path) => {
+        download: jest.fn().mockImplementation(async path => {
           return {
             data: new Blob(['mock file content'], { type: 'text/plain' }),
-            error: null,
+            error: null
           }
         }),
-        remove: jest.fn().mockImplementation(async (paths) => {
+        remove: jest.fn().mockImplementation(async paths => {
           return {
             data: { paths: Array.isArray(paths) ? paths : [paths] },
-            error: null,
+            error: null
           }
         }),
-        getPublicUrl: jest.fn().mockImplementation((path) => ({
+        getPublicUrl: jest.fn().mockImplementation(path => ({
           data: {
-            publicUrl: `https://mock-supabase-url.com/storage/v1/object/public/${bucket}/${path}`,
+            publicUrl: `https://mock-supabase-url.com/storage/v1/object/public/${bucket}/${path}`
           },
-          error: null,
+          error: null
         })),
-        list: jest.fn().mockImplementation(async (options) => {
+        list: jest.fn().mockImplementation(async options => {
           return {
             data: [
               {
@@ -241,12 +269,12 @@ export const createMockSupabaseClient = () => {
                 id: Math.random().toString(36),
                 size: 1024,
                 createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
               }
             ],
-            error: null,
+            error: null
           }
-        }),
+        })
       }))
     },
 
@@ -254,13 +282,13 @@ export const createMockSupabaseClient = () => {
       invoke: jest.fn().mockImplementation(async (functionName, options) => {
         return {
           data: { result: `Mock function ${functionName} executed` },
-          error: null,
+          error: null
         }
-      }),
+      })
     },
 
     // Real-time subscriptions
-    channel: jest.fn().mockImplementation((channelName) => ({
+    channel: jest.fn().mockImplementation(channelName => ({
       on: jest.fn().mockImplementation((event, callback) => {
         // Mock subscription events
         if (event === 'postgres_changes') {
@@ -271,17 +299,17 @@ export const createMockSupabaseClient = () => {
               new: { id: 'test-id', data: 'test-data' },
               old: null,
               table: 'test_table',
-              schema: 'public',
+              schema: 'public'
             })
           }, 100)
         }
         return {
           subscribe: jest.fn().mockReturnValue({ subscriptionId: Math.random().toString(36) }),
-          unsubscribe: jest.fn(),
+          unsubscribe: jest.fn()
         }
       }),
-      send: jest.fn(),
-    })),
+      send: jest.fn()
+    }))
   }
 
   // Helper methods for testing
@@ -314,10 +342,10 @@ export const mockEmergencyData = {
       severity: 'high',
       title: 'Medical Emergency',
       description: 'Person experiencing chest pain',
-      location: { latitude: 40.7128, longitude: -74.0060 },
+      location: { latitude: 40.7128, longitude: -74.006 },
       reported_by: 'user-1',
       status: 'active',
-      created_at: new Date().toISOString(),
+      created_at: new Date().toISOString()
     },
     {
       id: 'emergency-2',
@@ -328,8 +356,8 @@ export const mockEmergencyData = {
       location: { latitude: 40.7589, longitude: -73.9851 },
       reported_by: 'user-2',
       status: 'active',
-      created_at: new Date().toISOString(),
-    },
+      created_at: new Date().toISOString()
+    }
   ],
   users: [
     {
@@ -339,7 +367,7 @@ export const mockEmergencyData = {
       role: 'citizen',
       trust_score: 0.85,
       verified: true,
-      created_at: new Date().toISOString(),
+      created_at: new Date().toISOString()
     },
     {
       id: 'user-2',
@@ -348,8 +376,8 @@ export const mockEmergencyData = {
       role: 'responder',
       trust_score: 0.92,
       verified: true,
-      created_at: new Date().toISOString(),
-    },
+      created_at: new Date().toISOString()
+    }
   ],
   trust_scores: [
     {
@@ -360,15 +388,15 @@ export const mockEmergencyData = {
       response_time: 0.85,
       community_feedback: 0.8,
       skill_verification: 0.9,
-      updated_at: new Date().toISOString(),
-    },
-  ],
+      updated_at: new Date().toISOString()
+    }
+  ]
 }
 
 // Helper function to set up mock database with test data
 export const setupMockDatabase = (client: any, data: any = mockEmergencyData) => {
   const mockDB = client.__getDatabase()
-  
+
   Object.keys(data).forEach(table => {
     mockDB[table] = data[table]
   })
@@ -389,31 +417,3 @@ export const simulateRealtimeEvent = (client: any, event: any) => {
 }
 
 export default createMockSupabaseClient
-          }
-          
-          return Promise.resolve(callback(queryBuilder))
-        }),
-        catch: jest.fn().mockReturnThis(),
-      }
-      
-      // Add delete method to query builder
-      queryBuilder.delete = jest.fn().mockImplementation(() => {
-        queryBuilder.deleteCalled = true
-        return queryBuilder
-      })
-      
-      // Add single method
-      queryBuilder.single = jest.fn().mockImplementation(() => {
-        queryBuilder.singleCalled = true
-        return queryBuilder
-      })
-      
-      // Add maybeSingle method
-      queryBuilder.maybeSingle = jest.fn().mockImplementation(() => {
-        queryBuilder.maybeSingleCalled = true
-        return queryBuilder
-      })
-      
-      return queryBuilder
-    }),
-  }

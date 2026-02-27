@@ -1,34 +1,30 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
-const responsiveContainerVariants = cva(
-  'relative w-full h-full overflow-hidden',
-  {
-    variants: {
-      breakpoint: {
-        mobile: '',
-        tablet: '',
-        desktop: '',
-      },
-      layout: {
-        default: '',
-        fullscreen: 'fixed inset-0 z-50',
-        sidebar: 'flex',
-      }
+const responsiveContainerVariants = cva('relative w-full h-full overflow-hidden', {
+  variants: {
+    breakpoint: {
+      mobile: '',
+      tablet: '',
+      desktop: ''
     },
-    defaultVariants: {
-      breakpoint: 'desktop',
-      layout: 'default',
-    },
+    layout: {
+      default: '',
+      fullscreen: 'fixed inset-0 z-50',
+      sidebar: 'flex'
+    }
+  },
+  defaultVariants: {
+    breakpoint: 'desktop',
+    layout: 'default'
   }
-)
+})
 
 export interface ResponsiveMapContainerProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof responsiveContainerVariants> {
+  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof responsiveContainerVariants> {
   children: React.ReactNode
   onBreakpointChange?: (breakpoint: 'mobile' | 'tablet' | 'desktop') => void
   onOrientationChange?: (orientation: 'portrait' | 'landscape') => void
@@ -51,9 +47,9 @@ const ResponsiveMapContainer: React.FC<ResponsiveMapContainerProps> = ({
 
   // Breakpoint definitions
   const breakpoints = {
-    mobile: 768,    // < 768px
-    tablet: 1024,   // 768px - 1024px
-    desktop: 1024,  // >= 1024px
+    mobile: 768, // < 768px
+    tablet: 1024, // 768px - 1024px
+    desktop: 1024 // >= 1024px
   }
 
   // Determine current breakpoint
@@ -90,7 +86,7 @@ const ResponsiveMapContainer: React.FC<ResponsiveMapContainerProps> = ({
   // Set up resize observer
   useEffect(() => {
     const resizeObserver = new ResizeObserver(handleResize)
-    
+
     if (containerRef.current) {
       resizeObserver.observe(containerRef.current)
       // Initial check
@@ -119,7 +115,7 @@ const ResponsiveMapContainer: React.FC<ResponsiveMapContainerProps> = ({
     '--map-spatial-position': breakpoint === 'mobile' ? 'bottom-right' : 'top-right',
     '--map-controls-size': breakpoint === 'mobile' ? 'sm' : 'md',
     '--map-popup-width': breakpoint === 'mobile' ? '100vw' : 'md',
-    '--map-popup-position': breakpoint === 'mobile' ? 'bottom' : 'bottom',
+    '--map-popup-position': breakpoint === 'mobile' ? 'bottom' : 'bottom'
   } as React.CSSProperties
 
   return (
@@ -169,13 +165,16 @@ export const responsiveUtils = {
   isDesktop: (breakpoint: Breakpoint) => breakpoint === 'desktop',
   isPortrait: (orientation: Orientation) => orientation === 'portrait',
   isLandscape: (orientation: Orientation) => orientation === 'landscape',
-  
+
   // Get responsive value based on breakpoint
-  getResponsiveValue: <T,>(breakpoint: Breakpoint, values: {
-    mobile?: T
-    tablet?: T
-    desktop: T
-  }): T => {
+  getResponsiveValue: <T,>(
+    breakpoint: Breakpoint,
+    values: {
+      mobile?: T
+      tablet?: T
+      desktop: T
+    }
+  ): T => {
     switch (breakpoint) {
       case 'mobile':
         return values.mobile !== undefined ? values.mobile : values.desktop
@@ -186,7 +185,7 @@ export const responsiveUtils = {
         return values.desktop
     }
   },
-  
+
   // Get responsive position for map elements
   getMapPosition: (breakpoint: Breakpoint, defaultPosition: string) => {
     // Adjust positions for mobile to avoid overlap
@@ -204,7 +203,7 @@ export const responsiveUtils = {
     }
     return defaultPosition
   },
-  
+
   // Get responsive size for map elements
   getMapSize: (breakpoint: Breakpoint, defaultSize: string) => {
     if (breakpoint === 'mobile') {

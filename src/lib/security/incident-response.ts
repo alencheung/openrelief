@@ -1,6 +1,6 @@
 /**
  * Security Incident Response System
- * 
+ *
  * This module provides comprehensive incident response procedures including:
  * - Incident classification and prioritization
  * - Automated response workflows
@@ -11,7 +11,12 @@
  */
 
 import { createHash, randomBytes } from 'crypto'
-import { securityMonitor, SecurityIncident, IncidentSeverity, IncidentStatus } from './security-monitor'
+import {
+  securityMonitor,
+  SecurityIncident,
+  IncidentSeverity,
+  IncidentStatus
+} from './security-monitor'
 import { supabaseAdmin } from '@/lib/supabase'
 
 // Incident response interfaces
@@ -265,14 +270,14 @@ const INCIDENT_RESPONSE_CONFIG = {
       recovery: 3840
     }
   },
-  
+
   // Communication channels
   communications: {
     internal: ['slack', 'email', 'teams', 'phone'],
     external: ['email', 'press_release', 'social_media', 'website'],
     regulatory: ['email', 'portal', 'phone', 'certified_mail']
   },
-  
+
   // Escalation triggers
   escalation: {
     data_breach: {
@@ -300,12 +305,12 @@ export class IncidentResponseManager {
   private responseTemplates: Map<string, ResponseProcedure[]> = new Map()
   private communicationTemplates: Map<string, Record<string, string>> = new Map()
   private escalationMatrix: Map<IncidentType, EscalationPlan> = new Map()
-  
+
   constructor() {
     this.initializeTemplates()
     this.loadActiveIncidents()
   }
-  
+
   /**
    * Initialize incident response procedures
    */
@@ -360,7 +365,7 @@ export class IncidentResponseManager {
         verification: 'Regulatory notification templates prepared'
       }
     ])
-    
+
     // Unauthorized access response procedures
     this.responseTemplates.set(IncidentType.UNAUTHORIZED_ACCESS, [
       {
@@ -401,7 +406,7 @@ export class IncidentResponseManager {
         verification: 'Additional security controls implemented'
       }
     ])
-    
+
     // Denial of service response procedures
     this.responseTemplates.set(IncidentType.DENIAL_OF_SERVICE, [
       {
@@ -443,24 +448,24 @@ export class IncidentResponseManager {
         verification: 'CDN provider engaged'
       }
     ])
-    
+
     // Initialize communication templates
     this.communicationTemplates.set('internal_detection', {
       subject: 'SECURITY INCIDENT: {incident_type} detected',
       body: 'A {severity} security incident has been detected:\n\nType: {incident_type}\nSeverity: {severity}\nDescription: {description}\nDetected: {timestamp}\nIncident Commander: {commander}\n\nImmediate action required. Join incident response channel: {channel}'
     })
-    
+
     this.communicationTemplates.set('external_breach', {
       subject: 'Security Incident Notification',
       body: 'We are writing to inform you of a security incident that may have affected your personal information. We are taking this matter very seriously and have implemented additional security measures. For more information, please visit: {website}/incident-{incident_id}'
     })
-    
+
     this.communicationTemplates.set('regulatory_notification', {
       subject: 'Security Incident Report - {incident_type}',
       body: 'Pursuant to {regulation}, we are reporting a security incident:\n\nIncident Type: {incident_type}\nDate Detected: {date}\nIndividuals Affected: {affected_count}\nData Types: {data_types}\nMeasures Taken: {measures}\nContact: {contact}'
     })
   }
-  
+
   /**
    * Create incident response plan
    */
@@ -468,29 +473,29 @@ export class IncidentResponseManager {
     try {
       // Determine priority based on severity and impact
       const priority = this.determinePriority(incident)
-      
+
       // Assemble response team
       const responseTeam = this.assembleResponseTeam(incident.type, priority)
-      
+
       // Get response procedures
-      const procedures = this.responseTemplates.get(incident.type) || 
-                        this.getDefaultProcedures(incident.type)
-      
+      const procedures =
+        this.responseTemplates.get(incident.type) || this.getDefaultProcedures(incident.type)
+
       // Create communication plan
       const communications = this.createCommunicationPlan(incident, priority)
-      
+
       // Create escalation plan
       const escalation = this.createEscalationPlan(incident.type, priority)
-      
+
       // Create recovery plan
       const recovery = this.createRecoveryPlan(incident.type, priority)
-      
+
       // Initialize timeline
       const timeline = this.initializeTimeline(incident, priority)
-      
+
       // Allocate resources
       const resources = this.allocateResources(incident, priority)
-      
+
       const responsePlan: IncidentResponsePlan = {
         incidentId: incident.id,
         type: incident.type,
@@ -504,23 +509,23 @@ export class IncidentResponseManager {
         timeline,
         resources
       }
-      
+
       // Store response plan
       this.activeIncidents.set(incident.id, responsePlan)
-      
+
       // Save to database
       await this.saveResponsePlan(responsePlan)
-      
+
       // Initialize response
       await this.initializeResponse(responsePlan)
-      
+
       return responsePlan
     } catch (error) {
       console.error('Error creating response plan:', error)
       throw error
     }
   }
-  
+
   /**
    * Execute response procedure
    */
@@ -541,7 +546,7 @@ export class IncidentResponseManager {
           error: 'Incident response plan not found'
         }
       }
-      
+
       const procedure = plan.procedures.find(p => p.step === stepNumber)
       if (!procedure) {
         return {
@@ -549,20 +554,23 @@ export class IncidentResponseManager {
           error: 'Procedure step not found'
         }
       }
-      
+
       // Check dependencies
       const dependenciesMet = procedure.dependencies.every(dep => {
         const depProcedure = plan.procedures.find(p => p.step === dep)
-        return depProcedure && plan.timeline.milestones.find(m => m.name === depProcedure.action)?.status === 'completed'
+        return (
+          depProcedure &&
+          plan.timeline.milestones.find(m => m.name === depProcedure.action)?.status === 'completed'
+        )
       })
-      
+
       if (!dependenciesMet) {
         return {
           success: false,
           error: 'Dependencies not met'
         }
       }
-      
+
       // Execute procedure
       let result
       if (procedure.automated && procedure.script) {
@@ -570,20 +578,20 @@ export class IncidentResponseManager {
       } else {
         result = await this.executeManualProcedure(procedure, executor)
       }
-      
+
       // Update timeline
       const milestone = plan.timeline.milestones.find(m => m.name === procedure.action)
       if (milestone) {
         milestone.status = 'completed'
         milestone.responsible = executor
       }
-      
+
       // Log execution
       await this.logProcedureExecution(incidentId, procedure, executor, result)
-      
+
       // Check for next steps
       await this.checkNextSteps(incidentId, stepNumber)
-      
+
       return {
         success: true,
         result
@@ -596,7 +604,7 @@ export class IncidentResponseManager {
       }
     }
   }
-  
+
   /**
    * Check escalation triggers
    */
@@ -609,15 +617,13 @@ export class IncidentResponseManager {
     if (!plan) {
       return { escalationRequired: false }
     }
-    
+
     const escalationPlan = plan.escalation
-    
+
     for (const trigger of escalationPlan.triggers) {
       if (await this.evaluateTrigger(incidentId, trigger)) {
-        const level = escalationPlan.levels.find(l => 
-          l.criteria.includes(trigger.condition)
-        )
-        
+        const level = escalationPlan.levels.find(l => l.criteria.includes(trigger.condition))
+
         return {
           escalationRequired: true,
           level: level?.level,
@@ -625,10 +631,10 @@ export class IncidentResponseManager {
         }
       }
     }
-    
+
     return { escalationRequired: false }
   }
-  
+
   /**
    * Send communication
    */
@@ -651,7 +657,7 @@ export class IncidentResponseManager {
           error: 'Incident response plan not found'
         }
       }
-      
+
       // Get communication template
       const templateData = this.communicationTemplates.get(template)
       if (!templateData) {
@@ -660,7 +666,7 @@ export class IncidentResponseManager {
           error: 'Communication template not found'
         }
       }
-      
+
       // Format message
       const message = this.formatMessage(templateData.body, {
         ...data,
@@ -670,18 +676,13 @@ export class IncidentResponseManager {
         priority: plan.priority,
         timestamp: new Date().toISOString()
       })
-      
+
       // Send communication
-      const messageId = await this.deliverCommunication(
-        type,
-        recipients,
-        message,
-        plan
-      )
-      
+      const messageId = await this.deliverCommunication(type, recipients, message, plan)
+
       // Log communication
       await this.logCommunication(incidentId, type, template, recipients, message)
-      
+
       return {
         success: true,
         messageId
@@ -694,11 +695,14 @@ export class IncidentResponseManager {
       }
     }
   }
-  
+
   /**
    * Complete incident response
    */
-  async completeResponse(incidentId: string, lessons: string[]): Promise<{
+  async completeResponse(
+    incidentId: string,
+    lessons: string[]
+  ): Promise<{
     success: boolean
     finalReport?: string
     error?: string
@@ -711,27 +715,27 @@ export class IncidentResponseManager {
           error: 'Incident response plan not found'
         }
       }
-      
+
       // Generate final report
       const finalReport = await this.generateFinalReport(plan, lessons)
-      
+
       // Update incident status
       await securityMonitor.updateIncidentStatus(
         incidentId,
         IncidentStatus.RESOLVED,
-        'incident_response_system'
+        'incident_response_system',
         'Incident response completed'
       )
-      
+
       // Archive response plan
       await this.archiveResponsePlan(plan, finalReport)
-      
+
       // Remove from active incidents
       this.activeIncidents.delete(incidentId)
-      
+
       // Schedule follow-up actions
       await this.scheduleFollowUpActions(plan, lessons)
-      
+
       return {
         success: true,
         finalReport
@@ -744,11 +748,11 @@ export class IncidentResponseManager {
       }
     }
   }
-  
+
   /**
    * Private helper methods
    */
-  
+
   private determinePriority(incident: SecurityIncident): Priority {
     const severityPriority = {
       [IncidentSeverity.CRITICAL]: Priority.CRITICAL,
@@ -756,24 +760,24 @@ export class IncidentResponseManager {
       [IncidentSeverity.MEDIUM]: Priority.MEDIUM,
       [IncidentSeverity.LOW]: Priority.LOW
     }
-    
+
     let priority = severityPriority[incident.severity]
-    
+
     // Adjust priority based on impact
     if (incident.impact === 'severe' && priority !== Priority.CRITICAL) {
       priority = Priority.HIGH
     }
-    
+
     // Adjust based on affected users
     if (incident.affectedUsers && incident.affectedUsers.length > 1000) {
       if (priority !== Priority.CRITICAL) {
         priority = Priority.HIGH
       }
     }
-    
+
     return priority
   }
-  
+
   private assembleResponseTeam(incidentType: IncidentType, priority: Priority): ResponseTeam {
     const teams = {
       [IncidentType.DATA_BREACH]: {
@@ -804,11 +808,14 @@ export class IncidentResponseManager {
         external: ['ddos-mitigation-provider']
       }
     }
-    
+
     return teams[incidentType] || teams[IncidentType.UNAUTHORIZED_ACCESS]
   }
-  
-  private createCommunicationPlan(incident: SecurityIncident, priority: Priority): CommunicationPlan {
+
+  private createCommunicationPlan(
+    incident: SecurityIncident,
+    priority: Priority
+  ): CommunicationPlan {
     return {
       internal: {
         channels: INCIDENT_RESPONSE_CONFIG.communications.internal,
@@ -842,7 +849,7 @@ export class IncidentResponseManager {
       }
     }
   }
-  
+
   private createEscalationPlan(incidentType: IncidentType, priority: Priority): EscalationPlan {
     return {
       triggers: [
@@ -893,7 +900,7 @@ export class IncidentResponseManager {
       }
     }
   }
-  
+
   private createRecoveryPlan(incidentType: IncidentType, priority: Priority): RecoveryPlan {
     return {
       containment: [
@@ -967,11 +974,11 @@ export class IncidentResponseManager {
       ]
     }
   }
-  
+
   private initializeTimeline(incident: SecurityIncident, priority: Priority): ResponseTimeline {
     const now = new Date()
     const timeframes = INCIDENT_RESPONSE_CONFIG.timeframes[priority]
-    
+
     return {
       detected: incident.detectedAt,
       acknowledged: new Date(now.getTime() + timeframes.acknowledgement * 60 * 1000),
@@ -982,7 +989,7 @@ export class IncidentResponseManager {
       milestones: []
     }
   }
-  
+
   private allocateResources(incident: SecurityIncident, priority: Priority): IncidentResources {
     return {
       personnel: [
@@ -1022,45 +1029,45 @@ export class IncidentResponseManager {
       }
     }
   }
-  
+
   private async executeAutomatedProcedure(script: string): Promise<any> {
     // This would execute the actual script
     console.log(`Executing automated procedure: ${script}`)
-    
+
     // Simulate execution
     await new Promise(resolve => setTimeout(resolve, 1000))
-    
+
     return {
       status: 'completed',
       output: 'Procedure executed successfully',
       logs: 'Automated execution logs'
     }
   }
-  
+
   private async executeManualProcedure(procedure: any, executor: string): Promise<any> {
     // This would notify the responsible person and track completion
     console.log(`Executing manual procedure: ${procedure.action} by ${executor}`)
-    
+
     // Simulate manual execution
     await new Promise(resolve => setTimeout(resolve, 5000))
-    
+
     return {
       status: 'completed',
       executor,
       notes: 'Manual procedure completed successfully'
     }
   }
-  
+
   private formatMessage(template: string, data: Record<string, any>): string {
     let message = template
-    
+
     for (const [key, value] of Object.entries(data)) {
       message = message.replace(new RegExp(`{${key}}`, 'g'), value)
     }
-    
+
     return message
   }
-  
+
   private async deliverCommunication(
     type: string,
     recipients: string[],
@@ -1068,25 +1075,23 @@ export class IncidentResponseManager {
     plan: IncidentResponsePlan
   ): Promise<string> {
     const messageId = randomBytes(16).toString('hex')
-    
+
     // This would actually send the communication via the appropriate channels
     console.log(`Sending ${type} communication to ${recipients.join(', ')}`)
     console.log(`Message: ${message}`)
-    
+
     return messageId
   }
-  
+
   private async saveResponsePlan(plan: IncidentResponsePlan): Promise<void> {
-    await supabaseAdmin
-      .from('incident_response_plans')
-      .insert({
-        incident_id: plan.incidentId,
-        plan_data: plan,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
+    await supabaseAdmin.from('incident_response_plans').insert({
+      incident_id: plan.incidentId,
+      plan_data: plan,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    })
   }
-  
+
   private async initializeResponse(plan: IncidentResponsePlan): Promise<void> {
     // Send initial notifications
     await this.sendCommunication(
@@ -1099,7 +1104,7 @@ export class IncidentResponseManager {
         channel: 'security-incident-response'
       }
     )
-    
+
     // Update incident status
     await securityMonitor.updateIncidentStatus(
       plan.incidentId,
@@ -1108,35 +1113,34 @@ export class IncidentResponseManager {
       'Response plan initialized'
     )
   }
-  
+
   private async logProcedureExecution(
     incidentId: string,
     procedure: any,
     executor: string,
     result: any
   ): Promise<void> {
-    await supabaseAdmin
-      .from('incident_procedure_logs')
-      .insert({
-        incident_id: incidentId,
-        procedure_step: procedure.step,
-        action: procedure.action,
-        executor,
-        result,
-        executed_at: new Date().toISOString()
-      })
+    await supabaseAdmin.from('incident_procedure_logs').insert({
+      incident_id: incidentId,
+      procedure_step: procedure.step,
+      action: procedure.action,
+      executor,
+      result,
+      executed_at: new Date().toISOString()
+    })
   }
-  
+
   private async checkNextSteps(incidentId: string, completedStep: number): Promise<void> {
     const plan = this.activeIncidents.get(incidentId)
     if (!plan) return
-    
+
     // Find procedures that can now be executed
-    const executableProcedures = plan.procedures.filter(p => 
-      p.dependencies.includes(completedStep) &&
-      plan.timeline.milestones.find(m => m.name === p.action)?.status === 'pending'
+    const executableProcedures = plan.procedures.filter(
+      p =>
+        p.dependencies.includes(completedStep) &&
+        plan.timeline.milestones.find(m => m.name === p.action)?.status === 'pending'
     )
-    
+
     for (const procedure of executableProcedures) {
       // Update milestone status
       const milestone = plan.timeline.milestones.find(m => m.name === procedure.action)
@@ -1144,7 +1148,7 @@ export class IncidentResponseManager {
         milestone.status = 'in_progress'
         milestone.responsible = procedure.responsible
       }
-      
+
       // Notify responsible person
       await this.sendCommunication(
         incidentId,
@@ -1159,13 +1163,13 @@ export class IncidentResponseManager {
       )
     }
   }
-  
+
   private async evaluateTrigger(incidentId: string, trigger: EscalationTrigger): Promise<boolean> {
     // This would evaluate the actual trigger condition
     // Simplified implementation for demonstration
     return false
   }
-  
+
   private async logCommunication(
     incidentId: string,
     type: string,
@@ -1173,19 +1177,20 @@ export class IncidentResponseManager {
     recipients: string[],
     message: string
   ): Promise<void> {
-    await supabaseAdmin
-      .from('incident_communications')
-      .insert({
-        incident_id: incidentId,
-        communication_type: type,
-        template,
-        recipients,
-        message,
-        sent_at: new Date().toISOString()
-      })
+    await supabaseAdmin.from('incident_communications').insert({
+      incident_id: incidentId,
+      communication_type: type,
+      template,
+      recipients,
+      message,
+      sent_at: new Date().toISOString()
+    })
   }
-  
-  private async generateFinalReport(plan: IncidentResponsePlan, lessons: string[]): Promise<string> {
+
+  private async generateFinalReport(
+    plan: IncidentResponsePlan,
+    lessons: string[]
+  ): Promise<string> {
     const report = {
       incidentId: plan.incidentId,
       type: plan.type,
@@ -1199,10 +1204,10 @@ export class IncidentResponseManager {
       recommendations: this.generateRecommendations(plan, lessons),
       createdAt: new Date().toISOString()
     }
-    
+
     return JSON.stringify(report, null, 2)
   }
-  
+
   private generateRecommendations(plan: IncidentResponsePlan, lessons: string[]): string[] {
     const recommendations = [
       'Review and update incident response procedures',
@@ -1210,22 +1215,26 @@ export class IncidentResponseManager {
       'Conduct security awareness training',
       'Enhance monitoring and detection capabilities'
     ]
-    
+
     return recommendations
   }
-  
-  private async archiveResponsePlan(plan: IncidentResponsePlan, finalReport: string): Promise<void> {
-    await supabaseAdmin
-      .from('incident_response_archives')
-      .insert({
-        incident_id: plan.incidentId,
-        plan_data: plan,
-        final_report: finalReport,
-        archived_at: new Date().toISOString()
-      })
+
+  private async archiveResponsePlan(
+    plan: IncidentResponsePlan,
+    finalReport: string
+  ): Promise<void> {
+    await supabaseAdmin.from('incident_response_archives').insert({
+      incident_id: plan.incidentId,
+      plan_data: plan,
+      final_report: finalReport,
+      archived_at: new Date().toISOString()
+    })
   }
-  
-  private async scheduleFollowUpActions(plan: IncidentResponsePlan, lessons: string[]): Promise<void> {
+
+  private async scheduleFollowUpActions(
+    plan: IncidentResponsePlan,
+    lessons: string[]
+  ): Promise<void> {
     const followUpActions = [
       {
         action: 'Update security policies',
@@ -1238,21 +1247,19 @@ export class IncidentResponseManager {
         responsible: 'external_auditor'
       }
     ]
-    
+
     for (const action of followUpActions) {
-      await supabaseAdmin
-        .from('incident_follow_up_actions')
-        .insert({
-          incident_id: plan.incidentId,
-          action: action.action,
-          due_date: action.dueDate.toISOString(),
-          responsible: action.responsible,
-          status: 'pending',
-          created_at: new Date().toISOString()
-        })
+      await supabaseAdmin.from('incident_follow_up_actions').insert({
+        incident_id: plan.incidentId,
+        action: action.action,
+        due_date: action.dueDate.toISOString(),
+        responsible: action.responsible,
+        status: 'pending',
+        created_at: new Date().toISOString()
+      })
     }
   }
-  
+
   private getDefaultProcedures(incidentType: IncidentType): any[] {
     return [
       {
@@ -1275,16 +1282,16 @@ export class IncidentResponseManager {
       }
     ]
   }
-  
+
   private async loadActiveIncidents(): Promise<void> {
     try {
       const { data, error } = await supabaseAdmin
         .from('incident_response_plans')
         .select('*')
         .is('status', 'active')
-      
+
       if (error) throw error
-      
+
       for (const planData of data || []) {
         const plan = planData.plan_data as IncidentResponsePlan
         this.activeIncidents.set(plan.incidentId, plan)

@@ -1,17 +1,17 @@
 /**
  * Granular Data Controls Component for OpenRelief
- * 
+ *
  * This component provides fine-grained permission settings by data type,
  * location privacy zones, emergency response preferences, and trust score visibility.
  */
 
-'use client';
+'use client'
 
-import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { StatusIndicator } from '@/components/ui/StatusIndicator';
-import { useToast } from '@/hooks/use-toast';
+import React, { useState, useEffect } from 'react'
+import { Card } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
+import { StatusIndicator } from '@/components/ui/StatusIndicator'
+import { useToast } from '@/hooks/use-toast'
 import {
   Shield,
   MapPin,
@@ -42,91 +42,98 @@ import {
   Users,
   Heart,
   Zap
-} from 'lucide-react';
+} from 'lucide-react'
 
 // Types for granular data controls
 interface DataTypePermission {
-  id: string;
-  name: string;
-  description: string;
-  category: 'location' | 'profile' | 'emergency' | 'communication' | 'analytics';
-  enabled: boolean;
-  retentionDays: number;
-  purposeLimitation: string[];
+  id: string
+  name: string
+  description: string
+  category: 'location' | 'profile' | 'emergency' | 'communication' | 'analytics'
+  enabled: boolean
+  retentionDays: number
+  purposeLimitation: string[]
   sharingSettings: {
-    emergencyServices: boolean;
-    researchParticipation: boolean;
-    thirdPartyAnalytics: boolean;
-    lawEnforcement: boolean;
-  };
-  encryptionLevel: 'none' | 'basic' | 'standard' | 'enhanced' | 'maximum';
-  lastModified: Date;
+    emergencyServices: boolean
+    researchParticipation: boolean
+    thirdPartyAnalytics: boolean
+    lawEnforcement: boolean
+  }
+  encryptionLevel: 'none' | 'basic' | 'standard' | 'enhanced' | 'maximum'
+  lastModified: Date
 }
 
 interface LocationPrivacyZone {
-  id: string;
-  name: string;
-  latitude: number;
-  longitude: number;
-  radius: number;
-  privacyLevel: 'public' | 'private' | 'restricted' | 'sanitized';
+  id: string
+  name: string
+  latitude: number
+  longitude: number
+  radius: number
+  privacyLevel: 'public' | 'private' | 'restricted' | 'sanitized'
   exceptions: {
-    emergencyServices: boolean;
-    trustedContacts: boolean;
-    familyMembers: boolean;
-  };
+    emergencyServices: boolean
+    trustedContacts: boolean
+    familyMembers: boolean
+  }
   activeHours: {
-    start: string; // HH:MM format
-    end: string;   // HH:MM format
-  };
-  createdAt: Date;
+    start: string // HH:MM format
+    end: string // HH:MM format
+  }
+  createdAt: Date
 }
 
 interface EmergencyDataPreference {
-  id: string;
-  scenario: 'medical_emergency' | 'natural_disaster' | 'security_incident' | 'missing_person';
-  dataTypes: string[];
-  sharingLevel: 'minimal' | 'standard' | 'comprehensive';
-  autoShare: boolean;
-  durationHours: number;
-  trustedRecipients: string[];
-  geofenceRequired: boolean;
+  id: string
+  scenario: 'medical_emergency' | 'natural_disaster' | 'security_incident' | 'missing_person'
+  dataTypes: string[]
+  sharingLevel: 'minimal' | 'standard' | 'comprehensive'
+  autoShare: boolean
+  durationHours: number
+  trustedRecipients: string[]
+  geofenceRequired: boolean
 }
 
 interface TrustScoreSettings {
-  visibility: 'public' | 'private' | 'friends_only' | 'emergency_only';
-  calculationTransparency: 'minimal' | 'basic' | 'detailed' | 'full';
+  visibility: 'public' | 'private' | 'friends_only' | 'emergency_only'
+  calculationTransparency: 'minimal' | 'basic' | 'detailed' | 'full'
   dataSources: {
-    emergencyResponses: boolean;
-    communityFeedback: boolean;
-    responseTime: boolean;
-    reliability: boolean;
-    skillVerification: boolean;
-  };
+    emergencyResponses: boolean
+    communityFeedback: boolean
+    responseTime: boolean
+    reliability: boolean
+    skillVerification: boolean
+  }
   appealProcess: {
-    enabled: boolean;
-    timeframe: number; // days
-    contactMethod: 'email' | 'phone' | 'in_app' | 'mail';
-  };
+    enabled: boolean
+    timeframe: number // days
+    contactMethod: 'email' | 'phone' | 'in_app' | 'mail'
+  }
 }
 
 interface DataProcessingPurpose {
-  id: string;
-  name: string;
-  description: string;
-  category: 'service_delivery' | 'safety_monitoring' | 'research_analytics' | 'legal_compliance' | 'user_experience';
-  required: boolean;
-  dataTypes: string[];
-  retentionDays: number;
-  processingLocation: 'local' | 'regional' | 'national' | 'international';
-  userConsent: 'explicit' | 'implicit' | 'opt_out';
-  lastReviewed: Date;
+  id: string
+  name: string
+  description: string
+  category:
+    | 'service_delivery'
+    | 'safety_monitoring'
+    | 'research_analytics'
+    | 'legal_compliance'
+    | 'user_experience'
+  required: boolean
+  dataTypes: string[]
+  retentionDays: number
+  processingLocation: 'local' | 'regional' | 'national' | 'international'
+  userConsent: 'explicit' | 'implicit' | 'opt_out'
+  lastReviewed: Date
 }
 
 const DataControls: React.FC = () => {
-  const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<'permissions' | 'zones' | 'emergency' | 'trust'>('permissions');
-  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast()
+  const [activeTab, setActiveTab] = useState<'permissions' | 'zones' | 'emergency' | 'trust'>(
+    'permissions'
+  )
+  const [isLoading, setIsLoading] = useState(false)
 
   // Mock data for demonstration
   const [dataPermissions, setDataPermissions] = useState<DataTypePermission[]>([
@@ -198,7 +205,7 @@ const DataControls: React.FC = () => {
       encryptionLevel: 'basic',
       lastModified: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
     }
-  ]);
+  ])
 
   const [privacyZones, setPrivacyZones] = useState<LocationPrivacyZone[]>([
     {
@@ -255,7 +262,7 @@ const DataControls: React.FC = () => {
       },
       createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000)
     }
-  ]);
+  ])
 
   const [emergencyPreferences, setEmergencyPreferences] = useState<EmergencyDataPreference[]>([
     {
@@ -278,7 +285,7 @@ const DataControls: React.FC = () => {
       trustedRecipients: ['disaster_response_agency', 'family_contacts'],
       geofenceRequired: true
     }
-  ]);
+  ])
 
   const [trustScoreSettings, setTrustScoreSettings] = useState<TrustScoreSettings>({
     visibility: 'private',
@@ -295,7 +302,7 @@ const DataControls: React.FC = () => {
       timeframe: 30,
       contactMethod: 'in_app'
     }
-  });
+  })
 
   const [dataProcessingPurposes, setDataProcessingPurposes] = useState<DataProcessingPurpose[]>([
     {
@@ -322,24 +329,25 @@ const DataControls: React.FC = () => {
       userConsent: 'opt_out',
       lastReviewed: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000)
     }
-  ]);
+  ])
 
   // Handle permission toggle
   const togglePermission = (id: string) => {
     setDataPermissions(prev =>
       prev.map(permission =>
-        permission.id === id 
-          ? { ...permission, enabled: !permission.enabled }
-          : permission
+        permission.id === id ? { ...permission, enabled: !permission.enabled } : permission
       )
-    );
-  };
+    )
+  }
 
   // Update sharing settings
-  const updateSharingSettings = (id: string, sharingType: keyof DataTypePermission['sharingSettings']) => {
+  const updateSharingSettings = (
+    id: string,
+    sharingType: keyof DataTypePermission['sharingSettings']
+  ) => {
     setDataPermissions(prev =>
       prev.map(permission =>
-        permission.id === id 
+        permission.id === id
           ? {
               ...permission,
               sharingSettings: {
@@ -349,19 +357,17 @@ const DataControls: React.FC = () => {
             }
           : permission
       )
-    );
-  };
+    )
+  }
 
   // Update encryption level
   const updateEncryptionLevel = (id: string, level: DataTypePermission['encryptionLevel']) => {
     setDataPermissions(prev =>
       prev.map(permission =>
-        permission.id === id 
-          ? { ...permission, encryptionLevel: level }
-          : permission
+        permission.id === id ? { ...permission, encryptionLevel: level } : permission
       )
-    );
-  };
+    )
+  }
 
   // Add new privacy zone
   const addPrivacyZone = () => {
@@ -382,68 +388,75 @@ const DataControls: React.FC = () => {
         end: '17:00'
       },
       createdAt: new Date()
-    };
-    setPrivacyZones(prev => [...prev, newZone]);
-  };
+    }
+    setPrivacyZones(prev => [...prev, newZone])
+  }
 
   // Update privacy zone
   const updatePrivacyZone = (id: string, updates: Partial<LocationPrivacyZone>) => {
-    setPrivacyZones(prev =>
-      prev.map(zone =>
-        zone.id === id ? { ...zone, ...updates } : zone
-      )
-    );
-  };
+    setPrivacyZones(prev => prev.map(zone => (zone.id === id ? { ...zone, ...updates } : zone)))
+  }
 
   // Delete privacy zone
   const deletePrivacyZone = (id: string) => {
-    setPrivacyZones(prev => prev.filter(zone => zone.id !== id));
-  };
+    setPrivacyZones(prev => prev.filter(zone => zone.id !== id))
+  }
 
   // Save all settings
   const saveAllSettings = async () => {
-    setIsLoading(true);
+    setIsLoading(true)
     try {
       // In a real implementation, save to API
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
       toast({
-        title: "Settings Saved",
-        description: "Your granular data controls have been saved successfully."
-      });
+        title: 'Settings Saved',
+        description: 'Your granular data controls have been saved successfully.'
+      })
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to save data controls",
-        variant: "destructive"
-      });
+        title: 'Error',
+        description: 'Failed to save data controls',
+        variant: 'destructive'
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   // Get privacy level color
   const getPrivacyLevelColor = (level: LocationPrivacyZone['privacyLevel']) => {
     switch (level) {
-      case 'public': return 'green';
-      case 'private': return 'yellow';
-      case 'restricted': return 'orange';
-      case 'sanitized': return 'red';
-      default: return 'gray';
+      case 'public':
+        return 'green'
+      case 'private':
+        return 'yellow'
+      case 'restricted':
+        return 'orange'
+      case 'sanitized':
+        return 'red'
+      default:
+        return 'gray'
     }
-  };
+  }
 
   // Get encryption level color
   const getEncryptionLevelColor = (level: DataTypePermission['encryptionLevel']) => {
     switch (level) {
-      case 'none': return 'red';
-      case 'basic': return 'orange';
-      case 'standard': return 'yellow';
-      case 'enhanced': return 'blue';
-      case 'maximum': return 'green';
-      default: return 'gray';
+      case 'none':
+        return 'red'
+      case 'basic':
+        return 'orange'
+      case 'standard':
+        return 'yellow'
+      case 'enhanced':
+        return 'blue'
+      case 'maximum':
+        return 'green'
+      default:
+        return 'gray'
     }
-  };
+  }
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
@@ -456,7 +469,7 @@ const DataControls: React.FC = () => {
 
       {/* Tab Navigation */}
       <div className="flex space-x-1 border-b overflow-x-auto">
-        {(['permissions', 'zones', 'emergency', 'trust'] as const).map((tab) => (
+        {(['permissions', 'zones', 'emergency', 'trust'] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -466,10 +479,15 @@ const DataControls: React.FC = () => {
                 : 'text-gray-600 hover:text-gray-800'
             }`}
           >
-            {tab === 'permissions' ? 'Data Permissions' :
-             tab === 'zones' ? 'Privacy Zones' :
-             tab === 'emergency' ? 'Emergency Settings' :
-             tab === 'trust' ? 'Trust Score Settings' : tab}
+            {tab === 'permissions'
+              ? 'Data Permissions'
+              : tab === 'zones'
+                ? 'Privacy Zones'
+                : tab === 'emergency'
+                  ? 'Emergency Settings'
+                  : tab === 'trust'
+                    ? 'Trust Score Settings'
+                    : tab}
           </button>
         ))}
       </div>
@@ -485,9 +503,9 @@ const DataControls: React.FC = () => {
                 <span>Fine-grained control</span>
               </div>
             </div>
-            
+
             <div className="space-y-6">
-              {dataPermissions.map((permission) => (
+              {dataPermissions.map(permission => (
                 <div key={permission.id} className="border rounded-lg p-4">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
@@ -506,13 +524,11 @@ const DataControls: React.FC = () => {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <StatusIndicator 
-                        status={permission.enabled ? 'green' : 'red'} 
-                        text={permission.enabled ? 'Enabled' : 'Disabled'} 
+                      <StatusIndicator
+                        status={permission.enabled ? 'green' : 'red'}
+                        text={permission.enabled ? 'Enabled' : 'Disabled'}
                       />
-                      <span className="text-sm text-gray-600">
-                        Category: {permission.category}
-                      </span>
+                      <span className="text-sm text-gray-600">Category: {permission.category}</span>
                     </div>
                   </div>
 
@@ -534,7 +550,10 @@ const DataControls: React.FC = () => {
                     <h4 className="font-medium mb-2">Sharing Settings</h4>
                     <div className="grid grid-cols-2 gap-4">
                       {Object.entries(permission.sharingSettings).map(([key, value]) => (
-                        <div key={key} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                        <div
+                          key={key}
+                          className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                        >
                           <span className="text-sm font-medium capitalize">
                             {key.replace(/([A-Z])/g, ' $1').trim()}
                           </span>
@@ -556,21 +575,26 @@ const DataControls: React.FC = () => {
                   <div className="mb-4">
                     <h4 className="font-medium mb-2">Encryption Level</h4>
                     <div className="flex items-center space-x-4">
-                      {(['none', 'basic', 'standard', 'enhanced', 'maximum'] as const).map((level) => (
-                        <button
-                          key={level}
-                          onClick={() => updateEncryptionLevel(permission.id, level as any)}
-                          className={`px-3 py-1 rounded text-sm font-medium ${
-                            permission.encryptionLevel === level
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                          }`}
-                        >
-                          {level.replace('_', ' ')}
-                        </button>
-                      ))}
+                      {(['none', 'basic', 'standard', 'enhanced', 'maximum'] as const).map(
+                        level => (
+                          <button
+                            key={level}
+                            onClick={() => updateEncryptionLevel(permission.id, level as any)}
+                            className={`px-3 py-1 rounded text-sm font-medium ${
+                              permission.encryptionLevel === level
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            }`}
+                          >
+                            {level.replace('_', ' ')}
+                          </button>
+                        )
+                      )}
                       <div className="flex items-center space-x-2">
-                        <StatusIndicator status={getEncryptionLevelColor(permission.encryptionLevel)} text="" />
+                        <StatusIndicator
+                          status={getEncryptionLevelColor(permission.encryptionLevel)}
+                          text=""
+                        />
                         <span className="text-sm text-gray-600">
                           Current: {permission.encryptionLevel.replace('_', ' ')}
                         </span>
@@ -590,13 +614,13 @@ const DataControls: React.FC = () => {
                         min="1"
                         max="730"
                         value={permission.retentionDays}
-                        onChange={(e) => {
+                        onChange={e => {
                           const updated = dataPermissions.map(p =>
-                            p.id === permission.id 
+                            p.id === permission.id
                               ? { ...p, retentionDays: parseInt(e.target.value) }
                               : p
-                          );
-                          setDataPermissions(updated);
+                          )
+                          setDataPermissions(updated)
                         }}
                         className="w-20 border rounded px-2 py-1 text-sm"
                       />
@@ -631,9 +655,9 @@ const DataControls: React.FC = () => {
                 Add Zone
               </Button>
             </div>
-            
+
             <div className="space-y-4">
-              {privacyZones.map((zone) => (
+              {privacyZones.map(zone => (
                 <div key={zone.id} className="border rounded-lg p-4">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
@@ -641,19 +665,23 @@ const DataControls: React.FC = () => {
                       <div>
                         <h3 className="font-medium">{zone.name}</h3>
                         <p className="text-sm text-gray-600">
-                          {zone.latitude.toFixed(4)}, {zone.longitude.toFixed(4)} • {zone.radius}m radius
+                          {zone.latitude.toFixed(4)}, {zone.longitude.toFixed(4)} • {zone.radius}m
+                          radius
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <StatusIndicator status={getPrivacyLevelColor(zone.privacyLevel)} text={zone.privacyLevel} />
+                      <StatusIndicator
+                        status={getPrivacyLevelColor(zone.privacyLevel)}
+                        text={zone.privacyLevel}
+                      />
                       <Button variant="outline" size="sm">
                         <Edit className="h-4 w-4 mr-2" />
                         Edit
                       </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => deletePrivacyZone(zone.id)}
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
@@ -692,12 +720,14 @@ const DataControls: React.FC = () => {
                                 type="checkbox"
                                 className="sr-only peer"
                                 checked={value}
-                                onChange={() => updatePrivacyZone(zone.id, {
-                                  exceptions: {
-                                    ...zone.exceptions,
-                                    [key]: !value
-                                  }
-                                })}
+                                onChange={() =>
+                                  updatePrivacyZone(zone.id, {
+                                    exceptions: {
+                                      ...zone.exceptions,
+                                      [key]: !value
+                                    }
+                                  })
+                                }
                               />
                               <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[1px] after:left-[1px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
                             </label>
@@ -733,9 +763,9 @@ const DataControls: React.FC = () => {
                 <span>Life-saving settings</span>
               </div>
             </div>
-            
+
             <div className="space-y-4">
-              {emergencyPreferences.map((preference) => (
+              {emergencyPreferences.map(preference => (
                 <div key={preference.id} className="border rounded-lg p-4">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
@@ -757,16 +787,13 @@ const DataControls: React.FC = () => {
                           checked={preference.autoShare}
                           onChange={() => {
                             const updated = emergencyPreferences.map(p =>
-                              p.id === preference.id 
-                                ? { ...p, autoShare: !p.autoShare }
-                                : p
-                            );
-                            setEmergencyPreferences(updated);
+                              p.id === preference.id ? { ...p, autoShare: !p.autoShare } : p
+                            )
+                            setEmergencyPreferences(updated)
                           }}
                         />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                       </label>
-                      </div>
                     </div>
                   </div>
 
@@ -774,8 +801,11 @@ const DataControls: React.FC = () => {
                   <div className="mb-4">
                     <h4 className="font-medium mb-2">Data Types to Share</h4>
                     <div className="flex flex-wrap gap-2">
-                      {preference.dataTypes.map((dataType) => (
-                        <span key={dataType} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">
+                      {preference.dataTypes.map(dataType => (
+                        <span
+                          key={dataType}
+                          className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm"
+                        >
                           {dataType.replace('_', ' ')}
                         </span>
                       ))}
@@ -786,7 +816,7 @@ const DataControls: React.FC = () => {
                   <div className="mb-4">
                     <h4 className="font-medium mb-2">Sharing Level</h4>
                     <div className="flex items-center space-x-4">
-                      {(['minimal', 'standard', 'comprehensive'] as const).map((level) => (
+                      {(['minimal', 'standard', 'comprehensive'] as const).map(level => (
                         <button
                           key={level}
                           className={`px-3 py-1 rounded text-sm font-medium ${
@@ -828,9 +858,7 @@ const DataControls: React.FC = () => {
                         />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                       </label>
-                      <span className="text-sm text-gray-600">
-                        Require geofence verification
-                      </span>
+                      <span className="text-sm text-gray-600">Require geofence verification</span>
                     </div>
                   </div>
 
@@ -838,7 +866,7 @@ const DataControls: React.FC = () => {
                   <div className="mb-4">
                     <h4 className="font-medium mb-2">Trusted Recipients</h4>
                     <div className="space-y-2">
-                      {preference.trustedRecipients.map((recipient) => (
+                      {preference.trustedRecipients.map(recipient => (
                         <div key={recipient} className="flex items-center space-x-2">
                           <Users className="h-4 w-4 text-green-600" />
                           <span className="text-sm">{recipient.replace('_', ' ')}</span>
@@ -864,25 +892,27 @@ const DataControls: React.FC = () => {
                 <span>Reputation management</span>
               </div>
             </div>
-            
+
             {/* Visibility Settings */}
             <div className="mb-6">
               <h3 className="font-medium mb-4">Score Visibility</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {(['public', 'private', 'friends_only', 'emergency_only'] as const).map((visibility) => (
-                  <button
-                    key={visibility}
-                    className={`p-3 border rounded-lg text-center ${
-                      trustScoreSettings.visibility === visibility
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-300 hover:border-gray-400'
-                    }`}
-                    onClick={() => setTrustScoreSettings(prev => ({ ...prev, visibility }))}
-                  >
-                    <Eye className="h-6 w-6 mx-auto mb-2 text-blue-600" />
-                    <div className="font-medium capitalize">{visibility.replace('_', ' ')}</div>
-                  </button>
-                ))}
+                {(['public', 'private', 'friends_only', 'emergency_only'] as const).map(
+                  visibility => (
+                    <button
+                      key={visibility}
+                      className={`p-3 border rounded-lg text-center ${
+                        trustScoreSettings.visibility === visibility
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                      onClick={() => setTrustScoreSettings(prev => ({ ...prev, visibility }))}
+                    >
+                      <Eye className="h-6 w-6 mx-auto mb-2 text-blue-600" />
+                      <div className="font-medium capitalize">{visibility.replace('_', ' ')}</div>
+                    </button>
+                  )
+                )}
               </div>
             </div>
 
@@ -890,8 +920,11 @@ const DataControls: React.FC = () => {
             <div className="mb-6">
               <h3 className="font-medium mb-4">Calculation Transparency</h3>
               <div className="space-y-4">
-                {(['minimal', 'basic', 'detailed', 'full'] as const).map((transparency) => (
-                  <div key={transparency} className="flex items-center justify-between p-3 border rounded-lg">
+                {(['minimal', 'basic', 'detailed', 'full'] as const).map(transparency => (
+                  <div
+                    key={transparency}
+                    className="flex items-center justify-between p-3 border rounded-lg"
+                  >
                     <div className="flex items-center space-x-3">
                       <BarChart3 className="h-5 w-5 text-gray-600" />
                       <span className="font-medium">{transparency}</span>
@@ -902,14 +935,21 @@ const DataControls: React.FC = () => {
                           type="radio"
                           name="transparency"
                           checked={trustScoreSettings.calculationTransparency === transparency}
-                          onChange={() => setTrustScoreSettings(prev => ({ ...prev, calculationTransparency: transparency }))}
+                          onChange={() =>
+                            setTrustScoreSettings(prev => ({
+                              ...prev,
+                              calculationTransparency: transparency
+                            }))
+                          }
                           className="sr-only peer"
                         />
-                        <div className={`w-4 h-4 rounded-full border-2 ${
-                          trustScoreSettings.calculationTransparency === transparency
-                            ? 'border-blue-600 bg-blue-600'
-                            : 'border-gray-300 bg-white'
-                        }`}></div>
+                        <div
+                          className={`w-4 h-4 rounded-full border-2 ${
+                            trustScoreSettings.calculationTransparency === transparency
+                              ? 'border-blue-600 bg-blue-600'
+                              : 'border-gray-300 bg-white'
+                          }`}
+                        ></div>
                       </label>
                       <span className="text-sm text-gray-600">
                         {transparency === 'minimal' && 'Basic score only'}
@@ -937,13 +977,15 @@ const DataControls: React.FC = () => {
                         type="checkbox"
                         className="sr-only peer"
                         checked={enabled}
-                        onChange={() => setTrustScoreSettings(prev => ({
-                          ...prev,
-                          dataSources: {
-                            ...prev.dataSources,
-                            [source]: !enabled
-                          }
-                        }))}
+                        onChange={() =>
+                          setTrustScoreSettings(prev => ({
+                            ...prev,
+                            dataSources: {
+                              ...prev.dataSources,
+                              [source]: !enabled
+                            }
+                          }))
+                        }
                       />
                       <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                     </label>
@@ -963,18 +1005,20 @@ const DataControls: React.FC = () => {
                       type="checkbox"
                       className="sr-only peer"
                       checked={trustScoreSettings.appealProcess.enabled}
-                      onChange={() => setTrustScoreSettings(prev => ({
-                        ...prev,
-                        appealProcess: {
-                          ...prev.appealProcess,
-                          enabled: !prev.appealProcess.enabled
-                        }
-                      }))}
+                      onChange={() =>
+                        setTrustScoreSettings(prev => ({
+                          ...prev,
+                          appealProcess: {
+                            ...prev.appealProcess,
+                            enabled: !prev.appealProcess.enabled
+                          }
+                        }))
+                      }
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                   </label>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">Response Timeframe</span>
                   <div className="flex items-center space-x-2">
@@ -983,23 +1027,25 @@ const DataControls: React.FC = () => {
                       min="1"
                       max="90"
                       value={trustScoreSettings.appealProcess.timeframe}
-                      onChange={(e) => setTrustScoreSettings(prev => ({
-                        ...prev,
-                        appealProcess: {
-                          ...prev.appealProcess,
-                          timeframe: parseInt(e.target.value)
-                        }
-                      }))}
+                      onChange={e =>
+                        setTrustScoreSettings(prev => ({
+                          ...prev,
+                          appealProcess: {
+                            ...prev.appealProcess,
+                            timeframe: parseInt(e.target.value)
+                          }
+                        }))
+                      }
                       className="w-20 border rounded px-2 py-1 text-sm"
                     />
                     <span className="text-sm text-gray-600">days</span>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">Contact Method</span>
                   <div className="flex items-center space-x-2">
-                    {(['email', 'phone', 'in_app', 'mail'] as const).map((method) => (
+                    {(['email', 'phone', 'in_app', 'mail'] as const).map(method => (
                       <button
                         key={method}
                         className={`px-3 py-1 rounded text-sm ${
@@ -1007,13 +1053,15 @@ const DataControls: React.FC = () => {
                             ? 'bg-blue-600 text-white'
                             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                         }`}
-                        onClick={() => setTrustScoreSettings(prev => ({
-                          ...prev,
-                          appealProcess: {
-                            ...prev.appealProcess,
-                            contactMethod: method
-                          }
-                        }))}
+                        onClick={() =>
+                          setTrustScoreSettings(prev => ({
+                            ...prev,
+                            appealProcess: {
+                              ...prev.appealProcess,
+                              contactMethod: method
+                            }
+                          }))
+                        }
                       >
                         {method === 'email' && <Mail className="h-4 w-4 mr-2" />}
                         {method === 'phone' && <Smartphone className="h-4 w-4 mr-2" />}
@@ -1039,9 +1087,9 @@ const DataControls: React.FC = () => {
             <span>Legal basis tracking</span>
           </div>
         </div>
-        
+
         <div className="space-y-4">
-          {dataProcessingPurposes.map((purpose) => (
+          {dataProcessingPurposes.map(purpose => (
             <div key={purpose.id} className="border rounded-lg p-4">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-3">
@@ -1052,13 +1100,11 @@ const DataControls: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <StatusIndicator 
-                    status={purpose.required ? 'green' : 'yellow'} 
-                    text={purpose.required ? 'Required' : 'Optional'} 
+                  <StatusIndicator
+                    status={purpose.required ? 'green' : 'yellow'}
+                    text={purpose.required ? 'Required' : 'Optional'}
                   />
-                  <span className="text-sm text-gray-600">
-                    Category: {purpose.category}
-                  </span>
+                  <span className="text-sm text-gray-600">Category: {purpose.category}</span>
                 </div>
               </div>
 
@@ -1066,8 +1112,11 @@ const DataControls: React.FC = () => {
                 <div>
                   <span className="text-sm text-gray-600">Data Types:</span>
                   <div className="flex flex-wrap gap-1 mt-1">
-                    {purpose.dataTypes.map((dataType) => (
-                      <span key={dataType} className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">
+                    {purpose.dataTypes.map(dataType => (
+                      <span
+                        key={dataType}
+                        className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs"
+                      >
                         {dataType.replace('_', ' ')}
                       </span>
                     ))}
@@ -1082,11 +1131,15 @@ const DataControls: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
                   <span className="text-sm text-gray-600">Processing Location:</span>
-                  <div className="font-medium capitalize">{purpose.processingLocation.replace('_', ' ')}</div>
+                  <div className="font-medium capitalize">
+                    {purpose.processingLocation.replace('_', ' ')}
+                  </div>
                 </div>
                 <div>
                   <span className="text-sm text-gray-600">User Consent:</span>
-                  <div className="font-medium capitalize">{purpose.userConsent.replace('_', ' ')}</div>
+                  <div className="font-medium capitalize">
+                    {purpose.userConsent.replace('_', ' ')}
+                  </div>
                 </div>
               </div>
 
@@ -1104,7 +1157,7 @@ const DataControls: React.FC = () => {
         </div>
       </Card>
     </div>
-  );
-};
+  )
+}
 
-export default DataControls;
+export default DataControls

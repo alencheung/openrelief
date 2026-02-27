@@ -1,6 +1,6 @@
 /**
  * Comprehensive Integration Tests for Complete Emergency Workflow
- * 
+ *
  * These tests verify the end-to-end emergency response workflow,
  * including event creation, trust evaluation, consensus building, and resolution.
  */
@@ -9,25 +9,25 @@ import { renderHook, act, waitFor } from '@testing-library/react'
 import { useEmergencyStore } from '../emergencyStore'
 import { useTrustStore } from '../trustStore'
 import { ConsensusTestUtils } from '@/test-utils/consensus'
-import { 
+import {
   initializeTestDatabase,
   resetTestDatabase,
   getMockDatabase,
   validateDatabaseIntegrity
 } from '@/test-utils/database'
-import { 
-  createEmergencyEvent, 
-  createUser, 
+import {
+  createEmergencyEvent,
+  createUser,
   createTrustScore,
   emergencyScenarios,
-  testUsers 
+  testUsers
 } from '@/test-utils/fixtures/emergencyScenarios'
 
 describe('Emergency Workflow Integration Tests', () => {
   beforeEach(async () => {
     await resetTestDatabase()
     await initializeTestDatabase()
-    
+
     // Reset stores
     useEmergencyStore.getState().reset()
     useTrustStore.getState().reset()
@@ -42,7 +42,7 @@ describe('Emergency Workflow Integration Tests', () => {
       const reporter = testUsers.citizenUser
       const reporterTrustScore = createTrustScore({
         userId: reporter.id,
-        overall: reporter.trustScore,
+        overall: reporter.trustScore
       })
 
       act(() => {
@@ -55,9 +55,9 @@ describe('Emergency Workflow Integration Tests', () => {
         severity: 'high',
         title: 'Cardiac Emergency - Integration Test',
         description: 'Patient experiencing chest pain at downtown location',
-        location: { latitude: 40.7128, longitude: -74.0060 },
+        location: { latitude: 40.7128, longitude: -74.006 },
         reportedBy: reporter.id,
-        status: 'pending',
+        status: 'pending'
       })
 
       act(() => {
@@ -76,13 +76,13 @@ describe('Emergency Workflow Integration Tests', () => {
         testUsers.paramedicUser,
         testUsers.firefighterUser,
         createUser({ id: 'witness-1', trustScore: 0.75 }),
-        createUser({ id: 'witness-2', trustScore: 0.65 }),
+        createUser({ id: 'witness-2', trustScore: 0.65 })
       ]
 
       confirmers.forEach(confirmer => {
         const trustScore = createTrustScore({
           userId: confirmer.id,
-          overall: confirmer.trustScore,
+          overall: confirmer.trustScore
         })
         act(() => {
           trustResult.current.setUserScore(confirmer.id, trustScore)
@@ -96,29 +96,29 @@ describe('Emergency Workflow Integration Tests', () => {
           voteType: 'confirm',
           trustWeight: testUsers.paramedicUser.trustScore,
           timestamp: new Date().toISOString(),
-          location: testUsers.paramedicUser.location,
+          location: testUsers.paramedicUser.location
         },
         {
           userId: testUsers.firefighterUser.id,
           voteType: 'confirm',
           trustWeight: testUsers.firefighterUser.trustScore,
           timestamp: new Date().toISOString(),
-          location: testUsers.firefighterUser.location,
+          location: testUsers.firefighterUser.location
         },
         {
           userId: 'witness-1',
           voteType: 'confirm',
           trustWeight: 0.75,
           timestamp: new Date().toISOString(),
-          location: { latitude: 40.7130, longitude: -74.0062 },
+          location: { latitude: 40.713, longitude: -74.0062 }
         },
         {
           userId: 'witness-2',
           voteType: 'confirm',
           trustWeight: 0.65,
           timestamp: new Date().toISOString(),
-          location: { latitude: 40.7125, longitude: -74.0058 },
-        },
+          location: { latitude: 40.7125, longitude: -74.0058 }
+        }
       ]
 
       const consensus = ConsensusTestUtils.calculateConsensus(votes, emergencyEvent)
@@ -127,9 +127,9 @@ describe('Emergency Workflow Integration Tests', () => {
 
       // Step 5: Update event status based on consensus
       act(() => {
-        emergencyResult.current.updateEvent(emergencyEvent.id, { 
+        emergencyResult.current.updateEvent(emergencyEvent.id, {
           status: 'active',
-          trust_weight: consensus.weightedConfirmScore,
+          trust_weight: consensus.weightedConfirmScore
         })
       })
 
@@ -141,20 +141,20 @@ describe('Emergency Workflow Integration Tests', () => {
           userId: testUsers.paramedicUser.id,
           timestamp: new Date().toISOString(),
           type: 'status_change',
-          message: 'Paramedics on scene, assessing patient condition',
+          message: 'Paramedics on scene, assessing patient condition'
         },
         {
           userId: testUsers.paramedicUser.id,
           timestamp: new Date().toISOString(),
           type: 'resource_update',
           message: 'Patient stabilized, preparing for transport',
-          data: { vitals: { heartRate: 85, bloodPressure: '120/80' } },
-        },
+          data: { vitals: { heartRate: 85, bloodPressure: '120/80' } }
+        }
       ]
 
       // Step 7: Event resolution
       act(() => {
-        emergencyResult.current.updateEvent(emergencyEvent.id, { 
+        emergencyResult.current.updateEvent(emergencyEvent.id, {
           status: 'resolved',
           resolved_at: new Date().toISOString(),
           finalReport: {
@@ -162,8 +162,8 @@ describe('Emergency Workflow Integration Tests', () => {
             message: 'Emergency resolved successfully',
             casualties: { minor: 0, major: 1, critical: 0, fatal: 0 },
             resourcesUsed: ['ambulance', 'paramedic'],
-            responseTime: 8,
-          },
+            responseTime: 8
+          }
         })
       })
 
@@ -177,14 +177,14 @@ describe('Emergency Workflow Integration Tests', () => {
           'report',
           'success'
         )
-        
+
         await trustResult.current.updateTrustForAction(
           testUsers.paramedicUser.id,
           emergencyEvent.id,
           'confirm',
           'success'
         )
-        
+
         await trustResult.current.updateTrustForAction(
           testUsers.firefighterUser.id,
           emergencyEvent.id,
@@ -199,8 +199,8 @@ describe('Emergency Workflow Integration Tests', () => {
       const finalFirefighterScore = trustResult.current.getUserScore(testUsers.firefighterUser.id)
 
       expect(finalReporterScore?.score).toBeGreaterThan(reporter.trustScore)
-      expect(finalParamedicScore?.score).toBeGreaterThan(testUsers.paramedicUser.trustScore))
-      expect(finalFirefighterScore?.score).toBeGreaterThan(testUsers.firefighterUser.trustScore))
+      expect(finalParamedicScore?.score).toBeGreaterThan(testUsers.paramedicUser.trustScore)
+      expect(finalFirefighterScore?.score).toBeGreaterThan(testUsers.firefighterUser.trustScore)
     })
 
     it('should handle disputed emergency workflow', async () => {
@@ -210,12 +210,12 @@ describe('Emergency Workflow Integration Tests', () => {
       // Step 1: Low-trust user reports suspicious event
       const suspiciousReporter = createUser({
         id: 'suspicious-reporter',
-        trustScore: 0.2, // Low trust
+        trustScore: 0.2 // Low trust
       })
 
       const reporterTrustScore = createTrustScore({
         userId: suspiciousReporter.id,
-        overall: suspiciousReporter.trustScore,
+        overall: suspiciousReporter.trustScore
       })
 
       act(() => {
@@ -230,7 +230,7 @@ describe('Emergency Workflow Integration Tests', () => {
         description: 'Suspicious package reported at public venue',
         location: { latitude: 40.7614, longitude: -73.9776 },
         reportedBy: suspiciousReporter.id,
-        status: 'pending',
+        status: 'pending'
       })
 
       act(() => {
@@ -242,13 +242,13 @@ describe('Emergency Workflow Integration Tests', () => {
         testUsers.coordinatorUser, // High trust, disputes
         createUser({ id: 'low-trust-1', trustScore: 0.15 }), // Low trust, confirms
         createUser({ id: 'low-trust-2', trustScore: 0.12 }), // Low trust, confirms
-        createUser({ id: 'medium-trust-1', trustScore: 0.6 }), // Medium trust, confirms
+        createUser({ id: 'medium-trust-1', trustScore: 0.6 }) // Medium trust, confirms
       ]
 
       mixedResponders.forEach(responder => {
         const trustScore = createTrustScore({
           userId: responder.id,
-          overall: responder.trustScore,
+          overall: responder.trustScore
         })
         act(() => {
           trustResult.current.setUserScore(responder.id, trustScore)
@@ -261,42 +261,40 @@ describe('Emergency Workflow Integration Tests', () => {
           userId: testUsers.coordinatorUser.id,
           voteType: 'dispute',
           trustWeight: testUsers.coordinatorUser.trustScore,
-          timestamp: new Date().toISOString(),
+          timestamp: new Date().toISOString()
         },
         {
           userId: 'low-trust-1',
           voteType: 'confirm',
           trustWeight: 0.15,
-          timestamp: new Date().toISOString(),
+          timestamp: new Date().toISOString()
         },
         {
           userId: 'low-trust-2',
           voteType: 'confirm',
           trustWeight: 0.12,
-          timestamp: new Date().toISOString(),
+          timestamp: new Date().toISOString()
         },
         {
           userId: 'medium-trust-1',
           voteType: 'confirm',
           trustWeight: 0.6,
-          timestamp: new Date().toISOString(),
-        },
+          timestamp: new Date().toISOString()
+        }
       ]
 
       const consensus = ConsensusTestUtils.calculateConsensus(conflictingVotes, suspiciousEvent)
-      
+
       // High trust user should outweigh multiple low trust users
       expect(consensus.consensus).toBe('dispute')
-      expect(consensus.anomalies).toContain(
-        'Low-trust users opposing high-trust consensus'
-      )
+      expect(consensus.anomalies).toContain('Low-trust users opposing high-trust consensus')
 
       // Step 4: Handle disputed outcome
       act(() => {
-        emergencyResult.current.updateEvent(suspiciousEvent.id, { 
+        emergencyResult.current.updateEvent(suspiciousEvent.id, {
           status: 'closed', // Disputed events are closed
           disputed: true,
-          dispute_reason: 'Insufficient trust weight for confirmation',
+          dispute_reason: 'Insufficient trust weight for confirmation'
         })
       })
 
@@ -333,15 +331,15 @@ describe('Emergency Workflow Integration Tests', () => {
           severity: 'critical',
           title: 'Building Fire - Main Building',
           location: areaLocation,
-          reportedBy: 'reporter-1',
+          reportedBy: 'reporter-1'
         }),
         createEmergencyEvent({
           id: 'multi-event-2',
           type: 'medical',
           severity: 'high',
           title: 'Medical Emergency - Fire Victims',
-          location: { latitude: 40.7590, longitude: -73.9850 },
-          reportedBy: 'reporter-2',
+          location: { latitude: 40.759, longitude: -73.985 },
+          reportedBy: 'reporter-2'
         }),
         createEmergencyEvent({
           id: 'multi-event-3',
@@ -349,8 +347,8 @@ describe('Emergency Workflow Integration Tests', () => {
           severity: 'medium',
           title: 'Security Threat - Evacuation',
           location: { latitude: 40.7588, longitude: -73.9852 },
-          reportedBy: 'reporter-3',
-        }),
+          reportedBy: 'reporter-3'
+        })
       ]
 
       // Add all events
@@ -365,7 +363,7 @@ describe('Emergency Workflow Integration Tests', () => {
         emergencyResult.current.setUserLocation(areaLocation)
         emergencyResult.current.setFilters({
           radius: 500, // 500m radius
-          center: areaLocation,
+          center: areaLocation
         })
       })
 
@@ -376,13 +374,13 @@ describe('Emergency Workflow Integration Tests', () => {
       const responders = [
         testUsers.firefighterUser,
         testUsers.paramedicUser,
-        testUsers.coordinatorUser,
+        testUsers.coordinatorUser
       ]
 
       responders.forEach(responder => {
         const trustScore = createTrustScore({
           userId: responder.id,
-          overall: responder.trustScore,
+          overall: responder.trustScore
         })
         act(() => {
           trustResult.current.setUserScore(responder.id, trustScore)
@@ -395,20 +393,20 @@ describe('Emergency Workflow Integration Tests', () => {
           eventId: 'multi-event-1',
           userId: testUsers.firefighterUser.id,
           action: 'confirm',
-          outcome: 'success',
+          outcome: 'success'
         },
         {
           eventId: 'multi-event-2',
           userId: testUsers.paramedicUser.id,
           action: 'confirm',
-          outcome: 'success',
+          outcome: 'success'
         },
         {
           eventId: 'multi-event-3',
           userId: testUsers.coordinatorUser.id,
           action: 'confirm',
-          outcome: 'success',
-        },
+          outcome: 'success'
+        }
       ]
 
       // Process all responses
@@ -420,9 +418,9 @@ describe('Emergency Workflow Integration Tests', () => {
             'confirm',
             response.outcome
           )
-          
+
           emergencyResult.current.updateEvent(response.eventId, {
-            status: 'active',
+            status: 'active'
           })
         }
       })
@@ -436,8 +434,8 @@ describe('Emergency Workflow Integration Tests', () => {
       const finalCoordinatorScore = trustResult.current.getUserScore(testUsers.coordinatorUser.id)
 
       expect(finalFirefighterScore?.score).toBeGreaterThan(testUsers.firefighterUser.trustScore)
-      expect(finalParamedicScore?.score).toBeGreaterThan(testUsers.paramedicUser.trustScore))
-      expect(finalCoordinatorScore?.score).toBeGreaterThan(testUsers.coordinatorUser.trustScore))
+      expect(finalParamedicScore?.score).toBeGreaterThan(testUsers.paramedicUser.trustScore)
+      expect(finalCoordinatorScore?.score).toBeGreaterThan(testUsers.coordinatorUser.trustScore)
     })
 
     it('should handle emergency event escalation', async () => {
@@ -451,9 +449,9 @@ describe('Emergency Workflow Integration Tests', () => {
         severity: 'medium',
         title: 'Medical Emergency - Initial Report',
         description: 'Person injured in accident',
-        location: { latitude: 40.7128, longitude: -74.0060 },
+        location: { latitude: 40.7128, longitude: -74.006 },
         reportedBy: 'initial-reporter',
-        status: 'pending',
+        status: 'pending'
       })
 
       act(() => {
@@ -463,13 +461,13 @@ describe('Emergency Workflow Integration Tests', () => {
       // Initial confirmations
       const initialConfirmers = [
         createUser({ id: 'confirmer-1', trustScore: 0.7 }),
-        createUser({ id: 'confirmer-2', trustScore: 0.6 }),
+        createUser({ id: 'confirmer-2', trustScore: 0.6 })
       ]
 
       initialConfirmers.forEach(confirmer => {
         const trustScore = createTrustScore({
           userId: confirmer.id,
-          overall: confirmer.trustScore,
+          overall: confirmer.trustScore
         })
         act(() => {
           trustResult.current.setUserScore(confirmer.id, trustScore)
@@ -481,7 +479,7 @@ describe('Emergency Workflow Integration Tests', () => {
         userId: confirmer.id,
         voteType: 'confirm' as const,
         trustWeight: confirmer.trustScore,
-        timestamp: new Date().toISOString(),
+        timestamp: new Date().toISOString()
       }))
 
       const initialConsensus = ConsensusTestUtils.calculateConsensus(initialVotes, initialEvent)
@@ -489,9 +487,9 @@ describe('Emergency Workflow Integration Tests', () => {
 
       // Activate event
       act(() => {
-        emergencyResult.current.updateEvent(initialEvent.id, { 
+        emergencyResult.current.updateEvent(initialEvent.id, {
           status: 'active',
-          severity: 'high', // Escalate severity
+          severity: 'high' // Escalate severity
         })
       })
 
@@ -501,7 +499,7 @@ describe('Emergency Workflow Integration Tests', () => {
         timestamp: new Date().toISOString(),
         type: 'casualty_update',
         message: 'Multiple victims discovered, need additional resources',
-        data: { casualties: { minor: 2, major: 1, critical: 0, fatal: 0 } },
+        data: { casualties: { minor: 2, major: 1, critical: 0, fatal: 0 } }
       }
 
       // Update event with escalation
@@ -509,7 +507,7 @@ describe('Emergency Workflow Integration Tests', () => {
         emergencyResult.current.updateEvent(initialEvent.id, {
           severity: 'critical', // Further escalation
           priority: 'critical',
-          updates: [escalationUpdate],
+          updates: [escalationUpdate]
         })
       })
 
@@ -520,13 +518,13 @@ describe('Emergency Workflow Integration Tests', () => {
       const escalationConfirmers = [
         testUsers.firefighterUser,
         testUsers.paramedicUser,
-        testUsers.coordinatorUser,
+        testUsers.coordinatorUser
       ]
 
       escalationConfirmers.forEach(confirmer => {
         const trustScore = createTrustScore({
           userId: confirmer.id,
-          overall: confirmer.trustScore,
+          overall: confirmer.trustScore
         })
         act(() => {
           trustResult.current.setUserScore(confirmer.id, trustScore)
@@ -538,10 +536,13 @@ describe('Emergency Workflow Integration Tests', () => {
         userId: confirmer.id,
         voteType: 'confirm' as const,
         trustWeight: confirmer.trustScore,
-        timestamp: new Date().toISOString(),
+        timestamp: new Date().toISOString()
       }))
 
-      const escalationConsensus = ConsensusTestUtils.calculateConsensus(escalationVotes, initialEvent)
+      const escalationConsensus = ConsensusTestUtils.calculateConsensus(
+        escalationVotes,
+        initialEvent
+      )
       expect(escalationConsensus.consensus).toBe('confirm')
       expect(escalationConsensus.confidence).toBeGreaterThan(initialConsensus.confidence)
 
@@ -551,7 +552,7 @@ describe('Emergency Workflow Integration Tests', () => {
           status: 'resolved',
           resolved_at: new Date().toISOString(),
           escalation_level: 'high',
-          resources_deployed: ['fire_truck', 'ambulance', 'rescue_team'],
+          resources_deployed: ['fire_truck', 'ambulance', 'rescue_team']
         })
       })
 
@@ -572,7 +573,7 @@ describe('Emergency Workflow Integration Tests', () => {
         title: 'Flood - System Error Test',
         location: { latitude: 40.7282, longitude: -74.0776 },
         reportedBy: 'error-test-reporter',
-        status: 'pending',
+        status: 'pending'
       })
 
       act(() => {
@@ -585,7 +586,7 @@ describe('Emergency Workflow Integration Tests', () => {
         { userId: 'confirmer-2', success: false, error: 'Network timeout' },
         { userId: 'confirmer-3', success: true },
         { userId: 'confirmer-4', success: false, error: 'Database error' },
-        { userId: 'confirmer-5', success: true },
+        { userId: 'confirmer-5', success: true }
       ]
 
       // Process confirmations with error handling
@@ -596,18 +597,18 @@ describe('Emergency Workflow Integration Tests', () => {
             const user = createUser({ id: confirmation.userId, trustScore: 0.7 })
             const trustScore = createTrustScore({
               userId: user.id,
-              overall: user.trustScore,
+              overall: user.trustScore
             })
-            
+
             act(() => {
               trustResult.current.setUserScore(user.id, trustScore)
             })
-            
+
             processedConfirmations.push({
               userId: confirmation.userId,
               voteType: 'confirm',
               trustWeight: user.trustScore,
-              timestamp: new Date().toISOString(),
+              timestamp: new Date().toISOString()
             })
           }
         } catch (error) {
@@ -617,8 +618,11 @@ describe('Emergency Workflow Integration Tests', () => {
       }
 
       // Build consensus with available confirmations
-      const consensus = ConsensusTestUtils.calculateConsensus(processedConfirmations, emergencyEvent)
-      
+      const consensus = ConsensusTestUtils.calculateConsensus(
+        processedConfirmations,
+        emergencyEvent
+      )
+
       // Should still reach consensus with partial data
       expect(processedConfirmations.length).toBe(3)
       expect(consensus.consensus).toBe('confirm')
@@ -629,7 +633,7 @@ describe('Emergency Workflow Integration Tests', () => {
         emergencyResult.current.updateEvent(emergencyEvent.id, {
           status: 'active',
           error_recovery: true,
-          partial_data: true,
+          partial_data: true
         })
       })
 
@@ -647,9 +651,9 @@ describe('Emergency Workflow Integration Tests', () => {
         type: 'medical',
         severity: 'high',
         title: 'Medical Emergency - Corruption Test',
-        location: { latitude: 40.7128, longitude: -74.0060 },
+        location: { latitude: 40.7128, longitude: -74.006 },
         reportedBy: 'corruption-test-reporter',
-        status: 'pending',
+        status: 'pending'
       })
 
       act(() => {
@@ -661,14 +665,14 @@ describe('Emergency Workflow Integration Tests', () => {
         { field: 'location', value: 'INVALID_COORDINATES' },
         { field: 'severity', value: 'INVALID_SEVERITY' },
         { field: 'trust_weight', value: -1 },
-        { field: 'reported_by', value: null },
+        { field: 'reported_by', value: null }
       ]
 
       corruptionScenarios.forEach(scenario => {
         try {
           act(() => {
             emergencyResult.current.updateEvent(corruptedEvent.id, {
-              [scenario.field]: scenario.value,
+              [scenario.field]: scenario.value
             })
           })
         } catch (error) {
@@ -686,7 +690,7 @@ describe('Emergency Workflow Integration Tests', () => {
       act(() => {
         emergencyResult.current.updateEvent(corruptedEvent.id, {
           data_integrity_flag: true,
-          review_required: true,
+          review_required: true
         })
       })
 
@@ -710,10 +714,10 @@ describe('Emergency Workflow Integration Tests', () => {
           title: `High Volume Emergency ${i}`,
           location: {
             latitude: 40.7128 + (Math.random() - 0.5) * 0.1,
-            longitude: -74.0060 + (Math.random() - 0.5) * 0.1,
+            longitude: -74.006 + (Math.random() - 0.5) * 0.1
           },
           reportedBy: `reporter-${i}`,
-          status: 'pending',
+          status: 'pending'
         })
       )
 
@@ -735,29 +739,29 @@ describe('Emergency Workflow Integration Tests', () => {
       const confirmations = highVolumeEvents.slice(0, 50).map((event, i) => ({
         eventId: event.id,
         userId: `confirmer-${i}`,
-        trustWeight: 0.7 + (Math.random() * 0.2),
-        timestamp: new Date().toISOString(),
+        trustWeight: 0.7 + Math.random() * 0.2,
+        timestamp: new Date().toISOString()
       }))
 
       // Batch process confirmations
       await act(async () => {
         for (const confirmation of confirmations) {
-          const user = createUser({ 
-            id: confirmation.userId, 
-            trustScore: confirmation.trustWeight 
+          const user = createUser({
+            id: confirmation.userId,
+            trustScore: confirmation.trustWeight
           })
           const trustScore = createTrustScore({
             userId: user.id,
-            overall: user.trustScore,
+            overall: user.trustScore
           })
-          
+
           act(() => {
             trustResult.current.setUserScore(user.id, trustScore)
           })
-          
+
           // Update event status
           emergencyResult.current.updateEvent(confirmation.eventId, {
-            status: 'active',
+            status: 'active'
           })
         }
       })
@@ -766,7 +770,7 @@ describe('Emergency Workflow Integration Tests', () => {
 
       // Verify performance
       expect(confirmationTime).toBeLessThan(2000) // Should complete within 2 seconds
-      
+
       const activeEvents = emergencyResult.current.events.filter(e => e.status === 'active')
       expect(activeEvents.length).toBe(50)
     })
@@ -783,18 +787,18 @@ describe('Emergency Workflow Integration Tests', () => {
           severity: 'high',
           title: `Concurrent Emergency ${i}`,
           location: {
-            latitude: 40.7128 + (i * 0.01),
-            longitude: -74.0060 + (i * 0.01),
+            latitude: 40.7128 + i * 0.01,
+            longitude: -74.006 + i * 0.01
           },
           reportedBy: `reporter-${i}`,
-          status: 'pending',
+          status: 'pending'
         }),
         confirmers: Array.from({ length: 5 }, (_, j) =>
-          createUser({ 
-            id: `confirmer-${i}-${j}`, 
-            trustScore: 0.6 + (Math.random() * 0.3) 
+          createUser({
+            id: `confirmer-${i}-${j}`,
+            trustScore: 0.6 + Math.random() * 0.3
           })
-        ),
+        )
       }))
 
       // Process all scenarios concurrently
@@ -809,9 +813,9 @@ describe('Emergency Workflow Integration Tests', () => {
           const confirmationPromises = scenario.confirmers.map(async confirmer => {
             const trustScore = createTrustScore({
               userId: confirmer.id,
-              overall: confirmer.trustScore,
+              overall: confirmer.trustScore
             })
-            
+
             act(() => {
               trustResult.current.setUserScore(confirmer.id, trustScore)
             })
@@ -825,7 +829,7 @@ describe('Emergency Workflow Integration Tests', () => {
           // Update event status
           act(() => {
             emergencyResult.current.updateEvent(scenario.event.id, {
-              status: 'active',
+              status: 'active'
             })
           })
 
@@ -838,7 +842,7 @@ describe('Emergency Workflow Integration Tests', () => {
       // Verify data integrity
       expect(emergencyResult.current.events).toHaveLength(10)
       expect(emergencyResult.current.events.every(e => e.status === 'active')).toBe(true)
-      
+
       // Verify no data corruption
       const integrityCheck = validateDatabaseIntegrity()
       expect(integrityCheck.isValid).toBe(true)
@@ -856,9 +860,9 @@ describe('Emergency Workflow Integration Tests', () => {
         type: 'accident',
         severity: 'high',
         title: 'Real-Time Traffic Accident',
-        location: { latitude: 40.7580, longitude: -73.9855 },
+        location: { latitude: 40.758, longitude: -73.9855 },
         reportedBy: 'realtime-reporter',
-        status: 'pending',
+        status: 'pending'
       })
 
       // Add initial event
@@ -873,30 +877,30 @@ describe('Emergency Workflow Integration Tests', () => {
         {
           timestamp: Date.now() + 5000,
           update: { status: 'active' },
-          source: 'first_responder',
+          source: 'first_responder'
         },
         {
           timestamp: Date.now() + 15000,
-          update: { 
+          update: {
             severity: 'critical',
             casualties: { minor: 2, major: 1 }
           },
-          source: 'paramedic',
+          source: 'paramedic'
         },
         {
           timestamp: Date.now() + 30000,
-          update: { 
+          update: {
             status: 'resolved',
             resolved_at: new Date().toISOString()
           },
-          source: 'coordinator',
-        },
+          source: 'coordinator'
+        }
       ]
 
       // Process real-time updates
       for (const update of realtimeUpdates) {
         await new Promise(resolve => setTimeout(resolve, update.timestamp - Date.now()))
-        
+
         act(() => {
           emergencyResult.current.updateEvent(realtimeEvent.id, update.update)
         })
@@ -904,7 +908,7 @@ describe('Emergency Workflow Integration Tests', () => {
         // Verify update was applied
         const currentEvent = emergencyResult.current.events.find(e => e.id === realtimeEvent.id)
         expect(currentEvent).toBeDefined()
-        
+
         Object.keys(update.update).forEach(key => {
           expect(currentEvent[key]).toEqual(update.update[key])
         })

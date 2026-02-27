@@ -13,7 +13,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createHash, randomBytes } from 'crypto'
 import { securityMonitor } from '@/lib/audit/security-monitor'
-import { trustSecurityMiddleware, trustBasedRateLimitMiddleware } from '@/lib/security/trust-middleware'
+import {
+  trustSecurityMiddleware,
+  trustBasedRateLimitMiddleware
+} from '@/lib/security/trust-middleware'
 
 // Rate limiting configuration
 interface RateLimitConfig {
@@ -62,22 +65,42 @@ const RATE_LIMIT_TIERS: Record<string, RateLimitConfig> = {
   }
 }
 
-// In-memory rate limit store (in production, use Redis)
-const rateLimitStore = new Map<string, {
-  count: number
-  resetTime: number
-  penaltyCount: number
-  lastAccess: number
-  blocked: boolean
-  blockExpiry: number
-}>()
+// Current in-memory rate limiting - WARNING: Does not work in serverless/edge environments
+// TODO: Replace with Redis-based rate limiting before production deployment
+// See: https://upstash.com/docs/redis/features/rate-limiting
+
+if (process.env.NODE_ENV === 'production') {
+  console.warn(
+    '⚠️ WARNING: Using in-memory rate limiting in production. This will not work correctly in distributed/serverless deployments. Implement Redis-based rate limiting.'
+  )
+}
+
+const hasRedis = !!(process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL)
+if (!hasRedis && process.env.NODE_ENV === 'production') {
+  console.warn('⚠️ Redis not configured. Rate limiting will not work across multiple instances.')
+}
+
+const rateLimitStore = new Map<
+  string,
+  {
+    count: number
+    resetTime: number
+    penaltyCount: number
+    lastAccess: number
+    blocked: boolean
+    blockExpiry: number
+  }
+>()
 
 // Suspicious IP tracking
-const suspiciousIPs = new Map<string, {
-  score: number
-  lastActivity: number
-  offenses: string[]
-}>()
+const suspiciousIPs = new Map<
+  string,
+  {
+    score: number
+    lastActivity: number
+    offenses: string[]
+  }
+>()
 
 // Emergency mode detection
 let emergencyMode = false
@@ -283,14 +306,15 @@ async function rateLimitMiddleware(
 
   // Check emergency mode
   const isEmergency = checkEmergencyMode()
-  const effectiveMaxRequests = isEmergency && config.emergencyOverride
-    ? Math.floor(config.maxRequests * 0.3) // Reduce limits during emergency
-    : config.maxRequests
+  const effectiveMaxRequests =
+    isEmergency && config.emergencyOverride
+      ? Math.floor(config.maxRequests * 0.3) // Reduce limits during emergency
+      : config.maxRequests
 
   // Apply penalty multiplier
   const penaltyMultiplier = config.penaltyMultiplier || 1.0
   const adjustedMaxRequests = Math.floor(
-    effectiveMaxRequests / (1 + (rateLimitEntry.penaltyCount * penaltyMultiplier * 0.1))
+    effectiveMaxRequests / (1 + rateLimitEntry.penaltyCount * penaltyMultiplier * 0.1)
   )
 
   // Check if limit exceeded
@@ -300,7 +324,7 @@ async function rateLimitMiddleware(
     // Block if too many penalties
     if (rateLimitEntry.penaltyCount > 5) {
       rateLimitEntry.blocked = true
-      rateLimitEntry.blockExpiry = now + (60 * 60 * 1000) // 1 hour block
+      rateLimitEntry.blockExpiry = now + 60 * 60 * 1000 // 1 hour block
 
       const ip = getClientIP(req)
       updateSuspiciousIP(ip, 'rate_limit_exceeded', 20)
@@ -365,10 +389,7 @@ function inputValidationMiddleware(req: NextRequest): { valid: boolean; response
 
       return {
         valid: false,
-        response: NextResponse.json(
-          { error: 'Invalid request detected' },
-          { status: 400 }
-        )
+        response: NextResponse.json({ error: 'Invalid request detected' }, { status: 400 })
       }
     }
   }
@@ -393,16 +414,15 @@ function inputValidationMiddleware(req: NextRequest): { valid: boolean; response
   }
 
   // Validate content type for POST/PUT requests
-  if ((method === 'POST' || method === 'PUT')
-      && !contentType.includes('application/json')
-      && !contentType.includes('multipart/form-data')
-      && !contentType.includes('application/x-www-form-urlencoded')) {
+  if (
+    (method === 'POST' || method === 'PUT') &&
+    !contentType.includes('application/json') &&
+    !contentType.includes('multipart/form-data') &&
+    !contentType.includes('application/x-www-form-urlencoded')
+  ) {
     return {
       valid: false,
-      response: NextResponse.json(
-        { error: 'Invalid content type' },
-        { status: 400 }
-      )
+      response: NextResponse.json({ error: 'Invalid content type' }, { status: 400 })
     }
   }
 
@@ -447,7 +467,10 @@ function securityHeadersMiddleware(response: NextResponse): NextResponse {
 
   // HSTS (only in production)
   if (process.env.NODE_ENV === 'production') {
-    response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
+    response.headers.set(
+      'Strict-Transport-Security',
+      'max-age=31536000; includeSubDomains; preload'
+    )
   }
 
   return response
@@ -462,11 +485,11 @@ export async function middleware(req: NextRequest) {
 
   // Skip middleware for static assets and internal routes
   if (
-    pathname.startsWith('/_next')
-    || pathname.startsWith('/static')
-    || pathname.startsWith('/favicon')
-    || pathname.includes('.')
-    || pathname === '/sw.js'
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/static') ||
+    pathname.startsWith('/favicon') ||
+    pathname.includes('.') ||
+    pathname === '/sw.js'
   ) {
     return securityHeadersMiddleware(response)
   }
@@ -475,10 +498,7 @@ export async function middleware(req: NextRequest) {
 
   // Check if IP is suspicious
   if (isSuspiciousIP(ip)) {
-    return NextResponse.json(
-      { error: 'Access denied' },
-      { status: 403 }
-    )
+    return NextResponse.json({ error: 'Access denied' }, { status: 403 })
   }
 
   // Input validation
@@ -515,11 +535,12 @@ export async function middleware(req: NextRequest) {
     // Adjust rate limit based on trust score
     const adjustedConfig = {
       ...config,
-      maxRequests: trustContext.trustWeight > 0.7
-        ? config.maxRequests * 2
-        : trustContext.trustWeight < 0.3
-          ? Math.floor(config.maxRequests * 0.5)
-          : config.maxRequests
+      maxRequests:
+        trustContext.trustWeight > 0.7
+          ? config.maxRequests * 2
+          : trustContext.trustWeight < 0.3
+            ? Math.floor(config.maxRequests * 0.5)
+            : config.maxRequests
     }
 
     const rateLimitResult = await rateLimitMiddleware(req, adjustedConfig)
@@ -535,12 +556,14 @@ export async function middleware(req: NextRequest) {
     'API request processed',
     `${req.method} ${pathname} from ${ip}${trustContext ? ` (Trust: ${trustContext.trustWeight}, Level: ${trustContext.trustThreshold})` : ''}`,
     'middleware',
-    trustContext ? {
-      trustScore: trustContext.trustScore,
-      trustThreshold: trustContext.trustThreshold,
-      trustWeight: trustContext.trustWeight,
-      resistance: trustContext.resistance
-    } : undefined
+    trustContext
+      ? {
+          trustScore: trustContext.trustScore,
+          trustThreshold: trustContext.trustThreshold,
+          trustWeight: trustContext.trustWeight,
+          resistance: trustContext.resistance
+        }
+      : undefined
   )
 
   // Apply security headers with trust information
@@ -562,7 +585,6 @@ export async function middleware(req: NextRequest) {
  */
 export const config = {
   matcher: [
-
     /*
      * Match all request paths except for the ones starting with:
      * - _next/static (static files)

@@ -2,27 +2,27 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  AlertTriangle, 
-  Shield, 
-  Bell, 
-  BellOff, 
-  Volume2, 
-  VolumeX, 
-  Eye, 
-  EyeOff, 
-  Zap, 
-  Radio, 
-  Activity, 
-  Clock, 
-  MapPin, 
-  Users, 
-  TrendingUp, 
-  Info, 
-  X, 
-  CheckCircle, 
-  AlertCircle, 
-  ChevronRight, 
+import {
+  AlertTriangle,
+  Shield,
+  Bell,
+  BellOff,
+  Volume2,
+  VolumeX,
+  Eye,
+  EyeOff,
+  Zap,
+  Radio,
+  Activity,
+  Clock,
+  MapPin,
+  Users,
+  TrendingUp,
+  Info,
+  X,
+  CheckCircle,
+  AlertCircle,
+  ChevronRight,
   ChevronDown,
   Settings,
   Filter,
@@ -140,7 +140,7 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
   const [filter, setFilter] = useState({
     severity: 'all',
     type: 'all',
-    acknowledged: 'all',
+    acknowledged: 'all'
   })
   const [settings, setSettings] = useState({
     soundEnabled: true,
@@ -148,7 +148,7 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
     flashEnabled: true,
     autoDismiss: false,
     autoDismissTime: 30000, // 30 seconds
-    maxAlerts: 50,
+    maxAlerts: 50
   })
 
   const { addNotification } = useNotificationActions()
@@ -161,7 +161,7 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
       borderColor: 'border-blue-200',
       icon: Info,
       sound: 'gentle',
-      vibration: false,
+      vibration: false
     },
     medium: {
       color: 'text-yellow-600',
@@ -169,7 +169,7 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
       borderColor: 'border-yellow-200',
       icon: AlertCircle,
       sound: 'moderate',
-      vibration: true,
+      vibration: true
     },
     high: {
       color: 'text-orange-600',
@@ -177,7 +177,7 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
       borderColor: 'border-orange-200',
       icon: AlertTriangle,
       sound: 'urgent',
-      vibration: true,
+      vibration: true
     },
     critical: {
       color: 'text-red-600',
@@ -186,8 +186,8 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
       icon: Shield,
       sound: 'critical',
       vibration: true,
-      flash: true,
-    },
+      flash: true
+    }
   }
 
   // Mock alerts for demonstration
@@ -203,7 +203,7 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
         latitude: 37.7749,
         longitude: -122.4194,
         radius: 500,
-        address: '123 Market St, San Francisco, CA',
+        address: '123 Market St, San Francisco, CA'
       },
       trustWeight: 0.95,
       requiresAction: true,
@@ -218,34 +218,35 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
           label: 'View on Map',
           description: 'Navigate to emergency location',
           icon: MapPin,
-          primary: true,
+          primary: true
         },
         {
           id: 'call',
           type: 'call',
           label: 'Call Emergency',
           description: 'Call emergency services',
-          icon: Phone,
+          icon: Phone
         },
         {
           id: 'share',
           type: 'share',
           label: 'Share Alert',
           description: 'Share with nearby users',
-          icon: Share2,
-        },
+          icon: Share2
+        }
       ],
       metadata: {
         eventId: 'emergency-123',
-        reporterId: 'user-456',
-      },
+        reporterId: 'user-456'
+      }
     },
     {
       id: 'alert-2',
       type: 'severity_update',
       severity: 'high',
       title: 'Emergency Severity Increased',
-      message: 'Fire emergency severity upgraded from medium to high due to multiple confirmations.',
+      message:
+        'Fire emergency severity upgraded from medium to high due to multiple confirmations.',
       timestamp: Date.now() - 120000, // 2 minutes ago
       priority: 'high',
       acknowledged: true,
@@ -257,12 +258,12 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
           type: 'navigate',
           label: 'View Details',
           description: 'View emergency details',
-          icon: Eye,
-        },
+          icon: Eye
+        }
       ],
       metadata: {
-        eventId: 'emergency-123',
-      },
+        eventId: 'emergency-123'
+      }
     },
     {
       id: 'alert-3',
@@ -281,10 +282,10 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
           type: 'dismiss',
           label: 'Dismiss',
           description: 'Dismiss this alert',
-          icon: X,
-        },
-      ],
-    },
+          icon: X
+        }
+      ]
+    }
   ]
 
   useEffect(() => {
@@ -305,38 +306,36 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
           window.location.href = action.url
         }
         break
-        
+
       case 'confirm':
         // Handle confirmation action
         console.log('Confirming alert:', alert.id)
         break
-        
+
       case 'dispute':
         // Handle dispute action
         console.log('Disputing alert:', alert.id)
         break
-        
+
       case 'call':
         // Handle emergency call
         window.location.href = 'tel:911'
         break
-        
+
       case 'share':
         // Handle share action
         if (navigator.share) {
           navigator.share({
             title: alert.title,
             text: alert.message,
-            url: window.location.href,
+            url: window.location.href
           })
         }
         break
-        
+
       case 'dismiss':
         // Dismiss alert
-        setAlerts(prev => prev.map(a => 
-          a.id === alert.id ? { ...a, dismissed: true } : a
-        ))
+        setAlerts(prev => prev.map(a => (a.id === alert.id ? { ...a, dismissed: true } : a)))
         setActiveAlerts(prev => prev.filter(a => a.id !== alert.id))
         break
     }
@@ -344,9 +343,11 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
 
   // Acknowledge alert
   const acknowledgeAlert = (alertId: string) => {
-    setAlerts(prev => prev.map(alert => 
-      alert.id === alertId ? { ...alert, acknowledged: true, read: true } : alert
-    ))
+    setAlerts(prev =>
+      prev.map(alert =>
+        alert.id === alertId ? { ...alert, acknowledged: true, read: true } : alert
+      )
+    )
   }
 
   // Filter alerts
@@ -381,11 +382,7 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
                 size="sm"
                 label={isMuted ? 'Muted' : 'Active'}
               />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsMuted(!isMuted)}
-              >
+              <Button variant="outline" size="sm" onClick={() => setIsMuted(!isMuted)}>
                 {isMuted ? <BellOff className="h-4 w-4" /> : <Bell className="h-4 w-4" />}
               </Button>
             </div>
@@ -395,33 +392,25 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Critical Alerts */}
             <div className="text-center">
-              <div className="text-2xl font-bold text-red-600">
-                {getAlertCount('critical')}
-              </div>
+              <div className="text-2xl font-bold text-red-600">{getAlertCount('critical')}</div>
               <p className="text-sm text-muted-foreground">Critical</p>
             </div>
 
             {/* High Alerts */}
             <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">
-                {getAlertCount('high')}
-              </div>
+              <div className="text-2xl font-bold text-orange-600">{getAlertCount('high')}</div>
               <p className="text-sm text-muted-foreground">High</p>
             </div>
 
             {/* Medium Alerts */}
             <div className="text-center">
-              <div className="text-2xl font-bold text-yellow-600">
-                {getAlertCount('medium')}
-              </div>
+              <div className="text-2xl font-bold text-yellow-600">{getAlertCount('medium')}</div>
               <p className="text-sm text-muted-foreground">Medium</p>
             </div>
 
             {/* Low Alerts */}
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
-                {getAlertCount('low')}
-              </div>
+              <div className="text-2xl font-bold text-blue-600">{getAlertCount('low')}</div>
               <p className="text-sm text-muted-foreground">Low</p>
             </div>
           </div>
@@ -452,27 +441,22 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="font-medium">Do Not Disturb</h4>
-                <p className="text-sm text-muted-foreground">
-                  Silence all non-critical alerts
-                </p>
+                <p className="text-sm text-muted-foreground">Silence all non-critical alerts</p>
               </div>
-              <Switch
-                checked={isDoNotDisturb}
-                onCheckedChange={setIsDoNotDisturb}
-              />
+              <Switch checked={isDoNotDisturb} onCheckedChange={setIsDoNotDisturb} />
             </div>
 
             {/* Sound Settings */}
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="font-medium">Sound Alerts</h4>
-                <p className="text-sm text-muted-foreground">
-                  Play sound for new alerts
-                </p>
+                <p className="text-sm text-muted-foreground">Play sound for new alerts</p>
               </div>
               <Switch
                 checked={settings.soundEnabled}
-                onCheckedChange={(checked) => setSettings(prev => ({ ...prev, soundEnabled: checked }))}
+                onCheckedChange={checked =>
+                  setSettings(prev => ({ ...prev, soundEnabled: checked }))
+                }
               />
             </div>
 
@@ -480,13 +464,13 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="font-medium">Vibration</h4>
-                <p className="text-sm text-muted-foreground">
-                  Vibrate for critical alerts
-                </p>
+                <p className="text-sm text-muted-foreground">Vibrate for critical alerts</p>
               </div>
               <Switch
                 checked={settings.vibrationEnabled}
-                onCheckedChange={(checked) => setSettings(prev => ({ ...prev, vibrationEnabled: checked }))}
+                onCheckedChange={checked =>
+                  setSettings(prev => ({ ...prev, vibrationEnabled: checked }))
+                }
               />
             </div>
 
@@ -494,15 +478,14 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="font-medium">Flash Alert</h4>
-                <p className="text-sm text-muted-foreground">
-                  Flash screen for critical alerts
-                </p>
+                <p className="text-sm text-muted-foreground">Flash screen for critical alerts</p>
               </div>
               <Switch
                 checked={settings.flashEnabled}
-                onCheckedChange={(checked) => setSettings(prev => ({ ...prev, flashEnabled: checked }))}
+                onCheckedChange={checked =>
+                  setSettings(prev => ({ ...prev, flashEnabled: checked }))
+                }
               />
-            </div>
             </div>
           </div>
         </CardContent>
@@ -517,7 +500,7 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
               {/* Filter Controls */}
               <select
                 value={filter.severity}
-                onChange={(e) => setFilter(prev => ({ ...prev, severity: e.target.value }))}
+                onChange={e => setFilter(prev => ({ ...prev, severity: e.target.value }))}
                 className="px-3 py-1 border rounded-md text-sm"
               >
                 <option value="all">All Severities</option>
@@ -529,7 +512,7 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
 
               <select
                 value={filter.type}
-                onChange={(e) => setFilter(prev => ({ ...prev, type: e.target.value }))}
+                onChange={e => setFilter(prev => ({ ...prev, type: e.target.value }))}
                 className="px-3 py-1 border rounded-md text-sm"
               >
                 <option value="all">All Types</option>
@@ -580,18 +563,17 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
                   >
                     {/* Alert Header */}
                     <div
-                      className={cn(
-                        'p-4 cursor-pointer',
-                        config.bgColor
-                      )}
+                      className={cn('p-4 cursor-pointer', config.bgColor)}
                       onClick={() => setExpandedAlert(isExpanded ? null : alert.id)}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className={cn(
-                            'w-8 h-8 rounded-full flex items-center justify-center',
-                            config.bgColor
-                          )}>
+                          <div
+                            className={cn(
+                              'w-8 h-8 rounded-full flex items-center justify-center',
+                              config.bgColor
+                            )}
+                          >
                             <IconComponent className={cn('h-4 w-4', config.color)} />
                           </div>
                           <div>
@@ -605,7 +587,7 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={(e) => {
+                              onClick={e => {
                                 e.stopPropagation()
                                 acknowledgeAlert(alert.id)
                               }}
@@ -613,18 +595,21 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
                               <CheckCircle className="h-4 w-4" />
                             </Button>
                           )}
-                          
+
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={(e) => {
+                            onClick={e => {
                               e.stopPropagation()
-                              handleAlertAction(alert, alert.actions?.find(a => a.type === 'dismiss') || {
-                                id: 'dismiss',
-                                type: 'dismiss',
-                                label: 'Dismiss',
-                                icon: X,
-                              })
+                              handleAlertAction(
+                                alert,
+                                alert.actions?.find(a => a.type === 'dismiss') || {
+                                  id: 'dismiss',
+                                  type: 'dismiss',
+                                  label: 'Dismiss',
+                                  icon: X
+                                }
+                              )
                             }}
                           >
                             <X className="h-4 w-4" />
@@ -638,14 +623,17 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
                           <Clock className="h-3 w-3" />
                           <span>{new Date(alert.timestamp).toLocaleString()}</span>
                         </div>
-                        
+
                         {alert.location && (
                           <div className="flex items-center gap-1">
                             <MapPin className="h-3 w-3" />
-                            <span>{alert.location.address || `${alert.location.latitude.toFixed(4)}, ${alert.location.longitude.toFixed(4)}`}</span>
+                            <span>
+                              {alert.location.address ||
+                                `${alert.location.latitude.toFixed(4)}, ${alert.location.longitude.toFixed(4)}`}
+                            </span>
                           </div>
                         )}
-                        
+
                         {alert.trustWeight && (
                           <div className="flex items-center gap-1">
                             <Shield className="h-3 w-3" />
@@ -670,7 +658,7 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
                                 key={action.id}
                                 variant={action.primary ? 'default' : 'outline'}
                                 className="w-full justify-start"
-                                onClick={(e) => {
+                                onClick={e => {
                                   e.stopPropagation()
                                   handleAlertAction(alert, action)
                                 }}

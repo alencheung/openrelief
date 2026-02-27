@@ -2,13 +2,13 @@
 
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  BookOpen, 
-  Shield, 
-  TrendingUp, 
-  Users, 
-  Clock, 
-  MapPin, 
+import {
+  BookOpen,
+  Shield,
+  TrendingUp,
+  Users,
+  Clock,
+  MapPin,
   Award,
   AlertTriangle,
   CheckCircle,
@@ -57,11 +57,11 @@ export function TrustEducation({ compact = false, className }: TrustEducationPro
           <div>
             <h4 className="font-medium mb-2">What is Trust Score?</h4>
             <p className="text-sm text-muted-foreground">
-              Your trust score represents your reliability and accuracy in reporting and confirming emergencies. 
-              It ranges from 0% to 100% and is calculated based on multiple factors.
+              Your trust score represents your reliability and accuracy in reporting and confirming
+              emergencies. It ranges from 0% to 100% and is calculated based on multiple factors.
             </p>
           </div>
-          
+
           <div>
             <h4 className="font-medium mb-2">Why It Matters</h4>
             <ul className="text-sm text-muted-foreground space-y-1">
@@ -82,7 +82,7 @@ export function TrustEducation({ compact = false, className }: TrustEducationPro
                 </p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardContent className="p-4">
                 <AlertTriangle className="h-8 w-8 text-red-600 mb-2" />
@@ -189,8 +189,8 @@ export function TrustEducation({ compact = false, className }: TrustEducationPro
                 <div>
                   <h5 className="font-medium text-amber-800">Penalty System</h5>
                   <p className="text-sm text-amber-700">
-                    False reports, spam, or malicious behavior will result in penalty points 
-                    that significantly reduce your trust score and may lead to account restrictions.
+                    False reports, spam, or malicious behavior will result in penalty points that
+                    significantly reduce your trust score and may lead to account restrictions.
                   </p>
                 </div>
               </div>
@@ -260,9 +260,9 @@ export function TrustEducation({ compact = false, className }: TrustEducationPro
           <div className="bg-blue-50 p-4 rounded-lg">
             <h5 className="font-medium text-blue-900 mb-2">Progressive Access</h5>
             <p className="text-sm text-blue-800">
-              As your trust score increases, you gain access to more features and your reports 
-              carry more weight in the consensus system. Start with basic reporting and work your 
-              way up to high-trust privileges.
+              As your trust score increases, you gain access to more features and your reports carry
+              more weight in the consensus system. Start with basic reporting and work your way up
+              to high-trust privileges.
             </p>
           </div>
         </div>
@@ -331,9 +331,12 @@ export function TrustEducation({ compact = false, className }: TrustEducationPro
 
   const getLevelColor = (level: EducationSection['level']) => {
     switch (level) {
-      case 'beginner': return 'bg-green-100 text-green-800 border-green-200'
-      case 'intermediate': return 'bg-blue-100 text-blue-800 border-blue-200'
-      case 'advanced': return 'bg-purple-100 text-purple-800 border-purple-200'
+      case 'beginner':
+        return 'bg-green-100 text-green-800 border-green-200'
+      case 'intermediate':
+        return 'bg-blue-100 text-blue-800 border-blue-200'
+      case 'advanced':
+        return 'bg-purple-100 text-purple-800 border-purple-200'
     }
   }
 
@@ -387,13 +390,13 @@ export function TrustEducation({ compact = false, className }: TrustEducationPro
           </div>
 
           <div className="space-y-3">
-            {sections.map((section) => {
+            {sections.map(section => {
               const isExpanded = expandedSection === section.id
               const isCompleted = completedSections.has(section.id)
               const Icon = section.icon
 
               return (
-                <Card 
+                <Card
                   key={section.id}
                   className={cn(
                     'cursor-pointer transition-all duration-200',
@@ -412,12 +415,10 @@ export function TrustEducation({ compact = false, className }: TrustEducationPro
                         </div>
                         <div>
                           <h3 className="font-medium">{section.title}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {section.description}
-                          </p>
+                          <p className="text-sm text-muted-foreground">{section.description}</p>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className={getLevelColor(section.level)}>
                           {section.level}
@@ -440,12 +441,12 @@ export function TrustEducation({ compact = false, className }: TrustEducationPro
                           className="mt-4 pt-4 border-t"
                         >
                           {section.content}
-                          
+
                           {!isCompleted && (
                             <div className="mt-4 pt-4 border-t">
                               <Button
                                 size="sm"
-                                onClick={(e) => {
+                                onClick={e => {
                                   e.stopPropagation()
                                   handleSectionComplete(section.id)
                                 }}

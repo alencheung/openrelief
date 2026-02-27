@@ -2,13 +2,17 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import { Suspense } from 'react'
 import { Providers } from '@/components/providers/Providers'
+import { initSentry } from '@/lib/monitoring/sentry'
 import './globals.css'
+
+initSentry()
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'OpenRelief - Emergency Coordination Platform',
-  description: 'Offline-first emergency coordination platform for decentralized disaster response with 24+ hour offline capability',
+  description:
+    'Offline-first emergency coordination platform for decentralized disaster response with 24+ hour offline capability',
   keywords: ['emergency', 'coordination', 'disaster', 'relief', 'open-source', 'pwa', 'offline'],
   authors: [{ name: 'OpenRelief Contributors' }],
   manifest: '/manifest.json',
@@ -26,7 +30,8 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: 'https://openrelief.org',
     title: 'OpenRelief - Emergency Coordination Platform',
-    description: 'Offline-first emergency coordination platform for decentralized disaster response',
+    description:
+      'Offline-first emergency coordination platform for decentralized disaster response',
     siteName: 'OpenRelief'
   },
   twitter: {
@@ -55,11 +60,7 @@ export const viewport: Viewport = {
   themeColor: '#dc2626'
 }
 
-export default function RootLayout({
-  children
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="h-full">
       <head>
@@ -78,9 +79,7 @@ export default function RootLayout({
       <body className={`${inter.className} h-full antialiased`}>
         <Providers>
           <div className="min-h-full">
-            <Suspense fallback={<div>Loading...</div>}>
-              {children}
-            </Suspense>
+            <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
           </div>
         </Providers>
       </body>

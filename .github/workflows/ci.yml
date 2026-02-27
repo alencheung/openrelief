@@ -8,21 +8,10 @@ on:
   workflow_dispatch:
 
 env:
-  NODE_VERSION: '18.x'
+  NODE_VERSION: "18.x"
   CACHE_VERSION: v2
 
 jobs:
-  # Workflow disabled - all jobs will be skipped
-  disabled:
-    name: Workflow Disabled
-    runs-on: ubuntu-latest
-    if: false
-    steps:
-      - name: Workflow is disabled
-        run: |
-          echo "This workflow has been disabled to prevent failures."
-          echo "To re-enable, remove the 'if: false' condition and the disabled job."
-
   lint-and-type-check:
     name: Lint & Type Check
     runs-on: ubuntu-latest
@@ -36,7 +25,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
 
       - name: Cache node modules
         id: cache
@@ -75,7 +64,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
 
       - name: Cache node modules
         uses: actions/cache@v3
@@ -112,6 +101,14 @@ jobs:
           name: codecov-umbrella
           fail_ci_if_error: false
 
+      - name: Upload test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-failed
+          path: coverage/
+          retention-days: 30
+
   e2e-test:
     name: E2E Tests
     runs-on: ubuntu-latest
@@ -124,7 +121,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
 
       - name: Cache node modules
         uses: actions/cache@v3
@@ -176,7 +173,7 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 30
-          
+
       - name: Upload Playwright test results
         uses: actions/upload-artifact@v4
         if: always()
@@ -197,7 +194,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
 
       - name: Cache node modules
         uses: actions/cache@v3
@@ -242,7 +239,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
 
       - name: Cache node modules
         uses: actions/cache@v3
@@ -280,14 +277,14 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--env=staging'
+          vercel-args: "--env=staging"
           working-directory: ./
 
       - name: Deploy Edge Functions to Staging
-        if: steps.deploy-staging.outcome == 'success'
+        if: steps.deploy-staging.outcome == 'success' && hashFiles('supabase/functions/**') != ''
         run: |
           npx supabase login --token ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          npx supabase functions deploy --env=staging
+          npx supabase functions deploy
 
   build-production:
     name: Build Production
@@ -302,7 +299,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
 
       - name: Cache node modules
         uses: actions/cache@v3
@@ -317,6 +314,11 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Validate Database Migrations
+        run: |
+          npx supabase db lint
+        continue-on-error: true
 
       - name: Build application
         run: npm run build
@@ -340,14 +342,14 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
+          vercel-args: "--prod"
           working-directory: ./
 
       - name: Deploy Edge Functions
-        if: steps.deploy-production.outcome == 'success'
+        if: steps.deploy-production.outcome == 'success' && hashFiles('supabase/functions/**') != ''
         run: |
           npx supabase login --token ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          npx supabase functions deploy --env=production
+          npx supabase functions deploy
 
       - name: Run database migrations
         if: steps.deploy-production.outcome == 'success'
@@ -368,7 +370,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
 
       - name: Cache node modules
         uses: actions/cache@v3
@@ -414,9 +416,9 @@ jobs:
         uses: 8398a7/action-slack@v3
         with:
           status: success
-          channel: '#deployments'
+          channel: "#deployments"
           text: |
-            ✅ OpenRelief deployed successfully!
+            OpenRelief deployed successfully!
             Branch: ${{ github.ref_name }}
             Commit: ${{ github.sha }}
             Workflow: ${{ github.workflow }}
@@ -428,9 +430,9 @@ jobs:
         uses: 8398a7/action-slack@v3
         with:
           status: failure
-          channel: '#deployments'
+          channel: "#deployments"
           text: |
-            ❌ OpenRelief deployment failed!
+            OpenRelief deployment failed!
             Branch: ${{ github.ref_name }}
             Commit: ${{ github.sha }}
             Workflow: ${{ github.workflow }}

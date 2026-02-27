@@ -2,23 +2,23 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  WifiOff, 
-  Database, 
-  Clock, 
-  MapPin, 
-  Camera, 
-  Mic, 
-  FileText, 
-  Send, 
-  Save, 
-  Upload, 
-  RefreshCw, 
-  CheckCircle, 
-  AlertTriangle, 
-  Info, 
-  X, 
-  ChevronRight, 
+import {
+  WifiOff,
+  Database,
+  Clock,
+  MapPin,
+  Camera,
+  Mic,
+  FileText,
+  Send,
+  Save,
+  Upload,
+  RefreshCw,
+  CheckCircle,
+  AlertTriangle,
+  Info,
+  X,
+  ChevronRight,
   ChevronDown,
   Plus,
   Minus,
@@ -97,23 +97,23 @@ interface OfflineQueue {
   lastSyncTime: number
 }
 
-export function OfflineEmergencyReporting({ 
-  className, 
-  onReportSubmitted, 
-  initialLocation 
+export function OfflineEmergencyReporting({
+  className,
+  onReportSubmitted,
+  initialLocation
 }: OfflineEmergencyReportingProps) {
   const { pendingActions, addOfflineAction, clearSyncedActions } = useOfflineActions()
   const { userLocation, locationAccuracy } = useEmergencyStore()
   const { storageQuota, addAction } = useOfflineStore()
-  
+
   const [currentReport, setCurrentReport] = useState<Partial<OfflineReport>>({
     type: 'fire',
     severity: 'high',
     title: '',
     description: '',
-    location: initialLocation || null,
+    location: initialLocation || null
   })
-  
+
   const [images, setImages] = useState<string[]>([])
   const [videos, setVideos] = useState<string[]>([])
   const [audioRecording, setAudioRecording] = useState<string | null>(null)
@@ -126,7 +126,7 @@ export function OfflineEmergencyReporting({
     maxSize: 50 * 1024 * 1024, // 50MB
     compressionEnabled: true,
     autoSyncEnabled: true,
-    lastSyncTime: 0,
+    lastSyncTime: 0
   })
 
   // Mock offline reports from storage
@@ -141,12 +141,12 @@ export function OfflineEmergencyReporting({
         latitude: 37.7749,
         longitude: -122.4194,
         accuracy: 10,
-        address: 'Market St & 5th St, San Francisco, CA',
+        address: 'Market St & 5th St, San Francisco, CA'
       },
       reporter: {
         id: 'user-789',
         name: 'John Doe',
-        trustScore: 0.92,
+        trustScore: 0.92
       },
       timestamp: Date.now() - 300000, // 5 minutes ago
       images: ['image1.jpg'],
@@ -156,11 +156,11 @@ export function OfflineEmergencyReporting({
         batteryLevel: 85,
         networkStatus: 'offline',
         gpsAccuracy: 5,
-        estimatedDataSize: 2.5 * 1024 * 1024, // 2.5MB
+        estimatedDataSize: 2.5 * 1024 * 1024 // 2.5MB
       },
       status: 'queued',
       syncAttempts: 3,
-      lastSyncAttempt: Date.now() - 60000, // 1 minute ago
+      lastSyncAttempt: Date.now() - 60000 // 1 minute ago
     },
     {
       id: 'offline-2',
@@ -169,15 +169,15 @@ export function OfflineEmergencyReporting({
       title: 'Building Fire - Financial District',
       description: 'Smoke visible from multiple floors, fire alarms active',
       location: {
-        latitude: 37.7890,
-        longitude: -122.4010,
+        latitude: 37.789,
+        longitude: -122.401,
         accuracy: 15,
-        address: '100 Pine St, San Francisco, CA',
+        address: '100 Pine St, San Francisco, CA'
       },
       reporter: {
         id: 'user-456',
         name: 'Jane Smith',
-        trustScore: 0.78,
+        trustScore: 0.78
       },
       timestamp: Date.now() - 900000, // 15 minutes ago
       images: ['image2.jpg', 'image3.jpg'],
@@ -187,12 +187,12 @@ export function OfflineEmergencyReporting({
         batteryLevel: 45,
         networkStatus: 'poor',
         gpsAccuracy: 25,
-        estimatedDataSize: 8.7 * 1024 * 1024, // 8.7MB
+        estimatedDataSize: 8.7 * 1024 * 1024 // 8.7MB
       },
       status: 'syncing',
       syncAttempts: 1,
-      lastSyncAttempt: Date.now() - 30000, // 30 seconds ago
-    },
+      lastSyncAttempt: Date.now() - 30000 // 30 seconds ago
+    }
   ])
 
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -216,9 +216,15 @@ export function OfflineEmergencyReporting({
       maxSize: queue.maxSize,
       compressionEnabled: queue.compressionEnabled,
       autoSyncEnabled: queue.autoSyncEnabled,
-      lastSyncTime: queue.lastSyncTime,
+      lastSyncTime: queue.lastSyncTime
     })
-  }, [offlineReports, queue.maxSize, queue.compressionEnabled, queue.autoSyncEnabled, queue.lastSyncTime])
+  }, [
+    offlineReports,
+    queue.maxSize,
+    queue.compressionEnabled,
+    queue.autoSyncEnabled,
+    queue.lastSyncTime
+  ])
 
   // Get current location
   const getCurrentLocation = () => {
@@ -226,14 +232,16 @@ export function OfflineEmergencyReporting({
       return {
         latitude: userLocation.lat,
         longitude: userLocation.lng,
-        accuracy: locationAccuracy,
+        accuracy: locationAccuracy
       }
     }
-    return initialLocation || {
-      latitude: 37.7749,
-      longitude: -122.4194,
-      accuracy: 10,
-    }
+    return (
+      initialLocation || {
+        latitude: 37.7749,
+        longitude: -122.4194,
+        accuracy: 10
+      }
+    )
   }
 
   // Handle image capture
@@ -257,7 +265,7 @@ export function OfflineEmergencyReporting({
       const mediaRecorder = new MediaRecorder(stream)
       const audioChunks: Blob[] = []
 
-      mediaRecorder.ondataavailable = (event) => {
+      mediaRecorder.ondataavailable = event => {
         audioChunks.push(event.data)
       }
 
@@ -296,7 +304,7 @@ export function OfflineEmergencyReporting({
       reporter: {
         id: 'current-user',
         name: 'Current User',
-        trustScore: 0.75, // Default for offline reports
+        trustScore: 0.75 // Default for offline reports
       },
       timestamp: Date.now(),
       images,
@@ -307,10 +315,13 @@ export function OfflineEmergencyReporting({
         batteryLevel: 'unknown', // Would need Battery API
         networkStatus: navigator.onLine ? 'online' : 'offline',
         gpsAccuracy: getCurrentLocation().accuracy,
-        estimatedDataSize: (images.length * 1024 * 1024) + (videos.length * 5 * 1024 * 1024) + (audioRecording ? 2 * 1024 * 1024 : 0),
+        estimatedDataSize:
+          images.length * 1024 * 1024 +
+          videos.length * 5 * 1024 * 1024 +
+          (audioRecording ? 2 * 1024 * 1024 : 0)
       },
       status: 'queued',
-      syncAttempts: 0,
+      syncAttempts: 0
     }
 
     // Add to offline queue
@@ -319,24 +330,24 @@ export function OfflineEmergencyReporting({
       table: 'emergency_events',
       data: report,
       priority: 'critical',
-      maxRetries: 5,
+      maxRetries: 5
     })
 
     // Add to local reports
     setOfflineReports(prev => [report, ...prev])
-    
+
     // Reset form
     setCurrentReport({
       type: 'fire',
       severity: 'high',
       title: '',
       description: '',
-      location: null,
+      location: null
     })
     setImages([])
     setVideos([])
     setAudioRecording(null)
-    
+
     // Callback
     if (onReportSubmitted) {
       onReportSubmitted(report)
@@ -350,20 +361,26 @@ export function OfflineEmergencyReporting({
     if (navigator.onLine && queue.autoSyncEnabled && offlineReports.length > 0) {
       const syncInterval = setInterval(() => {
         const reportsToSync = offlineReports.filter(report => report.status === 'queued')
-        
+
         if (reportsToSync.length > 0) {
           console.log(`Syncing ${reportsToSync.length} offline reports...`)
-          
+
           // Update status to syncing
-          setOfflineReports(prev => prev.map(report => 
-            reportsToSync.includes(report) ? { ...report, status: 'syncing' } : report
-          ))
+          setOfflineReports(prev =>
+            prev.map(report =>
+              reportsToSync.includes(report) ? { ...report, status: 'syncing' } : report
+            )
+          )
 
           // Simulate sync process
           setTimeout(() => {
-            setOfflineReports(prev => prev.map(report => 
-              report.status === 'syncing' ? { ...report, status: 'synced', lastSyncAttempt: Date.now() } : report
-            ))
+            setOfflineReports(prev =>
+              prev.map(report =>
+                report.status === 'syncing'
+                  ? { ...report, status: 'synced', lastSyncAttempt: Date.now() }
+                  : report
+              )
+            )
           }, 3000) // 3 seconds
         }
       }, 30000) // Check every 30 seconds
@@ -377,22 +394,32 @@ export function OfflineEmergencyReporting({
   // Get status color
   const getStatusColor = (status: OfflineReport['status']) => {
     switch (status) {
-      case 'synced': return 'text-green-600'
-      case 'syncing': return 'text-blue-600'
-      case 'queued': return 'text-yellow-600'
-      case 'failed': return 'text-red-600'
-      default: return 'text-gray-600'
+      case 'synced':
+        return 'text-green-600'
+      case 'syncing':
+        return 'text-blue-600'
+      case 'queued':
+        return 'text-yellow-600'
+      case 'failed':
+        return 'text-red-600'
+      default:
+        return 'text-gray-600'
     }
   }
 
   // Get status icon
   const getStatusIcon = (status: OfflineReport['status']) => {
     switch (status) {
-      case 'synced': return CheckCircle
-      case 'syncing': return RefreshCw
-      case 'queued': return Clock
-      case 'failed': return AlertTriangle
-      default: return Clock
+      case 'synced':
+        return CheckCircle
+      case 'syncing':
+        return RefreshCw
+      case 'queued':
+        return Clock
+      case 'failed':
+        return AlertTriangle
+      default:
+        return Clock
     }
   }
 
@@ -422,16 +449,14 @@ export function OfflineEmergencyReporting({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Queue Status */}
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
-                {queue.reports.length}
-              </div>
+              <div className="text-2xl font-bold text-blue-600">{queue.reports.length}</div>
               <p className="text-sm text-muted-foreground">Queued Reports</p>
             </div>
 
             {/* Storage Usage */}
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-600">
-                {Math.round((queue.totalSize / 1024 / 1024))}MB
+                {Math.round(queue.totalSize / 1024 / 1024)}MB
               </div>
               <p className="text-sm text-muted-foreground">
                 of {Math.round(queue.maxSize / 1024 / 1024)}MB
@@ -441,7 +466,9 @@ export function OfflineEmergencyReporting({
             {/* Last Sync */}
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">
-                {queue.lastSyncTime > 0 ? new Date(queue.lastSyncTime).toLocaleTimeString() : 'Never'}
+                {queue.lastSyncTime > 0
+                  ? new Date(queue.lastSyncTime).toLocaleTimeString()
+                  : 'Never'}
               </div>
               <p className="text-sm text-muted-foreground">Last Sync</p>
             </div>
@@ -456,9 +483,7 @@ export function OfflineEmergencyReporting({
             <AlertTriangle className="h-5 w-5" />
             Create Emergency Report
           </CardTitle>
-          <Badge variant="outline">
-            Offline Mode
-          </Badge>
+          <Badge variant="outline">Offline Mode</Badge>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
@@ -471,7 +496,7 @@ export function OfflineEmergencyReporting({
                   { type: 'medical', name: 'Medical', icon: HeartPulse, color: 'pink' },
                   { type: 'security', name: 'Security', icon: Shield, color: 'blue' },
                   { type: 'natural', name: 'Natural', icon: CloudRain, color: 'cyan' },
-                  { type: 'infrastructure', name: 'Infrastructure', icon: Zap, color: 'orange' },
+                  { type: 'infrastructure', name: 'Infrastructure', icon: Zap, color: 'orange' }
                 ].map(({ type, name, icon: IconComponent, color }) => (
                   <motion.button
                     key={type}
@@ -479,8 +504,8 @@ export function OfflineEmergencyReporting({
                     whileTap={{ scale: 0.98 }}
                     className={cn(
                       'p-4 rounded-lg border-2 transition-all duration-200',
-                      currentReport.type === type 
-                        ? `${color}-100 border-${color}-500 bg-${color}-50` 
+                      currentReport.type === type
+                        ? `${color}-100 border-${color}-500 bg-${color}-50`
                         : 'border-gray-200 hover:border-gray-300'
                     )}
                     onClick={() => setCurrentReport(prev => ({ ...prev, type }))}
@@ -500,7 +525,7 @@ export function OfflineEmergencyReporting({
                   { level: 'low', name: 'Low', color: 'blue' },
                   { level: 'medium', name: 'Medium', color: 'yellow' },
                   { level: 'high', name: 'High', color: 'orange' },
-                  { level: 'critical', name: 'Critical', color: 'red' },
+                  { level: 'critical', name: 'Critical', color: 'red' }
                 ].map(({ level, name, color }) => (
                   <motion.button
                     key={level}
@@ -508,16 +533,18 @@ export function OfflineEmergencyReporting({
                     whileTap={{ scale: 0.98 }}
                     className={cn(
                       'p-4 rounded-lg border-2 transition-all duration-200',
-                      currentReport.severity === level 
-                        ? `${color}-100 border-${color}-500 bg-${color}-50` 
+                      currentReport.severity === level
+                        ? `${color}-100 border-${color}-500 bg-${color}-50`
                         : 'border-gray-200 hover:border-gray-300'
                     )}
                     onClick={() => setCurrentReport(prev => ({ ...prev, severity }))}
                   >
-                    <div className={cn(
-                      'w-3 h-3 rounded-full mx-auto mb-2',
-                      currentReport.severity === level ? `bg-${color}-500` : 'bg-gray-400'
-                    )} />
+                    <div
+                      className={cn(
+                        'w-3 h-3 rounded-full mx-auto mb-2',
+                        currentReport.severity === level ? `bg-${color}-500` : 'bg-gray-400'
+                      )}
+                    />
                     <div className="text-sm font-medium">{name}</div>
                   </motion.button>
                 ))}
@@ -530,7 +557,7 @@ export function OfflineEmergencyReporting({
                 <Input
                   label="Title"
                   value={currentReport.title || ''}
-                  onChange={(e) => setCurrentReport(prev => ({ ...prev, title: e.target.value }))}
+                  onChange={e => setCurrentReport(prev => ({ ...prev, title: e.target.value }))}
                   placeholder="Brief description of the emergency"
                   required
                 />
@@ -540,7 +567,9 @@ export function OfflineEmergencyReporting({
                 <label className="text-sm font-medium mb-2 block">Description</label>
                 <Textarea
                   value={currentReport.description || ''}
-                  onChange={(e) => setCurrentReport(prev => ({ ...prev, description: e.target.value }))}
+                  onChange={e =>
+                    setCurrentReport(prev => ({ ...prev, description: e.target.value }))
+                  }
                   placeholder="Detailed description of the emergency situation"
                   rows={4}
                   required
@@ -556,10 +585,10 @@ export function OfflineEmergencyReporting({
                   <MapPin className="h-5 w-5 text-gray-600" />
                   <div>
                     <div className="text-sm font-medium">
-                      {currentReport.location 
-                        ? currentReport.location.address || `${currentReport.location.latitude.toFixed(6)}, ${currentReport.location.longitude.toFixed(6)}`
-                        : 'Location will be captured automatically'
-                      }
+                      {currentReport.location
+                        ? currentReport.location.address ||
+                          `${currentReport.location.latitude.toFixed(6)}, ${currentReport.location.longitude.toFixed(6)}`
+                        : 'Location will be captured automatically'}
                     </div>
                     {currentReport.location && (
                       <div className="text-xs text-muted-foreground">
@@ -579,8 +608,8 @@ export function OfflineEmergencyReporting({
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                   {images.map((image, index) => (
                     <div key={index} className="relative">
-                      <img 
-                        src={image} 
+                      <img
+                        src={image}
                         alt={`Emergency photo ${index + 1}`}
                         className="w-full h-24 object-cover rounded-lg border border-gray-200"
                       />
@@ -592,7 +621,7 @@ export function OfflineEmergencyReporting({
                       </button>
                     </div>
                   ))}
-                  
+
                   {images.length < 5 && (
                     <motion.button
                       whileHover={{ scale: 1.02 }}
@@ -611,7 +640,7 @@ export function OfflineEmergencyReporting({
                   accept="image/*"
                   multiple
                   className="hidden"
-                  onChange={(e) => handleImageCapture(e.target.files)}
+                  onChange={e => handleImageCapture(e.target.files)}
                 />
               </div>
 
@@ -621,8 +650,8 @@ export function OfflineEmergencyReporting({
                 <div className="grid grid-cols-2 gap-3">
                   {videos.map((video, index) => (
                     <div key={index} className="relative">
-                      <video 
-                        src={video} 
+                      <video
+                        src={video}
                         className="w-full h-24 object-cover rounded-lg border border-gray-200"
                         controls
                       />
@@ -634,7 +663,7 @@ export function OfflineEmergencyReporting({
                       </button>
                     </div>
                   ))}
-                  
+
                   {videos.length < 2 && (
                     <motion.button
                       whileHover={{ scale: 1.02 }}
@@ -653,7 +682,7 @@ export function OfflineEmergencyReporting({
                   accept="video/*"
                   multiple
                   className="hidden"
-                  onChange={(e) => handleVideoCapture(e.target.files)}
+                  onChange={e => handleVideoCapture(e.target.files)}
                 />
               </div>
 
@@ -663,17 +692,11 @@ export function OfflineEmergencyReporting({
                 <div className="flex items-center gap-4">
                   {audioRecording ? (
                     <div className="flex-1">
-                      <audio 
-                        ref={audioRef}
-                        src={audioRecording} 
-                        controls
-                        className="w-full"
-                      />
+                      <audio ref={audioRef} src={audioRecording} controls className="w-full" />
                       <div className="mt-2 p-3 bg-red-50 rounded-lg border border-red-200">
                         <div className="flex items-center gap-2">
                           <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
                           <span className="text-sm font-medium text-red-800">Recording...</span>
-                        </div>
                         </div>
                       </div>
                     </div>
@@ -720,12 +743,8 @@ export function OfflineEmergencyReporting({
             Offline Queue
           </CardTitle>
           <div className="flex items-center gap-2">
-            <Badge variant="outline">
-              {queue.reports.length} reports
-            </Badge>
-            <Badge variant="outline">
-              {Math.round(queue.totalSize / 1024 / 1024)}MB
-            </Badge>
+            <Badge variant="outline">{queue.reports.length} reports</Badge>
+            <Badge variant="outline">{Math.round(queue.totalSize / 1024 / 1024)}MB</Badge>
           </div>
         </CardHeader>
         <CardContent>
@@ -734,9 +753,7 @@ export function OfflineEmergencyReporting({
               <div className="text-center py-8 text-muted-foreground">
                 <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p className="text-lg font-medium mb-2">No Offline Reports</p>
-                <p className="text-sm">
-                  Emergency reports created while offline will appear here
-                </p>
+                <p className="text-sm">Emergency reports created while offline will appear here</p>
               </div>
             ) : (
               offlineReports.map((report, index) => (
@@ -756,48 +773,45 @@ export function OfflineEmergencyReporting({
                           severity={report.severity}
                           showSeverity
                         />
-                        
+
                         <div>
                           <h4 className="font-semibold">{report.title}</h4>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {report.description}
-                          </p>
+                          <p className="text-sm text-muted-foreground mt-1">{report.description}</p>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <MapPin className="h-4 w-4" />
-                        <span>{report.location.address || `${report.location.latitude.toFixed(4)}, ${report.location.longitude.toFixed(4)}`}</span>
+                        <span>
+                          {report.location.address ||
+                            `${report.location.latitude.toFixed(4)}, ${report.location.longitude.toFixed(4)}`}
+                        </span>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <div className={cn(
-                        'w-3 h-3 rounded-full',
-                        getStatusColor(report.status)
-                      )}>
-                        {getStatusIcon(report.status) && (
-                          React.createElement(getStatusIcon(report.status), { className: 'h-3 w-3' })
-                        )}
+                      <div className={cn('w-3 h-3 rounded-full', getStatusColor(report.status))}>
+                        {getStatusIcon(report.status) &&
+                          React.createElement(getStatusIcon(report.status), {
+                            className: 'h-3 w-3'
+                          })}
                       </div>
-                      
+
                       <div className="text-right">
                         <Badge variant="outline" className={getStatusColor(report.status)}>
                           {report.status.toUpperCase()}
                         </Badge>
-                        
+
                         {report.status === 'queued' && (
-                          <div className="text-xs text-muted-foreground mt-1">
-                            Queued for sync
-                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">Queued for sync</div>
                         )}
-                        
+
                         {report.status === 'syncing' && (
                           <div className="text-xs text-muted-foreground mt-1">
                             Syncing... ({report.syncAttempts} attempts)
                           </div>
                         )}
-                        
+
                         {report.status === 'failed' && (
                           <div className="text-xs text-muted-foreground mt-1">
                             Failed after {report.syncAttempts} attempts
@@ -819,7 +833,7 @@ export function OfflineEmergencyReporting({
                             className="w-12 h-12 object-cover rounded border border-gray-200"
                           />
                         ))}
-                        
+
                         {report.videos?.map((video, videoIndex) => (
                           <video
                             key={videoIndex}
@@ -828,14 +842,10 @@ export function OfflineEmergencyReporting({
                             controls
                           />
                         ))}
-                        
+
                         {report.audio && (
                           <div className="flex-1">
-                            <audio 
-                              src={report.audio}
-                              controls
-                              className="w-full"
-                            />
+                            <audio src={report.audio} controls className="w-full" />
                           </div>
                         )}
                       </div>
@@ -885,7 +895,9 @@ export function OfflineEmergencyReporting({
                 <span className="text-sm font-medium">Auto Sync</span>
                 <Switch
                   checked={queue.autoSyncEnabled}
-                  onCheckedChange={(checked) => setQueue(prev => ({ ...prev, autoSyncEnabled: checked }))}
+                  onCheckedChange={checked =>
+                    setQueue(prev => ({ ...prev, autoSyncEnabled: checked }))
+                  }
                 />
               </div>
 
@@ -893,7 +905,9 @@ export function OfflineEmergencyReporting({
                 <span className="text-sm font-medium">Compression</span>
                 <Switch
                   checked={queue.compressionEnabled}
-                  onCheckedChange={(checked) => setQueue(prev => ({ ...prev, compressionEnabled: checked }))}
+                  onCheckedChange={checked =>
+                    setQueue(prev => ({ ...prev, compressionEnabled: checked }))
+                  }
                 />
               </div>
 

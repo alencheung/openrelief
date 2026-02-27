@@ -2,22 +2,22 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  Users, 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
-  TrendingUp, 
-  TrendingDown, 
-  Activity, 
-  Shield, 
-  AlertTriangle, 
-  Zap, 
-  Eye, 
-  EyeOff, 
-  RefreshCw, 
-  BarChart3, 
-  PieChart, 
+import {
+  Users,
+  CheckCircle,
+  XCircle,
+  Clock,
+  TrendingUp,
+  TrendingDown,
+  Activity,
+  Shield,
+  AlertTriangle,
+  Zap,
+  Eye,
+  EyeOff,
+  RefreshCw,
+  BarChart3,
+  PieChart,
   Target,
   ThumbsUp,
   ThumbsDown,
@@ -83,7 +83,7 @@ interface ConsensusMetrics {
   geographicDistribution: {
     withinRadius: number
     outsideRadius: number
-  averageDistance: number
+    averageDistance: number
   }
   expertiseDistribution: Record<string, number>
 }
@@ -124,11 +124,13 @@ export function ConsensusEngineUI({ className, emergencyId }: ConsensusEngineUIP
   const [consensusEvent, setConsensusEvent] = useState<ConsensusEvent | null>(null)
   const [isRealtime, setIsRealtime] = useState(true)
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState<'participants' | 'metrics' | 'timeline' | 'map'>('participants')
+  const [viewMode, setViewMode] = useState<'participants' | 'metrics' | 'timeline' | 'map'>(
+    'participants'
+  )
   const [filter, setFilter] = useState({
     vote: 'all',
     distance: 'all',
-    expertise: 'all',
+    expertise: 'all'
   })
   const [isAutoRefresh, setIsAutoRefresh] = useState(true)
   const [refreshInterval, setRefreshInterval] = useState(5000) // 5 seconds
@@ -146,12 +148,12 @@ export function ConsensusEngineUI({ className, emergencyId }: ConsensusEngineUIP
     location: {
       latitude: 37.7749,
       longitude: -122.4194,
-      radius: 500,
+      radius: 500
     },
     reporter: {
       id: 'user-456',
       name: 'Jane Smith',
-      trustScore: 0.85,
+      trustScore: 0.85
     },
     status: 'building',
     createdAt: '2024-01-15T10:30:00Z',
@@ -169,15 +171,15 @@ export function ConsensusEngineUI({ className, emergencyId }: ConsensusEngineUIP
       geographicDistribution: {
         withinRadius: 18,
         outsideRadius: 6,
-        averageDistance: 850,
+        averageDistance: 850
       },
       expertiseDistribution: {
-        'fire': 8,
-        'medical': 3,
-        'security': 4,
-        'infrastructure': 2,
-        'natural': 7,
-      },
+        fire: 8,
+        medical: 3,
+        security: 4,
+        infrastructure: 2,
+        natural: 7
+      }
     },
     participants: [
       {
@@ -190,13 +192,13 @@ export function ConsensusEngineUI({ className, emergencyId }: ConsensusEngineUIP
           latitude: 37.7751,
           longitude: -122.4188,
           accuracy: 10,
-          distance: 120,
+          distance: 120
         },
         responseTime: 15000,
         weight: 1.0,
         expertise: ['fire', 'medical'],
         isOnline: true,
-        lastActive: Date.now() - 300000,
+        lastActive: Date.now() - 300000
       },
       {
         id: 'user-2',
@@ -208,13 +210,13 @@ export function ConsensusEngineUI({ className, emergencyId }: ConsensusEngineUIP
           latitude: 37.7745,
           longitude: -122.4192,
           accuracy: 15,
-          distance: 200,
+          distance: 200
         },
         responseTime: 35000,
         weight: 0.85,
         expertise: ['security'],
         isOnline: true,
-        lastActive: Date.now() - 120000,
+        lastActive: Date.now() - 120000
       },
       {
         id: 'user-3',
@@ -224,31 +226,31 @@ export function ConsensusEngineUI({ className, emergencyId }: ConsensusEngineUIP
         vote: 'pending',
         location: {
           latitude: 37.7752,
-          longitude: -122.4190,
+          longitude: -122.419,
           accuracy: 20,
-          distance: 350,
+          distance: 350
         },
         responseTime: 60000,
         weight: 0.7,
         expertise: ['medical'],
         isOnline: true,
-        lastActive: Date.now() - 600000,
-      },
+        lastActive: Date.now() - 600000
+      }
     ],
     history: [
       {
         id: 'action-1',
         type: 'confirm',
         participantId: 'user-1',
-        timestamp: '2024-01-15T10:35:00Z',
+        timestamp: '2024-01-15T10:35:00Z'
       },
       {
         id: 'action-2',
         type: 'dispute',
         participantId: 'user-4',
-        timestamp: '2024-01-15T10:40:00Z',
-      },
-    ],
+        timestamp: '2024-01-15T10:40:00Z'
+      }
+    ]
   }
 
   useEffect(() => {
@@ -270,10 +272,14 @@ export function ConsensusEngineUI({ className, emergencyId }: ConsensusEngineUIP
   // Get vote color
   const getVoteColor = (vote?: string) => {
     switch (vote) {
-      case 'confirm': return 'text-green-600 bg-green-50'
-      case 'dispute': return 'text-red-600 bg-red-50'
-      case 'pending': return 'text-yellow-600 bg-yellow-50'
-      default: return 'text-gray-600 bg-gray-50'
+      case 'confirm':
+        return 'text-green-600 bg-green-50'
+      case 'dispute':
+        return 'text-red-600 bg-red-50'
+      case 'pending':
+        return 'text-yellow-600 bg-yellow-50'
+      default:
+        return 'text-gray-600 bg-gray-50'
     }
   }
 
@@ -304,11 +310,7 @@ export function ConsensusEngineUI({ className, emergencyId }: ConsensusEngineUIP
                 size="sm"
                 label={isRealtime ? 'Real-time' : 'Offline'}
               />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsRealtime(!isRealtime)}
-              >
+              <Button variant="outline" size="sm" onClick={() => setIsRealtime(!isRealtime)}>
                 {isRealtime ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </Button>
             </div>
@@ -326,24 +328,21 @@ export function ConsensusEngineUI({ className, emergencyId }: ConsensusEngineUIP
 
             {/* Participants */}
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
-                {event.metrics.confirmVotes}
-              </div>
+              <div className="text-2xl font-bold text-green-600">{event.metrics.confirmVotes}</div>
               <p className="text-sm text-muted-foreground">Confirmations</p>
             </div>
 
             {/* Disputes */}
             <div className="text-center">
-              <div className="text-2xl font-bold text-red-600">
-                {event.metrics.disputeVotes}
-              </div>
+              <div className="text-2xl font-bold text-red-600">{event.metrics.disputeVotes}</div>
               <p className="text-sm text-muted-foreground">Disputes</p>
             </div>
 
             {/* Time Remaining */}
             <div className="text-center">
               <div className="text-2xl font-bold text-orange-600">
-                {Math.floor(event.metrics.timeRemaining / 60)}:{(event.metrics.timeRemaining % 60).toString().padStart(2, '0')}
+                {Math.floor(event.metrics.timeRemaining / 60)}:
+                {(event.metrics.timeRemaining % 60).toString().padStart(2, '0')}
               </div>
               <p className="text-sm text-muted-foreground">Time Remaining</p>
             </div>
@@ -381,12 +380,18 @@ export function ConsensusEngineUI({ className, emergencyId }: ConsensusEngineUIP
             <div>
               <h4 className="font-medium mb-2">Emergency Details</h4>
               <div className="space-y-2 text-sm">
-                <div><span className="font-medium">Type:</span> {event.type}</div>
-                <div><span className="font-medium">Severity:</span> 
+                <div>
+                  <span className="font-medium">Type:</span> {event.type}
+                </div>
+                <div>
+                  <span className="font-medium">Severity:</span>
                   <Badge variant="outline">{event.severity.toUpperCase()}</Badge>
                 </div>
-                <div><span className="font-medium">Reporter:</span> {event.reporter.name}</div>
-                <div><span className="font-medium">Trust Score:</span> 
+                <div>
+                  <span className="font-medium">Reporter:</span> {event.reporter.name}
+                </div>
+                <div>
+                  <span className="font-medium">Trust Score:</span>
                   <span className={getConfidenceColor(event.reporter.trustScore)}>
                     {(event.reporter.trustScore * 100).toFixed(0)}%
                   </span>
@@ -397,10 +402,21 @@ export function ConsensusEngineUI({ className, emergencyId }: ConsensusEngineUIP
             <div>
               <h4 className="font-medium mb-2">Consensus Metrics</h4>
               <div className="space-y-2 text-sm">
-                <div><span className="font-medium">Required Votes:</span> {event.metrics.requiredVotes}</div>
-                <div><span className="font-medium">Average Response:</span> {Math.round(event.metrics.averageResponseTime / 1000)}s</div>
-                <div><span className="font-medium">Weighted Score:</span> {event.metrics.trustWeightedScore.toFixed(2)}</div>
-                <div><span className="font-medium">Total Participants:</span> {event.metrics.totalParticipants}</div>
+                <div>
+                  <span className="font-medium">Required Votes:</span> {event.metrics.requiredVotes}
+                </div>
+                <div>
+                  <span className="font-medium">Average Response:</span>{' '}
+                  {Math.round(event.metrics.averageResponseTime / 1000)}s
+                </div>
+                <div>
+                  <span className="font-medium">Weighted Score:</span>{' '}
+                  {event.metrics.trustWeightedScore.toFixed(2)}
+                </div>
+                <div>
+                  <span className="font-medium">Total Participants:</span>{' '}
+                  {event.metrics.totalParticipants}
+                </div>
               </div>
             </div>
           </div>
@@ -458,7 +474,7 @@ export function ConsensusEngineUI({ className, emergencyId }: ConsensusEngineUIP
               <div className="flex gap-2 mb-4">
                 <select
                   value={filter.vote}
-                  onChange={(e) => setFilter(prev => ({ ...prev, vote: e.target.value }))}
+                  onChange={e => setFilter(prev => ({ ...prev, vote: e.target.value }))}
                   className="px-3 py-1 border rounded-md text-sm"
                 >
                   <option value="all">All Votes</option>
@@ -469,12 +485,12 @@ export function ConsensusEngineUI({ className, emergencyId }: ConsensusEngineUIP
 
                 <select
                   value={filter.distance}
-                  onChange={(e) => setFilter(prev => ({ ...prev, distance: e.target.value }))}
+                  onChange={e => setFilter(prev => ({ ...prev, distance: e.target.value }))}
                   className="px-3 py-1 border rounded-md text-sm"
                 >
                   <option value="all">All Distances</option>
-                  <option value="nearby">Nearby (<500m)</option>
-                  <option value="far">Far (>500m)</option>
+                  <option value="nearby">Nearby (&lt;500m)</option>
+                  <option value="far">Far (&gt;500m)</option>
                 </select>
               </div>
 
@@ -483,8 +499,10 @@ export function ConsensusEngineUI({ className, emergencyId }: ConsensusEngineUIP
                 {event.participants
                   .filter(participant => {
                     if (filter.vote !== 'all' && participant.vote !== filter.vote) return false
-                    if (filter.distance === 'nearby' && participant.location.distance > 500) return false
-                    if (filter.distance === 'far' && participant.location.distance <= 500) return false
+                    if (filter.distance === 'nearby' && participant.location.distance > 500)
+                      return false
+                    if (filter.distance === 'far' && participant.location.distance <= 500)
+                      return false
                     return true
                   })
                   .map((participant, index) => (
@@ -496,10 +514,12 @@ export function ConsensusEngineUI({ className, emergencyId }: ConsensusEngineUIP
                       className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                     >
                       <div className="flex items-center gap-3">
-                        <div className={cn(
-                          'w-3 h-3 rounded-full',
-                          participant.isOnline ? 'bg-green-500' : 'bg-gray-400'
-                        )} />
+                        <div
+                          className={cn(
+                            'w-3 h-3 rounded-full',
+                            participant.isOnline ? 'bg-green-500' : 'bg-gray-400'
+                          )}
+                        />
                         <div>
                           <div className="font-medium">{participant.name}</div>
                           <div className="text-sm text-muted-foreground">
@@ -509,10 +529,12 @@ export function ConsensusEngineUI({ className, emergencyId }: ConsensusEngineUIP
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <div className={cn(
-                          'px-2 py-1 rounded text-xs font-medium',
-                          getVoteColor(participant.vote)
-                        )}>
+                        <div
+                          className={cn(
+                            'px-2 py-1 rounded text-xs font-medium',
+                            getVoteColor(participant.vote)
+                          )}
+                        >
                           {participant.vote?.toUpperCase() || 'PENDING'}
                         </div>
 
@@ -566,7 +588,7 @@ export function ConsensusEngineUI({ className, emergencyId }: ConsensusEngineUIP
                       <span className="text-sm font-medium capitalize">{expertise}</span>
                       <div className="flex items-center gap-2">
                         <div className="w-24 bg-gray-200 rounded-full h-2">
-                          <div 
+                          <div
                             className="bg-blue-600 h-2 rounded-full"
                             style={{ width: `${(count / event.metrics.totalParticipants) * 100}%` }}
                           />
@@ -593,13 +615,19 @@ export function ConsensusEngineUI({ className, emergencyId }: ConsensusEngineUIP
                     transition={{ delay: index * 0.1 }}
                     className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
                   >
-                    <div className={cn(
-                      'w-8 h-8 rounded-full flex items-center justify-center',
-                      action.type === 'confirm' ? 'bg-green-100' :
-                      action.type === 'dispute' ? 'bg-red-100' :
-                      'bg-gray-100'
-                    )}>
-                      {action.type === 'confirm' && <CheckCircle className="h-4 w-4 text-green-600" />}
+                    <div
+                      className={cn(
+                        'w-8 h-8 rounded-full flex items-center justify-center',
+                        action.type === 'confirm'
+                          ? 'bg-green-100'
+                          : action.type === 'dispute'
+                            ? 'bg-red-100'
+                            : 'bg-gray-100'
+                      )}
+                    >
+                      {action.type === 'confirm' && (
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                      )}
                       {action.type === 'dispute' && <XCircle className="h-4 w-4 text-red-600" />}
                       {action.type === 'join' && <Plus className="h-4 w-4 text-blue-600" />}
                       {action.type === 'leave' && <Minus className="h-4 w-4 text-orange-600" />}
@@ -649,9 +677,7 @@ export function ConsensusEngineUI({ className, emergencyId }: ConsensusEngineUIP
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Your Trust Score</span>
-                <Badge variant="outline">
-                  {(currentUserTrustScore!.score * 100).toFixed(0)}%
-                </Badge>
+                <Badge variant="outline">{(currentUserTrustScore!.score * 100).toFixed(0)}%</Badge>
               </div>
 
               <div className="flex items-center justify-between">
@@ -673,7 +699,7 @@ export function ConsensusEngineUI({ className, emergencyId }: ConsensusEngineUIP
                     <ThumbsUp className="h-4 w-4 mr-2" />
                     Confirm Emergency
                   </Button>
-                  
+
                   <Button
                     variant="outline"
                     className="flex-1"

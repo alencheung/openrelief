@@ -4,7 +4,7 @@ import { configure } from '@testing-library/react'
 // Configure React Testing Library
 configure({
   testIdAttribute: 'data-testid',
-  asyncUtilTimeout: 5000,
+  asyncUtilTimeout: 5000
 })
 
 // Mock Next.js router
@@ -24,40 +24,40 @@ jest.mock('next/router', () => ({
       events: {
         on: jest.fn(),
         off: jest.fn(),
-        emit: jest.fn(),
-      },
+        emit: jest.fn()
+      }
     }
-  },
+  }
 }))
 
 // Mock Next.js image
 jest.mock('next/image', () => ({
   __esModule: true,
-  default: (props) => {
+  default: props => {
     // eslint-disable-next-line @next/next/no-img-element
     return <img {...props} />
-  },
+  }
 }))
 
 // Mock IntersectionObserver
 global.IntersectionObserver = jest.fn().mockImplementation(() => ({
   observe: jest.fn(),
   unobserve: jest.fn(),
-  disconnect: jest.fn(),
+  disconnect: jest.fn()
 }))
 
 // Mock ResizeObserver
 global.ResizeObserver = jest.fn().mockImplementation(() => ({
   observe: jest.fn(),
   unobserve: jest.fn(),
-  disconnect: jest.fn(),
+  disconnect: jest.fn()
 }))
 
 // Mock Geolocation API
 const mockGeolocation = {
   getCurrentPosition: jest.fn(),
   watchPosition: jest.fn(),
-  clearWatch: jest.fn(),
+  clearWatch: jest.fn()
 }
 
 global.navigator.geolocation = mockGeolocation
@@ -67,8 +67,8 @@ global.navigator.serviceWorker = {
   register: jest.fn(),
   ready: Promise.resolve({
     showNotification: jest.fn(),
-    getNotifications: jest.fn(),
-  }),
+    getNotifications: jest.fn()
+  })
 }
 
 // Mock localStorage
@@ -76,7 +76,7 @@ const localStorageMock = {
   getItem: jest.fn(),
   setItem: jest.fn(),
   removeItem: jest.fn(),
-  clear: jest.fn(),
+  clear: jest.fn()
 }
 
 global.localStorage = localStorageMock
@@ -86,7 +86,7 @@ const sessionStorageMock = {
   getItem: jest.fn(),
   setItem: jest.fn(),
   removeItem: jest.fn(),
-  clear: jest.fn(),
+  clear: jest.fn()
 }
 
 global.sessionStorage = sessionStorageMock
@@ -94,7 +94,7 @@ global.sessionStorage = sessionStorageMock
 // Mock matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: jest.fn().mockImplementation((query) => ({
+  value: jest.fn().mockImplementation(query => ({
     matches: false,
     media: query,
     onchange: null,
@@ -102,8 +102,8 @@ Object.defineProperty(window, 'matchMedia', {
     removeListener: jest.fn(), // deprecated
     addEventListener: jest.fn(),
     removeEventListener: jest.fn(),
-    dispatchEvent: jest.fn(),
-  })),
+    dispatchEvent: jest.fn()
+  }))
 })
 
 // Mock URL.createObjectURL
@@ -115,7 +115,7 @@ HTMLCanvasElement.prototype.getContext = jest.fn(() => ({
   fillRect: jest.fn(),
   clearRect: jest.fn(),
   getImageData: jest.fn(() => ({
-    data: new Array(4),
+    data: new Array(4)
   })),
   putImageData: jest.fn(),
   createImageData: jest.fn(() => ({ data: new Array(4) })),
@@ -137,7 +137,7 @@ HTMLCanvasElement.prototype.getContext = jest.fn(() => ({
   measureText: jest.fn(() => ({ width: 0 })),
   transform: jest.fn(),
   rect: jest.fn(),
-  clip: jest.fn(),
+  clip: jest.fn()
 }))
 
 // Mock MapLibre GL JS
@@ -153,23 +153,23 @@ jest.mock('maplibre-gl', () => ({
     setZoom: jest.fn(),
     fitBounds: jest.fn(),
     getCenter: jest.fn(() => ({ lng: 0, lat: 0 })),
-    getZoom: jest.fn(() => 10),
+    getZoom: jest.fn(() => 10)
   })),
   Marker: jest.fn(() => ({
     addTo: jest.fn(),
     remove: jest.fn(),
     setLngLat: jest.fn(),
-    getLngLat: jest.fn(() => ({ lng: 0, lat: 0 })),
+    getLngLat: jest.fn(() => ({ lng: 0, lat: 0 }))
   })),
   Popup: jest.fn(() => ({
     addTo: jest.fn(),
     remove: jest.fn(),
     setLngLat: jest.fn(),
-    setHTML: jest.fn(),
+    setHTML: jest.fn()
   })),
   NavigationControl: jest.fn(),
   GeolocateControl: jest.fn(),
-  ScaleControl: jest.fn(),
+  ScaleControl: jest.fn()
 }))
 
 // Mock Leaflet
@@ -180,22 +180,22 @@ jest.mock('leaflet', () => ({
     removeLayer: jest.fn(),
     on: jest.fn(),
     off: jest.fn(),
-    invalidateSize: jest.fn(),
+    invalidateSize: jest.fn()
   })),
   tileLayer: jest.fn(() => ({
-    addTo: jest.fn(),
+    addTo: jest.fn()
   })),
   marker: jest.fn(() => ({
     addTo: jest.fn(),
-    bindPopup: jest.fn(),
+    bindPopup: jest.fn()
   })),
   popup: jest.fn(() => ({
     setLatLng: jest.fn(),
     setContent: jest.fn(),
-    openOn: jest.fn(),
+    openOn: jest.fn()
   })),
   icon: jest.fn(),
-  divIcon: jest.fn(),
+  divIcon: jest.fn()
 }))
 
 // Mock Supabase
@@ -206,7 +206,7 @@ jest.mock('@supabase/supabase-js', () => ({
       signOut: jest.fn(),
       onAuthStateChange: jest.fn(),
       getCurrentUser: jest.fn(),
-      updateUser: jest.fn(),
+      updateUser: jest.fn()
     },
     from: jest.fn(() => ({
       select: jest.fn().mockReturnThis(),
@@ -218,20 +218,20 @@ jest.mock('@supabase/supabase-js', () => ({
       limit: jest.fn().mockReturnThis(),
       single: jest.fn().mockResolvedValue({ data: null, error: null }),
       then: jest.fn().mockReturnThis(),
-      catch: jest.fn().mockReturnThis(),
+      catch: jest.fn().mockReturnThis()
     })),
     storage: {
       from: jest.fn(() => ({
         upload: jest.fn(),
         download: jest.fn(),
         remove: jest.fn(),
-        getPublicUrl: jest.fn(),
-      })),
+        getPublicUrl: jest.fn()
+      }))
     },
     functions: {
-      invoke: jest.fn(),
-    },
-  })),
+      invoke: jest.fn()
+    }
+  }))
 }))
 
 // Mock TanStack Query
@@ -242,21 +242,16 @@ jest.mock('@tanstack/react-query', () => ({
     invalidateQueries: jest.fn(),
     refetchQueries: jest.fn(),
     setQueryData: jest.fn(),
-    getQueryData: jest.fn(),
+    getQueryData: jest.fn()
   })),
   QueryClient: jest.fn(() => ({
     invalidateQueries: jest.fn(),
     refetchQueries: jest.fn(),
     setQueryData: jest.fn(),
-    getQueryData: jest.fn(),
+    getQueryData: jest.fn()
   })),
   QueryClientProvider: ({ children }) => children,
-  ReactQueryDevtools: () => null,
-}))
-
-// Mock Zustand
-jest.mock('zustand', () => ({
-  create: jest.fn((create) => create()),
+  ReactQueryDevtools: () => null
 }))
 
 // Mock fetch
@@ -265,7 +260,7 @@ global.fetch = jest.fn(() =>
     ok: true,
     status: 200,
     json: () => Promise.resolve({}),
-    text: () => Promise.resolve(''),
+    text: () => Promise.resolve('')
   })
 )
 
@@ -273,10 +268,7 @@ global.fetch = jest.fn(() =>
 const originalError = console.error
 beforeAll(() => {
   console.error = (...args) => {
-    if (
-      typeof args[0] === 'string' &&
-      args[0].includes('Warning: ReactDOM.render is deprecated')
-    ) {
+    if (typeof args[0] === 'string' && args[0].includes('Warning: ReactDOM.render is deprecated')) {
       return
     }
     originalError.call(console, ...args)

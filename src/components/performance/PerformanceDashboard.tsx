@@ -2,12 +2,22 @@
 
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts'
-import { 
-  Activity, 
-  AlertTriangle, 
-  CheckCircle, 
-  TrendingUp, 
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  AreaChart,
+  Area
+} from 'recharts'
+import {
+  Activity,
+  AlertTriangle,
+  CheckCircle,
+  TrendingUp,
   TrendingDown,
   Zap,
   Clock,
@@ -26,11 +36,11 @@ import {
   Users
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { 
-  usePerformanceMonitor, 
-  usePerformanceMetrics, 
-  usePerformanceAlerts, 
-  usePerformanceActions 
+import {
+  usePerformanceMonitor,
+  usePerformanceMetrics,
+  usePerformanceAlerts,
+  usePerformanceActions
 } from '@/lib/performance-monitor'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -43,20 +53,15 @@ interface PerformanceDashboardProps {
   refreshInterval?: number
 }
 
-export function PerformanceDashboard({ 
-  className, 
-  autoRefresh = true, 
-  refreshInterval = 5000 
+export function PerformanceDashboard({
+  className,
+  autoRefresh = true,
+  refreshInterval = 5000
 }: PerformanceDashboardProps) {
   const metrics = usePerformanceMetrics()
   const alerts = usePerformanceAlerts()
-  const { 
-    startMonitoring, 
-    stopMonitoring, 
-    triggerOptimization, 
-    generateReport,
-    exportMetrics 
-  } = usePerformanceActions()
+  const { startMonitoring, stopMonitoring, triggerOptimization, generateReport, exportMetrics } =
+    usePerformanceActions()
 
   const [isMonitoring, setIsMonitoring] = useState(false)
   const [timeRange, setTimeRange] = useState<'1h' | '24h' | '7d' | '30d'>('1h')
@@ -79,7 +84,7 @@ export function PerformanceDashboard({
   useEffect(() => {
     setIsMonitoring(true)
     startMonitoring()
-    
+
     return () => {
       stopMonitoring()
     }
@@ -101,8 +106,8 @@ export function PerformanceDashboard({
   // Export metrics
   const handleExportMetrics = (format: 'json' | 'csv') => {
     const data = exportMetrics(format)
-    const blob = new Blob([data], { 
-      type: format === 'json' ? 'application/json' : 'text/csv' 
+    const blob = new Blob([data], {
+      type: format === 'json' ? 'application/json' : 'text/csv'
     })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -135,14 +140,14 @@ export function PerformanceDashboard({
   const latencyData = [
     { name: 'Current', value: metrics.averageLatency, threshold: 100 },
     { name: 'P95', value: metrics.p95Latency, threshold: 100 },
-    { name: 'P99', value: metrics.p99Latency, threshold: 100 },
+    { name: 'P99', value: metrics.p99Latency, threshold: 100 }
   ]
 
   const throughputData = [
     { time: 'Now', rps: metrics.requestsPerSecond },
     { time: '-5m', rps: metrics.requestsPerSecond * 0.95 },
     { time: '-10m', rps: metrics.requestsPerSecond * 0.9 },
-    { time: '-15m', rps: metrics.requestsPerSecond * 0.85 },
+    { time: '-15m', rps: metrics.requestsPerSecond * 0.85 }
   ]
 
   return (
@@ -164,7 +169,7 @@ export function PerformanceDashboard({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => isMonitoring ? stopMonitoring() : startMonitoring()}
+                onClick={() => (isMonitoring ? stopMonitoring() : startMonitoring())}
               >
                 {isMonitoring ? 'Stop' : 'Start'}
               </Button>
@@ -175,16 +180,13 @@ export function PerformanceDashboard({
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Latency */}
             <div className="text-center">
-              <div className={cn(
-                'text-2xl font-bold',
-                getStatusColor(metrics.averageLatency, 100)
-              )}>
+              <div
+                className={cn('text-2xl font-bold', getStatusColor(metrics.averageLatency, 100))}
+              >
                 {metrics.averageLatency.toFixed(1)}ms
               </div>
               <p className="text-sm text-muted-foreground">Avg Latency</p>
-              <div className="text-xs text-muted-foreground">
-                Target: <100ms
-              </div>
+              <div className="text-xs text-muted-foreground">Target: &lt;100ms</div>
             </div>
 
             {/* Throughput */}
@@ -200,16 +202,13 @@ export function PerformanceDashboard({
 
             {/* Error Rate */}
             <div className="text-center">
-              <div className={cn(
-                'text-2xl font-bold',
-                getStatusColor(metrics.errorRate, 1.0, true)
-              )}>
+              <div
+                className={cn('text-2xl font-bold', getStatusColor(metrics.errorRate, 1.0, true))}
+              >
                 {metrics.errorRate.toFixed(2)}%
               </div>
               <p className="text-sm text-muted-foreground">Error Rate</p>
-              <div className="text-xs text-muted-foreground">
-                Target: <1%
-              </div>
+              <div className="text-xs text-muted-foreground">Target: &lt;1%</div>
             </div>
 
             {/* Total Requests */}
@@ -218,9 +217,7 @@ export function PerformanceDashboard({
                 {metrics.totalRequests.toLocaleString()}
               </div>
               <p className="text-sm text-muted-foreground">Total Requests</p>
-              <div className="text-xs text-muted-foreground">
-                All time
-              </div>
+              <div className="text-xs text-muted-foreground">All time</div>
             </div>
           </div>
         </CardContent>
@@ -237,7 +234,7 @@ export function PerformanceDashboard({
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {unresolvedAlerts.slice(0, 5).map((alert) => (
+              {unresolvedAlerts.slice(0, 5).map(alert => (
                 <motion.div
                   key={alert.id}
                   initial={{ opacity: 0, x: -20 }}
@@ -245,16 +242,18 @@ export function PerformanceDashboard({
                   className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200"
                 >
                   <div className="flex items-center gap-3">
-                    <div className={cn(
-                      'w-2 h-2 rounded-full',
-                      alert.severity === 'critical' ? 'bg-red-600' :
-                      alert.severity === 'high' ? 'bg-orange-600' :
-                      'bg-yellow-600'
-                    )} />
+                    <div
+                      className={cn(
+                        'w-2 h-2 rounded-full',
+                        alert.severity === 'critical'
+                          ? 'bg-red-600'
+                          : alert.severity === 'high'
+                            ? 'bg-orange-600'
+                            : 'bg-yellow-600'
+                      )}
+                    />
                     <div>
-                      <p className="text-sm font-medium text-red-800">
-                        {alert.message}
-                      </p>
+                      <p className="text-sm font-medium text-red-800">{alert.message}</p>
                       <p className="text-xs text-red-600">
                         {new Date(alert.timestamp).toLocaleString()}
                       </p>
@@ -287,17 +286,17 @@ export function PerformanceDashboard({
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
-                <Line 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke="#3b82f6" 
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#3b82f6"
                   strokeWidth={2}
                   dot={{ fill: '#3b82f6' }}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="threshold" 
-                  stroke="#ef4444" 
+                <Line
+                  type="monotone"
+                  dataKey="threshold"
+                  stroke="#ef4444"
                   strokeDasharray="5 5"
                   strokeWidth={1}
                   dot={false}
@@ -352,7 +351,7 @@ export function PerformanceDashboard({
                 <span className="text-sm font-medium">CPU Usage</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
+                <div
                   className={cn(
                     'h-2 rounded-full transition-all duration-300',
                     getStatusColor(metrics.cpuUsage, 80, true).replace('text-', 'bg-')
@@ -372,7 +371,7 @@ export function PerformanceDashboard({
                 <span className="text-sm font-medium">Memory Usage</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
+                <div
                   className={cn(
                     'h-2 rounded-full transition-all duration-300',
                     getStatusColor(metrics.memoryUsage, 85, true).replace('text-', 'bg-')
@@ -391,12 +390,8 @@ export function PerformanceDashboard({
                 <Database className="h-4 w-4 text-purple-600" />
                 <span className="text-sm font-medium">Queue Size</span>
               </div>
-              <div className="text-lg font-semibold">
-                {metrics.queueSize.toLocaleString()}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Max: 10,000
-              </p>
+              <div className="text-lg font-semibold">{metrics.queueSize.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">Max: 10,000</p>
             </div>
           </div>
         </CardContent>
@@ -414,19 +409,12 @@ export function PerformanceDashboard({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {Object.entries(metrics.regionalPerformance).map(([region, perf]) => (
               <div key={region} className="text-center p-3 bg-gray-50 rounded-lg">
-                <div className="text-sm font-medium text-gray-900">
-                  {region.toUpperCase()}
-                </div>
+                <div className="text-sm font-medium text-gray-900">{region.toUpperCase()}</div>
                 <div className="text-lg font-bold text-blue-600">
                   {perf.averageLatency.toFixed(1)}ms
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  {perf.requestCount} requests
-                </div>
-                <div className={cn(
-                  'text-xs',
-                  getStatusColor(perf.errorRate, 1.0, true)
-                )}>
+                <div className="text-xs text-muted-foreground">{perf.requestCount} requests</div>
+                <div className={cn('text-xs', getStatusColor(perf.errorRate, 1.0, true))}>
                   {perf.errorRate.toFixed(2)}% errors
                 </div>
               </div>
@@ -474,7 +462,7 @@ export function PerformanceDashboard({
                   <Zap className="h-4 w-4 mr-2" />
                   Optimize Queries
                 </Button>
-                
+
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
@@ -485,7 +473,7 @@ export function PerformanceDashboard({
                     <Calendar className="h-4 w-4 mr-2" />
                     {isGeneratingReport ? 'Generating...' : 'Generate Report'}
                   </Button>
-                  
+
                   <Button
                     variant="outline"
                     onClick={() => handleExportMetrics('json')}
@@ -516,19 +504,15 @@ export function PerformanceDashboard({
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               className="bg-white rounded-xl shadow-xl max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto p-6"
-              onClick={(e) => e.stopPropagation()}
+              onClick={e => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">Performance Report</h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setReport(null)}
-                >
+                <Button variant="ghost" size="sm" onClick={() => setReport(null)}>
                   ×
                 </Button>
               </div>
-              
+
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -540,7 +524,7 @@ export function PerformanceDashboard({
                       <div>Uptime: {report.summary.uptime.toFixed(1)}%</div>
                     </div>
                   </div>
-                  
+
                   <div>
                     <h4 className="font-medium mb-2">Latency Distribution</h4>
                     <div className="space-y-1 text-sm">
@@ -551,7 +535,7 @@ export function PerformanceDashboard({
                     </div>
                   </div>
                 </div>
-                
+
                 {report.recommendations.length > 0 && (
                   <div>
                     <h4 className="font-medium mb-2">Recommendations</h4>

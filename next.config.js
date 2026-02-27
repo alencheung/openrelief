@@ -1,4 +1,11 @@
 /** @type {import('next').NextConfig} */
+let withSentryConfig
+try {
+  withSentryConfig = require('@sentry/nextjs').withSentryConfig
+} catch {
+  withSentryConfig = config => config
+}
+
 const withPWA = require('next-pwa')({
   dest: 'public',
   disable: process.env.NODE_ENV === 'development',
@@ -9,7 +16,7 @@ const withPWA = require('next-pwa')({
     // Exclude build manifests that cause precaching issues
     /_next\/app-build-manifest\.json$/,
     /_next\/build-manifest\.json$/,
-    /_next\/react-loadable-manifest\.json$/,
+    /_next\/react-loadable-manifest\.json$/
   ],
   runtimeCaching: [
     {
@@ -45,33 +52,77 @@ const withPWA = require('next-pwa')({
         }
       }
     },
-  ],
+    {
+      urlPattern: /^https:\/\/.*\.tile\.openstreetmap\.org\/.*/i,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'map-tiles',
+        expiration: {
+          maxEntries: 200,
+          maxAgeSeconds: 7 * 24 * 60 * 60 // 7 days
+        },
+        cacheableResponse: {
+          statuses: [0, 200]
+        }
+      }
+    },
+    {
+      urlPattern: /^https?:\/\/.*\/api\/emergency/i,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'emergency-api',
+        networkTimeoutSeconds: 10,
+        expiration: {
+          maxEntries: 50,
+          maxAgeSeconds: 5 * 60 // 5 minutes
+        },
+        cacheableResponse: {
+          statuses: [0, 200]
+        }
+      }
+    },
+    {
+      urlPattern: /^https?:\/\/.*\/api\/alerts/i,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'alerts-api',
+        networkTimeoutSeconds: 10,
+        expiration: {
+          maxEntries: 50,
+          maxAgeSeconds: 60 // 1 minute
+        },
+        cacheableResponse: {
+          statuses: [0, 200]
+        }
+      }
+    }
+  ]
 })
 
 const nextConfig = {
   experimental: {
     optimizeCss: true,
-    optimizePackageImports: ['lucide-react', '@heroicons/react'],
+    optimizePackageImports: ['lucide-react', '@heroicons/react']
   },
   images: {
     domains: ['localhost'],
     formats: ['image/webp', 'image/avif'],
-    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days for PWA
+    minimumCacheTTL: 60 * 60 * 24 * 30 // 30 days for PWA
   },
   env: {
     CUSTOM_KEY: process.env.CUSTOM_KEY,
-    NEXT_PUBLIC_VAPID_PUBLIC_KEY: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+    NEXT_PUBLIC_VAPID_PUBLIC_KEY: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
   },
   async rewrites() {
     return [
       {
         source: '/sw.js',
-        destination: '/sw.js',
+        destination: '/sw.js'
       },
       {
         source: '/offline',
-        destination: '/offline',
-      },
+        destination: '/offline'
+      }
     ]
   },
   async headers() {
@@ -82,13 +133,13 @@ const nextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=0, must-revalidate',
+            value: 'public, max-age=0, must-revalidate'
           },
           {
             key: 'Service-Worker-Allowed',
-            value: '/',
-          },
-        ],
+            value: '/'
+          }
+        ]
       },
       // PWA Manifest
       {
@@ -96,13 +147,13 @@ const nextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
+            value: 'public, max-age=31536000, immutable'
           },
           {
             key: 'Content-Type',
-            value: 'application/manifest+json',
-          },
-        ],
+            value: 'application/manifest+json'
+          }
+        ]
       },
       // Icons and static assets
       {
@@ -110,9 +161,9 @@ const nextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
+            value: 'public, max-age=31536000, immutable'
+          }
+        ]
       },
       // Offline pages
       {
@@ -120,9 +171,9 @@ const nextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=3600',
-          },
-        ],
+            value: 'public, max-age=3600'
+          }
+        ]
       },
       // Enhanced security headers for all routes
       {
@@ -130,37 +181,38 @@ const nextConfig = {
         headers: [
           {
             key: 'X-Frame-Options',
-            value: 'DENY',
+            value: 'DENY'
           },
           {
             key: 'X-Content-Type-Options',
-            value: 'nosniff',
+            value: 'nosniff'
           },
           {
             key: 'X-XSS-Protection',
-            value: '1; mode=block',
+            value: '1; mode=block'
           },
           {
             key: 'Referrer-Policy',
-            value: 'strict-origin-when-cross-origin',
+            value: 'strict-origin-when-cross-origin'
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(self), microphone=(self), geolocation=(self), accelerometer=(), ambient-light-sensor=(), autoplay=(self), battery=(), cross-origin-isolated=(), display-capture=(), document-domain=(), encrypted-media=(self), execution-while-not-rendered=(), execution-while-out-of-viewport=(), fullscreen=(self), gamepad=(self), gyroscope=(), magnetometer=(), midi=(), navigation-override=(), payment=(self), picture-in-picture=(self), publickey-credentials-get=(self), screen-wake-lock=(self), sync-xhr=(self), usb=(), xr-spatial-tracking=()',
+            value:
+              'camera=(self), microphone=(self), geolocation=(self), accelerometer=(), ambient-light-sensor=(), autoplay=(self), battery=(), cross-origin-isolated=(), display-capture=(), document-domain=(), encrypted-media=(self), execution-while-not-rendered=(), execution-while-out-of-viewport=(), fullscreen=(self), gamepad=(self), gyroscope=(), magnetometer=(), midi=(), navigation-override=(), payment=(self), picture-in-picture=(self), publickey-credentials-get=(self), screen-wake-lock=(self), sync-xhr=(self), usb=(), xr-spatial-tracking=()'
           },
           {
             key: 'Cross-Origin-Embedder-Policy',
-            value: 'require-corp',
+            value: 'require-corp'
           },
           {
             key: 'Cross-Origin-Opener-Policy',
-            value: 'same-origin',
+            value: 'same-origin'
           },
           {
             key: 'Cross-Origin-Resource-Policy',
-            value: 'same-origin',
-          },
-        ],
+            value: 'same-origin'
+          }
+        ]
       },
       // Content Security Policy headers
       {
@@ -174,7 +226,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: https: blob:",
-              "connect-src 'self' https://api.openrelief.org https://openrelief.supabase.co https://dispatch.openrelief.org wss://openrelief.supabase.co",
+              "connect-src 'self' https://api.openrelief.org https://openrelief.supabase.co https://dispatch.openrelief.org wss://openrelief.supabase.co https://o*.ingest.sentry.io",
               "media-src 'self' blob:",
               "object-src 'none'",
               "child-src 'self'",
@@ -184,7 +236,7 @@ const nextConfig = {
               "base-uri 'self'",
               "form-action 'self'",
               "frame-ancestors 'none'",
-              "upgrade-insecure-requests"
+              'upgrade-insecure-requests'
             ].join('; ')
           },
           {
@@ -195,7 +247,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: https: blob:",
-              "connect-src 'self' https://api.openrelief.org https://openrelief.supabase.co https://dispatch.openrelief.org wss://openrelief.supabase.co",
+              "connect-src 'self' https://api.openrelief.org https://openrelief.supabase.co https://dispatch.openrelief.org wss://openrelief.supabase.co https://o*.ingest.sentry.io",
               "media-src 'self' blob:",
               "object-src 'none'",
               "child-src 'self'",
@@ -205,44 +257,48 @@ const nextConfig = {
               "base-uri 'self'",
               "form-action 'self'",
               "frame-ancestors 'none'",
-              "upgrade-insecure-requests",
-              "report-uri https://openrelief.report-uri.com/csp-violation"
+              'upgrade-insecure-requests',
+              'report-uri https://openrelief.report-uri.com/csp-violation'
             ].join('; ')
-          },
-        ],
+          }
+        ]
       },
       // HSTS headers (production only)
-      ...(process.env.NODE_ENV === 'production' ? [{
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'Strict-Transport-Security',
-            value: 'max-age=31536000; includeSubDomains; preload',
-          },
-        ],
-      }] : []),
+      ...(process.env.NODE_ENV === 'production'
+        ? [
+            {
+              source: '/(.*)',
+              headers: [
+                {
+                  key: 'Strict-Transport-Security',
+                  value: 'max-age=31536000; includeSubDomains; preload'
+                }
+              ]
+            }
+          ]
+        : []),
       // API-specific security headers
       {
         source: '/api/(.*)',
         headers: [
           {
             key: 'X-Content-Type-Options',
-            value: 'nosniff',
+            value: 'nosniff'
           },
           {
             key: 'X-Download-Options',
-            value: 'noopen',
+            value: 'noopen'
           },
           {
             key: 'X-Permitted-Cross-Domain-Policies',
-            value: 'none',
+            value: 'none'
           },
           {
             key: 'X-Robots-Tag',
-            value: 'noindex, nofollow',
-          },
-        ],
-      },
+            value: 'noindex, nofollow'
+          }
+        ]
+      }
     ]
   },
   // Bundle analyzer
@@ -250,7 +306,7 @@ const nextConfig = {
     // Custom webpack config for PWA
     config.resolve.alias = {
       ...config.resolve.alias,
-      apexcharts: 'apexcharts.esm.js',
+      apexcharts: 'apexcharts.esm.js'
     }
 
     // Optimize for PWA
@@ -261,16 +317,16 @@ const nextConfig = {
           vendor: {
             test: /[\\/]node_modules[\\/]/,
             name: 'vendors',
-            chunks: 'all',
+            chunks: 'all'
           },
           common: {
             name: 'common',
             minChunks: 2,
             chunks: 'all',
             enforce: true,
-            priority: 10,
-          },
-        },
+            priority: 10
+          }
+        }
       }
     }
 
@@ -279,7 +335,7 @@ const nextConfig = {
       config.plugins.push(
         new BundleAnalyzerPlugin({
           analyzerMode: 'static',
-          openAnalyzer: !isServer,
+          openAnalyzer: !isServer
         })
       )
     }
@@ -295,7 +351,16 @@ const nextConfig = {
   output: 'standalone',
 
   // Enable static optimization
-  trailingSlash: false,
+  trailingSlash: false
 }
 
-module.exports = withPWA(nextConfig)
+module.exports = withSentryConfig(withPWA(nextConfig), {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  silent: !process.env.CI,
+  widenClientFileUpload: true,
+  tunnelRoute: '/monitoring-tunnel',
+  hideSourceMaps: true,
+  disableLogger: true,
+  automaticVercelMonitors: true
+})
