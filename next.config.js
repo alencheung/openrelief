@@ -215,6 +215,7 @@ const nextConfig = {
         ]
       },
       // Content Security Policy headers
+      // VULN-004: Removed unsafe-eval, added strict-dynamic with nonce support for production
       {
         source: '/(.*)',
         headers: [
@@ -222,28 +223,7 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.vercel-insights.com https://browser.sentry-cdn.com",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: https: blob:",
-              "connect-src 'self' https://api.openrelief.org https://openrelief.supabase.co https://dispatch.openrelief.org wss://openrelief.supabase.co https://o*.ingest.sentry.io",
-              "media-src 'self' blob:",
-              "object-src 'none'",
-              "child-src 'self'",
-              "frame-src 'none'",
-              "worker-src 'self' blob:",
-              "manifest-src 'self'",
-              "base-uri 'self'",
-              "form-action 'self'",
-              "frame-ancestors 'none'",
-              'upgrade-insecure-requests'
-            ].join('; ')
-          },
-          {
-            key: 'Content-Security-Policy-Report-Only',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.vercel-insights.com https://browser.sentry-cdn.com",
+              `script-src 'self' ${process.env.NODE_ENV === 'development' ? "'unsafe-inline'" : "'strict-dynamic' 'nonce-{{nonce}}'"} https://cdn.vercel-insights.com https://browser.sentry-cdn.com`,
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: https: blob:",
@@ -258,7 +238,29 @@ const nextConfig = {
               "form-action 'self'",
               "frame-ancestors 'none'",
               'upgrade-insecure-requests',
-              'report-uri https://openrelief.report-uri.com/csp-violation'
+              'report-uri /api/csp-violation'
+            ].join('; ')
+          },
+          {
+            key: 'Content-Security-Policy-Report-Only',
+            value: [
+              "default-src 'self'",
+              `script-src 'self' ${process.env.NODE_ENV === 'development' ? "'unsafe-inline'" : "'strict-dynamic' 'nonce-{{nonce}}'"} https://cdn.vercel-insights.com https://browser.sentry-cdn.com`,
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "font-src 'self' https://fonts.gstatic.com",
+              "img-src 'self' data: https: blob:",
+              "connect-src 'self' https://api.openrelief.org https://openrelief.supabase.co https://dispatch.openrelief.org wss://openrelief.supabase.co https://o*.ingest.sentry.io",
+              "media-src 'self' blob:",
+              "object-src 'none'",
+              "child-src 'self'",
+              "frame-src 'none'",
+              "worker-src 'self' blob:",
+              "manifest-src 'self'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "frame-ancestors 'none'",
+              'upgrade-insecure-requests',
+              'report-uri /api/csp-violation'
             ].join('; ')
           }
         ]

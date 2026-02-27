@@ -112,7 +112,7 @@ export class APISecurityManager {
       const response = await handler(request, securityResult.securityContext!)
 
       // Apply security to response
-      return this.secureResponse(response, securityConfig, securityResult.securityContext!)
+      return this.secureResponse(response, securityConfig, securityResult.securityContext!, request)
     } catch (error) {
       console.error('API Security Error:', error)
       return this.createErrorResponse('Internal security error', 500, 'security_error')
@@ -522,13 +522,32 @@ export class APISecurityManager {
   private secureResponse(
     response: NextResponse,
     config: APISecurityConfig,
-    securityContext: SecurityContext
+    securityContext: SecurityContext,
+    request?: NextRequest
   ): NextResponse {
     // Set security headers
     response.headers.set('X-Content-Type-Options', 'nosniff')
     response.headers.set('X-Frame-Options', 'DENY')
     response.headers.set('X-XSS-Protection', '1; mode=block')
     response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+
+    // Set CORS headers if enabled with explicit origin whitelist
+    if (config.enableCORS && request) {
+      const requestOrigin = request.headers.get('origin')
+      const allowedOrigins = config.allowedOrigins || []
+      const originAllowed =
+        allowedOrigins.includes(requestOrigin || '') || allowedOrigins.includes('*')
+
+      if (originAllowed && requestOrigin) {
+        response.headers.set('Access-Control-Allow-Origin', requestOrigin)
+        response.headers.set('Access-Control-Allow-Credentials', 'true')
+        response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+        response.headers.set(
+          'Access-Control-Allow-Headers',
+          'Content-Type, Authorization, X-Requested-With'
+        )
+      }
+    }
 
     // Set cache control
     if (config.cacheControl) {

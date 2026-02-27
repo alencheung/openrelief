@@ -1,48 +1,36 @@
 import { createClient } from '@supabase/supabase-js'
 import { Database } from '@/types/database'
 
-// Check if Supabase environment variables are configured
-const isSupabaseConfigured = !!(
-  process.env.NEXT_PUBLIC_SUPABASE_URL
-  && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
-if (!isSupabaseConfigured) {
-  console.warn('⚠️ WARNING: Supabase environment variables not configured. Using mock client.')
-  console.warn('📝 To fix this, create a .env.local file with:')
-  console.warn('NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co')
-  console.warn('NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key')
-}
+// Mock client should ONLY be used in test environment - never in production
+const shouldUseMockClient = process.env.NODE_ENV === 'test'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mock.supabase.co'
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'mock-key'
-
-export const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: true
-    },
-    realtime: {
-      params: {
-        eventsPerSecond: 10
+export const supabase = shouldUseMockClient
+  ? createMockSupabaseClient()
+  : createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true
+      },
+      realtime: {
+        params: {
+          eventsPerSecond: 10
+        }
       }
-    }
-  })
-  : createMockSupabaseClient()
+    })
 
 // Service role client for server-side operations
-export const supabaseAdmin = isSupabaseConfigured ? createClient(
-  supabaseUrl,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-) : createMockSupabaseClient()
+export const supabaseAdmin = shouldUseMockClient
+  ? createMockSupabaseClient()
+  : createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
 
 // Mock Supabase client for development
 function createMockSupabaseClient() {
@@ -109,29 +97,35 @@ function createMockSupabaseClient() {
     from: (table: string) => ({
       select: (columns?: string) => ({
         eq: (column: string, value: any) => ({
-          single: () => Promise.resolve({
-            data: table === 'user_profiles' ? {
-              user_id: 'mock-user-id',
-              trust_score: 0.5,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            } : null,
-            error: null
-          }),
-          then: (resolve: any) => resolve({
-            data: [],
-            error: null
-          })
+          single: () =>
+            Promise.resolve({
+              data:
+                table === 'user_profiles'
+                  ? {
+                      user_id: 'mock-user-id',
+                      trust_score: 0.5,
+                      created_at: new Date().toISOString(),
+                      updated_at: new Date().toISOString()
+                    }
+                  : null,
+              error: null
+            }),
+          then: (resolve: any) =>
+            resolve({
+              data: [],
+              error: null
+            })
         }),
         order: () => ({
           eq: () => ({
             limit: () => Promise.resolve({ data: [], error: null })
           })
         }),
-        then: (resolve: any) => resolve({
-          data: [],
-          error: null
-        })
+        then: (resolve: any) =>
+          resolve({
+            data: [],
+            error: null
+          })
       }),
       insert: (data: any) => ({
         select: () => ({
@@ -160,7 +154,7 @@ function createMockSupabaseClient() {
 
     channel: (channelName: string) => ({
       on: () => ({
-        subscribe: () => ({ unsubscribe: () => { } })
+        subscribe: () => ({ unsubscribe: () => {} })
       })
     })
   }
@@ -197,11 +191,7 @@ export const supabaseHelpers = {
   },
 
   async createUserProfile(profile: any) {
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .insert(profile)
-      .select()
-      .single()
+    const { data, error } = await supabase.from('user_profiles').insert(profile).select().single()
 
     if (error) {
       throw error
@@ -217,14 +207,16 @@ export const supabaseHelpers = {
   }) {
     let query = supabase
       .from('emergency_events')
-      .select(`
+      .select(
+        `
         *,
         emergency_types (*),
         reporter: user_profiles (
           user_id,
           trust_score
         )
-      `)
+      `
+      )
       .order('created_at', { ascending: false })
 
     if (options?.status) {
@@ -248,14 +240,16 @@ export const supabaseHelpers = {
     const { data, error } = await supabase
       .from('emergency_events')
       .insert(event)
-      .select(`
+      .select(
+        `
         *,
         emergency_types (*),
         reporter: user_profiles (
           user_id,
           trust_score
         )
-      `)
+      `
+      )
       .single()
 
     if (error) {
@@ -264,10 +258,7 @@ export const supabaseHelpers = {
     return data
   },
 
-  async updateEmergencyEvent(
-    eventId: string,
-    updates: any
-  ) {
+  async updateEmergencyEvent(eventId: string, updates: any) {
     const { data, error } = await supabase
       .from('emergency_events')
       .update(updates)
@@ -309,13 +300,15 @@ export const supabaseHelpers = {
   async getEventConfirmations(eventId: string) {
     const { data, error } = await supabase
       .from('event_confirmations')
-      .select(`
+      .select(
+        `
         *,
         user: user_profiles (
           user_id,
           trust_score
         )
-      `)
+      `
+      )
       .eq('event_id', eventId)
 
     if (error) {
@@ -328,10 +321,12 @@ export const supabaseHelpers = {
   async getUserSubscriptions(userId: string) {
     const { data, error } = await supabase
       .from('user_subscriptions')
-      .select(`
+      .select(
+        `
         *,
         emergency_types (*)
-      `)
+      `
+      )
       .eq('user_id', userId)
       .eq('is_active', true)
 
