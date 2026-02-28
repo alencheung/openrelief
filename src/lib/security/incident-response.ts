@@ -16,7 +16,7 @@ import {
   SecurityIncident,
   IncidentSeverity,
   IncidentStatus
-} from './security-monitor'
+} from '@/lib/audit/security-monitor'
 import { supabaseAdmin } from '@/lib/supabase'
 
 // Incident response interfaces
@@ -1132,7 +1132,9 @@ export class IncidentResponseManager {
 
   private async checkNextSteps(incidentId: string, completedStep: number): Promise<void> {
     const plan = this.activeIncidents.get(incidentId)
-    if (!plan) return
+    if (!plan) {
+      return
+    }
 
     // Find procedures that can now be executed
     const executableProcedures = plan.procedures.filter(
@@ -1290,7 +1292,9 @@ export class IncidentResponseManager {
         .select('*')
         .is('status', 'active')
 
-      if (error) throw error
+      if (error) {
+        throw error
+      }
 
       for (const planData of data || []) {
         const plan = planData.plan_data as IncidentResponsePlan

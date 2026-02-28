@@ -15,6 +15,7 @@ import { authSecurityManager } from './auth-security'
 import { inputValidator, validateApiInput, ValidationResult } from './input-validation'
 import { sybilPreventionEngine } from './sybil-prevention'
 import { securityMonitor } from '@/lib/audit/security-monitor'
+import { supabaseAdmin } from '@/lib/supabase'
 
 // API Security configuration
 interface APISecurityConfig {
