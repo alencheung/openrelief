@@ -12,6 +12,7 @@
 import { performanceMonitor } from '../performance/performance-monitor'
 import { queryOptimizer } from '../database/query-optimizer'
 import { createClient } from '@supabase/supabase-js'
+import { FCMBatcher, fcmBatcher } from '../notifications/fcm-batcher'
 
 const ALLOWED_EXTERNAL_DOMAINS = [
   'api.sendgrid.net',
@@ -64,6 +65,50 @@ export enum DeliveryStatus {
   DELIVERED = 'delivered',
   FAILED = 'failed',
   RETRYING = 'retrying'
+}
+
+// FCM batch configuration
+const FCM_BATCH_SIZE = 1000
+const FCM_MAX_RETRIES = 3
+const FCM_BASE_DELAY_MS = 1000
+const FCM_MAX_DELAY_MS = 30000
+
+// FCM batch result types
+export interface FCMBatchResult {
+  successCount: number
+  failureCount: number
+  failedTokens: string[]
+  invalidTokens: string[]
+}
+
+export interface FCMSingleNotification {
+  tokenId: string
+  userId: string
+  title: string
+  message: string
+  data: Record<string, unknown>
+  priority: AlertPriority
+}
+
+export interface FCMBatchPayload {
+  tokens: string[]
+  notification: {
+    title: string
+    body: string
+    priority: string
+    ttl: number
+  }
+  data: Record<string, unknown>
+  android: {
+    priority: string
+    ttl: number
+  }
+  apns: {
+    headers: {
+      'apns-priority': string
+      'apns-expiration': string
+    }
+  }
 }
 
 // Alert interface
@@ -480,7 +525,7 @@ class AlertDispatchOptimizer {
   }
 
   /**
-   * Send push notification
+   * Send push notification (single - for backward compatibility)
    */
   private async sendPushNotification(alert: EmergencyAlert): Promise<boolean> {
     const timerId = performanceMonitor.startTimer('push_notification_send', {
@@ -488,7 +533,6 @@ class AlertDispatchOptimizer {
     })
 
     try {
-      // Get user's FCM token
       const { data: user } = await this.supabase
         .from('user_profiles')
         .select('fcm_token')
@@ -499,52 +543,254 @@ class AlertDispatchOptimizer {
         throw new Error('No FCM token for user')
       }
 
-      // Send via FCM (optimized implementation)
+      const notification = {
+        title: alert.title,
+        body: alert.message,
+        priority: this.getFCMPriority(alert.priority),
+        ttl: this.getTTL(alert.priority)
+      }
+
+      const data = {
+        alertId: alert.id,
+        eventId: alert.eventId,
+        type: alert.type,
+        priority: alert.priority,
+        ...alert.data
+      }
+
+      const batcher = new FCMBatcher()
+      batcher.addToken(user.fcm_token, notification, data, alert.priority)
+      const results = await batcher.flush()
+
+      const result = results[0]
+      const success = result ? result.successCount > 0 : false
+
+      performanceMonitor.endTimer(timerId, 'alert', 'push_notification_send')
+
+      return success
+    } catch (error) {
+      performanceMonitor.endTimer(timerId, 'alert', 'push_notification_send')
+      throw error
+    }
+  }
+
+  /**
+   * Chunk array into batches of specified size
+   */
+  private chunkArray<T>(array: T[], size: number): T[][] {
+    const chunks: T[][] = []
+    for (let i = 0; i < array.length; i += size) {
+      chunks.push(array.slice(i, i + size))
+    }
+    return chunks
+  }
+
+  /**
+   * Sleep utility for exponential backoff
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms))
+  }
+
+  /**
+   * Calculate exponential backoff delay with jitter
+   */
+  private calculateBackoffDelay(retryCount: number): number {
+    const delay = Math.min(FCM_BASE_DELAY_MS * Math.pow(2, retryCount), FCM_MAX_DELAY_MS)
+    return delay + Math.random() * 500
+  }
+
+  /**
+   * Send a single FCM batch request with retry logic
+   */
+  private async sendFCMBatchWithRetry(
+    payload: FCMBatchPayload,
+    retryCount = 0
+  ): Promise<{ success: boolean; response?: Response; shouldRetry: boolean }> {
+    try {
       const response = await fetch('https://fcm.googleapis.com/fcm/send', {
         method: 'POST',
         headers: {
           Authorization: `key=${process.env.FCM_SERVER_KEY}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          to: user.fcm_token,
-          notification: {
-            title: alert.title,
-            body: alert.message,
-            priority: this.getFCMPriority(alert.priority),
-            ttl: this.getTTL(alert.priority)
-          },
-          data: {
-            alertId: alert.id,
-            eventId: alert.eventId,
-            type: alert.type,
-            priority: alert.priority,
-            ...alert.data
-          },
-          android: {
-            priority: this.getFCMPriority(alert.priority),
-            ttl: this.getTTL(alert.priority)
-          },
-          apns: {
-            headers: {
-              'apns-priority': this.getAPNSPriority(alert.priority),
-              'apns-expiration': this.getAPNSExpiration(alert.priority)
-            }
-          }
-        })
+        body: JSON.stringify(payload)
       })
 
-      const success = response.ok
-      const executionTime = performanceMonitor.endTimer(timerId, 'alert', 'push_notification_send')
-
-      if (!success) {
-        throw new Error(`FCM request failed: ${response.statusText}`)
+      if (response.status === 429) {
+        if (retryCount < FCM_MAX_RETRIES) {
+          return { success: false, shouldRetry: true }
+        }
+        return { success: false, shouldRetry: false }
       }
 
-      return success
+      return { success: response.ok, response, shouldRetry: false }
+    } catch {
+      if (retryCount < FCM_MAX_RETRIES) {
+        return { success: false, shouldRetry: true }
+      }
+      return { success: false, shouldRetry: false }
+    }
+  }
+
+  /**
+   * Batch push notifications - sends up to 1000 tokens per FCM request
+   * This reduces 500K individual API calls to ~500 batched calls
+   */
+  async batchPushNotifications(notifications: FCMSingleNotification[]): Promise<FCMBatchResult> {
+    const timerId = performanceMonitor.startTimer('batch_push_notification_send', {
+      notification_count: notifications.length.toString()
+    })
+
+    const result: FCMBatchResult = {
+      successCount: 0,
+      failureCount: 0,
+      failedTokens: [],
+      invalidTokens: []
+    }
+
+    if (notifications.length === 0) {
+      return result
+    }
+
+    try {
+      const tokensWithNotifications = notifications.filter(n => n.tokenId)
+      const tokens = tokensWithNotifications.map(n => n.tokenId)
+
+      if (tokens.length === 0) {
+        return result
+      }
+
+      const firstNotification = tokensWithNotifications[0]
+      if (!firstNotification) {
+        return result
+      }
+
+      const batchPayload: Omit<FCMBatchPayload, 'tokens'> = {
+        notification: {
+          title: firstNotification.title,
+          body: firstNotification.message,
+          priority: this.getFCMPriority(firstNotification.priority),
+          ttl: this.getTTL(firstNotification.priority)
+        },
+        data: {
+          eventId: firstNotification.data.eventId as string,
+          type: firstNotification.data.type as string,
+          priority: firstNotification.priority,
+          ...firstNotification.data
+        },
+        android: {
+          priority: this.getFCMPriority(firstNotification.priority),
+          ttl: this.getTTL(firstNotification.priority)
+        },
+        apns: {
+          headers: {
+            'apns-priority': this.getAPNSPriority(firstNotification.priority),
+            'apns-expiration': this.getAPNSExpiration(firstNotification.priority)
+          }
+        }
+      }
+
+      const tokenBatches = this.chunkArray(tokens, FCM_BATCH_SIZE)
+
+      const batchPromises = tokenBatches.map(async batchTokens => {
+        let retryCount = 0
+
+        while (retryCount <= FCM_MAX_RETRIES) {
+          const payload: FCMBatchPayload = {
+            tokens: batchTokens,
+            ...batchPayload
+          }
+
+          const batchResult = await this.sendFCMBatchWithRetry(payload, retryCount)
+
+          if (batchResult.shouldRetry) {
+            retryCount++
+            const delay = this.calculateBackoffDelay(retryCount)
+            await this.sleep(delay)
+            continue
+          }
+
+          if (!batchResult.success || !batchResult.response) {
+            result.failureCount += batchTokens.length
+            result.failedTokens.push(...batchTokens)
+            return
+          }
+
+          try {
+            const responseData = await batchResult.response.json()
+            const fcmResults = responseData.results as
+              | Array<{
+                  message_id?: string
+                  error?: string
+                }>
+              | undefined
+
+            if (fcmResults) {
+              fcmResults.forEach((fcmResult, index) => {
+                const token = batchTokens[index]
+                if (!token) {
+                  return
+                }
+
+                if (fcmResult.message_id) {
+                  result.successCount++
+                } else if (fcmResult.error) {
+                  result.failureCount++
+                  result.failedTokens.push(token)
+
+                  const isInvalidToken =
+                    fcmResult.error === 'InvalidRegistration' || fcmResult.error === 'NotRegistered'
+                  if (isInvalidToken) {
+                    result.invalidTokens.push(token)
+                  }
+                }
+              })
+            } else {
+              result.successCount += batchTokens.length
+            }
+          } catch {
+            result.successCount += batchTokens.length
+          }
+
+          return
+        }
+
+        result.failureCount += batchTokens.length
+        result.failedTokens.push(...batchTokens)
+      })
+
+      await Promise.all(batchPromises)
+
+      if (result.invalidTokens.length > 0) {
+        await this.logInvalidTokens(result.invalidTokens)
+      }
+
+      performanceMonitor.endTimer(timerId, 'alert', 'batch_push_notification_send')
+
+      return result
     } catch (error) {
-      performanceMonitor.endTimer(timerId, 'alert', 'push_notification_send')
-      throw error
+      performanceMonitor.endTimer(timerId, 'alert', 'batch_push_notification_send')
+      result.failureCount = notifications.length
+      result.failedTokens = notifications.map(n => n.tokenId)
+      return result
+    }
+  }
+
+  /**
+   * Log invalid tokens for cleanup
+   */
+  private async logInvalidTokens(tokens: string[]): Promise<void> {
+    try {
+      await this.supabase.from('invalid_fcm_tokens').insert(
+        tokens.map(token => ({
+          token,
+          detected_at: new Date().toISOString(),
+          cleanup_status: 'pending'
+        }))
+      )
+    } catch {
+      console.error('Failed to log invalid tokens for cleanup')
     }
   }
 
@@ -787,19 +1033,14 @@ class AlertDispatchOptimizer {
       )
 
       if (hasSuccessfulDelivery) {
-        // Mark as delivered
         await this.markAlertDelivered(alert.id)
+      } else if (alert.retryCount < alert.maxRetries) {
+        alert.retryCount++
+        setTimeout(() => {
+          this.addToQueue(alert)
+        }, this.getRetryDelay(alert.retryCount))
       } else {
-        // Retry if attempts remaining
-        if (alert.retryCount < alert.maxRetries) {
-          alert.retryCount++
-          setTimeout(() => {
-            this.addToQueue(alert)
-          }, this.getRetryDelay(alert.retryCount))
-        } else {
-          // Mark as failed
-          await this.markAlertFailed(alert.id)
-        }
+        await this.markAlertFailed(alert.id)
       }
     } catch (error) {
       console.error(`Error processing alert ${alert.id}:`, error)
@@ -1111,8 +1352,8 @@ class AlertDispatchOptimizer {
       tags: {
         total_alerts: this.metrics.totalAlerts.toString(),
         success_rate: (
-          (this.metrics.successfulDeliveries / this.metrics.totalAlerts)
-          * 100
+          (this.metrics.successfulDeliveries / this.metrics.totalAlerts) *
+          100
         ).toString(),
         p95_latency: this.metrics.p95Latency.toString(),
         p99_latency: this.metrics.p99Latency.toString()
@@ -1168,6 +1409,79 @@ class AlertDispatchOptimizer {
 
     console.log('[AlertDispatchOptimizer] Normal mode restored')
   }
+
+  async sendBatchPushNotifications(
+    users: Array<{ userId: string; fcmToken?: string }>,
+    alert: {
+      title: string
+      message: string
+      eventId: string
+      type: string
+      priority: AlertPriority
+      data: Record<string, unknown>
+    }
+  ): Promise<FCMBatchResult> {
+    const timerId = performanceMonitor.startTimer('batch_push_to_users', {
+      user_count: users.length.toString()
+    })
+
+    const result: FCMBatchResult = {
+      successCount: 0,
+      failureCount: 0,
+      failedTokens: [],
+      invalidTokens: []
+    }
+
+    try {
+      const usersWithTokens = users.filter(u => u.fcmToken)
+      if (usersWithTokens.length === 0) {
+        return result
+      }
+
+      const batcher = new FCMBatcher()
+
+      const notification = {
+        title: alert.title,
+        body: alert.message,
+        priority: this.getFCMPriority(alert.priority),
+        ttl: this.getTTL(alert.priority)
+      }
+
+      const data = {
+        eventId: alert.eventId,
+        type: alert.type,
+        priority: alert.priority,
+        ...alert.data
+      }
+
+      for (const user of usersWithTokens) {
+        if (user.fcmToken) {
+          batcher.addToken(user.fcmToken, notification, data, alert.priority)
+        }
+      }
+
+      const batchResults = await batcher.flush()
+
+      for (const batchResult of batchResults) {
+        result.successCount += batchResult.successCount
+        result.failureCount += batchResult.failureCount
+        result.failedTokens.push(...batchResult.failedTokens)
+        result.invalidTokens.push(...batchResult.invalidTokens)
+      }
+
+      if (result.invalidTokens.length > 0) {
+        await this.logInvalidTokens(result.invalidTokens)
+      }
+
+      performanceMonitor.endTimer(timerId, 'alert', 'batch_push_to_users')
+
+      return result
+    } catch (error) {
+      performanceMonitor.endTimer(timerId, 'alert', 'batch_push_to_users')
+      result.failureCount = users.length
+      return result
+    }
+  }
 }
 
 // Export singleton instance
@@ -1183,7 +1497,9 @@ export function useAlertDispatchOptimizer() {
     getQueueStatus: alertDispatchOptimizer.getQueueStatus.bind(alertDispatchOptimizer),
     optimizeForEmergencyMode:
       alertDispatchOptimizer.optimizeForEmergencyMode.bind(alertDispatchOptimizer),
-    resetToNormalMode: alertDispatchOptimizer.resetToNormalMode.bind(alertDispatchOptimizer)
+    resetToNormalMode: alertDispatchOptimizer.resetToNormalMode.bind(alertDispatchOptimizer),
+    sendBatchPushNotifications:
+      alertDispatchOptimizer.sendBatchPushNotifications.bind(alertDispatchOptimizer)
   }
 }
 

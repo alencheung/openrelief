@@ -82,6 +82,8 @@
     "@turf/distance": "^7.3.1",
     "@turf/helpers": "^7.3.1",
     "@turf/turf": "^7.3.1",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.36.3",
     "axios": "^1.6.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",

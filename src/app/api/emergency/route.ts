@@ -14,6 +14,14 @@ import { inputValidator, VALIDATION_SCHEMAS } from '@/lib/security/input-validat
 import { sybilPreventionEngine } from '@/lib/security/sybil-prevention'
 import { securityMonitor } from '@/lib/audit/security-monitor'
 import { trustScoreManager, updateTrustScoreFromAction } from '@/lib/security/trust-integration'
+import {
+  cacheResponse,
+  generateCacheKey,
+  getCacheHeaders,
+  invalidateEmergencyCache,
+  checkETagMatch,
+  CACHE_CONFIGS
+} from '@/lib/cache/api-cache'
 
 // Create Supabase client
 const supabase = createClient(
@@ -21,7 +29,10 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (request: NextRequest, context) => {
+export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
+  request: NextRequest,
+  context
+) => {
   try {
     const { searchParams } = new URL(request.url)
     const {
@@ -34,31 +45,22 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (request: Ne
       center_lng
     } = Object.fromEntries(searchParams.entries())
 
-    // Validate query parameters
     const validationResult = inputValidator.validateAndSanitizeObject(
       { status, type_id, limit, offset, radius, center_lat, center_lng },
       {
         status: [
-          { name: 'status', type: 'string', allowedValues: ['pending', 'active', 'resolved', 'closed'] }
+          {
+            name: 'status',
+            type: 'string',
+            allowedValues: ['pending', 'active', 'resolved', 'closed']
+          }
         ],
-        type_id: [
-          { name: 'type_id', type: 'number', min: 1 }
-        ],
-        limit: [
-          { name: 'limit', type: 'number', min: 1, max: 100 }
-        ],
-        offset: [
-          { name: 'offset', type: 'number', min: 0 }
-        ],
-        radius: [
-          { name: 'radius', type: 'number', min: 100, max: 50000 }
-        ],
-        center_lat: [
-          { name: 'center_lat', type: 'number', min: -90, max: 90 }
-        ],
-        center_lng: [
-          { name: 'center_lng', type: 'number', min: -180, max: 180 }
-        ]
+        type_id: [{ name: 'type_id', type: 'number', min: 1 }],
+        limit: [{ name: 'limit', type: 'number', min: 1, max: 100 }],
+        offset: [{ name: 'offset', type: 'number', min: 0 }],
+        radius: [{ name: 'radius', type: 'number', min: 100, max: 50000 }],
+        center_lat: [{ name: 'center_lat', type: 'number', min: -90, max: 90 }],
+        center_lng: [{ name: 'center_lng', type: 'number', min: -180, max: 180 }]
       }
     )
 
@@ -75,94 +77,120 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (request: Ne
 
     const sanitizedData = validationResult.sanitizedData
 
-    let query = supabase
-      .from('emergency_events')
-      .select(`
-        *,
-        emergency_types (*),
-        reporter: user_profiles (
-          user_id,
-          trust_score
-        )
-      `)
-      .order('created_at', { ascending: false })
+    const cacheKey = generateCacheKey('emergency', {
+      status: sanitizedData.status,
+      type_id: sanitizedData.type_id,
+      limit: sanitizedData.limit,
+      offset: sanitizedData.offset,
+      radius: sanitizedData.radius,
+      center_lat: sanitizedData.center_lat,
+      center_lng: sanitizedData.center_lng
+    })
 
-    // Apply filters
-    if (sanitizedData.status) {
-      query = query.in('status', sanitizedData.status.split(','))
-    }
+    const ifNoneMatch = request.headers.get('If-None-Match')
 
-    if (sanitizedData.type_id) {
-      query = query.eq('type_id', parseInt(sanitizedData.type_id))
-    }
+    const { data, cached, etag } = await cacheResponse(
+      cacheKey,
+      async () => {
+        let query = supabase
+          .from('emergency_events')
+          .select(
+            `
+            *,
+            emergency_types (*),
+            reporter: user_profiles (
+              user_id,
+              trust_score
+            )
+          `
+          )
+          .order('created_at', { ascending: false })
 
-    // Apply spatial filtering
-    if (sanitizedData.radius && sanitizedData.center_lat && sanitizedData.center_lng) {
-      const radiusMeters = parseFloat(sanitizedData.radius)
-      const centerLat = parseFloat(sanitizedData.center_lat)
-      const centerLng = parseFloat(sanitizedData.center_lng)
+        if (sanitizedData.status) {
+          query = query.in('status', sanitizedData.status.split(','))
+        }
 
-      query = query.rpc('nearby_emergency_events', {
-        center_lat: centerLat,
-        center_lng: centerLng,
-        radius_meters: radiusMeters
+        if (sanitizedData.type_id) {
+          query = query.eq('type_id', parseInt(sanitizedData.type_id))
+        }
+
+        if (sanitizedData.radius && sanitizedData.center_lat && sanitizedData.center_lng) {
+          const radiusMeters = parseFloat(sanitizedData.radius)
+          const centerLat = parseFloat(sanitizedData.center_lat)
+          const centerLng = parseFloat(sanitizedData.center_lng)
+
+          query = query.rpc('nearby_emergency_events', {
+            center_lat: centerLat,
+            center_lng: centerLng,
+            radius_meters: radiusMeters
+          })
+        }
+
+        if (sanitizedData.limit) {
+          query = query.limit(parseInt(sanitizedData.limit))
+        }
+
+        if (sanitizedData.offset) {
+          query = query.range(
+            parseInt(sanitizedData.offset),
+            parseInt(sanitizedData.offset) + parseInt(sanitizedData.limit) - 1
+          )
+        }
+
+        const { data, error, count } = await query
+
+        if (error) {
+          throw error
+        }
+
+        return {
+          data,
+          pagination: {
+            total: count || 0,
+            limit: parseInt(sanitizedData.limit),
+            offset: parseInt(sanitizedData.offset),
+            hasMore: (count || 0) > parseInt(sanitizedData.offset) + parseInt(sanitizedData.limit)
+          }
+        }
+      },
+      CACHE_CONFIGS.emergency
+    )
+
+    if (checkETagMatch(ifNoneMatch, etag)) {
+      return new NextResponse(null, {
+        status: 304,
+        headers: getCacheHeaders(CACHE_CONFIGS.emergency, etag)
       })
     }
 
-    // Apply pagination
-    if (sanitizedData.limit) {
-      query = query.limit(parseInt(sanitizedData.limit))
-    }
-
-    if (sanitizedData.offset) {
-      query = query.range(parseInt(sanitizedData.offset), parseInt(sanitizedData.offset) + parseInt(sanitizedData.limit) - 1)
-    }
-
-    const { data, error, count } = await query
-
-    if (error) {
-      console.error('Error fetching emergency events:', error)
-      await securityMonitor.createAlert(
-        'database_error' as any,
-        'medium' as any,
-        'Database error in emergency events fetch',
-        `Error: ${error.message}`,
-        'api_security'
-      )
-
-      return NextResponse.json(
-        { error: 'Failed to fetch emergency events', details: error.message },
-        { status: 500 }
-      )
-    }
-
-    return NextResponse.json({
-      data,
-      pagination: {
-        total: count || 0,
-        limit: parseInt(sanitizedData.limit),
-        offset: parseInt(sanitizedData.offset),
-        hasMore: (count || 0) > parseInt(sanitizedData.offset) + parseInt(sanitizedData.limit)
+    return NextResponse.json(data, {
+      headers: {
+        ...getCacheHeaders(CACHE_CONFIGS.emergency, etag),
+        'X-Cache-Status': cached ? 'HIT' : 'MISS'
       }
     })
-  } catch (error) {
-    console.error('Unexpected error in GET /api/emergency:', error)
+  } catch (error: unknown) {
+    console.error('Error fetching emergency events:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     await securityMonitor.createAlert(
-      'system_error' as any,
-      'high' as any,
-      'Unexpected error in emergency events fetch',
-      `Error: ${error.message}`,
+      'database_error' as any,
+      'medium' as any,
+      'Database error in emergency events fetch',
+      `Error: ${errorMessage}`,
       'api_security'
     )
 
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Failed to fetch emergency events', details: errorMessage },
       { status: 500 }
     )
   }
 })
 
-export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (request: NextRequest, context) => {
+export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (
+  request: NextRequest,
+  context
+) => {
   try {
     const body = await request.json()
 
@@ -207,10 +235,7 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (reque
       .single()
 
     if (reporterError || !reporter) {
-      return NextResponse.json(
-        { error: 'Reporter not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Reporter not found' }, { status: 404 })
     }
 
     // Check for Sybil attack patterns
@@ -225,10 +250,7 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (reque
           'sybil_prevention'
         )
 
-        return NextResponse.json(
-          { error: 'Additional verification required' },
-          { status: 401 }
-        )
+        return NextResponse.json({ error: 'Additional verification required' }, { status: 401 })
       }
     }
 
@@ -253,14 +275,16 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (reque
         updated_at: new Date().toISOString(),
         expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
       })
-      .select(`
+      .select(
+        `
         *,
         emergency_types (*),
         reporter: user_profiles (
           user_id,
           trust_score
         )
-      `)
+      `
+      )
       .single()
 
     if (error) {
@@ -312,68 +336,63 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (reque
       }
     }
 
-    return NextResponse.json({
-      data,
-      message: 'Emergency event created successfully',
-      trustWeight: calculatedTrustWeight
-    }, { status: 201 })
-  } catch (error) {
+    return NextResponse.json(
+      {
+        data,
+        message: 'Emergency event created successfully',
+        trustWeight: calculatedTrustWeight
+      },
+      { status: 201 }
+    )
+  } catch (error: unknown) {
     console.error('Unexpected error in POST /api/emergency:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     await securityMonitor.createAlert(
       'system_error' as any,
       'high' as any,
       'Unexpected error in emergency event creation',
-      `Error: ${error.message}`,
+      `Error: ${errorMessage}`,
       'api_security'
     )
 
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  } finally {
+    await invalidateEmergencyCache().catch(() => {})
   }
 })
 
-export const PUT = withAPISecurity(API_SECURITY_CONFIGS.user)(async (request: NextRequest, context) => {
+export const PUT = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
+  request: NextRequest,
+  context
+) => {
   try {
     const { searchParams } = new URL(request.url)
     const eventId = searchParams.get('id')
 
     if (!eventId) {
-      return NextResponse.json(
-        { error: 'Event ID is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Event ID is required' }, { status: 400 })
     }
 
     const body = await request.json()
-    const {
-      status,
-      severity,
-      metadata,
-      final_report,
-      resolved_at
-    } = body
+    const { status, severity, metadata, final_report, resolved_at } = body
 
     // Validate input
     const validationResult = inputValidator.validateAndSanitizeObject(
       { status, severity, metadata, final_report, resolved_at },
       {
         status: [
-          { name: 'status', type: 'string', allowedValues: ['pending', 'active', 'resolved', 'closed'] }
+          {
+            name: 'status',
+            type: 'string',
+            allowedValues: ['pending', 'active', 'resolved', 'closed']
+          }
         ],
         severity: [
           { name: 'severity', type: 'string', allowedValues: ['low', 'medium', 'high', 'critical'] }
         ],
-        metadata: [
-          { name: 'metadata', type: 'object' }
-        ],
-        final_report: [
-          { name: 'final_report', type: 'string', maxLength: 5000 }
-        ],
-        resolved_at: [
-          { name: 'resolved_at', type: 'string' }
-        ]
+        metadata: [{ name: 'metadata', type: 'object' }],
+        final_report: [{ name: 'final_report', type: 'string', maxLength: 5000 }],
+        resolved_at: [{ name: 'resolved_at', type: 'string' }]
       }
     )
 
@@ -420,14 +439,16 @@ export const PUT = withAPISecurity(API_SECURITY_CONFIGS.user)(async (request: Ne
       .from('emergency_events')
       .update(updates)
       .eq('id', eventId)
-      .select(`
+      .select(
+        `
         *,
         emergency_types (*),
         reporter: user_profiles (
           user_id,
           trust_score
         )
-      `)
+      `
+      )
       .single()
 
     if (error) {
@@ -451,43 +472,40 @@ export const PUT = withAPISecurity(API_SECURITY_CONFIGS.user)(async (request: Ne
     }
 
     if (!data) {
-      return NextResponse.json(
-        { error: 'Emergency event not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Emergency event not found' }, { status: 404 })
     }
 
     return NextResponse.json({
       data,
       message: 'Emergency event updated successfully'
     })
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Unexpected error in PUT /api/emergency:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     await securityMonitor.createAlert(
       'system_error' as any,
       'high' as any,
       'Unexpected error in emergency event update',
-      `Error: ${error.message}`,
+      `Error: ${errorMessage}`,
       'api_security'
     )
 
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  } finally {
+    await invalidateEmergencyCache().catch(() => {})
   }
 })
 
-export const DELETE = withAPISecurity(API_SECURITY_CONFIGS.user)(async (request: NextRequest, context) => {
+export const DELETE = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
+  request: NextRequest,
+  context
+) => {
   try {
     const { searchParams } = new URL(request.url)
     const eventId = searchParams.get('id')
 
     if (!eventId) {
-      return NextResponse.json(
-        { error: 'Event ID is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Event ID is required' }, { status: 400 })
     }
 
     // Check if event can be deleted (only resolved/closed events)
@@ -498,10 +516,7 @@ export const DELETE = withAPISecurity(API_SECURITY_CONFIGS.user)(async (request:
       .single()
 
     if (fetchError || !event) {
-      return NextResponse.json(
-        { error: 'Emergency event not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Emergency event not found' }, { status: 404 })
     }
 
     if (!['resolved', 'closed'].includes(event.status)) {
@@ -512,13 +527,11 @@ export const DELETE = withAPISecurity(API_SECURITY_CONFIGS.user)(async (request:
     }
 
     // Archive event before deletion
-    const { error: archiveError } = await supabase
-      .from('emergency_events_archive')
-      .insert({
-        ...event,
-        archived_at: new Date().toISOString(),
-        deleted_by: context.userId
-      })
+    const { error: archiveError } = await supabase.from('emergency_events_archive').insert({
+      ...event,
+      archived_at: new Date().toISOString(),
+      deleted_by: context.userId
+    })
 
     if (archiveError) {
       console.error('Error archiving emergency event:', archiveError)
@@ -534,10 +547,7 @@ export const DELETE = withAPISecurity(API_SECURITY_CONFIGS.user)(async (request:
         }
       )
 
-      return NextResponse.json(
-        { error: 'Failed to archive emergency event' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Failed to archive emergency event' }, { status: 500 })
     }
 
     // Delete event
@@ -560,28 +570,25 @@ export const DELETE = withAPISecurity(API_SECURITY_CONFIGS.user)(async (request:
         }
       )
 
-      return NextResponse.json(
-        { error: 'Failed to delete emergency event' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Failed to delete emergency event' }, { status: 500 })
     }
 
     return NextResponse.json({
       message: 'Emergency event deleted successfully'
     })
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Unexpected error in DELETE /api/emergency:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     await securityMonitor.createAlert(
       'system_error' as any,
       'high' as any,
       'Unexpected error in emergency event deletion',
-      `Error: ${error.message}`,
+      `Error: ${errorMessage}`,
       'api_security'
     )
 
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  } finally {
+    await invalidateEmergencyCache().catch(() => {})
   }
 })

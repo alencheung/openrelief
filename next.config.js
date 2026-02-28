@@ -102,7 +102,23 @@ const withPWA = require('next-pwa')({
 const nextConfig = {
   experimental: {
     optimizeCss: true,
-    optimizePackageImports: ['lucide-react', '@heroicons/react']
+    isrMemoryCacheSize: 100,
+    optimizePackageImports: [
+      'lucide-react',
+      '@heroicons/react',
+      '@tanstack/react-query',
+      'zustand',
+      'date-fns',
+      'zod',
+      'framer-motion',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-dropdown-menu',
+      '@radix-ui/react-popover',
+      '@radix-ui/react-select',
+      '@radix-ui/react-tabs',
+      '@radix-ui/react-toast',
+      '@radix-ui/react-tooltip'
+    ]
   },
   images: {
     domains: ['localhost'],

@@ -17,82 +17,19 @@ import {
   trustSecurityMiddleware,
   trustBasedRateLimitMiddleware
 } from '@/lib/security/trust-middleware'
+import {
+  getRateLimiter,
+  generateRateLimitKey,
+  getRateLimitTier,
+  getClientIP,
+  createRateLimitHeaders,
+  RATE_LIMIT_TIERS,
+  type RateLimitTier
+} from '@/lib/redis/rate-limiter'
 
-// Rate limiting configuration
-interface RateLimitConfig {
-  windowMs: number
-  maxRequests: number
-  skipSuccessfulRequests?: boolean
-  skipFailedRequests?: boolean
-  keyGenerator?: (req: NextRequest) => string
-  onLimitReached?: (req: NextRequest, res: NextResponse) => void
-  penaltyMultiplier?: number
-  emergencyOverride?: boolean
-}
+const rateLimiter = getRateLimiter()
 
-// Rate limit tiers for different endpoint types
-const RATE_LIMIT_TIERS: Record<string, RateLimitConfig> = {
-  // Emergency endpoints - more restrictive during crises
-  emergency: {
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    maxRequests: 30,
-    penaltyMultiplier: 2.0,
-    emergencyOverride: true
-  },
-
-  // Authentication endpoints - very restrictive
-  auth: {
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    maxRequests: 10,
-    penaltyMultiplier: 3.0,
-    emergencyOverride: false
-  },
-
-  // General API endpoints
-  api: {
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    maxRequests: 100,
-    penaltyMultiplier: 1.5,
-    emergencyOverride: false
-  },
-
-  // File upload endpoints
-  upload: {
-    windowMs: 60 * 60 * 1000, // 1 hour
-    maxRequests: 20,
-    penaltyMultiplier: 2.5,
-    emergencyOverride: false
-  }
-}
-
-// Current in-memory rate limiting - WARNING: Does not work in serverless/edge environments
-// TODO: Replace with Redis-based rate limiting before production deployment
-// See: https://upstash.com/docs/redis/features/rate-limiting
-
-if (process.env.NODE_ENV === 'production') {
-  console.warn(
-    '⚠️ WARNING: Using in-memory rate limiting in production. This will not work correctly in distributed/serverless deployments. Implement Redis-based rate limiting.'
-  )
-}
-
-const hasRedis = !!(process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL)
-if (!hasRedis && process.env.NODE_ENV === 'production') {
-  console.warn('⚠️ Redis not configured. Rate limiting will not work across multiple instances.')
-}
-
-const rateLimitStore = new Map<
-  string,
-  {
-    count: number
-    resetTime: number
-    penaltyCount: number
-    lastAccess: number
-    blocked: boolean
-    blockExpiry: number
-  }
->()
-
-// Suspicious IP tracking
+// Suspicious IP tracking (in-memory for single instance, Redis handles distributed)
 const suspiciousIPs = new Map<
   string,
   {
@@ -105,61 +42,6 @@ const suspiciousIPs = new Map<
 // Emergency mode detection
 let emergencyMode = false
 let emergencyModeExpiry = 0
-
-/**
- * Generate rate limit key based on request
- */
-function generateRateLimitKey(req: NextRequest, tier: string): string {
-  const ip = getClientIP(req)
-  const userAgent = req.headers.get('user-agent') || 'unknown'
-  const userId = req.headers.get('x-user-id') || 'anonymous'
-
-  // Create composite key for better tracking
-  const keyData = `${tier}:${ip}:${userId}:${userAgent}`
-  return createHash('sha256').update(keyData).digest('hex').substring(0, 16)
-}
-
-/**
- * Get client IP address from request
- */
-function getClientIP(req: NextRequest): string {
-  // Check various headers for real IP
-  const forwardedFor = req.headers.get('x-forwarded-for')
-  const realIP = req.headers.get('x-real-ip')
-  const cfConnectingIP = req.headers.get('cf-connecting-ip')
-
-  if (forwardedFor) {
-    return forwardedFor.split(',')[0].trim()
-  }
-  if (realIP) {
-    return realIP
-  }
-  if (cfConnectingIP) {
-    return cfConnectingIP
-  }
-
-  // Fallback to request IP
-  return req.ip || 'unknown'
-}
-
-/**
- * Determine rate limit tier based on request path
- */
-function getRateLimitTier(pathname: string): string {
-  if (pathname.includes('/emergency')) {
-    return 'emergency'
-  }
-  if (pathname.includes('/auth') || pathname.includes('/signup')) {
-    return 'auth'
-  }
-  if (pathname.includes('/upload') || pathname.includes('/file')) {
-    return 'upload'
-  }
-  if (pathname.startsWith('/api/')) {
-    return 'api'
-  }
-  return 'api'
-}
 
 /**
  * Check if request is from suspicious IP
@@ -251,110 +133,39 @@ function activateEmergencyMode(duration: number = 60 * 60 * 1000): void {
 }
 
 /**
- * Rate limiting middleware
+ * Rate limiting middleware using Redis-backed rate limiter
  */
 async function rateLimitMiddleware(
   req: NextRequest,
-  config: RateLimitConfig
+  tier: RateLimitTier,
+  options?: {
+    trustWeight?: number
+    emergencyMode?: boolean
+    customMaxRequests?: number
+  }
 ): Promise<{ allowed: boolean; response?: NextResponse }> {
-  const key = config.keyGenerator ? config.keyGenerator(req) : generateRateLimitKey(req, 'api')
-  const now = Date.now()
+  const key = generateRateLimitKey(req, tier)
+  const result = await rateLimiter.checkLimit(key, tier, options)
 
-  // Get or create rate limit entry
-  let rateLimitEntry = rateLimitStore.get(key)
-  if (!rateLimitEntry) {
-    rateLimitEntry = {
-      count: 0,
-      resetTime: now + config.windowMs,
-      penaltyCount: 0,
-      lastAccess: now,
-      blocked: false,
-      blockExpiry: 0
-    }
-    rateLimitStore.set(key, rateLimitEntry)
-  }
-
-  // Check if IP is blocked
-  if (rateLimitEntry.blocked && now < rateLimitEntry.blockExpiry) {
-    return {
-      allowed: false,
-      response: NextResponse.json(
-        {
-          error: 'Too many requests. Please try again later.',
-          retryAfter: Math.ceil((rateLimitEntry.blockExpiry - now) / 1000),
-          blocked: true
-        },
-        {
-          status: 429,
-          headers: {
-            'Retry-After': Math.ceil((rateLimitEntry.blockExpiry - now) / 1000).toString(),
-            'X-RateLimit-Limit': config.maxRequests.toString(),
-            'X-RateLimit-Remaining': '0',
-            'X-RateLimit-Reset': new Date(rateLimitEntry.resetTime).toISOString()
-          }
-        }
-      )
-    }
-  }
-
-  // Reset window if expired
-  if (now > rateLimitEntry.resetTime) {
-    rateLimitEntry.count = 0
-    rateLimitEntry.penaltyCount = 0
-    rateLimitEntry.resetTime = now + config.windowMs
-  }
-
-  // Check emergency mode
-  const isEmergency = checkEmergencyMode()
-  const effectiveMaxRequests
-    = isEmergency && config.emergencyOverride
-      ? Math.floor(config.maxRequests * 0.3) // Reduce limits during emergency
-      : config.maxRequests
-
-  // Apply penalty multiplier
-  const penaltyMultiplier = config.penaltyMultiplier || 1.0
-  const adjustedMaxRequests = Math.floor(
-    effectiveMaxRequests / (1 + rateLimitEntry.penaltyCount * penaltyMultiplier * 0.1)
-  )
-
-  // Check if limit exceeded
-  if (rateLimitEntry.count >= adjustedMaxRequests) {
-    rateLimitEntry.penaltyCount++
-
-    // Block if too many penalties
-    if (rateLimitEntry.penaltyCount > 5) {
-      rateLimitEntry.blocked = true
-      rateLimitEntry.blockExpiry = now + 60 * 60 * 1000 // 1 hour block
-
-      const ip = getClientIP(req)
-      updateSuspiciousIP(ip, 'rate_limit_exceeded', 20)
-    }
+  if (!result.allowed) {
+    const headers = createRateLimitHeaders(result)
+    headers['Retry-After'] = Math.ceil((result.reset.getTime() - Date.now()) / 1000).toString()
 
     return {
       allowed: false,
       response: NextResponse.json(
         {
           error: 'Rate limit exceeded',
-          retryAfter: Math.ceil((rateLimitEntry.resetTime - now) / 1000),
-          penaltyCount: rateLimitEntry.penaltyCount
+          retryAfter: Math.ceil((result.reset.getTime() - Date.now()) / 1000),
+          penaltyCount: result.penaltyCount
         },
         {
           status: 429,
-          headers: {
-            'Retry-After': Math.ceil((rateLimitEntry.resetTime - now) / 1000).toString(),
-            'X-RateLimit-Limit': config.maxRequests.toString(),
-            'X-RateLimit-Remaining': '0',
-            'X-RateLimit-Reset': new Date(rateLimitEntry.resetTime).toISOString(),
-            'X-RateLimit-Penalty': rateLimitEntry.penaltyCount.toString()
-          }
+          headers
         }
       )
     }
   }
-
-  // Increment counter
-  rateLimitEntry.count++
-  rateLimitEntry.lastAccess = now
 
   return { allowed: true }
 }
@@ -415,10 +226,10 @@ function inputValidationMiddleware(req: NextRequest): { valid: boolean; response
 
   // Validate content type for POST/PUT requests
   if (
-    (method === 'POST' || method === 'PUT')
-    && !contentType.includes('application/json')
-    && !contentType.includes('multipart/form-data')
-    && !contentType.includes('application/x-www-form-urlencoded')
+    (method === 'POST' || method === 'PUT') &&
+    !contentType.includes('application/json') &&
+    !contentType.includes('multipart/form-data') &&
+    !contentType.includes('application/x-www-form-urlencoded')
   ) {
     return {
       valid: false,
@@ -485,11 +296,11 @@ export async function middleware(req: NextRequest) {
 
   // Skip middleware for static assets and internal routes
   if (
-    pathname.startsWith('/_next')
-    || pathname.startsWith('/static')
-    || pathname.startsWith('/favicon')
-    || pathname.includes('.')
-    || pathname === '/sw.js'
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/static') ||
+    pathname.startsWith('/favicon') ||
+    pathname.includes('.') ||
+    pathname === '/sw.js'
   ) {
     return securityHeadersMiddleware(response)
   }
@@ -530,20 +341,12 @@ export async function middleware(req: NextRequest) {
 
     // Apply traditional rate limiting as fallback
     const tier = getRateLimitTier(pathname)
-    const config = RATE_LIMIT_TIERS[tier]
 
-    // Adjust rate limit based on trust score
-    const adjustedConfig = {
-      ...config,
-      maxRequests:
-        trustContext.trustWeight > 0.7
-          ? config.maxRequests * 2
-          : trustContext.trustWeight < 0.3
-            ? Math.floor(config.maxRequests * 0.5)
-            : config.maxRequests
-    }
-
-    const rateLimitResult = await rateLimitMiddleware(req, adjustedConfig)
+    // Apply rate limiting with trust-based adjustments
+    const rateLimitResult = await rateLimitMiddleware(req, tier, {
+      trustWeight: trustContext?.trustWeight ?? 1,
+      emergencyMode: checkEmergencyMode()
+    })
     if (!rateLimitResult.allowed) {
       return rateLimitResult.response
     }
@@ -558,11 +361,11 @@ export async function middleware(req: NextRequest) {
     'middleware',
     trustContext
       ? {
-        trustScore: trustContext.trustScore,
-        trustThreshold: trustContext.trustThreshold,
-        trustWeight: trustContext.trustWeight,
-        resistance: trustContext.resistance
-      }
+          trustScore: trustContext.trustScore,
+          trustThreshold: trustContext.trustThreshold,
+          trustWeight: trustContext.trustWeight,
+          resistance: trustContext.resistance
+        }
       : undefined
   )
 
@@ -585,7 +388,6 @@ export async function middleware(req: NextRequest) {
  */
 export const config = {
   matcher: [
-
     /*
      * Match all request paths except for the ones starting with:
      * - _next/static (static files)

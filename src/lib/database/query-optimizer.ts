@@ -1,22 +1,21 @@
-/**
- * Database Query Optimizer for High-Load Emergency Scenarios
- *
- * This module provides intelligent query optimization for:
- * - Spatial queries with geographic indexing
- * - Connection pooling and load balancing
- * - Query result caching strategies
- * - Materialized views for analytics
- * - Emergency-specific query patterns
- */
-
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { performanceMonitor } from '../performance/performance-monitor'
+import {
+  PoolManager,
+  PoolConfig,
+  PoolStats,
+  getPoolStats,
+  acquireConnection,
+  releaseConnection
+} from './pool-manager'
 
-// Query optimization configuration
 export interface QueryOptimizationConfig {
   enableConnectionPooling: boolean
+  minConnections: number
   maxConnections: number
   connectionTimeout: number
+  idleTimeout: number
+  acquireTimeoutMillis: number
   queryTimeout: number
   enableQueryCache: boolean
   cacheTTL: number
@@ -25,29 +24,18 @@ export interface QueryOptimizationConfig {
   materializedViews: boolean
 }
 
-// Query cache entry
 interface QueryCacheEntry {
   query: string
-  params: any[]
-  result: any
+  params: unknown[]
+  result: unknown
   timestamp: number
   ttl: number
   hitCount: number
 }
 
-// Connection pool entry
-interface ConnectionPoolEntry {
-  client: SupabaseClient
-  inUse: boolean
-  lastUsed: number
-  created: number
-  queryCount: number
-}
-
-// Query optimization result
 export interface QueryOptimizationResult {
   optimizedQuery: string
-  optimizedParams: any[]
+  optimizedParams: unknown[]
   strategy: 'index_scan' | 'sequential_scan' | 'bitmap_scan' | 'hash_join' | 'nested_loop'
   estimatedCost: number
   estimatedRows: number
@@ -55,7 +43,6 @@ export interface QueryOptimizationResult {
   cacheHit: boolean
 }
 
-// Spatial query optimization
 export interface SpatialQueryOptimization {
   useSpatialIndex: boolean
   boundingBoxFilter: boolean
@@ -68,19 +55,20 @@ class DatabaseQueryOptimizer {
   private static instance: DatabaseQueryOptimizer
   private config: QueryOptimizationConfig
   private queryCache: Map<string, QueryCacheEntry> = new Map()
-  private connectionPool: ConnectionPoolEntry[] = []
-  private activeConnections = 0
   private supabase: SupabaseClient
-  private readReplicas: SupabaseClient[] = []
+  private poolManager: PoolManager
 
   private constructor() {
     this.config = {
       enableConnectionPooling: true,
-      maxConnections: 20,
-      connectionTimeout: 30000,
+      minConnections: parseInt(process.env.DB_POOL_MIN || '10', 10),
+      maxConnections: parseInt(process.env.DB_POOL_MAX || '100', 10),
+      connectionTimeout: parseInt(process.env.DB_POOL_CONNECTION_TIMEOUT || '2000', 10),
+      idleTimeout: parseInt(process.env.DB_POOL_IDLE_TIMEOUT || '30000', 10),
+      acquireTimeoutMillis: parseInt(process.env.DB_POOL_ACQUIRE_TIMEOUT || '3000', 10),
       queryTimeout: 10000,
       enableQueryCache: true,
-      cacheTTL: 300000, // 5 minutes
+      cacheTTL: 300000,
       enableReadReplicas: true,
       spatialIndexing: true,
       materializedViews: true
@@ -91,8 +79,16 @@ class DatabaseQueryOptimizer {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    this.initializeConnectionPool()
-    this.startConnectionPoolMaintenance()
+    this.poolManager = PoolManager.getInstance(
+      {
+        minConnections: this.config.minConnections,
+        maxConnections: this.config.maxConnections,
+        connectionTimeout: this.config.connectionTimeout,
+        idleTimeout: this.config.idleTimeout,
+        acquireTimeoutMillis: this.config.acquireTimeoutMillis
+      },
+      this.config.queryTimeout
+    )
   }
 
   static getInstance(): DatabaseQueryOptimizer {
@@ -102,71 +98,63 @@ class DatabaseQueryOptimizer {
     return DatabaseQueryOptimizer.instance
   }
 
-  /**
-   * Execute optimized query
-   */
-  async executeQuery<T = any>(
+  async executeQuery<T = unknown>(
     query: string,
-    params: any[] = [],
+    params: unknown[] = [],
     options: {
       useCache?: boolean
       useReadReplica?: boolean
       timeout?: number
       spatialOptimization?: SpatialQueryOptimization
     } = {}
-  ): Promise<{ data: T | null; error: any; performance: any }> {
+  ): Promise<{ data: T | null; error: unknown; performance: unknown }> {
     const timerId = performanceMonitor.startTimer('database_query', {
       query_type: this.getQueryType(query),
       table_name: this.extractTableName(query)
     })
 
     try {
-      // Check cache first
       if (options.useCache !== false && this.config.enableQueryCache) {
-        const cachedResult = this.getFromCache(query, params)
-        if (cachedResult) {
+        const cachedResult = this.getFromCache(query, params) as T | null
+        if (cachedResult !== null) {
           performanceMonitor.endTimer(timerId, 'database', 'database_query_execution_time', {
             cache_hit: 'true'
           })
-
           return {
             data: cachedResult,
             error: null,
-            performance: {
-              cacheHit: true,
-              executionTime: 0
-            }
+            performance: { cacheHit: true, executionTime: 0 }
           }
         }
       }
 
-      // Get connection from pool
       const connection = await this.getConnection(options.useReadReplica)
 
       try {
-        // Optimize query
         const optimization = await this.optimizeQuery(query, params, options.spatialOptimization)
-
-        // Execute with timeout
-        const result = await this.executeWithTimeout(
+        const result = await this.executeWithTimeout<T>(
           connection,
           optimization.optimizedQuery,
           optimization.optimizedParams,
           options.timeout || this.config.queryTimeout
         )
 
-        // Cache result
-        if (this.config.enableQueryCache && options.useCache !== false) {
+        if (this.config.enableQueryCache && options.useCache !== false && result.data !== null) {
           this.setCache(query, params, result.data)
         }
 
-        const executionTime = performanceMonitor.endTimer(timerId, 'database', 'database_query_execution_time', {
-          cache_hit: 'false',
-          optimization_strategy: optimization.strategy,
-          estimated_cost: optimization.estimatedCost.toString()
-        })
+        const stats = getPoolStats()
+        const executionTime = performanceMonitor.endTimer(
+          timerId,
+          'database',
+          'database_query_execution_time',
+          {
+            cache_hit: 'false',
+            optimization_strategy: optimization.strategy,
+            estimated_cost: optimization.estimatedCost.toString()
+          }
+        )
 
-        // Record query metrics
         performanceMonitor.recordDatabaseQuery({
           queryId: this.generateQueryId(),
           queryType: this.getQueryType(query),
@@ -175,17 +163,13 @@ class DatabaseQueryOptimizer {
           rowsAffected: Array.isArray(result.data) ? result.data.length : 0,
           indexUsed: optimization.indexes[0] || 'none',
           cacheHit: false,
-          concurrentConnections: this.activeConnections
+          concurrentConnections: stats.activeConnections
         })
 
         return {
           data: result.data,
           error: result.error,
-          performance: {
-            cacheHit: false,
-            executionTime,
-            optimization: optimization
-          }
+          performance: { cacheHit: false, executionTime, optimization }
         }
       } finally {
         this.releaseConnection(connection)
@@ -195,43 +179,24 @@ class DatabaseQueryOptimizer {
         cache_hit: 'false',
         error: 'true'
       })
-
-      return {
-        data: null,
-        error,
-        performance: {
-          cacheHit: false,
-          executionTime: 0,
-          error
-        }
-      }
+      return { data: null, error, performance: { cacheHit: false, executionTime: 0, error } }
     }
   }
 
-  /**
-   * Execute emergency-optimized spatial query
-   */
-  async executeSpatialQuery<T = any>(
+  async executeSpatialQuery<T = unknown>(
     baseQuery: string,
-    spatialParams: {
-      lat: number
-      lng: number
-      radiusMeters: number
-      limit?: number
-    },
-    additionalParams: any[] = []
-  ): Promise<{ data: T[] | null; error: any; performance: any }> {
+    spatialParams: { lat: number; lng: number; radiusMeters: number; limit?: number },
+    additionalParams: unknown[] = []
+  ): Promise<{ data: T[] | null; error: unknown; performance: unknown }> {
     const timerId = performanceMonitor.startTimer('spatial_query', {
       query_type: 'spatial_select',
       table_name: 'emergency_events'
     })
 
     try {
-      // Get connection optimized for spatial queries
-      const connection = await this.getConnection(true) // Prefer read replicas for spatial queries
+      const connection = await this.getConnection(true)
 
       try {
-        // Apply spatial optimizations
         const spatialOptimization: SpatialQueryOptimization = {
           useSpatialIndex: true,
           boundingBoxFilter: true,
@@ -240,25 +205,37 @@ class DatabaseQueryOptimizer {
           parallelExecution: true
         }
 
-        // Build optimized spatial query
-        const optimizedQuery = this.buildOptimizedSpatialQuery(baseQuery, spatialParams, spatialOptimization)
-        const optimizedParams = [...additionalParams, spatialParams.lat, spatialParams.lng, spatialParams.radiusMeters]
+        const optimizedQuery = this.buildOptimizedSpatialQuery(
+          baseQuery,
+          spatialParams,
+          spatialOptimization
+        )
+        const optimizedParams = [
+          ...additionalParams,
+          spatialParams.lat,
+          spatialParams.lng,
+          spatialParams.radiusMeters
+        ]
 
-        // Execute with extended timeout for spatial queries
-        const result = await this.executeWithTimeout(
+        const result = await this.executeWithTimeout<T[]>(
           connection,
           optimizedQuery,
           optimizedParams,
-          this.config.queryTimeout * 2 // Double timeout for spatial queries
+          this.config.queryTimeout * 2
         )
 
-        const executionTime = performanceMonitor.endTimer(timerId, 'database', 'spatial_query_execution_time', {
-          spatial_optimization: 'true',
-          bounding_box: spatialOptimization.boundingBoxFilter.toString(),
-          parallel_execution: spatialOptimization.parallelExecution.toString()
-        })
+        const stats = getPoolStats()
+        const executionTime = performanceMonitor.endTimer(
+          timerId,
+          'database',
+          'spatial_query_execution_time',
+          {
+            spatial_optimization: 'true',
+            bounding_box: spatialOptimization.boundingBoxFilter.toString(),
+            parallel_execution: spatialOptimization.parallelExecution.toString()
+          }
+        )
 
-        // Record spatial query metrics
         performanceMonitor.recordDatabaseQuery({
           queryId: this.generateQueryId(),
           queryType: 'select',
@@ -267,7 +244,7 @@ class DatabaseQueryOptimizer {
           rowsAffected: Array.isArray(result.data) ? result.data.length : 0,
           indexUsed: 'spatial_index',
           cacheHit: false,
-          concurrentConnections: this.activeConnections
+          concurrentConnections: stats.activeConnections
         })
 
         return {
@@ -286,69 +263,66 @@ class DatabaseQueryOptimizer {
       performanceMonitor.endTimer(timerId, 'database', 'spatial_query_execution_time', {
         error: 'true'
       })
-
-      return {
-        data: null,
-        error,
-        performance: {
-          error
-        }
-      }
+      return { data: null, error, performance: { error } }
     }
   }
 
-  /**
-   * Execute batch emergency alert dispatch
-   */
   async executeBatchAlertDispatch(
     alertQueries: Array<{
       query: string
-      params: any[]
+      params: unknown[]
       priority: 'high' | 'medium' | 'low'
     }>
-  ): Promise<{ results: any[]; errors: any[]; performance: any }> {
+  ): Promise<{ results: unknown[]; errors: unknown[]; performance: unknown }> {
     const timerId = performanceMonitor.startTimer('batch_alert_dispatch', {
       query_count: alertQueries.length.toString()
     })
 
     try {
-      // Sort by priority
       const sortedQueries = [...alertQueries].sort((a, b) => {
         const priorityOrder = { high: 3, medium: 2, low: 1 }
         return priorityOrder[b.priority] - priorityOrder[a.priority]
       })
 
-      // Get multiple connections for parallel execution
       const connections = await Promise.all(
-        sortedQueries.map(() => this.getConnection(false))
+        sortedQueries.map(async () => this.getConnection(false))
       )
 
       try {
-        // Execute queries in parallel with priority considerations
         const results = await Promise.allSettled(
-          sortedQueries.map((alertQuery, index) =>
-            this.executeWithTimeout(
-              connections[index],
+          sortedQueries.map((alertQuery, index) => {
+            const conn = connections[index]
+            if (!conn) return Promise.reject(new Error('No connection available'))
+            return this.executeWithTimeout(
+              conn,
               alertQuery.query,
               alertQuery.params,
-              this.config.queryTimeout * 0.5 // Shorter timeout for alert queries
+              this.config.queryTimeout * 0.5
             )
-          )
+          })
         )
 
+        type QueryResult = { data: unknown; error: unknown }
         const successfulResults = results
-          .filter((result): result is PromiseFulfilledResult<any> => result.status === 'fulfilled')
+          .filter(
+            (result): result is PromiseFulfilledResult<QueryResult> => result.status === 'fulfilled'
+          )
           .map(result => result.value)
 
         const errors = results
           .filter((result): result is PromiseRejectedResult => result.status === 'rejected')
           .map(result => result.reason)
 
-        const executionTime = performanceMonitor.endTimer(timerId, 'database', 'batch_alert_dispatch_time', {
-          query_count: alertQueries.length.toString(),
-          success_count: successfulResults.length.toString(),
-          error_count: errors.length.toString()
-        })
+        const executionTime = performanceMonitor.endTimer(
+          timerId,
+          'database',
+          'batch_alert_dispatch_time',
+          {
+            query_count: alertQueries.length.toString(),
+            success_count: successfulResults.length.toString(),
+            error_count: errors.length.toString()
+          }
+        )
 
         return {
           results: successfulResults,
@@ -360,44 +334,31 @@ class DatabaseQueryOptimizer {
           }
         }
       } finally {
-        // Release all connections
         connections.forEach(connection => this.releaseConnection(connection))
       }
     } catch (error) {
       performanceMonitor.endTimer(timerId, 'database', 'batch_alert_dispatch_time', {
         error: 'true'
       })
-
-      return {
-        results: [],
-        errors: [error],
-        performance: {
-          error
-        }
-      }
+      return { results: [], errors: [error], performance: { error } }
     }
   }
 
-  /**
-   * Get materialized view data for analytics
-   */
-  async getMaterializedViewData<T = any>(
+  async getMaterializedViewData<T = unknown>(
     viewName: string,
-    filters: Record<string, any> = {}
-  ): Promise<{ data: T[] | null; error: any; performance: any }> {
+    filters: Record<string, unknown> = {}
+  ): Promise<{ data: T[] | null; error: unknown; performance: unknown }> {
     const timerId = performanceMonitor.startTimer('materialized_view_query', {
       view_name: viewName
     })
 
     try {
-      const connection = await this.getConnection(true) // Use read replica for analytics
+      const connection = await this.getConnection(true)
 
       try {
-        // Build query for materialized view
         let query = `SELECT * FROM ${viewName}`
-        const params: any[] = []
+        const params: unknown[] = []
 
-        // Add filters
         if (Object.keys(filters).length > 0) {
           const whereClause = Object.keys(filters)
             .map((key, index) => `${key} = $${index + 1}`)
@@ -406,17 +367,22 @@ class DatabaseQueryOptimizer {
           params.push(...Object.values(filters))
         }
 
-        const result = await this.executeWithTimeout(
+        const result = await this.executeWithTimeout<T[]>(
           connection,
           query,
           params,
-          this.config.queryTimeout * 3 // Longer timeout for analytics
+          this.config.queryTimeout * 3
         )
 
-        const executionTime = performanceMonitor.endTimer(timerId, 'database', 'materialized_view_query_time', {
-          view_name: viewName,
-          filter_count: Object.keys(filters).length.toString()
-        })
+        const executionTime = performanceMonitor.endTimer(
+          timerId,
+          'database',
+          'materialized_view_query_time',
+          {
+            view_name: viewName,
+            filter_count: Object.keys(filters).length.toString()
+          }
+        )
 
         return {
           data: result.data,
@@ -434,159 +400,69 @@ class DatabaseQueryOptimizer {
       performanceMonitor.endTimer(timerId, 'database', 'materialized_view_query_time', {
         error: 'true'
       })
-
-      return {
-        data: null,
-        error,
-        performance: {
-          error
-        }
-      }
+      return { data: null, error, performance: { error } }
     }
-  }
-
-  /**
-   * Private helper methods
-   */
-
-  private async initializeConnectionPool(): Promise<void> {
-    if (!this.config.enableConnectionPooling) {
-      return
-    }
-
-    // Initialize primary connections
-    for (let i = 0; i < Math.floor(this.config.maxConnections * 0.7); i++) {
-      this.connectionPool.push({
-        client: this.createConnection(),
-        inUse: false,
-        lastUsed: Date.now(),
-        created: Date.now(),
-        queryCount: 0
-      })
-    }
-
-    // Initialize read replica connections
-    if (this.config.enableReadReplicas) {
-      for (let i = 0; i < Math.floor(this.config.maxConnections * 0.3); i++) {
-        const replicaClient = this.createReadReplicaConnection()
-        if (replicaClient) {
-          this.readReplicas.push(replicaClient)
-        }
-      }
-    }
-
-    console.log(`[DatabaseQueryOptimizer] Initialized connection pool with ${this.connectionPool.length} connections`)
-  }
-
-  private createConnection(): SupabaseClient {
-    return createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        db: {
-          queryTimeout: this.config.queryTimeout
-        }
-      }
-    )
-  }
-
-  private createReadReplicaConnection(): SupabaseClient | null {
-    // In a real implementation, this would connect to read replica endpoints
-    // For now, return primary connection as fallback
-    return this.createConnection()
   }
 
   private async getConnection(useReadReplica: boolean = false): Promise<SupabaseClient> {
     if (!this.config.enableConnectionPooling) {
-      return useReadReplica && this.readReplicas.length > 0
-        ? this.readReplicas[0]
-        : this.supabase
+      return this.supabase
     }
-
-    // Try to get available connection from pool
-    const availableConnection = this.connectionPool.find(conn => !conn.inUse)
-
-    if (availableConnection) {
-      availableConnection.inUse = true
-      availableConnection.lastUsed = Date.now()
-      this.activeConnections++
-      return availableConnection.client
-    }
-
-    // If no available connection and under limit, create new one
-    if (this.connectionPool.length < this.config.maxConnections) {
-      const newConnection = this.createConnection()
-      this.connectionPool.push({
-        client: newConnection,
-        inUse: true,
-        lastUsed: Date.now(),
-        created: Date.now(),
-        queryCount: 0
-      })
-      this.activeConnections++
-      return newConnection
-    }
-
-    // Wait for available connection
-    return new Promise((resolve) => {
-      const checkInterval = setInterval(() => {
-        const availableConnection = this.connectionPool.find(conn => !conn.inUse)
-        if (availableConnection) {
-          clearInterval(checkInterval)
-          availableConnection.inUse = true
-          availableConnection.lastUsed = Date.now()
-          this.activeConnections++
-          resolve(availableConnection.client)
-        }
-      }, 10)
-    })
+    return this.poolManager.acquire(useReadReplica && this.config.enableReadReplicas)
   }
 
   private releaseConnection(client: SupabaseClient): void {
-    if (!this.config.enableConnectionPooling) {
-      return
+    if (this.config.enableConnectionPooling) {
+      this.poolManager.release(client)
     }
+  }
 
-    const connection = this.connectionPool.find(conn => conn.client === client)
-    if (connection) {
-      connection.inUse = false
-      connection.lastUsed = Date.now()
-      this.activeConnections--
-    }
+  async checkPoolHealth(): Promise<{
+    healthy: boolean
+    primaryHealthy: number
+    replicaHealthy: number
+    details: string[]
+  }> {
+    return this.poolManager.healthCheck()
+  }
+
+  getPoolStats(): PoolStats {
+    return this.poolManager.getStats()
   }
 
   private async executeWithTimeout<T>(
     client: SupabaseClient,
     query: string,
-    params: any[],
+    params: unknown[],
     timeout: number
-  ): Promise<{ data: T | null; error: any }> {
-    return new Promise((resolve) => {
+  ): Promise<{ data: T | null; error: unknown }> {
+    return new Promise(resolve => {
       const timeoutId = setTimeout(() => {
         resolve({ data: null, error: new Error('Query timeout') })
       }, timeout)
 
-      client.rpc('execute_optimized_query', {
+      const rpcPromise = client.rpc('execute_optimized_query', {
         query_text: query,
         query_params: params
-      }).then(result => {
-        clearTimeout(timeoutId)
-        resolve(result)
-      }).catch(error => {
-        clearTimeout(timeoutId)
-        resolve({ data: null, error })
       })
+
+      Promise.resolve(rpcPromise)
+        .then(result => {
+          clearTimeout(timeoutId)
+          resolve({ data: result.data as T | null, error: result.error })
+        })
+        .catch((error: unknown) => {
+          clearTimeout(timeoutId)
+          resolve({ data: null, error })
+        })
     })
   }
 
   private async optimizeQuery(
     query: string,
-    params: any[],
-    spatialOptimization?: SpatialQueryOptimization
+    params: unknown[],
+    _spatialOptimization?: SpatialQueryOptimization
   ): Promise<QueryOptimizationResult> {
-    // This would integrate with PostgreSQL's EXPLAIN ANALYZE
-    // For now, return basic optimization info
-
     return {
       optimizedQuery: query,
       optimizedParams: params,
@@ -606,10 +482,9 @@ class DatabaseQueryOptimizer {
     let optimizedQuery = baseQuery
 
     if (optimization.boundingBoxFilter) {
-      // Add bounding box filter for initial filtering
       const { lat, lng, radiusMeters } = spatialParams
-      const latDelta = radiusMeters / 111320 // Approximate degrees
-      const lngDelta = radiusMeters / (111320 * Math.cos(lat * Math.PI / 180))
+      const latDelta = radiusMeters / 111320
+      const lngDelta = radiusMeters / (111320 * Math.cos((lat * Math.PI) / 180))
 
       optimizedQuery += ` AND location && ST_MakeEnvelope(
         ST_MakePoint(${lng - lngDelta}, ${lat - latDelta}),
@@ -628,15 +503,12 @@ class DatabaseQueryOptimizer {
     return optimizedQuery
   }
 
-  private getFromCache(query: string, params: any[]): any | null {
+  private getFromCache(query: string, params: unknown[]): unknown | null {
     const cacheKey = this.generateCacheKey(query, params)
     const entry = this.queryCache.get(cacheKey)
 
-    if (!entry) {
-      return null
-    }
+    if (!entry) return null
 
-    // Check if cache entry is still valid
     if (Date.now() - entry.timestamp > entry.ttl) {
       this.queryCache.delete(cacheKey)
       return null
@@ -646,7 +518,7 @@ class DatabaseQueryOptimizer {
     return entry.result
   }
 
-  private setCache(query: string, params: any[], result: any): void {
+  private setCache(query: string, params: unknown[], result: unknown): void {
     const cacheKey = this.generateCacheKey(query, params)
 
     this.queryCache.set(cacheKey, {
@@ -658,7 +530,6 @@ class DatabaseQueryOptimizer {
       hitCount: 0
     })
 
-    // Clean up old cache entries
     if (this.queryCache.size > 1000) {
       this.cleanupCache()
     }
@@ -666,15 +537,15 @@ class DatabaseQueryOptimizer {
 
   private cleanupCache(): void {
     const now = Date.now()
-
-    for (const [key, entry] of this.queryCache.entries()) {
+    const entries = Array.from(this.queryCache.entries())
+    for (const [key, entry] of entries) {
       if (now - entry.timestamp > entry.ttl) {
         this.queryCache.delete(key)
       }
     }
   }
 
-  private generateCacheKey(query: string, params: any[]): string {
+  private generateCacheKey(query: string, params: unknown[]): string {
     return `${query}:${JSON.stringify(params)}`
   }
 
@@ -685,51 +556,18 @@ class DatabaseQueryOptimizer {
   private getQueryType(query: string): 'select' | 'insert' | 'update' | 'delete' | 'rpc' {
     const trimmedQuery = query.trim().toLowerCase()
 
-    if (trimmedQuery.startsWith('select')) {
-      return 'select'
-    }
-    if (trimmedQuery.startsWith('insert')) {
-      return 'insert'
-    }
-    if (trimmedQuery.startsWith('update')) {
-      return 'update'
-    }
-    if (trimmedQuery.startsWith('delete')) {
-      return 'delete'
-    }
+    if (trimmedQuery.startsWith('select')) return 'select'
+    if (trimmedQuery.startsWith('insert')) return 'insert'
+    if (trimmedQuery.startsWith('update')) return 'update'
+    if (trimmedQuery.startsWith('delete')) return 'delete'
     return 'rpc'
   }
 
   private extractTableName(query: string): string {
-    // Simple table name extraction - in real implementation, use query parser
     const match = query.match(/from\s+(\w+)/i)
-    return match ? match[1] : 'unknown'
+    const tableName = match?.[1]
+    return tableName ?? 'unknown'
   }
-
-  private startConnectionPoolMaintenance(): void {
-    // Clean up idle connections every 5 minutes
-    setInterval(() => {
-      this.maintainConnectionPool()
-    }, 5 * 60 * 1000)
-  }
-
-  private maintainConnectionPool(): void {
-    const now = Date.now()
-    const maxIdleTime = 10 * 60 * 1000 // 10 minutes
-
-    // Remove old idle connections
-    this.connectionPool = this.connectionPool.filter(conn => {
-      if (!conn.inUse && (now - conn.lastUsed) > maxIdleTime) {
-        // Close connection (in real implementation)
-        return false
-      }
-      return true
-    })
-  }
-
-  /**
-   * Public API methods
-   */
 
   async getQueryPerformanceStats(): Promise<{
     activeConnections: number
@@ -738,36 +576,40 @@ class DatabaseQueryOptimizer {
     cacheHitRate: number
     avgQueryTime: number
   }> {
-    const totalCacheHits = Array.from(this.queryCache.values())
-      .reduce((sum, entry) => sum + entry.hitCount, 0)
-
+    const stats = this.poolManager.getStats()
+    const totalCacheHits = Array.from(this.queryCache.values()).reduce(
+      (sum, entry) => sum + entry.hitCount,
+      0
+    )
     const cacheHitRate = this.queryCache.size > 0 ? totalCacheHits / this.queryCache.size : 0
 
-    // Get recent query metrics
     const recentMetrics = await performanceMonitor.getMetrics('database')
     const queryTimes = recentMetrics
       .filter(m => m.name === 'database_query_execution_time')
       .map(m => m.value)
 
-    const avgQueryTime = queryTimes.length > 0
-      ? queryTimes.reduce((sum, time) => sum + time, 0) / queryTimes.length
-      : 0
+    const avgQueryTime =
+      queryTimes.length > 0
+        ? queryTimes.reduce((sum, time) => sum + time, 0) / queryTimes.length
+        : 0
 
     return {
-      activeConnections: this.activeConnections,
-      poolSize: this.connectionPool.length,
+      activeConnections: stats.activeConnections,
+      poolSize: stats.totalConnections,
       cacheSize: this.queryCache.size,
-      cacheHitRate: cacheHitRate * 100, // percentage
+      cacheHitRate: cacheHitRate * 100,
       avgQueryTime
     }
   }
 
   async warmupCache(): Promise<void> {
-    // Pre-cache common queries
     const commonQueries = [
       { query: 'SELECT * FROM emergency_events WHERE status = $1', params: ['active'] },
       { query: 'SELECT * FROM emergency_types WHERE is_active = $1', params: [true] },
-      { query: 'SELECT COUNT(*) FROM emergency_events WHERE created_at > $1', params: [new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()] }
+      {
+        query: 'SELECT COUNT(*) FROM emergency_events WHERE created_at > $1',
+        params: [new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()]
+      }
     ]
 
     for (const { query, params } of commonQueries) {
@@ -776,12 +618,14 @@ class DatabaseQueryOptimizer {
 
     console.log('[DatabaseQueryOptimizer] Cache warmed up with common queries')
   }
+
+  async drainPool(): Promise<void> {
+    await this.poolManager.drain()
+  }
 }
 
-// Export singleton instance
 export const queryOptimizer = DatabaseQueryOptimizer.getInstance()
 
-// Export hooks for easy integration
 export function useQueryOptimizer() {
   return {
     executeQuery: queryOptimizer.executeQuery.bind(queryOptimizer),
@@ -789,6 +633,8 @@ export function useQueryOptimizer() {
     executeBatchAlertDispatch: queryOptimizer.executeBatchAlertDispatch.bind(queryOptimizer),
     getMaterializedViewData: queryOptimizer.getMaterializedViewData.bind(queryOptimizer),
     getQueryPerformanceStats: queryOptimizer.getQueryPerformanceStats.bind(queryOptimizer),
+    checkPoolHealth: queryOptimizer.checkPoolHealth.bind(queryOptimizer),
+    getPoolStats: queryOptimizer.getPoolStats.bind(queryOptimizer),
     warmupCache: queryOptimizer.warmupCache.bind(queryOptimizer)
   }
 }

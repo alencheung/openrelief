@@ -23,6 +23,16 @@ import {
   realtimeLogger,
   checkRealtimeHealth
 } from '@/lib/realtimeLogger'
+import {
+  getPresenceChannel,
+  getEmergencyBroadcastShard,
+  getShardCount,
+  isShardingEnabled,
+  isPresenceForUser,
+  isPresenceFromOtherUser,
+  getUserIdsInShard,
+  type ShardedPresenceState
+} from '@/lib/realtime/channel-sharding'
 
 // Types
 export type SubscriptionCallback<T = any> = (payload: {
@@ -66,10 +76,20 @@ export const useRealtimeSubscription = (config: SubscriptionConfig) => {
 
   // Enhanced subscribe function with retry logic
   const subscribe = useCallback(async () => {
-    logSubscriptionAttempt('useRealtimeSubscription', config.table as string, retryCount + 1, maxRetries)
+    logSubscriptionAttempt(
+      'useRealtimeSubscription',
+      config.table as string,
+      retryCount + 1,
+      maxRetries
+    )
 
     if (!isOnline) {
-      logSubscriptionError('useRealtimeSubscription', config.table as string, new Error('Offline - cannot establish connection'), retryCount)
+      logSubscriptionError(
+        'useRealtimeSubscription',
+        config.table as string,
+        new Error('Offline - cannot establish connection'),
+        retryCount
+      )
       console.warn(`[Realtime] Cannot subscribe to ${config.table} - offline`)
       setStatus('disconnected')
       setError('Offline - cannot establish connection')
@@ -89,7 +109,9 @@ export const useRealtimeSubscription = (config: SubscriptionConfig) => {
     const retrySubscribe = createRetryFunction(
       async () => {
         const channelName = `realtime-${config.table}-${Date.now()}`
-        console.log(`[Realtime] Attempting to subscribe to ${config.table} (attempt ${retryCount + 1})`)
+        console.log(
+          `[Realtime] Attempting to subscribe to ${config.table} (attempt ${retryCount + 1})`
+        )
 
         const channel = supabase
           .channel(channelName)
@@ -117,7 +139,7 @@ export const useRealtimeSubscription = (config: SubscriptionConfig) => {
               }
             }
           )
-          .subscribe((status) => {
+          .subscribe(status => {
             console.log(`[Realtime] Subscription status for ${config.table}:`, status)
 
             switch (status) {
@@ -154,7 +176,12 @@ export const useRealtimeSubscription = (config: SubscriptionConfig) => {
         backoffFactor: 2,
         jitter: true,
         onRetry: (attempt, err) => {
-          logSubscriptionAttempt('useRealtimeSubscription', config.table as string, attempt, maxRetries)
+          logSubscriptionAttempt(
+            'useRealtimeSubscription',
+            config.table as string,
+            attempt,
+            maxRetries
+          )
           logSubscriptionError('useRealtimeSubscription', config.table as string, err, attempt)
           console.warn(`[Realtime] Retry attempt ${attempt} for ${config.table}:`, err)
           setStatus('retrying')
@@ -163,7 +190,10 @@ export const useRealtimeSubscription = (config: SubscriptionConfig) => {
         },
         onFailure: (err, attempts) => {
           logSubscriptionError('useRealtimeSubscription', config.table as string, err, attempts)
-          console.error(`[Realtime] Failed to subscribe to ${config.table} after ${attempts} attempts:`, err)
+          console.error(
+            `[Realtime] Failed to subscribe to ${config.table} after ${attempts} attempts:`,
+            err
+          )
           setStatus('error')
           setError(`Failed to connect after ${attempts} attempts`)
           setLastErrorTime(Date.now())
@@ -187,7 +217,16 @@ export const useRealtimeSubscription = (config: SubscriptionConfig) => {
       setStatus('error')
       setError('Critical subscription error')
     }
-  }, [config.table, config.event, config.filter, isOnline, retryCount, maxRetries, retryDelay, priority])
+  }, [
+    config.table,
+    config.event,
+    config.filter,
+    isOnline,
+    retryCount,
+    maxRetries,
+    retryDelay,
+    priority
+  ])
 
   // Enhanced unsubscribe function
   const unsubscribe = useCallback(() => {
@@ -256,7 +295,8 @@ export const useRealtimeSubscription = (config: SubscriptionConfig) => {
 
 // Emergency events subscription with enhanced error handling
 export const useEmergencyEventsSubscription = () => {
-  const { addEvent, updateEvent, removeEvent, setRealtimeEnabled, updateLastSyncTime } = useEmergencyStore.getState()
+  const { addEvent, updateEvent, removeEvent, setRealtimeEnabled, updateLastSyncTime } =
+    useEmergencyStore.getState()
   const { createEmergencyNotification } = useNotificationStore.getState()
   const { updateTrustForAction } = useTrustStore.getState()
   const { isOnline } = useOfflineStore.getState()
@@ -267,7 +307,7 @@ export const useEmergencyEventsSubscription = () => {
     priority: 'critical', // Emergency events are highest priority
     maxRetries: 10, // More retries for critical data
     retryDelay: 1000, // Faster retry for emergencies
-    callback: async (payload) => {
+    callback: async payload => {
       try {
         console.log('[Realtime] Emergency event change:', payload)
 
@@ -291,7 +331,10 @@ export const useEmergencyEventsSubscription = () => {
                     location: payload.new.location
                   })
                 } catch (notificationError) {
-                  console.error('[Realtime] Failed to create emergency notification:', notificationError)
+                  console.error(
+                    '[Realtime] Failed to create emergency notification:',
+                    notificationError
+                  )
                   // Don't let notification failure break subscription
                 }
               }
@@ -325,7 +368,10 @@ export const useEmergencyEventsSubscription = () => {
                     })
                   }
                 } catch (notificationError) {
-                  console.error('[Realtime] Failed to create status change notification:', notificationError)
+                  console.error(
+                    '[Realtime] Failed to create status change notification:',
+                    notificationError
+                  )
                 }
               }
             }
@@ -357,7 +403,10 @@ export const useEmergencyEventsSubscription = () => {
   useEffect(() => {
     if (subscriptionResult.status === 'connected') {
       setRealtimeEnabled(true)
-    } else if (subscriptionResult.status === 'error' || subscriptionResult.status === 'disconnected') {
+    } else if (
+      subscriptionResult.status === 'error' ||
+      subscriptionResult.status === 'disconnected'
+    ) {
       setRealtimeEnabled(false)
 
       // If offline, queue emergency data for when we come back online
@@ -379,7 +428,7 @@ export const useEventConfirmationsSubscription = () => {
   return useRealtimeSubscription({
     table: 'event_confirmations',
     event: 'INSERT',
-    callback: async (payload) => {
+    callback: async payload => {
       if (payload.new) {
         console.log('[Realtime] New confirmation:', payload.new)
 
@@ -426,7 +475,7 @@ export const useUserProfilesSubscription = () => {
     table: 'user_profiles',
     event: 'UPDATE',
     filter: 'last_known_location=not.null',
-    callback: (payload) => {
+    callback: payload => {
       if (payload.new && payload.old) {
         console.log('[Realtime] User profile updated:', payload.new)
 
@@ -453,7 +502,10 @@ export const useUserProfilesSubscription = () => {
         }
 
         // Check proximity if location updated
-        if (payload.old.last_known_location !== payload.new.last_known_location && payload.new.last_known_location) {
+        if (
+          payload.old.last_known_location !== payload.new.last_known_location &&
+          payload.new.last_known_location
+        ) {
           const location = payload.new.last_known_location
           const coords = location.match(/POINT\(([^ ]+) ([^ ]+)\)/)
           if (coords) {
@@ -477,7 +529,7 @@ export const useTrustHistorySubscription = () => {
   return useRealtimeSubscription({
     table: 'user_trust_history',
     event: 'INSERT',
-    callback: (payload) => {
+    callback: payload => {
       if (payload.new) {
         console.log('[Realtime] Trust history entry:', payload.new)
 
@@ -514,7 +566,7 @@ export const useNotificationQueueSubscription = () => {
   return useRealtimeSubscription({
     table: 'notification_queue',
     event: 'INSERT',
-    callback: (payload) => {
+    callback: payload => {
       if (payload.new) {
         console.log('[Realtime] New notification in queue:', payload.new)
 
@@ -532,14 +584,19 @@ export const useSystemMetricsSubscription = () => {
   return useRealtimeSubscription({
     table: 'system_metrics',
     event: 'INSERT',
-    callback: (payload) => {
+    callback: payload => {
       if (payload.new) {
         console.log('[Realtime] System metric:', payload.new)
 
         // Handle critical system metrics
-        if (payload.new.metric_name.includes('error') || payload.new.metric_name.includes('critical')) {
+        if (
+          payload.new.metric_name.includes('error') ||
+          payload.new.metric_name.includes('critical')
+        ) {
           // Could trigger alerts or UI updates
-          console.warn(`[System] Critical metric: ${payload.new.metric_name} = ${payload.new.metric_value}`)
+          console.warn(
+            `[System] Critical metric: ${payload.new.metric_name} = ${payload.new.metric_value}`
+          )
         }
       }
     }
@@ -577,7 +634,7 @@ export const useMultipleRealtimeSubscriptions = (configs: SubscriptionConfig[]) 
             config.callback(enhancedPayload)
           }
         )
-        .subscribe((status) => {
+        .subscribe(status => {
           if (status === 'SUBSCRIBED') {
             console.log(`[Realtime] Subscribed to ${config.table}`)
           }
@@ -641,32 +698,39 @@ export const useRealtimeConnection = () => {
       const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 30000)
       reconnectAttemptsRef.current++
 
-      console.log(`[Realtime] Scheduling reconnection attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts} in ${delay}ms`)
+      console.log(
+        `[Realtime] Scheduling reconnection attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts} in ${delay}ms`
+      )
 
       reconnectTimeoutRef.current = setTimeout(() => {
-        console.log(`[Realtime] Attempting reconnection ${reconnectAttemptsRef.current}/${maxReconnectAttempts}`)
+        console.log(
+          `[Realtime] Attempting reconnection ${reconnectAttemptsRef.current}/${maxReconnectAttempts}`
+        )
         // Force reconnection by recreating the connection
         establishConnection()
       }, delay)
     }
   }, [isOnline, setRealtimeEnabled])
 
-  const handleError = useCallback((error: any) => {
-    console.error('[Realtime] Connection error:', error)
-    connectionStatusRef.current = 'error'
-    setRealtimeEnabled(false)
+  const handleError = useCallback(
+    (error: any) => {
+      console.error('[Realtime] Connection error:', error)
+      connectionStatusRef.current = 'error'
+      setRealtimeEnabled(false)
 
-    // Log error for debugging
-    const errorInfo = classifyError(error, {
-      action: 'realtime_connection',
-      connectionStatus: connectionStatusRef.current,
-      reconnectAttempts: reconnectAttemptsRef.current
-    })
-    console.error('[Realtime] Connection error details:', errorInfo)
+      // Log error for debugging
+      const errorInfo = classifyError(error, {
+        action: 'realtime_connection',
+        connectionStatus: connectionStatusRef.current,
+        reconnectAttempts: reconnectAttemptsRef.current
+      })
+      console.error('[Realtime] Connection error details:', errorInfo)
 
-    // Attempt recovery
-    handleDisconnect()
-  }, [setRealtimeEnabled, handleDisconnect])
+      // Attempt recovery
+      handleDisconnect()
+    },
+    [setRealtimeEnabled, handleDisconnect]
+  )
 
   const establishConnection = useCallback(() => {
     if (!isOnline) {
@@ -677,11 +741,12 @@ export const useRealtimeConnection = () => {
     console.log('[Realtime] Establishing connection to Supabase')
 
     // Listen to connection events
-    const channel = supabase.channel('system-connection')
-      .on('system', {}, (payload) => {
+    const channel = supabase
+      .channel('system-connection')
+      .on('system', {}, payload => {
         console.log('[Realtime] System event:', payload)
       })
-      .subscribe((status) => {
+      .subscribe(status => {
         console.log(`[Realtime] Connection status: ${status}`)
 
         switch (status) {
@@ -745,170 +810,245 @@ export const useRealtimeConnection = () => {
   }, [establishConnection, setRealtimeEnabled])
 }
 
-// Presence tracking for active users
-export const usePresenceTracking = (userId: string, userLocation?: { lat: number; lng: number }) => {
+/**
+ * Presence tracking for active users with channel sharding
+ *
+ * Uses sharded presence channels to prevent channel exhaustion at scale.
+ * Instead of 1 channel per user (500K channels), users are distributed
+ * across N shards (default 5000), reducing total channels by 100x.
+ *
+ * Within each shard, presence events are filtered by userId to maintain
+ * individual user tracking while sharing the channel with ~100 other users.
+ *
+ * @param userId - The current user's unique identifier
+ * @param userLocation - Optional user location for proximity features
+ */
+export const usePresenceTracking = (
+  userId: string,
+  userLocation?: { lat: number; lng: number }
+) => {
+  const channelRef = useRef<RealtimeChannel | null>(null)
+
   useEffect(() => {
     if (!userId || !userLocation) {
       return
     }
 
-    const channel = supabase.channel(`presence-${userId}`)
+    const channelName = getPresenceChannel(userId)
+    const isSharded = isShardingEnabled()
+
+    console.log(
+      `[Realtime] Setting up presence tracking for user ${userId} on ${channelName}`,
+      isSharded ? `(sharded, total shards: ${getShardCount()})` : '(legacy mode)'
+    )
+
+    const channel = supabase
+      .channel(channelName)
       .on('presence' as any, { event: 'sync' }, (state: any) => {
-        console.log('[Realtime] Presence sync:', state)
+        if (isSharded) {
+          const userIds = getUserIdsInShard(state)
+          console.log(
+            `[Realtime] Presence sync on ${channelName}: ${userIds.length} users in shard`
+          )
+        } else {
+          console.log('[Realtime] Presence sync:', state)
+        }
       })
       .on('presence' as any, { event: 'join' }, (newState: any) => {
-        console.log('[Realtime] User joined:', newState)
+        if (isSharded) {
+          const joiningUsers = Object.values(newState.newPresences || {}) as ShardedPresenceState[]
+          const otherUsers = joiningUsers.filter(p => isPresenceFromOtherUser(p, userId))
+          if (otherUsers.length > 0) {
+            console.log(`[Realtime] ${otherUsers.length} other user(s) joined shard ${channelName}`)
+          }
+        } else {
+          console.log('[Realtime] User joined:', newState)
+        }
       })
       .on('presence' as any, { event: 'leave' }, (leftState: any) => {
-        console.log('[Realtime] User left:', leftState)
+        if (isSharded) {
+          const leavingUsers = Object.values(
+            leftState.leftPresences || {}
+          ) as ShardedPresenceState[]
+          const otherUsers = leavingUsers.filter(p => isPresenceFromOtherUser(p, userId))
+          if (otherUsers.length > 0) {
+            console.log(`[Realtime] ${otherUsers.length} other user(s) left shard ${channelName}`)
+          }
+        } else {
+          console.log('[Realtime] User left:', leftState)
+        }
       })
-      .subscribe(async (status) => {
+      .subscribe(async status => {
         if (status === 'SUBSCRIBED') {
-          // Track presence
-          await channel.track({
+          const presenceState: ShardedPresenceState = {
             user_id: userId,
             location: userLocation,
             online_at: new Date().toISOString(),
             status: 'active'
-          })
+          }
+          await channel.track(presenceState)
+          console.log(`[Realtime] Tracking presence on ${channelName} for user ${userId}`)
         }
       })
 
+    channelRef.current = channel
+
     return () => {
-      supabase.removeChannel(channel)
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current)
+        channelRef.current = null
+      }
     }
   }, [userId, userLocation])
 }
 
-// Enhanced broadcast for emergency coordination with offline handling
+/**
+ * Enhanced broadcast for emergency coordination with offline handling
+ *
+ * Uses sharded emergency broadcast channels to prevent channel exhaustion.
+ * Emergency events are distributed across shards using consistent hashing.
+ *
+ * @param eventId - Optional emergency event ID for targeted broadcasts
+ */
 export const useEmergencyBroadcast = (eventId?: string) => {
   const { isOnline, addAction } = useOfflineStore.getState()
-  const [broadcastStatus, setBroadcastStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+  const [broadcastStatus, setBroadcastStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>(
+    'idle'
+  )
   const [lastError, setLastError] = useState<string | null>(null)
 
-  const broadcast = useCallback(async (event: string, payload: any) => {
-    const channelName = eventId ? `emergency-${eventId}` : 'emergency-global'
+  const broadcast = useCallback(
+    async (event: string, payload: any) => {
+      const channelName = eventId ? getEmergencyBroadcastShard(eventId) : 'emergency-global'
 
-    try {
-      setBroadcastStatus('sending')
-      setLastError(null)
+      try {
+        setBroadcastStatus('sending')
+        setLastError(null)
 
-      const enhancedPayload = {
-        ...payload,
-        timestamp: new Date().toISOString(),
-        senderId: useEmergencyStore.getState().selectedEvent?.reporter_id
+        const enhancedPayload = {
+          ...payload,
+          timestamp: new Date().toISOString(),
+          senderId: useEmergencyStore.getState().selectedEvent?.reporter_id,
+          eventId
+        }
+
+        logBroadcastAttempt('useEmergencyBroadcast', channelName, eventId)
+
+        if (!isOnline) {
+          logOfflineQueue('useEmergencyBroadcast', 'broadcast', 'emergency_broadcasts', 'critical')
+          console.log('[Realtime] Offline - queuing emergency broadcast')
+
+          addAction({
+            type: 'create',
+            table: 'emergency_broadcasts',
+            data: {
+              channelName,
+              event,
+              payload: enhancedPayload
+            },
+            priority: 'critical',
+            maxRetries: 10
+          })
+
+          setBroadcastStatus('sent')
+          return { queued: true, offline: true }
+        }
+
+        console.log(`[Realtime] Broadcasting emergency event: ${event} to ${channelName}`)
+
+        const channel = supabase.channel(channelName)
+
+        await channel.send({
+          type: 'broadcast',
+          event,
+          payload: enhancedPayload
+        })
+
+        logBroadcastSuccess('useEmergencyBroadcast', channelName, eventId)
+        setBroadcastStatus('sent')
+        console.log('[Realtime] Emergency broadcast sent successfully')
+
+        return { queued: false, offline: false }
+      } catch (error) {
+        logBroadcastError('useEmergencyBroadcast', channelName, error, eventId)
+        console.error('[Realtime] Failed to send emergency broadcast:', error)
+
+        const errorInfo = classifyError(error, {
+          action: 'emergency_broadcast',
+          channelName,
+          event,
+          eventId
+        })
+
+        console.error('[Realtime] Broadcast error details:', errorInfo)
+        setLastError(errorInfo.message)
+        setBroadcastStatus('error')
+
+        if (errorInfo.type === 'network' || errorInfo.type === 'offline') {
+          logOfflineQueue('useEmergencyBroadcast', 'broadcast', 'emergency_broadcasts', 'critical')
+          addAction({
+            type: 'create',
+            table: 'emergency_broadcasts',
+            data: {
+              channelName,
+              event,
+              payload: {
+                ...payload,
+                timestamp: new Date().toISOString(),
+                senderId: useEmergencyStore.getState().selectedEvent?.reporter_id,
+                eventId
+              }
+            },
+            priority: 'critical',
+            maxRetries: 10
+          })
+        }
+
+        throw error
       }
+    },
+    [eventId, isOnline, addAction]
+  )
 
-      logBroadcastAttempt('useEmergencyBroadcast', channelName, eventId)
+  const subscribe = useCallback(
+    (event: string, callback: (payload: any) => void) => {
+      const channelName = eventId ? getEmergencyBroadcastShard(eventId) : 'emergency-global'
 
       if (!isOnline) {
-        logOfflineQueue('useEmergencyBroadcast', 'broadcast', 'emergency_broadcasts', 'critical')
-        console.log('[Realtime] Offline - queuing emergency broadcast')
-
-        // Queue broadcast for when we come back online
-        addAction({
-          type: 'create',
-          table: 'emergency_broadcasts',
-          data: {
-            channelName,
-            event,
-            payload: enhancedPayload
-          },
-          priority: 'critical', // Emergency broadcasts are highest priority
-          maxRetries: 10
-        })
-
-        setBroadcastStatus('sent')
-        return { queued: true, offline: true }
+        console.log('[Realtime] Cannot subscribe to emergency broadcast - offline')
+        return () => {}
       }
 
-      console.log(`[Realtime] Broadcasting emergency event: ${event} to ${channelName}`)
+      console.log(`[Realtime] Subscribing to emergency broadcasts: ${event} on ${channelName}`)
 
-      const channel = supabase.channel(channelName)
-
-      await channel.send({
-        type: 'broadcast',
-        event,
-        payload: enhancedPayload
-      })
-
-      logBroadcastSuccess('useEmergencyBroadcast', channelName, eventId)
-      setBroadcastStatus('sent')
-      console.log('[Realtime] Emergency broadcast sent successfully')
-
-      return { queued: false, offline: false }
-    } catch (error) {
-      logBroadcastError('useEmergencyBroadcast', channelName, error, eventId)
-      console.error('[Realtime] Failed to send emergency broadcast:', error)
-
-      const errorInfo = classifyError(error, {
-        action: 'emergency_broadcast',
-        channelName,
-        event,
-        eventId
-      })
-
-      console.error('[Realtime] Broadcast error details:', errorInfo)
-      setLastError(errorInfo.message)
-      setBroadcastStatus('error')
-
-      // Queue for retry if it's a network error
-      if (errorInfo.type === 'network' || errorInfo.type === 'offline') {
-        logOfflineQueue('useEmergencyBroadcast', 'broadcast', 'emergency_broadcasts', 'critical')
-        addAction({
-          type: 'create',
-          table: 'emergency_broadcasts',
-          data: {
-            channelName,
-            event,
-            payload: {
-              ...payload,
-              timestamp: new Date().toISOString(),
-              senderId: useEmergencyStore.getState().selectedEvent?.reporter_id
+      const channel = supabase
+        .channel(channelName)
+        .on('broadcast', { event }, (payload: any) => {
+          try {
+            if (eventId && payload.eventId && payload.eventId !== eventId) {
+              return
             }
-          },
-          priority: 'critical',
-          maxRetries: 10
+            console.log(`[Realtime] Received emergency broadcast: ${event}`, payload)
+            callback(payload)
+          } catch (error) {
+            console.error('[Realtime] Error processing emergency broadcast:', error)
+          }
         })
+        .subscribe((status: string) => {
+          if (status === 'SUBSCRIBED') {
+            console.log(`[Realtime] Subscribed to emergency broadcasts: ${event}`)
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error(`[Realtime] Failed to subscribe to emergency broadcasts: ${event}`)
+          }
+        })
+
+      return () => {
+        console.log(`[Realtime] Unsubscribing from emergency broadcasts: ${event}`)
+        supabase.removeChannel(channel)
       }
-
-      throw error
-    }
-  }, [eventId, isOnline, addAction])
-
-  const subscribe = useCallback((event: string, callback: (payload: any) => void) => {
-    const channelName = eventId ? `emergency-${eventId}` : 'emergency-global'
-
-    if (!isOnline) {
-      console.log('[Realtime] Cannot subscribe to emergency broadcast - offline')
-      return () => { } // Return empty unsubscribe function
-    }
-
-    console.log(`[Realtime] Subscribing to emergency broadcasts: ${event} on ${channelName}`)
-
-    const channel = supabase.channel(channelName)
-      .on('broadcast', { event }, (payload) => {
-        try {
-          console.log(`[Realtime] Received emergency broadcast: ${event}`, payload)
-          callback(payload)
-        } catch (error) {
-          console.error('[Realtime] Error processing emergency broadcast:', error)
-          // Don't let processing errors break the subscription
-        }
-      })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log(`[Realtime] Subscribed to emergency broadcasts: ${event}`)
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error(`[Realtime] Failed to subscribe to emergency broadcasts: ${event}`)
-        }
-      })
-
-    return () => {
-      console.log(`[Realtime] Unsubscribing from emergency broadcasts: ${event}`)
-      supabase.removeChannel(channel)
-    }
-  }, [eventId, isOnline])
+    },
+    [eventId, isOnline]
+  )
 
   return {
     broadcast,

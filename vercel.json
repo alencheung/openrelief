@@ -114,7 +114,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "framework": "nextjs",
-  "regions": ["iad1", "sfo1", "hnd1"],
+  "regions": ["iad1", "sfo1", "hnd1", "fra1", "lhr1", "sin1", "syd1"],
   "domain": "openrelief.org",
   "alias": ["www.openrelief.org", "app.openrelief.org"],
   "git": {
@@ -124,6 +124,60 @@
     }
   },
   "headers": [
+    {
+      "source": "/api/emergency",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "s-maxage=60, stale-while-revalidate=30"
+        }
+      ]
+    },
+    {
+      "source": "/api/alerts",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "s-maxage=30, stale-while-revalidate=15"
+        }
+      ]
+    },
+    {
+      "source": "/api/trust",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "s-maxage=300, stale-while-revalidate=60"
+        }
+      ]
+    },
+    {
+      "source": "/api/users",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "s-maxage=120, stale-while-revalidate=60"
+        }
+      ]
+    },
+    {
+      "source": "/api/notifications",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "s-maxage=10, stale-while-revalidate=5"
+        }
+      ]
+    },
+    {
+      "source": "/api/health",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    },
     {
       "source": "/sw.js",
       "headers": [

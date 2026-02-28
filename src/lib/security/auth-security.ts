@@ -14,6 +14,8 @@ import { createHash, randomBytes, scrypt, timingSafeEqual } from 'crypto'
 import { sign, verify } from 'jsonwebtoken'
 import { securityMonitor } from '@/lib/audit/security-monitor'
 import { supabaseAdmin } from '@/lib/supabase'
+import { redisSessionStore } from '@/lib/redis/session-store'
+import { redisLoginAttemptsStore } from '@/lib/redis/login-attempts-store'
 
 // Authentication security interfaces
 export interface AuthSession {
@@ -32,7 +34,12 @@ export interface AuthSession {
 }
 
 export interface SessionSecurityFlag {
-  type: 'ip_change' | 'device_change' | 'suspicious_location' | 'concurrent_sessions' | 'expired_session'
+  type:
+    | 'ip_change'
+    | 'device_change'
+    | 'suspicious_location'
+    | 'concurrent_sessions'
+    | 'expired_session'
   severity: 'low' | 'medium' | 'high'
   detectedAt: Date
   description: string
@@ -160,15 +167,12 @@ const AUTH_SECURITY_CONFIG = {
  * Authentication Security Manager
  */
 export class AuthSecurityManager {
-  private sessions: Map<string, AuthSession> = new Map()
-  private loginAttempts: Map<string, LoginAttempt[]> = new Map()
   private deviceFingerprints: Map<string, DeviceFingerprint> = new Map()
   private passwordHistory: Map<string, string[]> = new Map()
   private securityCheckInterval: NodeJS.Timeout | null = null
 
   constructor() {
     this.startSecurityMonitoring()
-    this.loadExistingSessions()
   }
 
   /**
@@ -192,8 +196,7 @@ export class AuthSecurityManager {
     lockoutTime?: number
   }> {
     try {
-      // Check login attempt limits
-      const attemptCheck = this.checkLoginAttempts(email, deviceInfo.ipAddress)
+      const attemptCheck = await this.checkLoginAttempts(email, deviceInfo.ipAddress)
       if (!attemptCheck.allowed) {
         return {
           success: false,
@@ -309,7 +312,7 @@ export class AuthSecurityManager {
     method: 'totp' | 'sms' | 'email' | 'backup_code'
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const session = this.sessions.get(sessionId)
+      const session = await redisSessionStore.getSession(sessionId)
       if (!session) {
         return { success: false, error: 'Invalid session' }
       }
@@ -358,10 +361,9 @@ export class AuthSecurityManager {
         return { success: false, error: 'Invalid verification code' }
       }
 
-      // Mark session as MFA verified
       session.mfaVerified = true
       session.lastActivity = new Date()
-      this.sessions.set(sessionId, session)
+      await redisSessionStore.setSession(sessionId, session)
 
       return { success: true }
     } catch (error) {
@@ -370,20 +372,20 @@ export class AuthSecurityManager {
     }
   }
 
-  /**
-   * Validate session with security checks
-   */
-  async validateSession(sessionId: string, requestContext: {
-    ipAddress: string
-    userAgent: string
-  }): Promise<{
+  async validateSession(
+    sessionId: string,
+    requestContext: {
+      ipAddress: string
+      userAgent: string
+    }
+  ): Promise<{
     valid: boolean
     session?: AuthSession
     securityFlags?: SessionSecurityFlag[]
     requiresReauth?: boolean
   }> {
     try {
-      const session = this.sessions.get(sessionId)
+      const session = await redisSessionStore.getSession(sessionId)
       if (!session) {
         return { valid: false }
       }
@@ -424,10 +426,9 @@ export class AuthSecurityManager {
         })
       }
 
-      // Update session
       session.lastActivity = new Date()
       session.securityFlags.push(...securityFlags)
-      this.sessions.set(sessionId, session)
+      await redisSessionStore.setSession(sessionId, session)
 
       // Log security flags
       if (securityFlags.length > 0) {
@@ -481,17 +482,14 @@ export class AuthSecurityManager {
     const [salt, key] = hash.split(':')
     const pepper = process.env.AUTH_PEPPER || ''
 
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       scrypt(password + pepper, Buffer.from(salt, 'hex'), 64, (err, derivedKey) => {
         if (err) {
           resolve(false)
         }
 
         // Use timing-safe comparison
-        const isValid = timingSafeEqual(
-          Buffer.from(key, 'hex'),
-          derivedKey
-        )
+        const isValid = timingSafeEqual(Buffer.from(key, 'hex'), derivedKey)
         resolve(isValid)
       })
     })
@@ -516,31 +514,34 @@ export class AuthSecurityManager {
       .substring(0, 32)
   }
 
-  /**
-   * Check login attempts and apply rate limiting
-   */
-  private checkLoginAttempts(email: string, ipAddress: string): {
+  private async checkLoginAttempts(
+    email: string,
+    ipAddress: string
+  ): Promise<{
     allowed: boolean
     lockoutTime?: number
     delay?: number
-  } {
+  }> {
     const now = Date.now()
-    const userAttempts = this.loginAttempts.get(email) || []
-    const ipAttempts = this.loginAttempts.get(`ip:${ipAddress}`) || []
+    const userAttempts = await redisLoginAttemptsStore.getAttempts(email)
+    const ipAttempts = await redisLoginAttemptsStore.getAttempts(`ip:${ipAddress}`)
 
     // Clean old attempts
-    const recentUserAttempts = userAttempts.filter(attempt =>
-      now - attempt.timestamp.getTime() < AUTH_SECURITY_CONFIG.loginProtection.lockoutDuration
+    const recentUserAttempts = userAttempts.filter(
+      attempt =>
+        now - attempt.timestamp.getTime() < AUTH_SECURITY_CONFIG.loginProtection.lockoutDuration
     )
-    const recentIpAttempts = ipAttempts.filter(attempt =>
-      now - attempt.timestamp.getTime() < AUTH_SECURITY_CONFIG.loginProtection.lockoutDuration
+    const recentIpAttempts = ipAttempts.filter(
+      attempt =>
+        now - attempt.timestamp.getTime() < AUTH_SECURITY_CONFIG.loginProtection.lockoutDuration
     )
 
     // Check if user is locked out
     const failedUserAttempts = recentUserAttempts.filter(attempt => !attempt.success)
     if (failedUserAttempts.length >= AUTH_SECURITY_CONFIG.loginProtection.maxAttempts) {
       const lastAttempt = failedUserAttempts[failedUserAttempts.length - 1]
-      const lockoutTime = lastAttempt.timestamp.getTime() + AUTH_SECURITY_CONFIG.loginProtection.lockoutDuration
+      const lockoutTime =
+        lastAttempt.timestamp.getTime() + AUTH_SECURITY_CONFIG.loginProtection.lockoutDuration
 
       if (now < lockoutTime) {
         return {
@@ -554,7 +555,8 @@ export class AuthSecurityManager {
     const failedIpAttempts = recentIpAttempts.filter(attempt => !attempt.success)
     if (failedIpAttempts.length >= AUTH_SECURITY_CONFIG.loginProtection.maxAttempts) {
       const lastAttempt = failedIpAttempts[failedIpAttempts.length - 1]
-      const lockoutTime = lastAttempt.timestamp.getTime() + AUTH_SECURITY_CONFIG.loginProtection.lockoutDuration
+      const lockoutTime =
+        lastAttempt.timestamp.getTime() + AUTH_SECURITY_CONFIG.loginProtection.lockoutDuration
 
       if (now < lockoutTime) {
         return {
@@ -574,9 +576,6 @@ export class AuthSecurityManager {
     return { allowed: true, delay }
   }
 
-  /**
-   * Record login attempt
-   */
   private async recordLoginAttempt(attempt: {
     email: string
     userId?: string
@@ -592,7 +591,6 @@ export class AuthSecurityManager {
       attemptId: randomBytes(16).toString('hex'),
       email: attempt.email,
       userId: attempt.userId,
-      deviceFingerprint: attempt.fingerprint,
       userAgent: attempt.userAgent,
       ipAddress: attempt.ipAddress,
       timestamp: new Date(),
@@ -602,20 +600,13 @@ export class AuthSecurityManager {
       geolocation: attempt.geolocation
     }
 
-    // Store attempt
-    const userAttempts = this.loginAttempts.get(attempt.email) || []
-    userAttempts.push(loginAttempt)
-    this.loginAttempts.set(attempt.email, userAttempts)
-
-    // Store IP attempts
-    const ipAttempts = this.loginAttempts.get(`ip:${attempt.ipAddress}`) || []
-    ipAttempts.push(loginAttempt)
-    this.loginAttempts.set(`ip:${attempt.ipAddress}`, ipAttempts)
+    await redisLoginAttemptsStore.recordAttempt(attempt.email, loginAttempt)
+    await redisLoginAttemptsStore.recordAttempt(`ip:${attempt.ipAddress}`, loginAttempt)
 
     // Log to audit system
     await securityMonitor.createAlert(
-      attempt.success ? 'successful_login' : 'failed_login' as any,
-      attempt.success ? 'low' : 'medium' as any,
+      attempt.success ? 'successful_login' : ('failed_login' as any),
+      attempt.success ? 'low' : ('medium' as any),
       `Login attempt for ${attempt.email}`,
       `Success: ${attempt.success}, IP: ${attempt.ipAddress}, Reason: ${attempt.failureReason || 'N/A'}`,
       'auth_security'
@@ -651,24 +642,20 @@ export class AuthSecurityManager {
       trustLevel: sessionData.trustLevel
     }
 
-    // Store session
-    this.sessions.set(sessionId, session)
+    await redisSessionStore.setSession(sessionId, session)
 
-    // Store in database for persistence
-    await supabaseAdmin
-      .from('auth_sessions')
-      .insert({
-        session_id: sessionId,
-        user_id: sessionData.userId,
-        device_fingerprint: sessionData.deviceFingerprint,
-        ip_address: sessionData.ipAddress,
-        user_agent: sessionData.userAgent,
-        created_at: now.toISOString(),
-        expires_at: session.expiresAt.toISOString(),
-        is_active: true,
-        mfa_verified: false,
-        trust_level: sessionData.trustLevel
-      })
+    await supabaseAdmin.from('auth_sessions').insert({
+      session_id: sessionId,
+      user_id: sessionData.userId,
+      device_fingerprint: sessionData.deviceFingerprint,
+      ip_address: sessionData.ipAddress,
+      user_agent: sessionData.userAgent,
+      created_at: now.toISOString(),
+      expires_at: session.expiresAt.toISOString(),
+      is_active: true,
+      mfa_verified: false,
+      trust_level: sessionData.trustLevel
+    })
 
     return sessionId
   }
@@ -676,7 +663,10 @@ export class AuthSecurityManager {
   /**
    * Check device fingerprint
    */
-  private async checkDeviceFingerprint(userId: string, fingerprint: string): Promise<{
+  private async checkDeviceFingerprint(
+    userId: string,
+    fingerprint: string
+  ): Promise<{
     trustLevel: 'low' | 'medium' | 'high'
     isTrusted: boolean
   }> {
@@ -696,7 +686,9 @@ export class AuthSecurityManager {
     }
 
     // Check if device is trusted
-    const isTrusted = device.is_trusted && device.trust_score > AUTH_SECURITY_CONFIG.deviceFingerprinting.trustThreshold
+    const isTrusted =
+      device.is_trusted &&
+      device.trust_score > AUTH_SECURITY_CONFIG.deviceFingerprinting.trustThreshold
     const trustLevel = isTrusted ? 'high' : 'medium'
 
     return {
@@ -727,20 +719,15 @@ export class AuthSecurityManager {
     return backupCodes.includes(token)
   }
 
-  /**
-   * Invalidate session
-   */
   private async invalidateSession(sessionId: string, reason: string): Promise<void> {
-    const session = this.sessions.get(sessionId)
+    const session = await redisSessionStore.getSession(sessionId)
     if (!session) {
       return
     }
 
-    // Mark as inactive
     session.isActive = false
-    this.sessions.set(sessionId, session)
+    await redisSessionStore.setSession(sessionId, session)
 
-    // Update database
     await supabaseAdmin
       .from('auth_sessions')
       .update({
@@ -769,50 +756,29 @@ export class AuthSecurityManager {
     }, AUTH_SECURITY_CONFIG.session.securityCheckInterval)
   }
 
-  /**
-   * Perform periodic security checks
-   */
   private async performSecurityChecks(): Promise<void> {
     try {
-      // Check for expired sessions
-      const now = new Date()
-      for (const [sessionId, session] of this.sessions.entries()) {
-        if (now > session.expiresAt) {
-          await this.invalidateSession(sessionId, 'expired')
-        }
-      }
-
-      // Check for concurrent session violations
+      await redisSessionStore.invalidateExpiredSessions()
       await this.checkConcurrentSessions()
-
-      // Clean old login attempts
-      this.cleanupOldLoginAttempts()
     } catch (error) {
       console.error('Security check error:', error)
     }
   }
 
-  /**
-   * Check for concurrent session violations
-   */
   private async checkConcurrentSessions(): Promise<void> {
     const userSessions = new Map<string, AuthSession[]>()
 
-    // Group sessions by user
-    for (const session of this.sessions.values()) {
-      if (session.isActive) {
-        const userSessionList = userSessions.get(session.userId) || []
-        userSessionList.push(session)
-        userSessions.set(session.userId, userSessionList)
-      }
-    }
-
-    // Check for violations
-    for (const [userId, sessions] of userSessions.entries()) {
-      if (sessions.length > AUTH_SECURITY_CONFIG.session.maxConcurrentSessions) {
-        // Mark oldest sessions as inactive
-        const sortedSessions = sessions.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
-        const sessionsToInvalidate = sortedSessions.slice(0, sessions.length - AUTH_SECURITY_CONFIG.session.maxConcurrentSessions)
+    const entries = Array.from(userSessions.entries())
+    for (const [userId, sessions] of entries) {
+      const activeSessions = sessions.filter(s => s.isActive)
+      if (activeSessions.length > AUTH_SECURITY_CONFIG.session.maxConcurrentSessions) {
+        const sortedSessions = activeSessions.sort(
+          (a: AuthSession, b: AuthSession) => a.createdAt.getTime() - b.createdAt.getTime()
+        )
+        const sessionsToInvalidate = sortedSessions.slice(
+          0,
+          activeSessions.length - AUTH_SECURITY_CONFIG.session.maxConcurrentSessions
+        )
 
         for (const session of sessionsToInvalidate) {
           await this.invalidateSession(session.sessionId, 'concurrent_sessions')
@@ -820,66 +786,8 @@ export class AuthSecurityManager {
       }
     }
   }
-
-  /**
-   * Clean old login attempts
-   */
-  private cleanupOldLoginAttempts(): void {
-    const cutoffTime = Date.now() - AUTH_SECURITY_CONFIG.loginProtection.lockoutDuration
-
-    for (const [key, attempts] of this.loginAttempts.entries()) {
-      const recentAttempts = attempts.filter(attempt =>
-        attempt.timestamp.getTime() > cutoffTime
-      )
-
-      if (recentAttempts.length === 0) {
-        this.loginAttempts.delete(key)
-      } else {
-        this.loginAttempts.set(key, recentAttempts)
-      }
-    }
-  }
-
-  /**
-   * Load existing sessions from database
-   */
-  private async loadExistingSessions(): Promise<void> {
-    try {
-      const { data, error } = await supabaseAdmin
-        .from('auth_sessions')
-        .select('*')
-        .eq('is_active', true)
-        .gte('expires_at', new Date().toISOString())
-
-      if (error) {
-        throw error
-      }
-
-      for (const sessionData of data || []) {
-        const session: AuthSession = {
-          sessionId: sessionData.session_id,
-          userId: sessionData.user_id,
-          deviceFingerprint: sessionData.device_fingerprint,
-          ipAddress: sessionData.ip_address,
-          userAgent: sessionData.user_agent,
-          createdAt: new Date(sessionData.created_at),
-          lastActivity: new Date(sessionData.last_activity || sessionData.created_at),
-          expiresAt: new Date(sessionData.expires_at),
-          isActive: sessionData.is_active,
-          securityFlags: [],
-          mfaVerified: sessionData.mfa_verified,
-          trustLevel: sessionData.trust_level
-        }
-
-        this.sessions.set(session.sessionId, session)
-      }
-    } catch (error) {
-      console.error('Error loading existing sessions:', error)
-    }
-  }
 }
 
-// Global authentication security manager instance
 export const authSecurityManager = new AuthSecurityManager()
 
 export default authSecurityManager
