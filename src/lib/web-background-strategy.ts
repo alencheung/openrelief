@@ -178,7 +178,9 @@ class WebBackgroundManager {
   }
 
   private setupVisibilityHandling(): void {
-    if (typeof document === 'undefined') return
+    if (typeof document === 'undefined') {
+      return
+    }
 
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') {
@@ -189,7 +191,9 @@ class WebBackgroundManager {
   }
 
   async getPushSubscription(): Promise<PushSubscriptionData | null> {
-    if (!this.pushSubscription) return null
+    if (!this.pushSubscription) {
+      return null
+    }
 
     return {
       endpoint: this.pushSubscription.endpoint,
@@ -201,7 +205,9 @@ class WebBackgroundManager {
   }
 
   async unsubscribe(): Promise<boolean> {
-    if (!this.pushSubscription) return true
+    if (!this.pushSubscription) {
+      return true
+    }
 
     try {
       await this.pushSubscription.unsubscribe()
@@ -226,7 +232,9 @@ class WebBackgroundManager {
   }
 
   private showEmergencyNotification(payload: EmergencyPushPayload): void {
-    if (!('Notification' in window) || Notification.permission !== 'granted') return
+    if (!('Notification' in window) || Notification.permission !== 'granted') {
+      return
+    }
 
     const options: NotificationOptions = {
       body: payload.message,
@@ -298,10 +306,14 @@ class WebBackgroundManager {
   }
 
   private async verifyEmergencyLocation(emergency: EmergencyPushPayload): Promise<void> {
-    if (!emergency.location) return
+    if (!emergency.location) {
+      return
+    }
 
     const currentLocation = await this.getCurrentLocation()
-    if (!currentLocation) return
+    if (!currentLocation) {
+      return
+    }
 
     const distance = this.calculateDistance(
       currentLocation.latitude,
@@ -347,9 +359,9 @@ class WebBackgroundManager {
     const deltaPhi = ((lat2 - lat1) * Math.PI) / 180
     const deltaLambda = ((lon2 - lon1) * Math.PI) / 180
 
-    const a =
-      Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
-      Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2)
+    const a
+      = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2)
+      + Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2)
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 
     return R * c
@@ -357,7 +369,9 @@ class WebBackgroundManager {
 
   private async storeEmergencyLocally(emergency: EmergencyPushPayload): Promise<void> {
     try {
-      if (typeof localStorage === 'undefined') return
+      if (typeof localStorage === 'undefined') {
+        return
+      }
 
       const storageKey = `emergency_${emergency.eventId}`
       localStorage.setItem(storageKey, JSON.stringify(emergency))
@@ -370,7 +384,9 @@ class WebBackgroundManager {
         index.push(emergency.eventId)
         if (index.length > 100) {
           const removed = index.shift()
-          if (removed) localStorage.removeItem(`emergency_${removed}`)
+          if (removed) {
+            localStorage.removeItem(`emergency_${removed}`)
+          }
         }
         localStorage.setItem(indexKey, JSON.stringify(index))
       }

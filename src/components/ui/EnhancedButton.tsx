@@ -96,7 +96,9 @@ const EnhancedButton = React.forwardRef<HTMLButtonElement, EnhancedButtonProps>(
      * Handle button click with accessibility announcement
      */
     const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-      if (loading || disabled) return
+      if (loading || disabled) {
+        return
+      }
 
       // Announce button action to screen readers
       if (ariaLabel) {

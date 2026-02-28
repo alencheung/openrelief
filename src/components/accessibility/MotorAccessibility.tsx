@@ -32,18 +32,22 @@ import {
 } from 'lucide-react'
 
 export interface MotorAccessibilityProps {
+
   /**
    * Whether motor accessibility features are enabled
    */
   enabled?: boolean
+
   /**
    * CSS class name
    */
   className?: string
+
   /**
    * Callback when settings change
    */
   onSettingsChange?: (settings: MotorAccessibilitySettings) => void
+
   /**
    * Whether to show simplified controls
    */
@@ -51,58 +55,72 @@ export interface MotorAccessibilityProps {
 }
 
 export interface MotorAccessibilitySettings {
+
   /**
    * Touch target size multiplier
    */
   touchTargetSize: 'small' | 'medium' | 'large' | 'extra-large'
+
   /**
    * Whether to enable voice control
    */
   voiceControl: boolean
+
   /**
    * Whether to enable switch control
    */
   switchControl: boolean
+
   /**
    * Whether to enable eye tracking
    */
   eyeTracking: boolean
+
   /**
    * Whether to enable head tracking
    */
   headTracking: boolean
+
   /**
    * Whether to enable gesture controls
    */
   gestureControl: boolean
+
   /**
    * Whether to enable alternative input methods
    */
   alternativeInput: boolean
+
   /**
    * Whether to enable dwell clicking
    */
   dwellClicking: boolean
+
   /**
    * Whether to enable scanning mode
    */
   scanningMode: boolean
+
   /**
    * Dwell time in milliseconds
    */
   dwellTime: number
+
   /**
    * Scan speed in milliseconds
    */
   scanSpeed: number
+
   /**
    * Whether to enable haptic feedback
    */
   hapticFeedback: boolean
+
   /**
    * Whether to enable audio cues
    */
   audioCues: boolean
+
   /**
    * Whether to enable visual cues
    */
@@ -273,15 +291,17 @@ export function MotorAccessibility({
    * Handle voice control
    */
   const handleVoiceControl = useCallback(() => {
-    if (!settings.voiceControl) return
+    if (!settings.voiceControl) {
+      return
+    }
 
     setIsVoiceActive(!isVoiceActive)
 
     if (!isVoiceActive) {
       // Start voice recognition
       if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-        const SpeechRecognition =
-          (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+        const SpeechRecognition
+          = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
         const recognition = new SpeechRecognition()
 
         recognition.continuous = true
@@ -405,7 +425,9 @@ export function MotorAccessibility({
    */
   const handleDwellClick = useCallback(
     (element: HTMLElement) => {
-      if (!settings.dwellClicking) return
+      if (!settings.dwellClicking) {
+        return
+      }
 
       let dwellTimer: NodeJS.Timeout
 
@@ -437,7 +459,9 @@ export function MotorAccessibility({
    * Trigger haptic feedback
    */
   const triggerHapticFeedback = useCallback(() => {
-    if (!settings.hapticFeedback) return
+    if (!settings.hapticFeedback) {
+      return
+    }
 
     // Vibration pattern for feedback
     if ('vibrate' in navigator) {
@@ -456,7 +480,9 @@ export function MotorAccessibility({
    */
   const triggerAudioCue = useCallback(
     (type: 'success' | 'error' | 'warning' | 'navigation') => {
-      if (!settings.audioCues) return
+      if (!settings.audioCues) {
+        return
+      }
 
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
       const oscillator = audioContext.createOscillator()
@@ -488,7 +514,9 @@ export function MotorAccessibility({
    */
   const handleMotorKeyDown = useCallback(
     (event: KeyboardEvent) => {
-      if (!enabled) return
+      if (!enabled) {
+        return
+      }
 
       // Motor accessibility keyboard shortcuts
       const motorShortcuts: Record<string, () => void> = {
@@ -540,7 +568,9 @@ export function MotorAccessibility({
    * Set up keyboard event listeners
    */
   useEffect(() => {
-    if (!enabled) return
+    if (!enabled) {
+      return
+    }
 
     document.addEventListener('keydown', handleMotorKeyDown)
 

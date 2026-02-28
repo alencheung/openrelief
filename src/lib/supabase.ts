@@ -10,27 +10,27 @@ const shouldUseMockClient = process.env.NODE_ENV === 'test'
 export const supabase = shouldUseMockClient
   ? createMockSupabaseClient()
   : createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: true
-      },
-      realtime: {
-        params: {
-          eventsPerSecond: 10
-        }
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
+    },
+    realtime: {
+      params: {
+        eventsPerSecond: 10
       }
-    })
+    }
+  })
 
 // Service role client for server-side operations
 export const supabaseAdmin = shouldUseMockClient
   ? createMockSupabaseClient()
   : createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    })
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  })
 
 // Mock Supabase client for development
 function createMockSupabaseClient() {
@@ -102,11 +102,11 @@ function createMockSupabaseClient() {
               data:
                 table === 'user_profiles'
                   ? {
-                      user_id: 'mock-user-id',
-                      trust_score: 0.5,
-                      created_at: new Date().toISOString(),
-                      updated_at: new Date().toISOString()
-                    }
+                    user_id: 'mock-user-id',
+                    trust_score: 0.5,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                  }
                   : null,
               error: null
             }),

@@ -179,9 +179,9 @@ export class APISecurityManager {
 
     // Check trust score requirement
     if (
-      config.minTrustScore &&
-      securityContext.trustScore &&
-      securityContext.trustScore < config.minTrustScore
+      config.minTrustScore
+      && securityContext.trustScore
+      && securityContext.trustScore < config.minTrustScore
     ) {
       return {
         allowed: false,
@@ -257,9 +257,9 @@ export class APISecurityManager {
     securityContext?: SecurityContext
   }> {
     // Get session token from headers or cookies
-    const sessionToken =
-      request.headers.get('authorization')?.replace('Bearer ', '') ||
-      request.cookies.get('session-token')?.value
+    const sessionToken
+      = request.headers.get('authorization')?.replace('Bearer ', '')
+      || request.cookies.get('session-token')?.value
 
     if (!sessionToken) {
       return {
@@ -536,8 +536,8 @@ export class APISecurityManager {
     if (config.enableCORS && request) {
       const requestOrigin = request.headers.get('origin')
       const allowedOrigins = config.allowedOrigins || []
-      const originAllowed =
-        allowedOrigins.includes(requestOrigin || '') || allowedOrigins.includes('*')
+      const originAllowed
+        = allowedOrigins.includes(requestOrigin || '') || allowedOrigins.includes('*')
 
       if (originAllowed && requestOrigin) {
         response.headers.set('Access-Control-Allow-Origin', requestOrigin)

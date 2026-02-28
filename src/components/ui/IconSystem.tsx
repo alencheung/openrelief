@@ -3,117 +3,206 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 import {
   // Navigation & Action Icons
-  ArrowUp, ArrowDown, ArrowLeft, ArrowRight,
-  ChevronUp, ChevronDown, ChevronLeft, ChevronRight,
-  Home, Search, Filter, Settings, Menu, X, Plus, Minus,
+  ArrowUp,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  ChevronUp,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Home,
+  Search,
+  Filter,
+  Settings,
+  Menu,
+  X,
+  Plus,
+  Minus,
 
   // Emergency Type Icons
-  Flame, HeartPulse, Shield, CloudRain, Wrench, AlertTriangle,
+  Flame,
+  HeartPulse,
+  Shield,
+  CloudRain,
+  Wrench,
+  AlertTriangle,
 
   // Status & State Icons
-  CheckCircle, XCircle, AlertCircle, Clock, PauseCircle,
-  Loader2, RefreshCw, Download, Upload,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Clock,
+  PauseCircle,
+  Loader2,
+  RefreshCw,
+  Download,
+  Upload,
 
   // Trust & Security Icons
-  ShieldCheck, ShieldAlert, ShieldX, Lock, Unlock, Key,
-  Eye, EyeOff, Fingerprint, UserCheck,
+  ShieldCheck,
+  ShieldAlert,
+  ShieldX,
+  Lock,
+  Unlock,
+  Key,
+  Eye,
+  EyeOff,
+  Fingerprint,
+  UserCheck,
 
   // Communication Icons
-  Bell, BellRing, MessageSquare, Phone, Mail,
-  Send, Share2, Link, Unlink,
+  Bell,
+  BellRing,
+  MessageSquare,
+  Phone,
+  Mail,
+  Send,
+  Share2,
+  Link,
+  Unlink,
 
   // Location & Map Icons
-  MapPin, Navigation, Compass, Route, Map,
-  Globe, Satellite, Radar,
+  MapPin,
+  Navigation,
+  Compass,
+  Route,
+  Map,
+  Globe,
+  Satellite,
+  Radar,
 
   // Medical & Health Icons
-  Heart, Activity, Pill, Stethoscope, Ambulance,
-  Hospital, FirstAid, MedicalCross,
+  Heart,
+  Activity,
+  Pill,
+  Stethoscope,
+  Ambulance,
+  Hospital,
+  FirstAid,
+  MedicalCross,
 
   // Safety & Security Icons
-  Camera, CameraOff, Video, VideoOff,
-  Siren, Flashlight, Radio,
+  Camera,
+  CameraOff,
+  Video,
+  VideoOff,
+  Siren,
+  Flashlight,
+  Radio,
 
   // Infrastructure Icons
-  Building, Zap, Wifi, WifiOff, Battery, BatteryLow,
-  Lightbulb, LightbulbOff, Droplet, Wind,
+  Building,
+  Zap,
+  Wifi,
+  WifiOff,
+  Battery,
+  BatteryLow,
+  Lightbulb,
+  LightbulbOff,
+  Droplet,
+  Wind,
 
   // Weather & Nature Icons
-  Sun, Cloud, CloudSnow, CloudLightning,
-  Waves, Mountain, Trees,
+  Sun,
+  Cloud,
+  CloudSnow,
+  CloudLightning,
+  Waves,
+  Mountain,
+  Trees,
 
   // Social & Community Icons
-  Users, UserPlus, UserMinus, Crown,
-  HandHeart, HelpingHand, People,
+  Users,
+  UserPlus,
+  UserMinus,
+  Crown,
+  HandHeart,
+  HelpingHand,
+  People,
 
   // Data & Analytics Icons
-  BarChart, LineChart, PieChart, TrendingUp, TrendingDown,
-  Database, Server, HardDrive, Cloud,
+  BarChart,
+  LineChart,
+  PieChart,
+  TrendingUp,
+  TrendingDown,
+  Database,
+  Server,
+  HardDrive,
 
   // Time Icons
-  Calendar, Clock, Timer, Hourglass,
+  Calendar,
+  Timer,
+  Hourglass,
 
   // File & Document Icons
-  File, FileText, Image, Video,
-  Download, Upload, Folder,
+  File,
+  FileText,
+  Image,
+  Folder,
 
   // Utility Icons
-  Info, HelpCircle, ExternalLink, Copy, Trash,
-  Edit, Save, Print, ZoomIn, ZoomOut
+  Info,
+  HelpCircle,
+  ExternalLink,
+  Copy,
+  Trash,
+  Edit,
+  Save,
+  Print,
+  ZoomIn,
+  ZoomOut
 } from 'lucide-react'
 
-const iconVariants = cva(
-  'inline-flex items-center justify-center transition-all duration-normal',
-  {
-    variants: {
-      size: {
-        xs: 'w-3 h-3',
-        sm: 'w-4 h-4',
-        md: 'w-5 h-5',
-        lg: 'w-6 h-6',
-        xl: 'w-8 h-8',
-        '2xl': 'w-10 h-10',
-        '3xl': 'w-12 h-12'
-      },
-      variant: {
-        default: '',
-        solid: 'text-current',
-        muted: 'text-muted-foreground',
-        primary: 'text-primary',
-        secondary: 'text-secondary',
-        success: 'text-success',
-        warning: 'text-warning',
-        error: 'text-destructive',
-        info: 'text-info'
-      },
-      weight: {
-        regular: '',
-        thin: 'stroke-1',
-        light: 'stroke-[1.5]',
-        bold: 'stroke-[2.5]'
-      },
-      animated: {
-        true: '',
-        false: ''
-      },
-      interactive: {
-        true: 'cursor-pointer hover:scale-110 transition-transform',
-        false: ''
-      }
+const iconVariants = cva('inline-flex items-center justify-center transition-all duration-normal', {
+  variants: {
+    size: {
+      xs: 'w-3 h-3',
+      sm: 'w-4 h-4',
+      md: 'w-5 h-5',
+      lg: 'w-6 h-6',
+      xl: 'w-8 h-8',
+      '2xl': 'w-10 h-10',
+      '3xl': 'w-12 h-12'
     },
-    defaultVariants: {
-      size: 'md',
-      variant: 'default',
-      weight: 'regular',
-      animated: false,
-      interactive: false
+    variant: {
+      default: '',
+      solid: 'text-current',
+      muted: 'text-muted-foreground',
+      primary: 'text-primary',
+      secondary: 'text-secondary',
+      success: 'text-success',
+      warning: 'text-warning',
+      error: 'text-destructive',
+      info: 'text-info'
+    },
+    weight: {
+      regular: '',
+      thin: 'stroke-1',
+      light: 'stroke-[1.5]',
+      bold: 'stroke-[2.5]'
+    },
+    animated: {
+      true: '',
+      false: ''
+    },
+    interactive: {
+      true: 'cursor-pointer hover:scale-110 transition-transform',
+      false: ''
     }
+  },
+  defaultVariants: {
+    size: 'md',
+    variant: 'default',
+    weight: 'regular',
+    animated: false,
+    interactive: false
   }
-)
+})
 
 export interface IconProps
-  extends Omit<React.SVGAttributes<SVGSVGElement>, 'ref'>,
-    VariantProps<typeof iconVariants> {
+  extends Omit<React.SVGAttributes<SVGSVGElement>, 'ref'>, VariantProps<typeof iconVariants> {
   name: keyof typeof iconMap
   label?: string
   onClick?: () => void
@@ -297,18 +386,21 @@ const iconMap = {
 } as const
 
 const Icon = React.forwardRef<SVGSVGElement, IconProps>(
-  ({
-    name,
-    size,
-    variant,
-    weight,
-    animated = false,
-    interactive = false,
-    label,
-    onClick,
-    className,
-    ...props
-  }, ref) => {
+  (
+    {
+      name,
+      size,
+      variant,
+      weight,
+      animated = false,
+      interactive = false,
+      label,
+      onClick,
+      className,
+      ...props
+    },
+    ref
+  ) => {
     const IconComponent = iconMap[name as keyof typeof iconMap]
 
     if (!IconComponent) {
@@ -338,15 +430,24 @@ const Icon = React.forwardRef<SVGSVGElement, IconProps>(
 Icon.displayName = 'Icon'
 
 // Semantic icon components for common use cases
-export const EmergencyIcon = ({ type, ...props }: Omit<IconProps, 'name'> & { type: keyof typeof emergencyIcons }) => (
+export const EmergencyIcon = ({
+  type,
+  ...props
+}: Omit<IconProps, 'name'> & { type: keyof typeof emergencyIcons }) => (
   <Icon name={emergencyIcons[type] ? type : 'default'} {...props} />
 )
 
-export const TrustIcon = ({ level, ...props }: Omit<IconProps, 'name'> & { level: keyof typeof trustIcons }) => (
+export const TrustIcon = ({
+  level,
+  ...props
+}: Omit<IconProps, 'name'> & { level: keyof typeof trustIcons }) => (
   <Icon name={trustIcons[level] || 'default'} {...props} />
 )
 
-export const StatusIcon = ({ status, ...props }: Omit<IconProps, 'name'> & { status: keyof typeof statusIcons }) => (
+export const StatusIcon = ({
+  status,
+  ...props
+}: Omit<IconProps, 'name'> & { status: keyof typeof statusIcons }) => (
   <Icon name={statusIcons[status] || 'default'} {...props} />
 )
 

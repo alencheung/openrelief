@@ -60,8 +60,8 @@ export function PerformanceDashboard({
 }: PerformanceDashboardProps) {
   const metrics = usePerformanceMetrics()
   const alerts = usePerformanceAlerts()
-  const { startMonitoring, stopMonitoring, triggerOptimization, generateReport, exportMetrics } =
-    usePerformanceActions()
+  const { startMonitoring, stopMonitoring, triggerOptimization, generateReport, exportMetrics }
+    = usePerformanceActions()
 
   const [isMonitoring, setIsMonitoring] = useState(false)
   const [timeRange, setTimeRange] = useState<'1h' | '24h' | '7d' | '30d'>('1h')
@@ -121,14 +121,26 @@ export function PerformanceDashboard({
   const getStatusColor = (value: number, threshold: number, inverse = false) => {
     const ratio = value / threshold
     if (inverse) {
-      if (ratio > 1.2) return 'text-red-600'
-      if (ratio > 1.1) return 'text-orange-600'
-      if (ratio > 1.0) return 'text-yellow-600'
+      if (ratio > 1.2) {
+        return 'text-red-600'
+      }
+      if (ratio > 1.1) {
+        return 'text-orange-600'
+      }
+      if (ratio > 1.0) {
+        return 'text-yellow-600'
+      }
       return 'text-green-600'
     } else {
-      if (ratio > 0.8) return 'text-red-600'
-      if (ratio > 0.6) return 'text-orange-600'
-      if (ratio > 0.4) return 'text-yellow-600'
+      if (ratio > 0.8) {
+        return 'text-red-600'
+      }
+      if (ratio > 0.6) {
+        return 'text-orange-600'
+      }
+      if (ratio > 0.4) {
+        return 'text-yellow-600'
+      }
       return 'text-green-600'
     }
   }

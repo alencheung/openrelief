@@ -1,6 +1,6 @@
 /**
  * Central test utilities for OpenRelief emergency coordination system
- * 
+ *
  * This file provides common testing utilities, custom render functions,
  * and helper functions for testing emergency response features.
  */
@@ -19,12 +19,12 @@ const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
     defaultOptions: {
       queries: {
         retry: false,
-        gcTime: 0,
+        gcTime: 0
       },
       mutations: {
-        retry: false,
-      },
-    },
+        retry: false
+      }
+    }
   })
 
   return (
@@ -62,7 +62,7 @@ export const createMockEmergencyEvent = (overrides: {}) => ({
   location: {
     latitude: 40.7128,
     longitude: -74.0060,
-    address: '123 Test St, Test City',
+    address: '123 Test St, Test City'
   },
   reportedBy: 'test-user-id',
   reportedAt: new Date().toISOString(),
@@ -71,7 +71,7 @@ export const createMockEmergencyEvent = (overrides: {}) => ({
   responders: [],
   resources: [],
   updates: [],
-  ...overrides,
+  ...overrides
 })
 
 export const createMockUser = (overrides = {}) => ({
@@ -83,11 +83,11 @@ export const createMockUser = (overrides = {}) => ({
   verified: true,
   location: {
     latitude: 40.7128,
-    longitude: -74.0060,
+    longitude: -74.0060
   },
   skills: ['first_aid', 'search_rescue'],
   availability: 'available',
-  ...overrides,
+  ...overrides
 })
 
 export const createMockTrustScore = (overrides = {}) => ({
@@ -98,11 +98,11 @@ export const createMockTrustScore = (overrides = {}) => ({
     accuracy: 0.8,
     responseTime: 0.85,
     communityFeedback: 0.8,
-    skillVerification: 0.9,
+    skillVerification: 0.9
   },
   history: [],
   lastUpdated: new Date().toISOString(),
-  ...overrides,
+  ...overrides
 })
 
 export const createMockNotification = (overrides = {}) => ({
@@ -118,10 +118,10 @@ export const createMockNotification = (overrides = {}) => ({
     emergencyId: 'test-emergency-1',
     location: {
       latitude: 40.7128,
-      longitude: -74.0060,
-    },
+      longitude: -74.0060
+    }
   },
-  ...overrides,
+  ...overrides
 })
 
 // Map testing utilities
@@ -140,7 +140,7 @@ export const createMockMapInstance = () => ({
   addLayer: jest.fn(),
   removeLayer: jest.fn(),
   addSource: jest.fn(),
-  removeSource: jest.fn(),
+  removeSource: jest.fn()
 })
 
 export const createMockGeolocation = (position = { latitude: 40.7128, longitude: -74.0060 }) => ({
@@ -153,9 +153,9 @@ export const createMockGeolocation = (position = { latitude: 40.7128, longitude:
         altitude: null,
         altitudeAccuracy: null,
         heading: null,
-        speed: null,
+        speed: null
       },
-      timestamp: Date.now(),
+      timestamp: Date.now()
     })
   }),
   watchPosition: jest.fn().mockImplementation((success) => {
@@ -168,13 +168,13 @@ export const createMockGeolocation = (position = { latitude: 40.7128, longitude:
         altitude: null,
         altitudeAccuracy: null,
         heading: null,
-        speed: null,
+        speed: null
       },
-      timestamp: Date.now(),
+      timestamp: Date.now()
     })
     return watchId
   }),
-  clearWatch: jest.fn(),
+  clearWatch: jest.fn()
 })
 
 // Network status testing utilities
@@ -183,7 +183,7 @@ export const createMockNetworkStatus = (online = true) => ({
   effectiveType: online ? '4g' : 'slow-2g',
   downlink: online ? 10 : 0.1,
   rtt: online ? 50 : 1000,
-  saveData: false,
+  saveData: false
 })
 
 // Service Worker testing utilities
@@ -194,13 +194,13 @@ export const createMockServiceWorker = () => ({
     active: {
       postMessage: jest.fn(),
       addEventListener: jest.fn(),
-      removeEventListener: jest.fn(),
-    },
+      removeEventListener: jest.fn()
+    }
   }),
   ready: Promise.resolve({
     showNotification: jest.fn(),
-    getNotifications: jest.fn(() => Promise.resolve([])),
-  }),
+    getNotifications: jest.fn(() => Promise.resolve([]))
+  })
 })
 
 // Storage testing utilities
@@ -218,7 +218,7 @@ export const createMockStorage = () => {
       Object.keys(store).forEach(key => delete store[key])
     }),
     key: jest.fn((index) => Object.keys(store)[index] || null),
-    length: Object.keys(store).length,
+    length: Object.keys(store).length
   }
 }
 
@@ -240,10 +240,10 @@ export const emergencyScenarios = {
     location: {
       latitude: 40.7128,
       longitude: -74.0060,
-      address: '123 Main St, New York, NY',
+      address: '123 Main St, New York, NY'
     },
     requiredResources: ['ambulance', 'paramedic'],
-    estimatedResponseTime: 8,
+    estimatedResponseTime: 8
   },
   naturalDisaster: {
     type: 'natural_disaster',
@@ -253,10 +253,10 @@ export const emergencyScenarios = {
     location: {
       latitude: 40.7589,
       longitude: -73.9851,
-      address: '456 Park Ave, New York, NY',
+      address: '456 Park Ave, New York, NY'
     },
     requiredResources: ['rescue_team', 'helicopter', 'emergency_supplies'],
-    estimatedResponseTime: 15,
+    estimatedResponseTime: 15
   },
   fire: {
     type: 'fire',
@@ -266,11 +266,11 @@ export const emergencyScenarios = {
     location: {
       latitude: 40.7614,
       longitude: -73.9776,
-      address: '789 5th Ave, New York, NY',
+      address: '789 5th Ave, New York, NY'
     },
     requiredResources: ['fire_truck', 'firefighters'],
-    estimatedResponseTime: 5,
-  },
+    estimatedResponseTime: 5
+  }
 }
 
 // Performance testing utilities
@@ -288,7 +288,7 @@ export const checkAccessibility = async (container: HTMLElement) => {
   return {
     passes: true,
     violations: [],
-    incomplete: [],
+    incomplete: []
   }
 }
 

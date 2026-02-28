@@ -8,7 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { trustScoreManager } from './trust-integration'
-import { securityMonitor } from './security-monitor'
+import { securityMonitor } from '@/lib/audit/security-monitor'
 
 // Trust-based security interfaces
 export interface TrustSecurityContext {
@@ -212,10 +212,7 @@ export async function trustSecurityMiddleware(
         trustWeight: 0,
         resistance: 'error'
       },
-      response: NextResponse.json(
-        { error: 'Security check failed' },
-        { status: 500 }
-      )
+      response: NextResponse.json({ error: 'Security check failed' }, { status: 500 })
     }
   }
 }
@@ -251,8 +248,8 @@ export async function trustBasedRateLimitMiddleware(
     if (limitExceeded) {
       // Calculate retry after based on trust level
       const retryAfter = Math.ceil(
-        rateLimitParams.windowMs / 1000
-        * (1 + (1 - context.trustWeight) * rateLimitParams.penaltyMultiplier)
+        (rateLimitParams.windowMs / 1000)
+          * (1 + (1 - context.trustWeight) * rateLimitParams.penaltyMultiplier)
       )
 
       // Log rate limit exceeded
@@ -286,7 +283,10 @@ export async function trustBasedRateLimitMiddleware(
             headers: {
               'Retry-After': retryAfter.toString(),
               'X-RateLimit-Limit': rateLimitParams.maxRequests.toString(),
-              'X-RateLimit-Remaining': Math.max(0, rateLimitParams.maxRequests - currentUsage).toString(),
+              'X-RateLimit-Remaining': Math.max(
+                0,
+                rateLimitParams.maxRequests - currentUsage
+              ).toString(),
               'X-RateLimit-Reset': new Date(Date.now() + rateLimitParams.windowMs).toISOString()
             }
           }
@@ -577,8 +577,7 @@ function applyModerateContentFilter(content: any): any {
   // Apply moderate content filtering for medium trust users
   if (typeof content === 'string') {
     // Remove obviously harmful content
-    return content
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    return content.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
   }
 
   if (typeof content === 'object' && content !== null) {

@@ -259,7 +259,9 @@ export function ConsensusEngineUI({ className, emergencyId }: ConsensusEngineUIP
 
   // Auto-refresh effect
   useEffect(() => {
-    if (!isAutoRefresh) return
+    if (!isAutoRefresh) {
+      return
+    }
 
     const interval = setInterval(() => {
       // This would fetch real-time consensus data
@@ -285,9 +287,15 @@ export function ConsensusEngineUI({ className, emergencyId }: ConsensusEngineUIP
 
   // Get confidence color
   const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 0.8) return 'text-green-600'
-    if (confidence >= 0.6) return 'text-blue-600'
-    if (confidence >= 0.4) return 'text-yellow-600'
+    if (confidence >= 0.8) {
+      return 'text-green-600'
+    }
+    if (confidence >= 0.6) {
+      return 'text-blue-600'
+    }
+    if (confidence >= 0.4) {
+      return 'text-yellow-600'
+    }
     return 'text-red-600'
   }
 
@@ -498,11 +506,15 @@ export function ConsensusEngineUI({ className, emergencyId }: ConsensusEngineUIP
               <div className="space-y-2">
                 {event.participants
                   .filter(participant => {
-                    if (filter.vote !== 'all' && participant.vote !== filter.vote) return false
-                    if (filter.distance === 'nearby' && participant.location.distance > 500)
+                    if (filter.vote !== 'all' && participant.vote !== filter.vote) {
                       return false
-                    if (filter.distance === 'far' && participant.location.distance <= 500)
+                    }
+                    if (filter.distance === 'nearby' && participant.location.distance > 500) {
                       return false
+                    }
+                    if (filter.distance === 'far' && participant.location.distance <= 500) {
+                      return false
+                    }
                     return true
                   })
                   .map((participant, index) => (

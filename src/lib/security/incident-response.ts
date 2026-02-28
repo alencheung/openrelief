@@ -478,8 +478,8 @@ export class IncidentResponseManager {
       const responseTeam = this.assembleResponseTeam(incident.type, priority)
 
       // Get response procedures
-      const procedures =
-        this.responseTemplates.get(incident.type) || this.getDefaultProcedures(incident.type)
+      const procedures
+        = this.responseTemplates.get(incident.type) || this.getDefaultProcedures(incident.type)
 
       // Create communication plan
       const communications = this.createCommunicationPlan(incident, priority)
@@ -559,8 +559,8 @@ export class IncidentResponseManager {
       const dependenciesMet = procedure.dependencies.every(dep => {
         const depProcedure = plan.procedures.find(p => p.step === dep)
         return (
-          depProcedure &&
-          plan.timeline.milestones.find(m => m.name === depProcedure.action)?.status === 'completed'
+          depProcedure
+          && plan.timeline.milestones.find(m => m.name === depProcedure.action)?.status === 'completed'
         )
       })
 
@@ -1139,8 +1139,8 @@ export class IncidentResponseManager {
     // Find procedures that can now be executed
     const executableProcedures = plan.procedures.filter(
       p =>
-        p.dependencies.includes(completedStep) &&
-        plan.timeline.milestones.find(m => m.name === p.action)?.status === 'pending'
+        p.dependencies.includes(completedStep)
+        && plan.timeline.milestones.find(m => m.name === p.action)?.status === 'pending'
     )
 
     for (const procedure of executableProcedures) {

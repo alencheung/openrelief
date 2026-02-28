@@ -69,7 +69,8 @@
     "strictPropertyInitialization": true,
     "noImplicitOverride": true,
     "exactOptionalPropertyTypes": true,
-    "noPropertyAccessFromIndexSignature": false
+    "noPropertyAccessFromIndexSignature": false,
+    "skipLibCheck": true
   },
   "include": [
     "next-env.d.ts",

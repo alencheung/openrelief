@@ -1,6 +1,6 @@
 /**
  * Tests for useTrustSystem Hook
- * 
+ *
  * These tests verify the trust system hook functionality including
  * score calculations, permissions, and consensus participation.
  */
@@ -24,8 +24,8 @@ jest.mock('@/lib/supabase', () => ({
     confirmEvent: jest.fn(),
     getEventConfirmations: jest.fn(),
     getEmergencyTypes: jest.fn(),
-    subscribeToEmergencyEvents: jest.fn(),
-  },
+    subscribeToEmergencyEvents: jest.fn()
+  }
 }))
 
 describe('useTrustSystem Hook', () => {
@@ -36,10 +36,10 @@ describe('useTrustSystem Hook', () => {
     queryClient = new QueryClient({
       defaultOptions: {
         queries: { retry: false },
-        mutations: { retry: false },
-      },
+        mutations: { retry: false }
+      }
     })
-    
+
     const { supabase } = require('@/lib/supabase')
     mockSupabase = supabase
     mockSupabase.__resetDatabase()
@@ -64,9 +64,9 @@ describe('useTrustSystem Hook', () => {
           contribution_frequency: 5,
           community_endorsement: 0.75,
           penalty_score: 0.05,
-          expertise_areas: [1, 2],
+          expertise_areas: [1, 2]
         },
-        last_updated: new Date().toISOString(),
+        last_updated: new Date().toISOString()
       }
 
       mockSupabase.from.mockReturnValue({
@@ -113,13 +113,13 @@ describe('useTrustSystem Hook', () => {
         user_id: userId,
         overall_score: 0.7,
         trust_score_factors: { reporting_accuracy: 0.7 },
-        last_updated: new Date(Date.now() - 60000).toISOString(), // 1 minute ago
+        last_updated: new Date(Date.now() - 60000).toISOString() // 1 minute ago
       }
 
       const updatedData = {
         ...initialData,
         overall_score: 0.75,
-        last_updated: new Date().toISOString(),
+        last_updated: new Date().toISOString()
       }
 
       mockSupabase.from
@@ -169,7 +169,7 @@ describe('useTrustSystem Hook', () => {
           previous_score: 0.8,
           new_score: 0.85,
           reason: 'Successful report',
-          timestamp: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+          timestamp: new Date(Date.now() - 86400000).toISOString() // 1 day ago
         },
         {
           id: 'history-2',
@@ -180,8 +180,8 @@ describe('useTrustSystem Hook', () => {
           previous_score: 0.85,
           new_score: 0.88,
           reason: 'Accurate confirmation',
-          timestamp: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
-        },
+          timestamp: new Date(Date.now() - 172800000).toISOString() // 2 days ago
+        }
       ]
 
       mockSupabase.from.mockReturnValue({
@@ -236,7 +236,7 @@ describe('useTrustSystem Hook', () => {
           user_id: userId,
           confirmation_type: 'confirm',
           trust_weight: 0.8,
-          created_at: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+          created_at: new Date(Date.now() - 3600000).toISOString() // 1 hour ago
         },
         {
           id: 'participation-2',
@@ -244,17 +244,17 @@ describe('useTrustSystem Hook', () => {
           user_id: userId,
           confirmation_type: 'dispute',
           trust_weight: 0.8,
-          created_at: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
-        },
+          created_at: new Date(Date.now() - 7200000).toISOString() // 2 hours ago
+        }
       ]
 
       mockSupabase.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
             order: jest.fn().mockReturnValue({
-              limit: jest.fn().mockResolvedValue({ 
-                data: mockParticipation, 
-                error: null 
+              limit: jest.fn().mockResolvedValue({
+                data: mockParticipation,
+                error: null
               })
             })
           })
@@ -282,17 +282,17 @@ describe('useTrustSystem Hook', () => {
           confirmation_type: 'confirm',
           trust_weight: 0.75,
           location: 'POINT(-74.0060 40.7128)',
-          created_at: new Date().toISOString(),
-        },
+          created_at: new Date().toISOString()
+        }
       ]
 
       mockSupabase.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
             order: jest.fn().mockReturnValue({
-              limit: jest.fn().mockResolvedValue({ 
-                data: mockParticipationWithLocation, 
-                error: null 
+              limit: jest.fn().mockResolvedValue({
+                data: mockParticipationWithLocation,
+                error: null
               })
             })
           })
@@ -325,9 +325,9 @@ describe('useTrustSystem Hook', () => {
           contribution_frequency: 3,
           community_endorsement: 0.7,
           penalty_score: 0,
-          expertise_areas: [1],
+          expertise_areas: [1]
         },
-        last_updated: new Date().toISOString(),
+        last_updated: new Date().toISOString()
       }
 
       // Mock initial fetch
@@ -343,7 +343,7 @@ describe('useTrustSystem Hook', () => {
       const updatedTrustData = {
         ...initialTrustData,
         overall_score: 0.85,
-        last_updated: new Date().toISOString(),
+        last_updated: new Date().toISOString()
       }
 
       mockSupabase.from.mockReturnValueOnce({
@@ -368,7 +368,7 @@ describe('useTrustSystem Hook', () => {
           eventId: 'test-event-1',
           actionType: 'report',
           outcome: 'success',
-          metadata: { response_time: 15 },
+          metadata: { response_time: 15 }
         })
       })
 
@@ -396,7 +396,7 @@ describe('useTrustSystem Hook', () => {
           userId,
           eventId: 'test-event-2',
           actionType: 'confirm',
-          outcome: 'failure',
+          outcome: 'failure'
         })
       })
 
@@ -418,9 +418,9 @@ describe('useTrustSystem Hook', () => {
           contribution_frequency: 2,
           community_endorsement: 0.6,
           penalty_score: 0.1,
-          expertise_areas: [1],
+          expertise_areas: [1]
         },
-        last_updated: new Date(Date.now() - 86400000).toISOString(),
+        last_updated: new Date(Date.now() - 86400000).toISOString()
       }
 
       // Mock current trust data
@@ -436,7 +436,7 @@ describe('useTrustSystem Hook', () => {
       const recalculatedTrustData = {
         ...currentTrustData,
         overall_score: 0.78, // Slight increase due to recent positive actions
-        last_updated: new Date().toISOString(),
+        last_updated: new Date().toISOString()
       }
 
       mockSupabase.from.mockReturnValueOnce({
@@ -480,9 +480,9 @@ describe('useTrustSystem Hook', () => {
           contribution_frequency: 4,
           community_endorsement: 0.8,
           penalty_score: 0.05,
-          expertise_areas: [1, 2],
+          expertise_areas: [1, 2]
         },
-        last_updated: new Date().toISOString(),
+        last_updated: new Date().toISOString()
       }
 
       mockSupabase.from.mockReturnValue({
@@ -522,9 +522,9 @@ describe('useTrustSystem Hook', () => {
           contribution_frequency: 0,
           community_endorsement: 0.1,
           penalty_score: 0.3,
-          expertise_areas: [],
+          expertise_areas: []
         },
-        last_updated: new Date().toISOString(),
+        last_updated: new Date().toISOString()
       }
 
       mockSupabase.from.mockReturnValue({
@@ -581,7 +581,7 @@ describe('useTrustSystem Hook', () => {
         { score: 0.35, expectedLevel: 'medium' },
         { score: 0.65, expectedLevel: 'high' },
         { score: 0.85, expectedLevel: 'very-high' },
-        { score: 0.95, expectedLevel: 'very-high' },
+        { score: 0.95, expectedLevel: 'very-high' }
       ]
 
       for (const testCase of testCases) {
@@ -598,9 +598,9 @@ describe('useTrustSystem Hook', () => {
             contribution_frequency: 2,
             community_endorsement: testCase.score,
             penalty_score: 0,
-            expertise_areas: [],
+            expertise_areas: []
           },
-          last_updated: new Date().toISOString(),
+          last_updated: new Date().toISOString()
         }
 
         mockSupabase.from.mockReturnValue({
@@ -631,36 +631,36 @@ describe('useTrustSystem Hook', () => {
           user_id: userId,
           change: 0.05,
           new_score: 0.75,
-          timestamp: new Date(Date.now() - 7 * 86400000).toISOString(), // 7 days ago
+          timestamp: new Date(Date.now() - 7 * 86400000).toISOString() // 7 days ago
         },
         {
           id: 'trend-2',
           user_id: userId,
           change: 0.03,
           new_score: 0.78,
-          timestamp: new Date(Date.now() - 6 * 86400000).toISOString(), // 6 days ago
+          timestamp: new Date(Date.now() - 6 * 86400000).toISOString() // 6 days ago
         },
         {
           id: 'trend-3',
           user_id: userId,
           change: 0.02,
           new_score: 0.80,
-          timestamp: new Date(Date.now() - 5 * 86400000).toISOString(), // 5 days ago
+          timestamp: new Date(Date.now() - 5 * 86400000).toISOString() // 5 days ago
         },
         {
           id: 'trend-4',
           user_id: userId,
           change: -0.01,
           new_score: 0.79,
-          timestamp: new Date(Date.now() - 4 * 86400000).toISOString(), // 4 days ago
+          timestamp: new Date(Date.now() - 4 * 86400000).toISOString() // 4 days ago
         },
         {
           id: 'trend-5',
           user_id: userId,
           change: 0.04,
           new_score: 0.83,
-          timestamp: new Date(Date.now() - 3 * 86400000).toISOString(), // 3 days ago
-        },
+          timestamp: new Date(Date.now() - 3 * 86400000).toISOString() // 3 days ago
+        }
       ]
 
       mockSupabase.from.mockReturnValue({
@@ -691,22 +691,22 @@ describe('useTrustSystem Hook', () => {
           user_id: userId,
           change: 0.02,
           new_score: 0.75,
-          timestamp: new Date(Date.now() - 5 * 86400000).toISOString(),
+          timestamp: new Date(Date.now() - 5 * 86400000).toISOString()
         },
         {
           id: 'stable-2',
           user_id: userId,
           change: -0.01,
           new_score: 0.74,
-          timestamp: new Date(Date.now() - 4 * 86400000).toISOString(),
+          timestamp: new Date(Date.now() - 4 * 86400000).toISOString()
         },
         {
           id: 'stable-3',
           user_id: userId,
           change: 0.01,
           new_score: 0.75,
-          timestamp: new Date(Date.now() - 3 * 86400000).toISOString(),
-        },
+          timestamp: new Date(Date.now() - 3 * 86400000).toISOString()
+        }
       ]
 
       mockSupabase.from.mockReturnValue({
@@ -758,7 +758,7 @@ describe('useTrustSystem Hook', () => {
         user_id: userId,
         overall_score: 'invalid-score', // Should be number
         trust_score_factors: null, // Missing factors
-        last_updated: 'invalid-date',
+        last_updated: 'invalid-date'
       }
 
       mockSupabase.from.mockReturnValue({
@@ -796,9 +796,9 @@ describe('useTrustSystem Hook', () => {
           contribution_frequency: 4,
           community_endorsement: 0.8,
           penalty_score: 0,
-          expertise_areas: [1, 2],
+          expertise_areas: [1, 2]
         },
-        last_updated: new Date().toISOString(),
+        last_updated: new Date().toISOString()
       }
 
       mockSupabase.from.mockReturnValue({
@@ -832,13 +832,13 @@ describe('useTrustSystem Hook', () => {
       const initialTrustData = {
         user_id: userId,
         overall_score: 0.7,
-        last_updated: new Date(Date.now() - 60000).toISOString(),
+        last_updated: new Date(Date.now() - 60000).toISOString()
       }
 
       const updatedTrustData = {
         ...initialTrustData,
         overall_score: 0.75,
-        last_updated: new Date().toISOString(),
+        last_updated: new Date().toISOString()
       }
 
       // Mock initial fetch
@@ -872,7 +872,7 @@ describe('useTrustSystem Hook', () => {
           userId,
           eventId: 'cache-test-event',
           actionType: 'confirm',
-          outcome: 'success',
+          outcome: 'success'
         })
       })
 

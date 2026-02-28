@@ -3,35 +3,32 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 import { X, ZoomIn, Download, AlertCircle, CheckCircle } from 'lucide-react'
 
-const imagePreviewVariants = cva(
-  'relative group overflow-hidden rounded-lg border',
-  {
-    variants: {
-      variant: {
-        default: 'border-border bg-background',
-        card: 'border-border bg-card shadow-sm',
-        outlined: 'border-2 border-border bg-background',
-        ghost: 'border-transparent bg-background'
-      },
-      size: {
-        sm: 'w-16 h-16',
-        default: 'w-24 h-24',
-        lg: 'w-32 h-32',
-        xl: 'w-48 h-48'
-      },
-      shape: {
-        square: 'aspect-square',
-        rectangle: 'aspect-video',
-        circle: 'rounded-full'
-      }
+const imagePreviewVariants = cva('relative group overflow-hidden rounded-lg border', {
+  variants: {
+    variant: {
+      default: 'border-border bg-background',
+      card: 'border-border bg-card shadow-sm',
+      outlined: 'border-2 border-border bg-background',
+      ghost: 'border-transparent bg-background'
     },
-    defaultVariants: {
-      variant: 'default',
-      size: 'default',
-      shape: 'square'
+    size: {
+      sm: 'w-16 h-16',
+      default: 'w-24 h-24',
+      lg: 'w-32 h-32',
+      xl: 'w-48 h-48'
+    },
+    shape: {
+      square: 'aspect-square',
+      rectangle: 'aspect-video',
+      circle: 'rounded-full'
     }
+  },
+  defaultVariants: {
+    variant: 'default',
+    size: 'default',
+    shape: 'square'
   }
-)
+})
 
 export interface ImagePreviewItem {
   id: string
@@ -49,8 +46,7 @@ export interface ImagePreviewItem {
 }
 
 export interface ImagePreviewProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof imagePreviewVariants> {
+  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof imagePreviewVariants> {
   images: ImagePreviewItem[]
   onRemove?: (id: string, image: ImagePreviewItem) => void
   onReorder?: (fromIndex: number, toIndex: number) => void
@@ -68,27 +64,30 @@ export interface ImagePreviewProps
 }
 
 const ImagePreview = React.forwardRef<HTMLDivElement, ImagePreviewProps>(
-  ({
-    className,
-    variant,
-    size,
-    shape,
-    images,
-    onRemove,
-    onReorder,
-    onImageClick,
-    showRemove = true,
-    showReorder = false,
-    showCaption = false,
-    showProgress = true,
-    showStatus = true,
-    maxImages,
-    editable = false,
-    renderImage,
-    renderOverlay,
-    renderActions,
-    ...props
-  }, ref) => {
+  (
+    {
+      className,
+      variant,
+      size,
+      shape,
+      images,
+      onRemove,
+      onReorder,
+      onImageClick,
+      showRemove = true,
+      showReorder = false,
+      showCaption = false,
+      showProgress = true,
+      showStatus = true,
+      maxImages,
+      editable = false,
+      renderImage,
+      renderOverlay,
+      renderActions,
+      ...props
+    },
+    ref
+  ) => {
     const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null)
     const [dragOverIndex, setDragOverIndex] = React.useState<number | null>(null)
     const [selectedImage, setSelectedImage] = React.useState<ImagePreviewItem | null>(null)
@@ -148,33 +147,46 @@ const ImagePreview = React.forwardRef<HTMLDivElement, ImagePreviewProps>(
     // Get status color
     const getStatusColor = (status?: string) => {
       switch (status) {
-        case 'success': return 'text-success'
-        case 'error': return 'text-destructive'
-        case 'uploading': return 'text-warning'
-        default: return 'text-muted-foreground'
+        case 'success':
+          return 'text-success'
+        case 'error':
+          return 'text-destructive'
+        case 'uploading':
+          return 'text-warning'
+        default:
+          return 'text-muted-foreground'
       }
     }
 
     // Get status icon
     const getStatusIcon = (status?: string) => {
       switch (status) {
-        case 'success': return <CheckCircle className="h-3 w-3" />
-        case 'error': return <AlertCircle className="h-3 w-3" />
-        default: return null
+        case 'success':
+          return <CheckCircle className="h-3 w-3" />
+        case 'error':
+          return <AlertCircle className="h-3 w-3" />
+        default:
+          return null
       }
     }
 
     return (
       <div ref={ref} className={cn('space-y-4', className)} {...props}>
         {/* Images Grid */}
-        <div className={cn(
-          'grid gap-3',
-          size === 'sm' ? 'grid-cols-4 sm:grid-cols-6 md:grid-cols-8'
-            : size === 'default' ? 'grid-cols-3 sm:grid-cols-4 md:grid-cols-6'
-              : size === 'lg' ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4'
-                : size === 'xl' ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3'
-                  : 'grid-cols-3'
-        )}>
+        <div
+          className={cn(
+            'grid gap-3',
+            size === 'sm'
+              ? 'grid-cols-4 sm:grid-cols-6 md:grid-cols-8'
+              : size === 'default'
+                ? 'grid-cols-3 sm:grid-cols-4 md:grid-cols-6'
+                : size === 'lg'
+                  ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4'
+                  : size === 'xl'
+                    ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3'
+                    : 'grid-cols-3'
+          )}
+        >
           {images.map((image, index) => (
             <div
               key={image.id}
@@ -186,9 +198,9 @@ const ImagePreview = React.forwardRef<HTMLDivElement, ImagePreviewProps>(
               )}
               draggable={showReorder}
               onDragStart={() => handleDragStart(index)}
-              onDragOver={(e) => handleDragOver(e, index)}
+              onDragOver={e => handleDragOver(e, index)}
               onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, index)}
+              onDrop={e => handleDrop(e, index)}
             >
               {/* Image */}
               {renderImage ? (
@@ -250,10 +262,12 @@ const ImagePreview = React.forwardRef<HTMLDivElement, ImagePreviewProps>(
 
           {/* Add More Indicator */}
           {maxImages && images.length < maxImages && (
-            <div className={cn(
-              imagePreviewVariants({ variant: 'ghost', size, shape }),
-              'flex items-center justify-center border-2 border-dashed border-muted-foreground/25 cursor-pointer hover:border-primary/50 hover:bg-muted/25'
-            )}>
+            <div
+              className={cn(
+                imagePreviewVariants({ variant: 'ghost', size, shape }),
+                'flex items-center justify-center border-2 border-dashed border-muted-foreground/25 cursor-pointer hover:border-primary/50 hover:bg-muted/25'
+              )}
+            >
               <div className="text-center">
                 <div className="text-2xl text-muted-foreground mb-1">+</div>
                 <div className="text-xs text-muted-foreground">
@@ -269,29 +283,17 @@ const ImagePreview = React.forwardRef<HTMLDivElement, ImagePreviewProps>(
           <div className="space-y-2">
             {images.map((image, index) => (
               <div key={image.id} className="flex items-start gap-2 text-xs">
-                <img
-                  src={image.url}
-                  alt={image.name}
-                  className="w-8 h-8 object-cover rounded"
-                />
+                <img src={image.url} alt={image.name} className="w-8 h-8 object-cover rounded" />
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-foreground truncate">
-                    {image.name}
-                  </div>
-                  <div className="text-muted-foreground">
-                    {formatFileSize(image.size)}
-                  </div>
+                  <div className="font-medium text-foreground truncate">{image.name}</div>
+                  <div className="text-muted-foreground">{formatFileSize(image.size)}</div>
                   {image.caption && (
-                    <div className="text-muted-foreground italic">
-                      {image.caption}
-                    </div>
+                    <div className="text-muted-foreground italic">{image.caption}</div>
                   )}
                 </div>
                 <div className="flex items-center gap-1">
                   {getStatusIcon(image.status)}
-                  <span className={cn(getStatusColor(image.status))}>
-                    {image.status}
-                  </span>
+                  <span className={cn(getStatusColor(image.status))}>{image.status}</span>
                 </div>
               </div>
             ))}
@@ -325,7 +327,10 @@ const ImagePreview = React.forwardRef<HTMLDivElement, ImagePreviewProps>(
                 <div className="text-sm opacity-80">
                   {formatFileSize(selectedImage.size)}
                   {selectedImage.width && selectedImage.height && (
-                    <span> • {selectedImage.width} × {selectedImage.height}px</span>
+                    <span>
+                      {' '}
+                      • {selectedImage.width} × {selectedImage.height}px
+                    </span>
                   )}
                 </div>
                 {selectedImage.caption && (
@@ -342,8 +347,7 @@ const ImagePreview = React.forwardRef<HTMLDivElement, ImagePreviewProps>(
 ImagePreview.displayName = 'ImagePreview'
 
 // Single image preview component
-export interface SingleImagePreviewProps
-  extends Omit<ImagePreviewProps, 'images'> {
+export interface SingleImagePreviewProps extends Omit<ImagePreviewProps, 'images'> {
   image: ImagePreviewItem
 }
 
@@ -354,4 +358,4 @@ export const SingleImagePreview = React.forwardRef<HTMLDivElement, SingleImagePr
 )
 SingleImagePreview.displayName = 'SingleImagePreview'
 
-export { ImagePreview, SingleImagePreview, imagePreviewVariants }
+export { ImagePreview, imagePreviewVariants }

@@ -352,11 +352,19 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
 
   // Filter alerts
   const filteredAlerts = alerts.filter(alert => {
-    if (filter.severity !== 'all' && alert.severity !== filter.severity) return false
-    if (filter.type !== 'all' && alert.type !== filter.type) return false
+    if (filter.severity !== 'all' && alert.severity !== filter.severity) {
+      return false
+    }
+    if (filter.type !== 'all' && alert.type !== filter.type) {
+      return false
+    }
     if (filter.acknowledged !== 'all') {
-      if (filter.acknowledged === 'acknowledged' && !alert.acknowledged) return false
-      if (filter.acknowledged === 'unacknowledged' && alert.acknowledged) return false
+      if (filter.acknowledged === 'acknowledged' && !alert.acknowledged) {
+        return false
+      }
+      if (filter.acknowledged === 'unacknowledged' && alert.acknowledged) {
+        return false
+      }
     }
     return true
   })
@@ -628,8 +636,8 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
                           <div className="flex items-center gap-1">
                             <MapPin className="h-3 w-3" />
                             <span>
-                              {alert.location.address ||
-                                `${alert.location.latitude.toFixed(4)}, ${alert.location.longitude.toFixed(4)}`}
+                              {alert.location.address
+                                || `${alert.location.latitude.toFixed(4)}, ${alert.location.longitude.toFixed(4)}`}
                             </span>
                           </div>
                         )}

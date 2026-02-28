@@ -306,8 +306,8 @@ async function rateLimitMiddleware(
 
   // Check emergency mode
   const isEmergency = checkEmergencyMode()
-  const effectiveMaxRequests =
-    isEmergency && config.emergencyOverride
+  const effectiveMaxRequests
+    = isEmergency && config.emergencyOverride
       ? Math.floor(config.maxRequests * 0.3) // Reduce limits during emergency
       : config.maxRequests
 
@@ -415,10 +415,10 @@ function inputValidationMiddleware(req: NextRequest): { valid: boolean; response
 
   // Validate content type for POST/PUT requests
   if (
-    (method === 'POST' || method === 'PUT') &&
-    !contentType.includes('application/json') &&
-    !contentType.includes('multipart/form-data') &&
-    !contentType.includes('application/x-www-form-urlencoded')
+    (method === 'POST' || method === 'PUT')
+    && !contentType.includes('application/json')
+    && !contentType.includes('multipart/form-data')
+    && !contentType.includes('application/x-www-form-urlencoded')
   ) {
     return {
       valid: false,
@@ -485,11 +485,11 @@ export async function middleware(req: NextRequest) {
 
   // Skip middleware for static assets and internal routes
   if (
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/static') ||
-    pathname.startsWith('/favicon') ||
-    pathname.includes('.') ||
-    pathname === '/sw.js'
+    pathname.startsWith('/_next')
+    || pathname.startsWith('/static')
+    || pathname.startsWith('/favicon')
+    || pathname.includes('.')
+    || pathname === '/sw.js'
   ) {
     return securityHeadersMiddleware(response)
   }
@@ -558,11 +558,11 @@ export async function middleware(req: NextRequest) {
     'middleware',
     trustContext
       ? {
-          trustScore: trustContext.trustScore,
-          trustThreshold: trustContext.trustThreshold,
-          trustWeight: trustContext.trustWeight,
-          resistance: trustContext.resistance
-        }
+        trustScore: trustContext.trustScore,
+        trustThreshold: trustContext.trustThreshold,
+        trustWeight: trustContext.trustWeight,
+        resistance: trustContext.resistance
+      }
       : undefined
   )
 
@@ -585,6 +585,7 @@ export async function middleware(req: NextRequest) {
  */
 export const config = {
   matcher: [
+
     /*
      * Match all request paths except for the ones starting with:
      * - _next/static (static files)

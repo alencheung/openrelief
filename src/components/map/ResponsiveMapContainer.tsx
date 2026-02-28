@@ -54,8 +54,12 @@ const ResponsiveMapContainer: React.FC<ResponsiveMapContainerProps> = ({
 
   // Determine current breakpoint
   const getCurrentBreakpoint = (width: number): Breakpoint => {
-    if (width < breakpoints.mobile) return 'mobile'
-    if (width < breakpoints.tablet) return 'tablet'
+    if (width < breakpoints.mobile) {
+      return 'mobile'
+    }
+    if (width < breakpoints.tablet) {
+      return 'tablet'
+    }
     return 'desktop'
   }
 
@@ -66,7 +70,9 @@ const ResponsiveMapContainer: React.FC<ResponsiveMapContainerProps> = ({
 
   // Handle resize events
   const handleResize = useCallback(() => {
-    if (!containerRef.current) return
+    if (!containerRef.current) {
+      return
+    }
 
     const { clientWidth, clientHeight } = containerRef.current
     const newBreakpoint = getCurrentBreakpoint(clientWidth)
@@ -167,7 +173,7 @@ export const responsiveUtils = {
   isLandscape: (orientation: Orientation) => orientation === 'landscape',
 
   // Get responsive value based on breakpoint
-  getResponsiveValue: <T,>(
+  getResponsiveValue: <T, >(
     breakpoint: Breakpoint,
     values: {
       mobile?: T

@@ -99,20 +99,20 @@ class FrontendOptimizer {
 
     this.webVitalsTargets = {
       lcp: 2500, // 2.5s
-      fid: 100,   // 100ms
-      cls: 0.1,   // 0.1
+      fid: 100, // 100ms
+      cls: 0.1, // 0.1
       fcp: 1800, // 1.8s
-      ttfb: 600,  // 600ms
-      inp: 200    // 200ms
+      ttfb: 600, // 600ms
+      inp: 200 // 200ms
     }
 
     this.performanceBudget = {
       totalBundleSize: 500, // 500KB gzipped
-      chunkSize: 250,       // 250KB per chunk
+      chunkSize: 250, // 250KB per chunk
       imageOptimization: 70, // 70% reduction
-      fontOptimization: 50,  // 50% reduction
+      fontOptimization: 50, // 50% reduction
       javascriptExecution: 50, // 50ms
-      renderingTime: 100     // 100ms
+      renderingTime: 100 // 100ms
     }
 
     this.initializeOptimizations()
@@ -148,7 +148,7 @@ class FrontendOptimizer {
     }
 
     this.intersectionObserver = new IntersectionObserver(
-      (entries) => {
+      entries => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
             this.loadLazyResource(entry.target)
@@ -187,7 +187,10 @@ class FrontendOptimizer {
     this.addPreload('/_next/static/css/main.css', 'style')
 
     // Preload critical fonts
-    this.addPreload('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap', 'style')
+    this.addPreload(
+      'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+      'style'
+    )
 
     // Preload critical JavaScript chunks
     if (this.bundleConfig.preloadCriticalChunks) {
@@ -502,10 +505,8 @@ class FrontendOptimizer {
    * Setup dynamic imports
    */
   private setupDynamicImports(): void {
-    // Define lazy loading for heavy components
-    window.lazyLoadComponent = (componentPath: string) => {
-      return import(/* webpackChunkName: "[request]" */ `../components/${componentPath}`)
-    }
+    // Dynamic imports are handled by Next.js automatic code splitting
+    // This is a placeholder for any custom lazy loading logic
   }
 
   /**
@@ -514,7 +515,7 @@ class FrontendOptimizer {
   private setupChunkLoadingMonitoring(): void {
     // Monitor chunk loading performance
     if ('PerformanceObserver' in window) {
-      const observer = new PerformanceObserver((list) => {
+      const observer = new PerformanceObserver(list => {
         list.getEntries().forEach(entry => {
           if (entry.name.includes('chunk')) {
             performanceMonitor.recordMetric({
@@ -553,9 +554,10 @@ class FrontendOptimizer {
   private setupJavaScriptMonitoring(): void {
     // Monitor long tasks
     if ('PerformanceObserver' in window) {
-      const observer = new PerformanceObserver((list) => {
+      const observer = new PerformanceObserver(list => {
         list.getEntries().forEach(entry => {
-          if (entry.duration > 50) { // Long task threshold
+          if (entry.duration > 50) {
+            // Long task threshold
             performanceMonitor.recordMetric({
               type: 'frontend',
               name: 'long_task',
@@ -579,7 +581,7 @@ class FrontendOptimizer {
    */
   private optimizeServiceWorkerCaching(): void {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.addEventListener('message', (event) => {
+      navigator.serviceWorker.addEventListener('message', event => {
         if (event.data.type === 'CACHE_UPDATED') {
           performanceMonitor.recordMetric({
             type: 'frontend',
@@ -597,7 +599,7 @@ class FrontendOptimizer {
    */
   private setupBackgroundSync(): void {
     if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
-      navigator.serviceWorker.ready.then((registration) => {
+      navigator.serviceWorker.ready.then(registration => {
         // Register background sync for emergency data
         registration.sync.register('emergency-data-sync')
       })
@@ -646,7 +648,7 @@ class FrontendOptimizer {
    */
   private observeLCP(): void {
     if ('PerformanceObserver' in window) {
-      const observer = new PerformanceObserver((list) => {
+      const observer = new PerformanceObserver(list => {
         const entries = list.getEntries()
         const lastEntry = entries[entries.length - 1]
 
@@ -667,7 +669,7 @@ class FrontendOptimizer {
    */
   private observeFID(): void {
     if ('PerformanceObserver' in window) {
-      const observer = new PerformanceObserver((list) => {
+      const observer = new PerformanceObserver(list => {
         list.getEntries().forEach(entry => {
           if (entry.name === 'first-input') {
             performanceMonitor.recordMetric({
@@ -691,7 +693,7 @@ class FrontendOptimizer {
     if ('PerformanceObserver' in window) {
       let clsValue = 0
 
-      const observer = new PerformanceObserver((list) => {
+      const observer = new PerformanceObserver(list => {
         list.getEntries().forEach(entry => {
           if (!(entry as any).hadRecentInput) {
             clsValue += (entry as any).value
@@ -715,7 +717,7 @@ class FrontendOptimizer {
    */
   private observeFCP(): void {
     if ('PerformanceObserver' in window) {
-      const observer = new PerformanceObserver((list) => {
+      const observer = new PerformanceObserver(list => {
         const entries = list.getEntries()
         const fcpEntry = entries.find(entry => entry.name === 'first-contentful-paint')
 
@@ -738,12 +740,13 @@ class FrontendOptimizer {
    */
   private observeTTFB(): void {
     if ('PerformanceObserver' in window) {
-      const observer = new PerformanceObserver((list) => {
+      const observer = new PerformanceObserver(list => {
         const entries = list.getEntries()
         const navigationEntry = entries.find(entry => entry.entryType === 'navigation')
 
         if (navigationEntry) {
-          const ttfb = (navigationEntry as any).responseStart - (navigationEntry as any).requestStart
+          const ttfb
+            = (navigationEntry as any).responseStart - (navigationEntry as any).requestStart
           performanceMonitor.recordMetric({
             type: 'frontend',
             name: 'time_to_first_byte',
@@ -762,7 +765,7 @@ class FrontendOptimizer {
    */
   private observeINP(): void {
     if ('PerformanceObserver' in window) {
-      const observer = new PerformanceObserver((list) => {
+      const observer = new PerformanceObserver(list => {
         list.getEntries().forEach(entry => {
           if (entry.entryType === 'event') {
             const inp = (entry as any).processingStart - entry.startTime
@@ -785,7 +788,7 @@ class FrontendOptimizer {
    */
   private monitorResourceLoading(): void {
     if ('PerformanceObserver' in window) {
-      const observer = new PerformanceObserver((list) => {
+      const observer = new PerformanceObserver(list => {
         list.getEntries().forEach(entry => {
           if (entry.entryType === 'resource') {
             const resource = entry as PerformanceResourceTiming
@@ -814,7 +817,7 @@ class FrontendOptimizer {
    */
   private monitorUserInteractions(): void {
     // Monitor click interactions
-    document.addEventListener('click', (event) => {
+    document.addEventListener('click', event => {
       const target = event.target as Element
       const interactionTime = performance.now()
 
@@ -857,11 +860,16 @@ class FrontendOptimizer {
     const tagName = element.tagName.toLowerCase()
 
     switch (tagName) {
-      case 'img': return 'image'
-      case 'script': return 'script'
-      case 'link': return 'stylesheet'
-      case 'iframe': return 'iframe'
-      default: return 'unknown'
+      case 'img':
+        return 'image'
+      case 'script':
+        return 'script'
+      case 'link':
+        return 'stylesheet'
+      case 'iframe':
+        return 'iframe'
+      default:
+        return 'unknown'
     }
   }
 
@@ -869,19 +877,24 @@ class FrontendOptimizer {
     const extension = url.split('.').pop()?.toLowerCase()
 
     switch (extension) {
-      case 'js': return 'script'
-      case 'css': return 'stylesheet'
+      case 'js':
+        return 'script'
+      case 'css':
+        return 'stylesheet'
       case 'png':
       case 'jpg':
       case 'jpeg':
       case 'gif':
       case 'webp':
-      case 'avif': return 'image'
+      case 'avif':
+        return 'image'
       case 'woff':
       case 'woff2':
       case 'ttf':
-      case 'otf': return 'font'
-      default: return 'unknown'
+      case 'otf':
+        return 'font'
+      default:
+        return 'unknown'
     }
   }
 
@@ -1047,9 +1060,17 @@ class FrontendOptimizer {
     }
 
     // Generate recommendations
-    const recommendations = this.generateRecommendations({
-      lcp, fid, cls, fcp, ttfb, inp
-    }, violations)
+    const recommendations = this.generateRecommendations(
+      {
+        lcp,
+        fid,
+        cls,
+        fcp,
+        ttfb,
+        inp
+      },
+      violations
+    )
 
     return {
       coreWebVitals: { lcp, fid, cls, fcp, ttfb, inp },
@@ -1065,27 +1086,39 @@ class FrontendOptimizer {
     const recommendations: string[] = []
 
     if (violations.includes('LCP exceeds target')) {
-      recommendations.push('Optimize largest contentful paint by reducing server response time and optimizing critical resources')
+      recommendations.push(
+        'Optimize largest contentful paint by reducing server response time and optimizing critical resources'
+      )
     }
 
     if (violations.includes('FID exceeds target')) {
-      recommendations.push('Reduce first input delay by minimizing JavaScript execution time and breaking up long tasks')
+      recommendations.push(
+        'Reduce first input delay by minimizing JavaScript execution time and breaking up long tasks'
+      )
     }
 
     if (violations.includes('CLS exceeds target')) {
-      recommendations.push('Reduce cumulative layout shift by including size dimensions for images and reserving space for dynamic content')
+      recommendations.push(
+        'Reduce cumulative layout shift by including size dimensions for images and reserving space for dynamic content'
+      )
     }
 
     if (violations.includes('FCP exceeds target')) {
-      recommendations.push('Improve first contentful paint by optimizing server response time and reducing render-blocking resources')
+      recommendations.push(
+        'Improve first contentful paint by optimizing server response time and reducing render-blocking resources'
+      )
     }
 
     if (violations.includes('TTFB exceeds target')) {
-      recommendations.push('Reduce time to first byte by optimizing server performance and enabling compression')
+      recommendations.push(
+        'Reduce time to first byte by optimizing server performance and enabling compression'
+      )
     }
 
     if (violations.includes('INP exceeds target')) {
-      recommendations.push('Improve interaction to next paint by optimizing JavaScript execution and reducing main thread work')
+      recommendations.push(
+        'Improve interaction to next paint by optimizing JavaScript execution and reducing main thread work'
+      )
     }
 
     return recommendations

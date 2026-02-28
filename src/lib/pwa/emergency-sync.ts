@@ -103,7 +103,9 @@ class EmergencySyncManager {
   }
 
   private async loadPendingReports(): Promise<void> {
-    if (!this.db) return
+    if (!this.db) {
+      return
+    }
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(['pending_reports'], 'readonly')
@@ -124,7 +126,9 @@ class EmergencySyncManager {
   }
 
   private async saveReport(report: OfflineEmergencyReport): Promise<void> {
-    if (!this.db) return
+    if (!this.db) {
+      return
+    }
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(['pending_reports'], 'readwrite')
@@ -137,7 +141,9 @@ class EmergencySyncManager {
   }
 
   private async deleteReport(reportId: string): Promise<void> {
-    if (!this.db) return
+    if (!this.db) {
+      return
+    }
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(['pending_reports'], 'readwrite')
@@ -232,7 +238,9 @@ class EmergencySyncManager {
   private async checkForServerRecord(
     report: OfflineEmergencyReport
   ): Promise<Record<string, unknown> | null> {
-    if (!report.serverId) return null
+    if (!report.serverId) {
+      return null
+    }
 
     const { data, error } = await supabase
       .from('emergency_events')
@@ -240,7 +248,9 @@ class EmergencySyncManager {
       .eq('id', report.serverId)
       .single()
 
-    if (error || !data) return null
+    if (error || !data) {
+      return null
+    }
     return data
   }
 
@@ -259,10 +269,18 @@ class EmergencySyncManager {
     const serverVersion = serverRecord as unknown as OfflineEmergencyReport['data']
     const localVersion = report.data
 
-    if (serverVersion.title !== localVersion.title) conflictFields.push('title')
-    if (serverVersion.description !== localVersion.description) conflictFields.push('description')
-    if (serverVersion.severity !== localVersion.severity) conflictFields.push('severity')
-    if (serverVersion.status !== localVersion.status) conflictFields.push('status')
+    if (serverVersion.title !== localVersion.title) {
+      conflictFields.push('title')
+    }
+    if (serverVersion.description !== localVersion.description) {
+      conflictFields.push('description')
+    }
+    if (serverVersion.severity !== localVersion.severity) {
+      conflictFields.push('severity')
+    }
+    if (serverVersion.status !== localVersion.status) {
+      conflictFields.push('status')
+    }
 
     if (conflictFields.length === 0) {
       return null
@@ -281,7 +299,9 @@ class EmergencySyncManager {
     strategy?: ConflictData['resolutionStrategy']
   ): Promise<OfflineEmergencyReport['data']> {
     const conflict = report.conflictData
-    if (!conflict) return report.data
+    if (!conflict) {
+      return report.data
+    }
 
     const resolutionStrategy = strategy || this.config.conflictResolutionStrategy
 

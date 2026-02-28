@@ -1,13 +1,13 @@
 /**
  * Tests for useEmergencyEvents Hook
- * 
+ *
  * These tests verify the functionality of emergency event management hooks,
  * including fetching, creating, updating, and real-time subscriptions.
  */
 
 import { renderHook, waitFor, act } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { 
+import {
   useEmergencyEvents,
   useEmergencyEvent,
   useCreateEmergencyEvent,
@@ -17,7 +17,7 @@ import {
   useEmergencyTypes,
   useEmergencyEventsSubscription,
   getOptimisticEvent,
-  getOptimisticConfirmation,
+  getOptimisticConfirmation
 } from '../useEmergencyEvents'
 import { createMockSupabaseClient, setupMockDatabase } from '@/test-utils/mocks/supabase'
 import { emergencyScenarios, createEmergencyEvent } from '@/test-utils/fixtures/emergencyScenarios'
@@ -32,8 +32,8 @@ jest.mock('@/lib/supabase', () => ({
     confirmEvent: jest.fn(),
     getEventConfirmations: jest.fn(),
     getEmergencyTypes: jest.fn(),
-    subscribeToEmergencyEvents: jest.fn(),
-  },
+    subscribeToEmergencyEvents: jest.fn()
+  }
 }))
 
 describe('useEmergencyEvents Hook', () => {
@@ -44,14 +44,14 @@ describe('useEmergencyEvents Hook', () => {
     queryClient = new QueryClient({
       defaultOptions: {
         queries: { retry: false },
-        mutations: { retry: false },
-      },
+        mutations: { retry: false }
+      }
     })
-    
+
     const { supabase } = require('@/lib/supabase')
     mockSupabase = supabase
     setupMockDatabase(mockSupabase)
-    
+
     jest.clearAllMocks()
   })
 
@@ -253,7 +253,7 @@ describe('useEmergencyEvents Hook', () => {
         eventId: 'emergency-1',
         userId: 'user-1',
         confirmationType: 'confirm' as const,
-        location: { lat: 40.7128, lng: -74.0060 },
+        location: { lat: 40.7128, lng: -74.0060 }
       }
       const { supabaseHelpers } = require('@/lib/supabase')
       supabaseHelpers.confirmEvent.mockResolvedValue({ id: 'confirmation-1', ...confirmationData })
@@ -280,7 +280,7 @@ describe('useEmergencyEvents Hook', () => {
       const disputeData = {
         eventId: 'emergency-1',
         userId: 'user-1',
-        confirmationType: 'dispute' as const,
+        confirmationType: 'dispute' as const
       }
       const { supabaseHelpers } = require('@/lib/supabase')
       supabaseHelpers.confirmEvent.mockResolvedValue({ id: 'dispute-1', ...disputeData })
@@ -308,7 +308,7 @@ describe('useEmergencyEvents Hook', () => {
     it('should fetch event confirmations', async () => {
       const mockConfirmations = [
         { id: 'conf-1', event_id: 'emergency-1', confirmation_type: 'confirm' },
-        { id: 'conf-2', event_id: 'emergency-1', confirmation_type: 'dispute' },
+        { id: 'conf-2', event_id: 'emergency-1', confirmation_type: 'dispute' }
       ]
       const { supabaseHelpers } = require('@/lib/supabase')
       supabaseHelpers.getEventConfirmations.mockResolvedValue(mockConfirmations)
@@ -334,7 +334,7 @@ describe('useEmergencyEvents Hook', () => {
     it('should fetch emergency types', async () => {
       const mockTypes = [
         { id: 1, name: 'Medical', icon: 'medical', color: 'red' },
-        { id: 2, name: 'Fire', icon: 'fire', color: 'orange' },
+        { id: 2, name: 'Fire', icon: 'fire', color: 'orange' }
       ]
       const { supabaseHelpers } = require('@/lib/supabase')
       supabaseHelpers.getEmergencyTypes.mockResolvedValue(mockTypes)
@@ -365,7 +365,7 @@ describe('useEmergencyEvents Hook', () => {
         expect(result.current.isSuccess).toBe(true)
         expect(result.current.data).toEqual({
           subscription: mockSubscription,
-          unsubscribe: expect.any(Function),
+          unsubscribe: expect.any(Function)
         })
       })
 
@@ -399,7 +399,7 @@ describe('useEmergencyEvents Hook', () => {
         expect(optimisticEvent).toEqual({
           ...currentEvent,
           ...updates,
-          updated_at: expect.any(String),
+          updated_at: expect.any(String)
         })
       })
 
@@ -411,7 +411,7 @@ describe('useEmergencyEvents Hook', () => {
 
         expect(optimisticEvent).toEqual({
           ...currentEvent,
-          updated_at: expect.any(String),
+          updated_at: expect.any(String)
         })
       })
     })
@@ -433,7 +433,7 @@ describe('useEmergencyEvents Hook', () => {
           trust_weight: 0.1,
           location: 'POINT(-74.006 40.7128)',
           distance_from_event: null,
-          created_at: expect.any(String),
+          created_at: expect.any(String)
         })
       })
 
@@ -452,7 +452,7 @@ describe('useEmergencyEvents Hook', () => {
           trust_weight: 0.1,
           location: null,
           distance_from_event: null,
-          created_at: expect.any(String),
+          created_at: expect.any(String)
         })
       })
     })

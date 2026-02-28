@@ -349,12 +349,12 @@ const DataControls: React.FC = () => {
       prev.map(permission =>
         permission.id === id
           ? {
-              ...permission,
-              sharingSettings: {
-                ...permission.sharingSettings,
-                [sharingType]: !permission.sharingSettings[sharingType]
-              }
+            ...permission,
+            sharingSettings: {
+              ...permission.sharingSettings,
+              [sharingType]: !permission.sharingSettings[sharingType]
             }
+          }
           : permission
       )
     )

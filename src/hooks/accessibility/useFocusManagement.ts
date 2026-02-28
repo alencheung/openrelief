@@ -3,6 +3,7 @@
 import { useRef, useEffect, useCallback } from 'react'
 
 export interface FocusManagementOptions {
+
   /**
    * Whether to trap focus within the container
    */
@@ -310,8 +311,8 @@ export function useFocusOrder(elements: HTMLElement[]) {
       return
     }
 
-    currentIndexRef.current =
-      currentIndexRef.current <= 0 ? elements.length - 1 : currentIndexRef.current - 1
+    currentIndexRef.current
+      = currentIndexRef.current <= 0 ? elements.length - 1 : currentIndexRef.current - 1
     elements[currentIndexRef.current]?.focus()
   }, [elements])
 

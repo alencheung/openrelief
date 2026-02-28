@@ -1111,8 +1111,8 @@ class AlertDispatchOptimizer {
       tags: {
         total_alerts: this.metrics.totalAlerts.toString(),
         success_rate: (
-          (this.metrics.successfulDeliveries / this.metrics.totalAlerts) *
-          100
+          (this.metrics.successfulDeliveries / this.metrics.totalAlerts)
+          * 100
         ).toString(),
         p95_latency: this.metrics.p95Latency.toString(),
         p99_latency: this.metrics.p99Latency.toString()

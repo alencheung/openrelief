@@ -316,9 +316,9 @@ export function OfflineEmergencyReporting({
         networkStatus: navigator.onLine ? 'online' : 'offline',
         gpsAccuracy: getCurrentLocation().accuracy,
         estimatedDataSize:
-          images.length * 1024 * 1024 +
-          videos.length * 5 * 1024 * 1024 +
-          (audioRecording ? 2 * 1024 * 1024 : 0)
+          images.length * 1024 * 1024
+          + videos.length * 5 * 1024 * 1024
+          + (audioRecording ? 2 * 1024 * 1024 : 0)
       },
       status: 'queued',
       syncAttempts: 0
@@ -586,8 +586,8 @@ export function OfflineEmergencyReporting({
                   <div>
                     <div className="text-sm font-medium">
                       {currentReport.location
-                        ? currentReport.location.address ||
-                          `${currentReport.location.latitude.toFixed(6)}, ${currentReport.location.longitude.toFixed(6)}`
+                        ? currentReport.location.address
+                          || `${currentReport.location.latitude.toFixed(6)}, ${currentReport.location.longitude.toFixed(6)}`
                         : 'Location will be captured automatically'}
                     </div>
                     {currentReport.location && (
@@ -783,16 +783,16 @@ export function OfflineEmergencyReporting({
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <MapPin className="h-4 w-4" />
                         <span>
-                          {report.location.address ||
-                            `${report.location.latitude.toFixed(4)}, ${report.location.longitude.toFixed(4)}`}
+                          {report.location.address
+                            || `${report.location.latitude.toFixed(4)}, ${report.location.longitude.toFixed(4)}`}
                         </span>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2">
                       <div className={cn('w-3 h-3 rounded-full', getStatusColor(report.status))}>
-                        {getStatusIcon(report.status) &&
-                          React.createElement(getStatusIcon(report.status), {
+                        {getStatusIcon(report.status)
+                          && React.createElement(getStatusIcon(report.status), {
                             className: 'h-3 w-3'
                           })}
                       </div>

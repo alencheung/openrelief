@@ -687,8 +687,12 @@ class LoadTestingFramework {
     tablet: number
   }): 'mobile' | 'desktop' | 'tablet' {
     const random = Math.random() * 100
-    if (random < distribution.mobile) return 'mobile'
-    if (random < distribution.mobile + distribution.tablet) return 'tablet'
+    if (random < distribution.mobile) {
+      return 'mobile'
+    }
+    if (random < distribution.mobile + distribution.tablet) {
+      return 'tablet'
+    }
     return 'desktop'
   }
 
@@ -698,8 +702,12 @@ class LoadTestingFramework {
     broadband: number
   }): 'fast3G' | '4G' | 'broadband' {
     const random = Math.random() * 100
-    if (random < distribution.fast3G) return 'fast3G'
-    if (random < distribution.fast3G + distribution['4G']) return '4G'
+    if (random < distribution.fast3G) {
+      return 'fast3G'
+    }
+    if (random < distribution.fast3G + distribution['4G']) {
+      return '4G'
+    }
     return 'broadband'
   }
 
@@ -745,7 +753,9 @@ class LoadTestingFramework {
     const testId = this.getTestIdFromUser(virtualUser.id)
     const metrics = this.activeTests.get(testId)
 
-    if (!metrics) return
+    if (!metrics) {
+      return
+    }
 
     try {
       // Select endpoint based on weights
@@ -808,15 +818,23 @@ class LoadTestingFramework {
   }
 
   private getWorkerTypeForEndpoint(endpoint: TestEndpoint): string {
-    if (endpoint.url.includes('/alerts/dispatch')) return 'alert'
-    if (endpoint.url.includes('/users/nearby')) return 'geographic'
-    if (endpoint.url.includes('/emergency')) return 'emergency'
+    if (endpoint.url.includes('/alerts/dispatch')) {
+      return 'alert'
+    }
+    if (endpoint.url.includes('/users/nearby')) {
+      return 'geographic'
+    }
+    if (endpoint.url.includes('/emergency')) {
+      return 'emergency'
+    }
     return 'general'
   }
 
   private getAvailableWorker(type: string): Worker | null {
     const workers = this.testWorkers.get(type)
-    if (!workers) return null
+    if (!workers) {
+      return null
+    }
 
     // Find available worker
     return workers.find(w => !this.isWorkerBusy(w)) || null
@@ -883,7 +901,9 @@ class LoadTestingFramework {
     virtualUser: VirtualUser
   ): void {
     const metrics = this.activeTests.get(testId)
-    if (!metrics) return
+    if (!metrics) {
+      return
+    }
 
     // Update request counts
     metrics.requests.total++
@@ -933,9 +953,9 @@ class LoadTestingFramework {
 
     const regionMetrics = metrics.geographic[virtualUser.region]!
     regionMetrics.requests++
-    regionMetrics.avgResponseTime =
-      (regionMetrics.avgResponseTime * (regionMetrics.requests - 1) + responseTime) /
-      regionMetrics.requests
+    regionMetrics.avgResponseTime
+      = (regionMetrics.avgResponseTime * (regionMetrics.requests - 1) + responseTime)
+      / regionMetrics.requests
 
     if (response.status !== endpoint.expectedStatus) {
       regionMetrics.errors++
@@ -944,7 +964,9 @@ class LoadTestingFramework {
 
   private updateErrorMetrics(testId: string, error: any, virtualUser: VirtualUser): void {
     const metrics = this.activeTests.get(testId)
-    if (!metrics) return
+    if (!metrics) {
+      return
+    }
 
     metrics.requests.failed++
 
@@ -963,11 +985,21 @@ class LoadTestingFramework {
   }
 
   private categorizeError(status: number, message?: string): string {
-    if (status >= 500) return 'server_error'
-    if (status === 429) return 'rate_limit'
-    if (status === 401 || status === 403) return 'auth_error'
-    if (status >= 400) return 'client_error'
-    if (message?.includes('timeout')) return 'timeout'
+    if (status >= 500) {
+      return 'server_error'
+    }
+    if (status === 429) {
+      return 'rate_limit'
+    }
+    if (status === 401 || status === 403) {
+      return 'auth_error'
+    }
+    if (status >= 400) {
+      return 'client_error'
+    }
+    if (message?.includes('timeout')) {
+      return 'timeout'
+    }
     return 'unknown_error'
   }
 
@@ -1001,7 +1033,9 @@ class LoadTestingFramework {
 
   private async collectMetrics(testId: string): Promise<void> {
     const metrics = this.activeTests.get(testId)
-    if (!metrics) return
+    if (!metrics) {
+      return
+    }
 
     const now = Date.now()
     metrics.duration = (now - metrics.timestamp.getTime()) / 1000
@@ -1021,7 +1055,9 @@ class LoadTestingFramework {
 
   private calculateDerivedMetrics(testId: string): void {
     const metrics = this.activeTests.get(testId)
-    if (!metrics) return
+    if (!metrics) {
+      return
+    }
 
     // Calculate response time percentiles
     const responseTimes = this.collectResponseTimes(testId)
@@ -1031,8 +1067,8 @@ class LoadTestingFramework {
       metrics.performance.responseTime.p50 = responseTimes[Math.floor(responseTimes.length * 0.5)]!
       metrics.performance.responseTime.p95 = responseTimes[Math.floor(responseTimes.length * 0.95)]!
       metrics.performance.responseTime.p99 = responseTimes[Math.floor(responseTimes.length * 0.99)]!
-      metrics.performance.responseTime.mean =
-        responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length
+      metrics.performance.responseTime.mean
+        = responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length
     }
 
     // Calculate throughput
@@ -1040,8 +1076,8 @@ class LoadTestingFramework {
     if (elapsedSeconds > 0) {
       metrics.performance.throughput.requestsPerSecond = metrics.requests.total / elapsedSeconds
       metrics.performance.errorRate = (metrics.requests.failed / metrics.requests.total) * 100
-      metrics.performance.availability =
-        (metrics.requests.successful / metrics.requests.total) * 100
+      metrics.performance.availability
+        = (metrics.requests.successful / metrics.requests.total) * 100
     }
   }
 
@@ -1060,7 +1096,9 @@ class LoadTestingFramework {
 
   private checkPerformanceThresholds(testId: string): void {
     const metrics = this.activeTests.get(testId)
-    if (!metrics) return
+    if (!metrics) {
+      return
+    }
 
     const targets = metrics.config.performanceTargets
 
@@ -1091,7 +1129,9 @@ class LoadTestingFramework {
 
   private async detectBottlenecks(testId: string): Promise<void> {
     const metrics = this.activeTests.get(testId)
-    if (!metrics) return
+    if (!metrics) {
+      return
+    }
 
     // Analyze metrics to identify bottlenecks
     const bottlenecks: LoadTestMetrics['bottlenecks'] = []
@@ -1137,7 +1177,9 @@ class LoadTestingFramework {
 
   private async sendPerformanceAlerts(testId: string): Promise<void> {
     const metrics = this.activeTests.get(testId)
-    if (!metrics || !metrics.config.alerting.enabled) return
+    if (!metrics || !metrics.config.alerting.enabled) {
+      return
+    }
 
     // Send alerts based on configuration
     const channels = metrics.config.alerting.channels
@@ -1168,7 +1210,9 @@ class LoadTestingFramework {
 
   private async calculateFinalMetrics(testId: string): Promise<void> {
     const metrics = this.activeTests.get(testId)
-    if (!metrics) return
+    if (!metrics) {
+      return
+    }
 
     // Calculate final metrics
     await this.collectMetrics(testId)
@@ -1179,7 +1223,9 @@ class LoadTestingFramework {
 
   private async generateTestReport(testId: string): Promise<void> {
     const metrics = this.activeTests.get(testId)
-    if (!metrics) return
+    if (!metrics) {
+      return
+    }
 
     const report = {
       testId,

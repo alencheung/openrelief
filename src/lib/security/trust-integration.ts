@@ -8,7 +8,7 @@
  */
 
 import { createHash } from 'crypto'
-import { securityMonitor } from './security-monitor'
+import { securityMonitor } from '@/lib/audit/security-monitor'
 import { supabaseAdmin } from '@/lib/supabase'
 
 // Trust score interfaces
@@ -125,13 +125,13 @@ const TRUST_CONFIG = {
   // Factor weights
   factorWeights: {
     reportingAccuracy: 0.25,
-    confirmationAccuracy: 0.20,
+    confirmationAccuracy: 0.2,
     disputeAccuracy: 0.15,
-    responseTime: 0.10,
-    locationAccuracy: 0.10,
-    contributionFrequency: 0.10,
+    responseTime: 0.1,
+    locationAccuracy: 0.1,
+    contributionFrequency: 0.1,
     communityEndorsement: 0.05,
-    penaltyScore: -0.30,
+    penaltyScore: -0.3,
     consistencyScore: 0.15
   },
 
@@ -302,9 +302,7 @@ export class TrustScoreManager {
 
       // Check action permissions
       const actionPermissions = this.getActionPermissions(action)
-      const hasPermission = threshold.permissions.some(perm =>
-        actionPermissions.includes(perm)
-      )
+      const hasPermission = threshold.permissions.some(perm => actionPermissions.includes(perm))
 
       if (!hasPermission) {
         return {
@@ -526,14 +524,21 @@ export class TrustScoreManager {
     return trustScore
   }
 
-  private getActionImpact(action: string, context: any): {
+  private getActionImpact(
+    action: string,
+    context: any
+  ): {
     impact: number
     reason: string
     factor: keyof TrustFactors
   } {
     const impacts = {
       report: { impact: 0.02, reason: 'Emergency report submitted', factor: 'reportingAccuracy' },
-      confirm: { impact: 0.03, reason: 'Emergency event confirmed', factor: 'confirmationAccuracy' },
+      confirm: {
+        impact: 0.03,
+        reason: 'Emergency event confirmed',
+        factor: 'confirmationAccuracy'
+      },
       dispute: { impact: -0.02, reason: 'Emergency event disputed', factor: 'disputeAccuracy' },
       endorse: { impact: 0.01, reason: 'User endorsed', factor: 'communityEndorsement' },
       moderate: { impact: 0.01, reason: 'Content moderated', factor: 'communityEndorsement' },
@@ -560,8 +565,10 @@ export class TrustScoreManager {
 
     // Update contribution frequency
     if (['report', 'confirm', 'dispute'].includes(action)) {
-      updatedFactors.contributionFrequency = Math.min(1,
-        updatedFactors.contributionFrequency + 0.01)
+      updatedFactors.contributionFrequency = Math.min(
+        1,
+        updatedFactors.contributionFrequency + 0.01
+      )
     }
 
     // Update consistency score
@@ -609,7 +616,8 @@ export class TrustScoreManager {
 
     // Apply growth for positive actions
     if (['report', 'confirm', 'endorse'].includes(action)) {
-      const boostAmount = TRUST_CONFIG.decay.boostAmount
+      const boostAmount
+        = TRUST_CONFIG.decay.boostAmount
         * Math.exp(-daysSinceLastActivity * TRUST_CONFIG.decay.boostDecayRate)
       adjustedScore = Math.min(1.0, adjustedScore + boostAmount)
     }
@@ -640,7 +648,11 @@ export class TrustScoreManager {
     return Math.min(1.0, confidence)
   }
 
-  private async updateReputation(userId: string, score: number, action: string): Promise<Reputation> {
+  private async updateReputation(
+    userId: string,
+    score: number,
+    action: string
+  ): Promise<Reputation> {
     const currentReputation = this.reputationCache.get(userId) || {
       globalScore: 0.5,
       communityScore: 0.5,
@@ -656,27 +668,22 @@ export class TrustScoreManager {
 
     if (action === 'report') {
       updatedReputation.reports++
-      updatedReputation.communityScore = Math.min(1.0,
-        updatedReputation.communityScore + 0.01)
+      updatedReputation.communityScore = Math.min(1.0, updatedReputation.communityScore + 0.01)
     } else if (action === 'confirm') {
-      updatedReputation.communityScore = Math.min(1.0,
-        updatedReputation.communityScore + 0.02)
+      updatedReputation.communityScore = Math.min(1.0, updatedReputation.communityScore + 0.02)
     } else if (action === 'dispute') {
       updatedReputation.disputes++
-      updatedReputation.communityScore = Math.max(0.1,
-        updatedReputation.communityScore - 0.01)
+      updatedReputation.communityScore = Math.max(0.1, updatedReputation.communityScore - 0.01)
     } else if (action === 'endorse') {
       updatedReputation.endorsements++
-      updatedReputation.communityScore = Math.min(1.0,
-        updatedReputation.communityScore + 0.03)
+      updatedReputation.communityScore = Math.min(1.0, updatedReputation.communityScore + 0.03)
     }
 
     // Update global score
-    updatedReputation.globalScore = (
-      updatedReputation.communityScore * 0.6
+    updatedReputation.globalScore
+      = updatedReputation.communityScore * 0.6
       + updatedReputation.domainScore * 0.3
       + updatedReputation.endorsements * 0.1
-    )
 
     updatedReputation.lastActivity = new Date()
 
@@ -741,7 +748,7 @@ export class TrustScoreManager {
       .eq('user_id', userId)
       .single()
 
-    return !error && data?.mfa_enabled || false
+    return (!error && data?.mfa_enabled) || false
   }
 
   private async checkSybilResistance(
@@ -823,10 +830,7 @@ export class TrustScoreManager {
     return 'consensus_allowed'
   }
 
-  private applyReputationResistance(
-    userId: string,
-    trustScore: TrustScore
-  ): string {
+  private applyReputationResistance(userId: string, trustScore: TrustScore): string {
     // Apply reputation-based attack resistance
     if (trustScore.reputation.globalScore < this.attackResistanceConfig.reputationThreshold) {
       return 'reputation_limited'
@@ -874,23 +878,19 @@ export class TrustScoreManager {
   }
 
   private async saveTrustScore(trustScore: TrustScore): Promise<void> {
-    await supabaseAdmin
-      .from('user_trust_scores')
-      .upsert({
-        user_id: trustScore.userId,
-        overall_score: trustScore.overall,
-        factors: trustScore.factors,
-        reputation: trustScore.reputation,
-        confidence: trustScore.confidence,
-        updated_at: new Date().toISOString()
-      })
+    await supabaseAdmin.from('user_trust_scores').upsert({
+      user_id: trustScore.userId,
+      overall_score: trustScore.overall,
+      factors: trustScore.factors,
+      reputation: trustScore.reputation,
+      confidence: trustScore.confidence,
+      updated_at: new Date().toISOString()
+    })
   }
 
   private async loadTrustScores(): Promise<void> {
     try {
-      const { data, error } = await supabaseAdmin
-        .from('user_trust_scores')
-        .select('*')
+      const { data, error } = await supabaseAdmin.from('user_trust_scores').select('*')
 
       if (error) {
         throw error
