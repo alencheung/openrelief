@@ -119,4 +119,4 @@ cypress/screenshots/
 
 # Supabase
 supabase/.branches
-supabase/.temp
+supabase/.temptsconfig.tsbuildinfo
