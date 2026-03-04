@@ -857,7 +857,6 @@ const PrivacyEducation: React.FC = () => {
                   </div>
                 </div>
               ))}
-              ))}
             </div>
           </Card>
         </div>

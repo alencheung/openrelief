@@ -50,6 +50,13 @@ import {
   compressData,
   decompressData
 } from './offlineStore'
+import {
+  useCheckInStore,
+  useCheckIns,
+  useCheckInFilters,
+  useSelectedCheckIn,
+  useCheckInActions
+} from './checkInStore'
 
 export { useAuthStore, useAuth, useAuthActions }
 export {
@@ -102,6 +109,13 @@ export {
   compressData,
   decompressData
 }
+export {
+  useCheckInStore,
+  useCheckIns,
+  useCheckInFilters,
+  useSelectedCheckIn,
+  useCheckInActions
+}
 
 // Re-export types for convenience
 export type {
@@ -151,6 +165,14 @@ export type {
   ConflictResolution
 } from './offlineStore'
 
+export type {
+  StatusCheckIn,
+  CheckInSummary,
+  CheckInFilter,
+  CheckInCreateInput,
+  CheckInUpdateInput
+} from '@/types/checkin'
+
 // Utility functions for store initialization
 export const initializeStores = async () => {
   // Initialize any stores that need async setup
@@ -195,12 +217,13 @@ export const checkStoreHealth = () => {
 
 // Store reset utility
 export const resetAllStores = () => {
-  (useAuthStore.getState() as any).reset()
+  ;(useAuthStore.getState() as any).reset()
   useEmergencyStore.getState().reset()
   useTrustStore.getState().reset()
   useLocationStore.getState().reset()
   useNotificationStore.getState().reset()
   useOfflineStore.getState().reset()
+  useCheckInStore.getState().reset()
 }
 
 // Store persistence utilities
@@ -211,7 +234,8 @@ export const exportStoreData = () => {
     trust: useTrustStore.getState(),
     location: useLocationStore.getState(),
     notification: useNotificationStore.getState(),
-    offline: useOfflineStore.getState()
+    offline: useOfflineStore.getState(),
+    checkIn: useCheckInStore.getState()
   }
 }
 
@@ -233,5 +257,8 @@ export const importStoreData = (data: any) => {
   }
   if (data.offline) {
     useOfflineStore.setState(data.offline)
+  }
+  if (data.checkIn) {
+    useCheckInStore.setState(data.checkIn)
   }
 }

@@ -411,7 +411,8 @@ describe('Consensus Engine', () => {
       const independentUser = createUser({ id: 'independent', trustScore: 0.9 })
 
       // Set up trust scores
-      [...colludingGroup, independentUser].forEach(user => {
+      const allUsers = colludingGroup.concat(independentUser)
+      allUsers.forEach(user => {
         act(() => {
           trustResult.current.setUserScore(user.id,
             createTrustScore({ userId: user.id, overall: user.trustScore }))

@@ -1,6 +1,6 @@
 /**
  * Comprehensive tests for Sybil Attack Prevention Mechanisms
- * 
+ *
  * These tests verify Sybil attack detection and prevention,
  * including account behavior analysis, voting patterns, and trust score manipulation.
  */
@@ -9,7 +9,11 @@ import { renderHook, act } from '@testing-library/react'
 import { useTrustStore } from '../trustStore'
 import { useEmergencyStore } from '../emergencyStore'
 import { ConsensusTestUtils } from '@/test-utils/consensus'
-import { createUser, createEmergencyEvent, createTrustScore } from '@/test-utils/fixtures/emergencyScenarios'
+import {
+  createUser,
+  createEmergencyEvent,
+  createTrustScore
+} from '@/test-utils/fixtures/emergencyScenarios'
 
 describe('Sybil Attack Prevention Mechanisms', () => {
   beforeEach(() => {
@@ -25,8 +29,8 @@ describe('Sybil Attack Prevention Mechanisms', () => {
       const suspiciousAccounts = Array.from({ length: 20 }, (_, i) =>
         createUser({
           id: `sybil-${i}`,
-          trustScore: 0.1 + (Math.random() * 0.1), // Very low trust scores
-          createdAt: new Date(Date.now() + Math.random() * 60000).toISOString(), // Within 1 minute
+          trustScore: 0.1 + Math.random() * 0.1, // Very low trust scores
+          createdAt: new Date(Date.now() + Math.random() * 60000).toISOString() // Within 1 minute
         })
       )
 
@@ -44,8 +48,8 @@ describe('Sybil Attack Prevention Mechanisms', () => {
             contributionFrequency: 0,
             communityEndorsement: 0.1,
             penaltyScore: 0,
-            expertiseAreas: [],
-          },
+            expertiseAreas: []
+          }
         })
         act(() => {
           trustResult.current.setUserScore(account.id, trustScore)
@@ -68,8 +72,8 @@ describe('Sybil Attack Prevention Mechanisms', () => {
       const sybilGroup = Array.from({ length: 10 }, (_, i) =>
         createUser({
           id: `sybil-voter-${i}`,
-          trustScore: 0.15 + (i * 0.01), // Similar low trust scores
-          createdAt: new Date(Date.now() - 3600000).toISOString(), // Created around same time
+          trustScore: 0.15 + i * 0.01, // Similar low trust scores
+          createdAt: new Date(Date.now() - 3600000).toISOString() // Created around same time
         })
       )
 
@@ -77,7 +81,7 @@ describe('Sybil Attack Prevention Mechanisms', () => {
       sybilGroup.forEach(account => {
         const trustScore = createTrustScore({
           userId: account.id,
-          overall: account.trustScore,
+          overall: account.trustScore
         })
         act(() => {
           trustResult.current.setUserScore(account.id, trustScore)
@@ -89,7 +93,7 @@ describe('Sybil Attack Prevention Mechanisms', () => {
         targetEvent: 'target-emergency-1',
         voteType: 'dispute',
         timing: new Date().toISOString(),
-        location: { lat: 40.7128, lng: -74.0060 }, // Same location
+        location: { lat: 40.7128, lng: -74.006 } // Same location
       }
 
       // Analyze voting similarity
@@ -97,8 +101,9 @@ describe('Sybil Attack Prevention Mechanisms', () => {
         sameVoteType: true,
         sameTiming: true,
         sameLocation: true,
-        trustScoreVariance: Math.max(...sybilGroup.map(a => a.trustScore)) - 
-                         Math.min(...sybilGroup.map(a => a.trustScore)),
+        trustScoreVariance:
+          Math.max(...sybilGroup.map(a => a.trustScore)) -
+          Math.min(...sybilGroup.map(a => a.trustScore))
       }
 
       expect(voteSimilarity.sameVoteType).toBe(true)
@@ -113,14 +118,14 @@ describe('Sybil Attack Prevention Mechanisms', () => {
       const coordinatedAccounts = Array.from({ length: 5 }, (_, i) =>
         createUser({
           id: `coordinated-${i}`,
-          trustScore: 0.2 + (i * 0.05),
+          trustScore: 0.2 + i * 0.05
         })
       )
 
       coordinatedAccounts.forEach(account => {
         const trustScore = createTrustScore({
           userId: account.id,
-          overall: account.trustScore,
+          overall: account.trustScore
         })
         act(() => {
           trustResult.current.setUserScore(account.id, trustScore)
@@ -132,7 +137,7 @@ describe('Sybil Attack Prevention Mechanisms', () => {
         { time: '09:00:00', action: 'vote', target: 'event-1' },
         { time: '09:00:05', action: 'vote', target: 'event-2' },
         { time: '09:00:10', action: 'vote', target: 'event-3' },
-        { time: '09:00:15', action: 'report', target: 'new-event-1' },
+        { time: '09:00:15', action: 'report', target: 'new-event-1' }
       ]
 
       // Analyze coordination patterns
@@ -142,9 +147,11 @@ describe('Sybil Attack Prevention Mechanisms', () => {
         return currTime - prevTime
       })
 
-      const averageInterval = timeIntervals.reduce((sum, interval) => sum + interval, 0) / timeIntervals.length
-      const intervalVariance = timeIntervals.reduce((sum, interval) => 
-        sum + Math.pow(interval - averageInterval, 2), 0) / timeIntervals.length
+      const averageInterval =
+        timeIntervals.reduce((sum, interval) => sum + interval, 0) / timeIntervals.length
+      const intervalVariance =
+        timeIntervals.reduce((sum, interval) => sum + Math.pow(interval - averageInterval, 2), 0) /
+        timeIntervals.length
 
       // Should detect coordination (very consistent timing)
       expect(averageInterval).toBeLessThan(10000) // Less than 10 seconds between actions
@@ -158,7 +165,7 @@ describe('Sybil Attack Prevention Mechanisms', () => {
 
       const suspiciousUser = createUser({
         id: 'trust-inflator',
-        trustScore: 0.1,
+        trustScore: 0.1
       })
 
       const initialTrustScore = createTrustScore({
@@ -173,8 +180,8 @@ describe('Sybil Attack Prevention Mechanisms', () => {
           contributionFrequency: 0,
           communityEndorsement: 0.1,
           penaltyScore: 0,
-          expertiseAreas: [],
-        },
+          expertiseAreas: []
+        }
       })
 
       act(() => {
@@ -192,14 +199,15 @@ describe('Sybil Attack Prevention Mechanisms', () => {
             'success'
           )
         })
-        
+
         const currentScore = trustResult.current.getUserScore(suspiciousUser.id)
         trustHistory.push(currentScore?.score || 0)
       }
 
       // Analyze trust score growth pattern
       const scoreIncreases = trustHistory.slice(1).map((score, i) => score - trustHistory[i])
-      const averageIncrease = scoreIncreases.reduce((sum, inc) => sum + inc, 0) / scoreIncreases.length
+      const averageIncrease =
+        scoreIncreases.reduce((sum, inc) => sum + inc, 0) / scoreIncreases.length
       const maxIncrease = Math.max(...scoreIncreases)
 
       // Should detect suspicious rapid growth
@@ -214,14 +222,14 @@ describe('Sybil Attack Prevention Mechanisms', () => {
       const circularGroup = Array.from({ length: 5 }, (_, i) =>
         createUser({
           id: `circular-${i}`,
-          trustScore: 0.3,
+          trustScore: 0.3
         })
       )
 
       circularGroup.forEach(account => {
         const trustScore = createTrustScore({
           userId: account.id,
-          overall: account.trustScore,
+          overall: account.trustScore
         })
         act(() => {
           trustResult.current.setUserScore(account.id, trustScore)
@@ -233,18 +241,18 @@ describe('Sybil Attack Prevention Mechanisms', () => {
       for (let i = 0; i < circularGroup.length; i++) {
         const endorser = circularGroup[i]
         const endorsed = circularGroup[(i + 1) % circularGroup.length]
-        
+
         endorsements.push({
           endorserId: endorser.id,
           endorsedId: endorsed.id,
-          timestamp: new Date().toISOString(),
+          timestamp: new Date().toISOString()
         })
       }
 
       // Detect circular patterns
       const endorserCounts = {}
       const endorsedCounts = {}
-      
+
       endorsements.forEach(endorsement => {
         endorserCounts[endorsement.endorserId] = (endorserCounts[endorsement.endorserId] || 0) + 1
         endorsedCounts[endorsement.endorsedId] = (endorsedCounts[endorsement.endorsedId] || 0) + 1
@@ -269,23 +277,23 @@ describe('Sybil Attack Prevention Mechanisms', () => {
       const sybilNetwork = Array.from({ length: 15 }, (_, i) =>
         createUser({
           id: `network-sybil-${i}`,
-          trustScore: 0.1 + (Math.random() * 0.1),
-          createdAt: new Date(Date.now() - 3600000 + Math.random() * 60000).toISOString(),
+          trustScore: 0.1 + Math.random() * 0.1,
+          createdAt: new Date(Date.now() - 3600000 + Math.random() * 60000).toISOString()
         })
       )
 
       const legitimateUsers = Array.from({ length: 3 }, (_, i) =>
         createUser({
           id: `legitimate-${i}`,
-          trustScore: 0.7 + (Math.random() * 0.2),
-          createdAt: new Date(Date.now() - Math.random() * 86400000 * 30).toISOString(), // Random over 30 days
+          trustScore: 0.7 + Math.random() * 0.2,
+          createdAt: new Date(Date.now() - Math.random() * 86400000 * 30).toISOString() // Random over 30 days
         })
       )
 
-      [...sybilNetwork, ...legitimateUsers].forEach(user => {
+      ;[...sybilNetwork, ...legitimateUsers].forEach(user => {
         const trustScore = createTrustScore({
           userId: user.id,
-          overall: user.trustScore,
+          overall: user.trustScore
         })
         act(() => {
           trustResult.current.setUserScore(user.id, trustScore)
@@ -299,15 +307,15 @@ describe('Sybil Attack Prevention Mechanisms', () => {
           from: account.id,
           to: sybilNetwork[i + 1].id,
           type: 'confirmation',
-          timestamp: new Date().toISOString(),
+          timestamp: new Date().toISOString()
         })),
         // Limited interactions with legitimate users
         ...sybilNetwork.slice(0, 3).map(account => ({
           from: account.id,
           to: legitimateUsers[0].id,
           type: 'confirmation',
-          timestamp: new Date().toISOString(),
-        })),
+          timestamp: new Date().toISOString()
+        }))
       ]
 
       // Analyze network structure
@@ -316,15 +324,17 @@ describe('Sybil Attack Prevention Mechanisms', () => {
         interactionCounts[interaction.from] = (interactionCounts[interaction.from] || 0) + 1
       })
 
-      const sybilInteractionCounts = sybilNetwork.map(account => 
-        interactionCounts[account.id] || 0
-      )
-      const legitimateInteractionCounts = legitimateUsers.map(user =>
-        interactionCounts[user.id] || 0
+      const sybilInteractionCounts = sybilNetwork.map(account => interactionCounts[account.id] || 0)
+      const legitimateInteractionCounts = legitimateUsers.map(
+        user => interactionCounts[user.id] || 0
       )
 
-      const avgSybilInteractions = sybilInteractionCounts.reduce((sum, count) => sum + count, 0) / sybilInteractionCounts.length
-      const avgLegitimateInteractions = legitimateInteractionCounts.reduce((sum, count) => sum + count, 0) / legitimateInteractionCounts.length
+      const avgSybilInteractions =
+        sybilInteractionCounts.reduce((sum, count) => sum + count, 0) /
+        sybilInteractionCounts.length
+      const avgLegitimateInteractions =
+        legitimateInteractionCounts.reduce((sum, count) => sum + count, 0) /
+        legitimateInteractionCounts.length
 
       // Should detect suspicious network patterns
       expect(avgSybilInteractions).toBeGreaterThan(avgLegitimateInteractions)
@@ -339,8 +349,8 @@ describe('Sybil Attack Prevention Mechanisms', () => {
         createUser({
           id: `cluster1-${i}`,
           trustScore: 0.12,
-          location: { lat: 40.7128, lng: -74.0060 }, // Same location
-          createdAt: new Date(Date.now() - 7200000).toISOString(), // Same creation time
+          location: { lat: 40.7128, lng: -74.006 }, // Same location
+          createdAt: new Date(Date.now() - 7200000).toISOString() // Same creation time
         })
       )
 
@@ -349,14 +359,14 @@ describe('Sybil Attack Prevention Mechanisms', () => {
           id: `cluster2-${i}`,
           trustScore: 0.15,
           location: { lat: 40.7589, lng: -73.9851 }, // Same location
-          createdAt: new Date(Date.now() - 7200000).toISOString(), // Same creation time
+          createdAt: new Date(Date.now() - 7200000).toISOString() // Same creation time
         })
       )
 
-      [...cluster1, ...cluster2].forEach(user => {
+      ;[...cluster1, ...cluster2].forEach(user => {
         const trustScore = createTrustScore({
           userId: user.id,
-          overall: user.trustScore,
+          overall: user.trustScore
         })
         act(() => {
           trustResult.current.setUserScore(user.id, trustScore)
@@ -364,9 +374,9 @@ describe('Sybil Attack Prevention Mechanisms', () => {
       })
 
       // Analyze clustering
-      const locationClusters = {}
-      const timeClusters = {}
-      const trustScoreClusters = {}
+      const locationClusters: Record<string, number> = {}
+      const timeClusters: Record<string, number> = {}
+      const trustScoreClusters: Record<string, number> = {}
 
       ;[...cluster1, ...cluster2].forEach(user => {
         const locationKey = `${user.location.lat},${user.location.lng}`
@@ -395,12 +405,12 @@ describe('Sybil Attack Prevention Mechanisms', () => {
 
       const suspiciousUser = createUser({
         id: 'unusual-pattern-user',
-        trustScore: 0.2,
+        trustScore: 0.2
       })
 
       const trustScore = createTrustScore({
         userId: suspiciousUser.id,
-        overall: suspiciousUser.trustScore,
+        overall: suspiciousUser.trustScore
       })
 
       act(() => {
@@ -409,7 +419,7 @@ describe('Sybil Attack Prevention Mechanisms', () => {
 
       // Simulate unusual activity pattern
       const activities = []
-      
+
       // Burst of activity followed by silence
       for (let i = 0; i < 20; i++) {
         await act(async () => {
@@ -422,13 +432,13 @@ describe('Sybil Attack Prevention Mechanisms', () => {
         })
         activities.push({
           timestamp: Date.now(),
-          action: 'report',
+          action: 'report'
         })
       }
 
       // Long period of inactivity
       await new Promise(resolve => setTimeout(resolve, 100))
-      
+
       // Another burst
       for (let i = 0; i < 15; i++) {
         await act(async () => {
@@ -441,15 +451,15 @@ describe('Sybil Attack Prevention Mechanisms', () => {
         })
         activities.push({
           timestamp: Date.now(),
-          action: 'confirm',
+          action: 'confirm'
         })
       }
 
       // Analyze activity pattern
-      const timeGaps = activities.slice(1).map((activity, i) => 
-        activity.timestamp - activities[i].timestamp
-      )
-      
+      const timeGaps = activities
+        .slice(1)
+        .map((activity, i) => activity.timestamp - activities[i].timestamp)
+
       const longGaps = timeGaps.filter(gap => gap > 5000) // Gaps longer than 5 seconds
       const shortGaps = timeGaps.filter(gap => gap < 1000) // Gaps shorter than 1 second
 
@@ -463,12 +473,12 @@ describe('Sybil Attack Prevention Mechanisms', () => {
 
       const geographicallySuspiciousUser = createUser({
         id: 'geo-anomaly-user',
-        trustScore: 0.15,
+        trustScore: 0.15
       })
 
       const trustScore = createTrustScore({
         userId: geographicallySuspiciousUser.id,
-        overall: geographicallySuspiciousUser.trustScore,
+        overall: geographicallySuspiciousUser.trustScore
       })
 
       act(() => {
@@ -477,10 +487,10 @@ describe('Sybil Attack Prevention Mechanisms', () => {
 
       // Simulate impossible geographic movements
       const locations = [
-        { lat: 40.7128, lng: -74.0060, timestamp: Date.now() }, // NYC
+        { lat: 40.7128, lng: -74.006, timestamp: Date.now() }, // NYC
         { lat: 51.5074, lng: -0.1278, timestamp: Date.now() + 600000 }, // London (5 minutes later)
         { lat: -33.8688, lng: 151.2093, timestamp: Date.now() + 1200000 }, // Sydney (10 minutes later)
-        { lat: 40.7128, lng: -74.0060, timestamp: Date.now() + 1800000 }, // Back to NYC
+        { lat: 40.7128, lng: -74.006, timestamp: Date.now() + 1800000 } // Back to NYC
       ]
 
       // Analyze geographic feasibility
@@ -489,7 +499,7 @@ describe('Sybil Attack Prevention Mechanisms', () => {
         const distance = calculateDistance(prevLocation, location)
         const timeDiff = (location.timestamp - prevLocation.timestamp) / 1000 // seconds
         const speed = distance / timeDiff // meters per second
-        
+
         return {
           from: prevLocation,
           to: location,
@@ -515,20 +525,20 @@ describe('Sybil Attack Prevention Mechanisms', () => {
 
       const legitimateUser = createUser({
         id: 'legitimate-defender',
-        trustScore: 0.95,
+        trustScore: 0.95
       })
 
       const sybilArmy = Array.from({ length: 100 }, (_, i) =>
         createUser({
           id: `sybil-army-${i}`,
-          trustScore: 0.05 + (Math.random() * 0.1),
+          trustScore: 0.05 + Math.random() * 0.1
         })
       )
 
       // Set up trust scores
       const legitimateTrustScore = createTrustScore({
         userId: legitimateUser.id,
-        overall: legitimateUser.trustScore,
+        overall: legitimateUser.trustScore
       })
 
       act(() => {
@@ -538,7 +548,7 @@ describe('Sybil Attack Prevention Mechanisms', () => {
       sybilArmy.forEach(sybil => {
         const sybilTrustScore = createTrustScore({
           userId: sybil.id,
-          overall: sybil.trustScore,
+          overall: sybil.trustScore
         })
         act(() => {
           trustResult.current.setUserScore(sybil.id, sybilTrustScore)
@@ -547,7 +557,7 @@ describe('Sybil Attack Prevention Mechanisms', () => {
 
       const event = createEmergencyEvent({
         id: 'sybil-resistance-test',
-        status: 'pending',
+        status: 'pending'
       })
 
       act(() => {
@@ -560,14 +570,14 @@ describe('Sybil Attack Prevention Mechanisms', () => {
           userId: legitimateUser.id,
           voteType: 'confirm',
           trustWeight: legitimateUser.trustScore,
-          timestamp: new Date().toISOString(),
+          timestamp: new Date().toISOString()
         },
         ...sybilArmy.map(sybil => ({
           userId: sybil.id,
           voteType: 'dispute',
           trustWeight: sybil.trustScore,
-          timestamp: new Date().toISOString(),
-        })),
+          timestamp: new Date().toISOString()
+        }))
       ]
 
       const consensus = ConsensusTestUtils.calculateConsensus(votes, event)
@@ -587,15 +597,15 @@ describe('Sybil Attack Prevention Mechanisms', () => {
       const evolvingSybils = Array.from({ length: 20 }, (_, i) =>
         createUser({
           id: `evolving-sybil-${i}`,
-          trustScore: 0.1 + (i * 0.01), // Gradually increasing trust scores
-          createdAt: new Date(Date.now() - (20 - i) * 86400000).toISOString(), // Staggered creation
+          trustScore: 0.1 + i * 0.01, // Gradually increasing trust scores
+          createdAt: new Date(Date.now() - (20 - i) * 86400000).toISOString() // Staggered creation
         })
       )
 
       evolvingSybils.forEach(sybil => {
         const trustScore = createTrustScore({
           userId: sybil.id,
-          overall: sybil.trustScore,
+          overall: sybil.trustScore
         })
         act(() => {
           trustResult.current.setUserScore(sybil.id, trustScore)
@@ -617,13 +627,14 @@ describe('Sybil Attack Prevention Mechanisms', () => {
       const adaptiveThreshold = {
         baseTrustThreshold: 0.3,
         suspiciousPatternThreshold: 0.8,
-        adaptationRate: 0.1,
+        adaptationRate: 0.1
       }
 
-      const detectedSybils = evolvingSybils.filter(sybil => 
-        sybil.trustScore < adaptiveThreshold.baseTrustThreshold ||
-        (sybil.trustScore > adaptiveThreshold.suspiciousPatternThreshold && 
-         trustScoreTrend > adaptiveThreshold.adaptationRate)
+      const detectedSybils = evolvingSybils.filter(
+        sybil =>
+          sybil.trustScore < adaptiveThreshold.baseTrustThreshold ||
+          (sybil.trustScore > adaptiveThreshold.suspiciousPatternThreshold &&
+            trustScoreTrend > adaptiveThreshold.adaptationRate)
       )
 
       expect(detectedSybils.length).toBeGreaterThan(10) // Should detect most Sybils
@@ -641,45 +652,47 @@ describe('Sybil Attack Prevention Mechanisms', () => {
           sybilCount: 10,
           legitimateCount: 2,
           sybilTrustRange: [0.05, 0.15],
-          legitimateTrustRange: [0.8, 0.95],
+          legitimateTrustRange: [0.8, 0.95]
         },
         {
           name: 'medium-trust-attack',
           sybilCount: 5,
           legitimateCount: 3,
           sybilTrustRange: [0.3, 0.4],
-          legitimateTrustRange: [0.7, 0.85],
+          legitimateTrustRange: [0.7, 0.85]
         },
         {
           name: 'mixed-trust-attack',
           sybilCount: 15,
           legitimateCount: 5,
           sybilTrustRange: [0.1, 0.5],
-          legitimateTrustRange: [0.6, 0.9],
-        },
+          legitimateTrustRange: [0.6, 0.9]
+        }
       ]
 
       const effectivenessMetrics = attackScenarios.map(scenario => {
         const sybils = Array.from({ length: scenario.sybilCount }, (_, i) =>
           createUser({
             id: `${scenario.name}-sybil-${i}`,
-            trustScore: scenario.sybilTrustRange[0] + 
-              Math.random() * (scenario.sybilTrustRange[1] - scenario.sybilTrustRange[0]),
+            trustScore:
+              scenario.sybilTrustRange[0] +
+              Math.random() * (scenario.sybilTrustRange[1] - scenario.sybilTrustRange[0])
           })
         )
 
         const legitimate = Array.from({ length: scenario.legitimateCount }, (_, i) =>
           createUser({
             id: `${scenario.name}-legitimate-${i}`,
-            trustScore: scenario.legitimateTrustRange[0] + 
-              Math.random() * (scenario.legitimateTrustRange[1] - scenario.legitimateTrustRange[0]),
+            trustScore:
+              scenario.legitimateTrustRange[0] +
+              Math.random() * (scenario.legitimateTrustRange[1] - scenario.legitimateTrustRange[0])
           })
         )
 
         ;[...sybils, ...legitimate].forEach(user => {
           const trustScore = createTrustScore({
             userId: user.id,
-            overall: user.trustScore,
+            overall: user.trustScore
           })
           act(() => {
             trustResult.current.setUserScore(user.id, trustScore)
@@ -703,16 +716,22 @@ describe('Sybil Attack Prevention Mechanisms', () => {
           trueNegatives: legitimate.length - falsePositives,
           precision: detectedSybils / (detectedSybils + falsePositives) || 0,
           recall: detectedSybils / sybils.length,
-          f1Score: 2 * (detectedSybils / (detectedSybils + falsePositives) || 0) * 
-                   (detectedSybils / sybils.length) / 
-                   ((detectedSybils / (detectedSybils + falsePositives) || 0) + (detectedSybils / sybils.length)),
+          f1Score:
+            (2 *
+              (detectedSybils / (detectedSybils + falsePositives) || 0) *
+              (detectedSybils / sybils.length)) /
+            ((detectedSybils / (detectedSybils + falsePositives) || 0) +
+              detectedSybils / sybils.length)
         }
       })
 
       // Evaluate overall effectiveness
-      const avgPrecision = effectivenessMetrics.reduce((sum, m) => sum + m.precision, 0) / effectivenessMetrics.length
-      const avgRecall = effectivenessMetrics.reduce((sum, m) => sum + m.recall, 0) / effectivenessMetrics.length
-      const avgF1Score = effectivenessMetrics.reduce((sum, m) => sum + m.f1Score, 0) / effectivenessMetrics.length
+      const avgPrecision =
+        effectivenessMetrics.reduce((sum, m) => sum + m.precision, 0) / effectivenessMetrics.length
+      const avgRecall =
+        effectivenessMetrics.reduce((sum, m) => sum + m.recall, 0) / effectivenessMetrics.length
+      const avgF1Score =
+        effectivenessMetrics.reduce((sum, m) => sum + m.f1Score, 0) / effectivenessMetrics.length
 
       // Should maintain high effectiveness
       expect(avgPrecision).toBeGreaterThan(0.8)
@@ -723,16 +742,19 @@ describe('Sybil Attack Prevention Mechanisms', () => {
 })
 
 // Helper function to calculate distance between two points
-function calculateDistance(point1: { lat: number; lng: number }, point2: { lat: number; lng: number }): number {
+function calculateDistance(
+  point1: { lat: number; lng: number },
+  point2: { lat: number; lng: number }
+): number {
   const R = 6371e3 // Earth's radius in meters
   const φ1 = (point1.lat * Math.PI) / 180
   const φ2 = (point2.lat * Math.PI) / 180
   const Δφ = ((point2.lat - point1.lat) * Math.PI) / 180
   const Δλ = ((point2.lng - point1.lng) * Math.PI) / 180
 
-  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-    Math.cos(φ1) * Math.cos(φ2) *
-    Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 
   return R * c // Distance in meters
@@ -741,11 +763,11 @@ function calculateDistance(point1: { lat: number; lng: number }, point2: { lat: 
 // Helper function to calculate trend in an array
 function calculateTrend(values: number[]): number {
   if (values.length < 2) return 0
-  
+
   const n = values.length
   const sumX = (n * (n - 1)) / 2
   const sumY = values.reduce((sum, val) => sum + val, 0)
-  const sumXY = values.reduce((sum, val, i) => sum + (i * val), 0)
+  const sumXY = values.reduce((sum, val, i) => sum + i * val, 0)
   const sumX2 = (n * (n - 1) * (2 * n - 1)) / 6
 
   const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX)
