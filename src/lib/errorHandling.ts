@@ -3,7 +3,17 @@
 // Types
 export interface ErrorInfo {
   id: string
-  type: 'network' | 'validation' | 'permission' | 'database' | 'auth' | 'offline' | 'timeout' | 'rate_limit' | 'server_error' | 'unknown'
+  type:
+    | 'network'
+    | 'validation'
+    | 'permission'
+    | 'database'
+    | 'auth'
+    | 'offline'
+    | 'timeout'
+    | 'rate_limit'
+    | 'server_error'
+    | 'unknown'
   message: string
   code?: string | number
   timestamp: number
@@ -27,8 +37,10 @@ export interface ErrorInfo {
 
 export interface RetryConfig {
   maxRetries: number
-  baseDelay: number // milliseconds
-  maxDelay: number // milliseconds
+  // milliseconds
+  baseDelay: number
+  // milliseconds
+  maxDelay: number
   backoffFactor: number
   jitter: boolean
   retryCondition?: (error: any) => boolean
@@ -147,7 +159,8 @@ export const classifyError = (error: any, context?: any): ErrorInfo => {
       suggestions: ['Wait before trying again', 'Reduce request frequency'],
       retryable: true,
       maxRetries: 5,
-      nextRetry: timestamp + 60000 // 1 minute
+      // 1 minute
+      nextRetry: timestamp + 60000
     }
   }
 
@@ -250,9 +263,10 @@ export const createRetryFunction = <T extends any[], R>(
         const errorInfo = classifyError(error)
 
         // Check if we should retry
-        const shouldRetry = attempt < finalConfig.maxRetries
-          && errorInfo.retryable
-          && (!finalConfig.retryCondition || finalConfig.retryCondition(error))
+        const shouldRetry =
+          attempt < finalConfig.maxRetries &&
+          errorInfo.retryable &&
+          (!finalConfig.retryCondition || finalConfig.retryCondition(error))
 
         if (!shouldRetry) {
           if (finalConfig.onFailure) {
@@ -266,7 +280,7 @@ export const createRetryFunction = <T extends any[], R>(
 
         // Apply jitter if enabled
         if (finalConfig.jitter) {
-          delay *= (0.5 + Math.random() * 0.5)
+          delay *= 0.5 + Math.random() * 0.5
         }
 
         // Respect max delay
@@ -277,7 +291,10 @@ export const createRetryFunction = <T extends any[], R>(
           delay = Math.max(delay, errorInfo.nextRetry - Date.now())
         }
 
-        console.warn(`[Retry] Attempt ${attempt + 1}/${finalConfig.maxRetries + 1} failed, retrying in ${Math.round(delay)}ms:`, (error as Error).message || 'Unknown error')
+        console.warn(
+          `[Retry] Attempt ${attempt + 1}/${finalConfig.maxRetries + 1} failed, retrying in ${Math.round(delay)}ms:`,
+          (error as Error).message || 'Unknown error'
+        )
 
         if (finalConfig.onRetry) {
           finalConfig.onRetry(attempt + 1, error)
@@ -316,7 +333,7 @@ export const recoverFromError = async (errorInfo: ErrorInfo): Promise<boolean> =
 
     case 'offline':
       // Wait for connection
-      return new Promise((resolve) => {
+      return new Promise(resolve => {
         const handleOnline = () => {
           window.removeEventListener('online', handleOnline)
           resolve(true)
@@ -347,9 +364,14 @@ export const recoverFromError = async (errorInfo: ErrorInfo): Promise<boolean> =
       // Request permission
       if (errorInfo.context?.action === 'location') {
         try {
-          const permission = await navigator.permissions.query({ name: 'geolocation' as PermissionName })
+          const permission = await navigator.permissions.query({
+            name: 'geolocation' as PermissionName
+          })
           if (permission.state === 'prompt') {
-            await navigator.geolocation.getCurrentPosition(() => { }, () => { })
+            await navigator.geolocation.getCurrentPosition(
+              () => {},
+              () => {}
+            )
             return true
           }
         } catch {
@@ -537,7 +559,7 @@ export class CircuitBreaker {
     private threshold: number = 5,
     private timeout: number = 60000, // 1 minute
     private monitorPeriod: number = 300000 // 5 minutes
-  ) { }
+  ) {}
 
   public async execute<T>(fn: () => Promise<T>): Promise<T> {
     if (this.state === 'open') {

@@ -25,7 +25,8 @@ import {
   FileTextIcon,
   MapPinIcon,
   AlertCircleIcon,
-  Loader2Icon
+  Loader2Icon,
+  XIcon
 } from 'lucide-react'
 
 interface OfflineAction {
@@ -190,9 +191,8 @@ export function OfflineActionQueueVisualization() {
   }
 
   // Calculate sync progress percentage
-  const syncProgressPercentage = syncProgress.total > 0
-    ? (syncProgress.current / syncProgress.total) * 100
-    : 0
+  const syncProgressPercentage =
+    syncProgress.total > 0 ? (syncProgress.current / syncProgress.total) * 100 : 0
 
   const filteredActions = getFilteredActions()
   const actionGroups = groupActionsByType(filteredActions)
@@ -207,10 +207,11 @@ export function OfflineActionQueueVisualization() {
         className={`
           relative flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg backdrop-blur-sm
           transition-all duration-300 ease-in-out
-          ${hasPending || hasFailed
-      ? 'bg-orange-600 text-white hover:bg-orange-700'
-      : 'bg-white/90 border border-gray-200 text-gray-900 hover:bg-gray-50'
-    }
+          ${
+            hasPending || hasFailed
+              ? 'bg-orange-600 text-white hover:bg-orange-700'
+              : 'bg-white/90 border border-gray-200 text-gray-900 hover:bg-gray-50'
+          }
         `}
         aria-label={`${filteredActions.length} offline actions pending. ${expanded ? 'Hide' : 'Show'} details`}
       >
@@ -235,39 +236,49 @@ export function OfflineActionQueueVisualization() {
         {/* Status Text */}
         <div className="text-left">
           <div className="font-medium">
-            {isSyncing ? 'Syncing...' : hasFailed ? 'Sync Issues' : hasPending ? 'Offline Actions' : 'All Synced'}
+            {isSyncing
+              ? 'Syncing...'
+              : hasFailed
+                ? 'Sync Issues'
+                : hasPending
+                  ? 'Offline Actions'
+                  : 'All Synced'}
           </div>
-          <div className="text-xs opacity-75">
-            {filteredActions.length} items pending
-          </div>
+          <div className="text-xs opacity-75">{filteredActions.length} items pending</div>
         </div>
 
         {/* Expand/Collapse Icon */}
-        {expanded ? (
-          <ChevronDownIcon className="w-4 h-4" />
-        ) : (
-          <ChevronUpIcon className="w-4 h-4" />
-        )}
+        {expanded ? <ChevronDownIcon className="w-4 h-4" /> : <ChevronUpIcon className="w-4 h-4" />}
       </Button>
 
       {/* Expanded Queue Details */}
       {expanded && (
-        <Card className={`
+        <Card
+          className={`
           absolute bottom-full right-0 mb-2 w-96 max-h-96 overflow-hidden
           ${prefersReducedMotion ? '' : 'animate-slide-in-up'}
-        `}>
+        `}
+        >
           <div className="p-4">
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Offline Actions</h3>
               <div className="flex items-center gap-2">
-                {isSyncing && (
-                  <Loader2Icon className="w-4 h-4 animate-spin text-blue-600" />
-                )}
+                {isSyncing && <Loader2Icon className="w-4 h-4 animate-spin text-blue-600" />}
                 <StatusIndicator
-                  status={isSyncing ? 'pending' : hasFailed ? 'critical' : hasPending ? 'pending' : 'active'}
+                  status={
+                    isSyncing
+                      ? 'pending'
+                      : hasFailed
+                        ? 'critical'
+                        : hasPending
+                          ? 'pending'
+                          : 'active'
+                  }
                   size="sm"
-                  label={isSyncing ? 'Syncing' : hasFailed ? 'Failed' : hasPending ? 'Pending' : 'Ready'}
+                  label={
+                    isSyncing ? 'Syncing' : hasFailed ? 'Failed' : hasPending ? 'Pending' : 'Ready'
+                  }
                 />
               </div>
             </div>
@@ -297,7 +308,7 @@ export function OfflineActionQueueVisualization() {
 
             {/* Filter Tabs */}
             <div className="flex gap-2 mb-4">
-              {(['all', 'pending', 'failed'] as const).map((filterType) => (
+              {(['all', 'pending', 'failed'] as const).map(filterType => (
                 <Button
                   key={filterType}
                   variant={filter === filterType ? 'default' : 'outline'}
@@ -316,7 +327,7 @@ export function OfflineActionQueueVisualization() {
             <div className="flex gap-2 mb-4">
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                onChange={e => setSortBy(e.target.value as typeof sortBy)}
                 className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="priority">Sort by Priority</option>
@@ -333,34 +344,33 @@ export function OfflineActionQueueVisualization() {
                   <p>No offline actions</p>
                 </div>
               ) : (
-                actionGroups.map((group) => (
+                actionGroups.map(group => (
                   <div key={group.type} className="space-y-2">
                     {/* Group Header */}
                     <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
                       <group.icon className={`w-4 h-4 ${group.color}`} />
                       <span>{group.label}</span>
-                      <span className="text-xs text-gray-500">
-                        ({group.actions.length})
-                      </span>
+                      <span className="text-xs text-gray-500">({group.actions.length})</span>
                     </div>
 
                     {/* Actions in Group */}
                     <div className="space-y-1 pl-6">
-                      {group.actions.map((action) => (
+                      {group.actions.map(action => (
                         <div
                           key={action.id}
                           className={`
                             flex items-center justify-between p-2 rounded-lg border
                             transition-all duration-200 cursor-pointer
-                            ${selectedAction === action.id
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                        }
+                            ${
+                              selectedAction === action.id
+                                ? 'border-blue-500 bg-blue-50'
+                                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                            }
                             ${getPriorityColor(action.priority)}
                           `}
-                          onClick={() => setSelectedAction(
-                            selectedAction === action.id ? null : action.id
-                          )}
+                          onClick={() =>
+                            setSelectedAction(selectedAction === action.id ? null : action.id)
+                          }
                         >
                           <div className="flex items-center gap-2">
                             <StatusIndicator
@@ -384,9 +394,7 @@ export function OfflineActionQueueVisualization() {
                                 {action.retryCount}/{action.maxRetries}
                               </span>
                             )}
-                            {action.error && (
-                              <AlertCircleIcon className="w-4 h-4 text-red-500" />
-                            )}
+                            {action.error && <AlertCircleIcon className="w-4 h-4 text-red-500" />}
                           </div>
                         </div>
                       ))}
@@ -401,11 +409,7 @@ export function OfflineActionQueueVisualization() {
               <div className="mt-4 p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-sm font-medium text-gray-900">Action Details</h4>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSelectedAction(null)}
-                  >
+                  <Button variant="ghost" size="sm" onClick={() => setSelectedAction(null)}>
                     <XIcon className="w-4 h-4" />
                   </Button>
                 </div>
@@ -432,12 +436,12 @@ export function OfflineActionQueueVisualization() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Retries:</span>
-                        <span className="font-medium">{action.retryCount}/{action.maxRetries}</span>
+                        <span className="font-medium">
+                          {action.retryCount}/{action.maxRetries}
+                        </span>
                       </div>
                       {action.error && (
-                        <div className="text-red-600 text-xs">
-                          Error: {action.error}
-                        </div>
+                        <div className="text-red-600 text-xs">Error: {action.error}</div>
                       )}
 
                       {/* Action Buttons */}
@@ -471,32 +475,21 @@ export function OfflineActionQueueVisualization() {
             {/* Action Buttons */}
             <div className="flex gap-2 mt-4">
               {!isSyncing && hasPending && (
-                <Button
-                  onClick={handleStartSync}
-                  className="flex-1"
-                >
+                <Button onClick={handleStartSync} className="flex-1">
                   <PlayIcon className="w-4 h-4 mr-2" />
                   Start Sync
                 </Button>
               )}
 
               {isSyncing && (
-                <Button
-                  onClick={stopSync}
-                  variant="outline"
-                  className="flex-1"
-                >
+                <Button onClick={stopSync} variant="outline" className="flex-1">
                   <PauseIcon className="w-4 h-4 mr-2" />
                   Stop Sync
                 </Button>
               )}
 
               {hasFailed && (
-                <Button
-                  onClick={forceSync}
-                  variant="outline"
-                  className="flex-1"
-                >
+                <Button onClick={forceSync} variant="outline" className="flex-1">
                   <RefreshCwIcon className="w-4 h-4 mr-2" />
                   Force Sync
                 </Button>
@@ -509,7 +502,8 @@ export function OfflineActionQueueVisualization() {
       {/* Screen Reader Announcements */}
       <ScreenReaderOnly>
         <div aria-live="polite" aria-atomic="true">
-          {isSyncing && `Synchronization in progress: ${syncProgress.current} of ${syncProgress.total} actions completed`}
+          {isSyncing &&
+            `Synchronization in progress: ${syncProgress.current} of ${syncProgress.total} actions completed`}
           {hasPending && `You have ${pendingActions.length} pending actions`}
           {hasFailed && `You have ${failedActions.length} failed actions`}
         </div>

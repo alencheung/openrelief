@@ -12,27 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Progress } from '@/components/ui/progress'
-import {
-  Shield,
-  AlertTriangle,
-  Users,
-  Activity,
-  TrendingUp,
-  Lock,
-  Unlock,
-  Eye,
-  AlertCircle,
-  CheckCircle,
-  XCircle,
-  Clock,
-  MapPin,
-  UserCheck,
-  UserX,
-  Database,
-  Globe,
-  Cpu,
-  Wifi
-} from 'lucide-react'
+import { Shield, AlertTriangle, Users, Activity, Lock, Eye, Database } from 'lucide-react'
 
 // Security dashboard interfaces
 interface SecurityMetrics {
@@ -121,10 +101,9 @@ export default function SecurityDashboard() {
   const [selectedTimeRange, setSelectedTimeRange] = useState('24h')
   const [emergencyMode, setEmergencyMode] = useState(false)
 
-  // Fetch security data
   useEffect(() => {
     fetchSecurityData()
-    const interval = setInterval(fetchSecurityData, 30000) // Update every 30 seconds
+    const interval = setInterval(fetchSecurityData, 30000)
     return () => clearInterval(interval)
   }, [selectedTimeRange])
 
@@ -133,19 +112,14 @@ export default function SecurityDashboard() {
       setLoading(true)
 
       // Fetch all security data in parallel
-      const [
-        metricsResponse,
-        alertsResponse,
-        trustResponse,
-        statusResponse,
-        activityResponse
-      ] = await Promise.all([
-        fetch('/api/admin/security/metrics').then(r => r.json()),
-        fetch('/api/admin/security/alerts').then(r => r.json()),
-        fetch('/api/admin/security/trust-metrics').then(r => r.json()),
-        fetch('/api/admin/security/system-status').then(r => r.json()),
-        fetch('/api/admin/security/suspicious-activity').then(r => r.json())
-      ])
+      const [metricsResponse, alertsResponse, trustResponse, statusResponse, activityResponse] =
+        await Promise.all([
+          fetch('/api/admin/security/metrics').then(r => r.json()),
+          fetch('/api/admin/security/alerts').then(r => r.json()),
+          fetch('/api/admin/security/trust-metrics').then(r => r.json()),
+          fetch('/api/admin/security/system-status').then(r => r.json()),
+          fetch('/api/admin/security/suspicious-activity').then(r => r.json())
+        ])
 
       setMetrics(metricsResponse.data)
       setAlerts(alertsResponse.data)
@@ -192,20 +166,29 @@ export default function SecurityDashboard() {
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'critical': return 'bg-red-500'
-      case 'high': return 'bg-orange-500'
-      case 'medium': return 'bg-yellow-500'
-      case 'low': return 'bg-blue-500'
-      default: return 'bg-gray-500'
+      case 'critical':
+        return 'bg-red-500'
+      case 'high':
+        return 'bg-orange-500'
+      case 'medium':
+        return 'bg-yellow-500'
+      case 'low':
+        return 'bg-blue-500'
+      default:
+        return 'bg-gray-500'
     }
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'operational': return 'text-green-600'
-      case 'degraded': return 'text-yellow-600'
-      case 'down': return 'text-red-600'
-      default: return 'text-gray-600'
+      case 'operational':
+        return 'text-green-600'
+      case 'degraded':
+        return 'text-yellow-600'
+      case 'down':
+        return 'text-red-600'
+      default:
+        return 'text-gray-600'
     }
   }
 
@@ -217,6 +200,16 @@ export default function SecurityDashboard() {
       return 'text-yellow-600'
     }
     return 'text-red-600'
+  }
+
+  const getServiceStatusBgColor = (status: string | undefined) => {
+    if (status === 'operational') {
+      return 'bg-green-500'
+    }
+    if (status === 'degraded') {
+      return 'bg-yellow-500'
+    }
+    return 'bg-red-500'
   }
 
   if (loading) {
@@ -239,7 +232,7 @@ export default function SecurityDashboard() {
         <div className="flex items-center space-x-4">
           <select
             value={selectedTimeRange}
-            onChange={(e) => setSelectedTimeRange(e.target.value)}
+            onChange={e => setSelectedTimeRange(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-md"
           >
             <option value="1h">Last Hour</option>
@@ -293,9 +286,7 @@ export default function SecurityDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{metrics?.blockedIPs || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Suspicious addresses blocked
-            </p>
+            <p className="text-xs text-muted-foreground">Suspicious addresses blocked</p>
           </CardContent>
         </Card>
 
@@ -338,14 +329,15 @@ export default function SecurityDashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Recent Security Alerts</CardTitle>
-              <CardDescription>
-                Real-time security events and threats
-              </CardDescription>
+              <CardDescription>Real-time security events and threats</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {alerts.slice(0, 10).map((alert) => (
-                  <div key={alert.id} className="flex items-center justify-between p-4 border rounded-lg">
+                {alerts.slice(0, 10).map(alert => (
+                  <div
+                    key={alert.id}
+                    className="flex items-center justify-between p-4 border rounded-lg"
+                  >
                     <div className="flex items-center space-x-4">
                       <div className={`w-3 h-3 rounded-full ${getSeverityColor(alert.type)}`}></div>
                       <div>
@@ -384,16 +376,17 @@ export default function SecurityDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle>Trust Score Distribution</CardTitle>
-                <CardDescription>
-                  User trust score ranges across the system
-                </CardDescription>
+                <CardDescription>User trust score ranges across the system</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Very Low (0.0-0.2)</span>
                     <div className="flex items-center space-x-2">
-                      <Progress value={(trustMetrics?.trustDistribution.very_low || 0) * 100} className="w-24" />
+                      <Progress
+                        value={(trustMetrics?.trustDistribution.very_low || 0) * 100}
+                        className="w-24"
+                      />
                       <span className="text-sm w-12 text-right">
                         {trustMetrics?.trustDistribution.very_low || 0}
                       </span>
@@ -402,7 +395,10 @@ export default function SecurityDashboard() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Low (0.2-0.4)</span>
                     <div className="flex items-center space-x-2">
-                      <Progress value={(trustMetrics?.trustDistribution.low || 0) * 100} className="w-24" />
+                      <Progress
+                        value={(trustMetrics?.trustDistribution.low || 0) * 100}
+                        className="w-24"
+                      />
                       <span className="text-sm w-12 text-right">
                         {trustMetrics?.trustDistribution.low || 0}
                       </span>
@@ -411,7 +407,10 @@ export default function SecurityDashboard() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Medium (0.4-0.6)</span>
                     <div className="flex items-center space-x-2">
-                      <Progress value={(trustMetrics?.trustDistribution.medium || 0) * 100} className="w-24" />
+                      <Progress
+                        value={(trustMetrics?.trustDistribution.medium || 0) * 100}
+                        className="w-24"
+                      />
                       <span className="text-sm w-12 text-right">
                         {trustMetrics?.trustDistribution.medium || 0}
                       </span>
@@ -420,7 +419,10 @@ export default function SecurityDashboard() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm">High (0.6-0.8)</span>
                     <div className="flex items-center space-x-2">
-                      <Progress value={(trustMetrics?.trustDistribution.high || 0) * 100} className="w-24" />
+                      <Progress
+                        value={(trustMetrics?.trustDistribution.high || 0) * 100}
+                        className="w-24"
+                      />
                       <span className="text-sm w-12 text-right">
                         {trustMetrics?.trustDistribution.high || 0}
                       </span>
@@ -429,7 +431,10 @@ export default function SecurityDashboard() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Very High (0.8-1.0)</span>
                     <div className="flex items-center space-x-2">
-                      <Progress value={(trustMetrics?.trustDistribution.very_high || 0) * 100} className="w-24" />
+                      <Progress
+                        value={(trustMetrics?.trustDistribution.very_high || 0) * 100}
+                        className="w-24"
+                      />
                       <span className="text-sm w-12 text-right">
                         {trustMetrics?.trustDistribution.very_high || 0}
                       </span>
@@ -449,16 +454,22 @@ export default function SecurityDashboard() {
               <CardContent>
                 <div className="space-y-3">
                   {trustMetrics?.recentChanges.slice(0, 5).map((change, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 border rounded">
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-3 border rounded"
+                    >
                       <div>
                         <p className="font-medium text-sm">User {change.userId}</p>
                         <p className="text-xs text-gray-600">{change.reason}</p>
                       </div>
                       <div className="text-right">
-                        <div className={`text-sm font-medium ${
-                          change.change > 0 ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {change.change > 0 ? '+' : ''}{change.change.toFixed(2)}
+                        <div
+                          className={`text-sm font-medium ${
+                            change.change > 0 ? 'text-green-600' : 'text-red-600'
+                          }`}
+                        >
+                          {change.change > 0 ? '+' : ''}
+                          {change.change.toFixed(2)}
                         </div>
                         <div className="text-xs text-gray-500">
                           {change.previousScore.toFixed(2)} → {change.newScore.toFixed(2)}
@@ -477,18 +488,23 @@ export default function SecurityDashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Suspicious Activity Detection</CardTitle>
-              <CardDescription>
-                Automated detection of potential security threats
-              </CardDescription>
+              <CardDescription>Automated detection of potential security threats</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {suspiciousActivity.map((activity) => (
-                  <div key={activity.id} className="flex items-center justify-between p-4 border rounded-lg">
+                {suspiciousActivity.map(activity => (
+                  <div
+                    key={activity.id}
+                    className="flex items-center justify-between p-4 border rounded-lg"
+                  >
                     <div className="flex items-center space-x-4">
-                      <div className={`w-3 h-3 rounded-full ${getSeverityColor(activity.severity)}`}></div>
+                      <div
+                        className={`w-3 h-3 rounded-full ${getSeverityColor(activity.severity)}`}
+                      ></div>
                       <div>
-                        <h4 className="font-medium">{activity.type.replace('_', ' ').toUpperCase()}</h4>
+                        <h4 className="font-medium">
+                          {activity.type.replace('_', ' ').toUpperCase()}
+                        </h4>
                         <p className="text-sm text-gray-600">{activity.description}</p>
                         <div className="flex items-center space-x-2 mt-1">
                           <Badge variant="outline">{activity.severity}</Badge>
@@ -529,9 +545,7 @@ export default function SecurityDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle>Service Status</CardTitle>
-                <CardDescription>
-                  Operational status of critical services
-                </CardDescription>
+                <CardDescription>Operational status of critical services</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -540,11 +554,12 @@ export default function SecurityDashboard() {
                       <Database className="h-4 w-4" />
                       <span>API Service</span>
                     </div>
-                    <div className={`flex items-center space-x-2 ${getStatusColor(systemStatus?.services.api)}`}>
-                      <div className={`w-2 h-2 rounded-full ${
-                        systemStatus?.services.api === 'operational' ? 'bg-green-500'
-                          : systemStatus?.services.api === 'degraded' ? 'bg-yellow-500' : 'bg-red-500'
-                      }`}></div>
+                    <div
+                      className={`flex items-center space-x-2 ${getStatusColor(systemStatus?.services.api)}`}
+                    >
+                      <div
+                        className={`w-2 h-2 rounded-full ${getServiceStatusBgColor(systemStatus?.services.api)}`}
+                      ></div>
                       <span className="text-sm font-medium">
                         {systemStatus?.services.api || 'Unknown'}
                       </span>
@@ -556,11 +571,12 @@ export default function SecurityDashboard() {
                       <Database className="h-4 w-4" />
                       <span>Database</span>
                     </div>
-                    <div className={`flex items-center space-x-2 ${getStatusColor(systemStatus?.services.database)}`}>
-                      <div className={`w-2 h-2 rounded-full ${
-                        systemStatus?.services.database === 'operational' ? 'bg-green-500'
-                          : systemStatus?.services.database === 'degraded' ? 'bg-yellow-500' : 'bg-red-500'
-                      }`}></div>
+                    <div
+                      className={`flex items-center space-x-2 ${getStatusColor(systemStatus?.services.database)}`}
+                    >
+                      <div
+                        className={`w-2 h-2 rounded-full ${getServiceStatusBgColor(systemStatus?.services.database)}`}
+                      ></div>
                       <span className="text-sm font-medium">
                         {systemStatus?.services.database || 'Unknown'}
                       </span>
@@ -572,11 +588,12 @@ export default function SecurityDashboard() {
                       <Lock className="h-4 w-4" />
                       <span>Authentication</span>
                     </div>
-                    <div className={`flex items-center space-x-2 ${getStatusColor(systemStatus?.services.authentication)}`}>
-                      <div className={`w-2 h-2 rounded-full ${
-                        systemStatus?.services.authentication === 'operational' ? 'bg-green-500'
-                          : systemStatus?.services.authentication === 'degraded' ? 'bg-yellow-500' : 'bg-red-500'
-                      }`}></div>
+                    <div
+                      className={`flex items-center space-x-2 ${getStatusColor(systemStatus?.services.authentication)}`}
+                    >
+                      <div
+                        className={`w-2 h-2 rounded-full ${getServiceStatusBgColor(systemStatus?.services.authentication)}`}
+                      ></div>
                       <span className="text-sm font-medium">
                         {systemStatus?.services.authentication || 'Unknown'}
                       </span>
@@ -588,11 +605,12 @@ export default function SecurityDashboard() {
                       <Eye className="h-4 w-4" />
                       <span>Monitoring</span>
                     </div>
-                    <div className={`flex items-center space-x-2 ${getStatusColor(systemStatus?.services.monitoring)}`}>
-                      <div className={`w-2 h-2 rounded-full ${
-                        systemStatus?.services.monitoring === 'operational' ? 'bg-green-500'
-                          : systemStatus?.services.monitoring === 'degraded' ? 'bg-yellow-500' : 'bg-red-500'
-                      }`}></div>
+                    <div
+                      className={`flex items-center space-x-2 ${getStatusColor(systemStatus?.services.monitoring)}`}
+                    >
+                      <div
+                        className={`w-2 h-2 rounded-full ${getServiceStatusBgColor(systemStatus?.services.monitoring)}`}
+                      ></div>
                       <span className="text-sm font-medium">
                         {systemStatus?.services.monitoring || 'Unknown'}
                       </span>
@@ -605,9 +623,7 @@ export default function SecurityDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle>Performance Metrics</CardTitle>
-                <CardDescription>
-                  System performance and resource utilization
-                </CardDescription>
+                <CardDescription>System performance and resource utilization</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -631,10 +647,7 @@ export default function SecurityDashboard() {
                         {systemStatus?.performance.cpuUsage || 0}%
                       </span>
                     </div>
-                    <Progress
-                      value={systemStatus?.performance.cpuUsage || 0}
-                      className="h-2"
-                    />
+                    <Progress value={systemStatus?.performance.cpuUsage || 0} className="h-2" />
                   </div>
 
                   <div>
@@ -644,10 +657,7 @@ export default function SecurityDashboard() {
                         {systemStatus?.performance.memoryUsage || 0}%
                       </span>
                     </div>
-                    <Progress
-                      value={systemStatus?.performance.memoryUsage || 0}
-                      className="h-2"
-                    />
+                    <Progress value={systemStatus?.performance.memoryUsage || 0} className="h-2" />
                   </div>
 
                   <div>
@@ -657,10 +667,7 @@ export default function SecurityDashboard() {
                         {systemStatus?.performance.errorRate || 0}%
                       </span>
                     </div>
-                    <Progress
-                      value={systemStatus?.performance.errorRate || 0}
-                      className="h-2"
-                    />
+                    <Progress value={systemStatus?.performance.errorRate || 0} className="h-2" />
                   </div>
                 </div>
               </CardContent>

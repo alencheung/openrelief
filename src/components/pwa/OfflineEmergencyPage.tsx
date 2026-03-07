@@ -57,6 +57,7 @@ export function OfflineEmergencyPage() {
     e.preventDefault()
 
     if (!formData.type || !formData.description) {
+      // eslint-disable-next-line no-alert
       alert('Please fill in all required fields')
       return
     }
@@ -95,9 +96,11 @@ export function OfflineEmergencyPage() {
         contact: ''
       })
 
+      // eslint-disable-next-line no-alert
       alert('Emergency report saved offline. It will be sent when you reconnect.')
     } catch (error) {
       console.error('Failed to save emergency report:', error)
+      // eslint-disable-next-line no-alert
       alert('Failed to save emergency report. Please try again.')
     } finally {
       setIsSubmitting(false)
@@ -140,11 +143,10 @@ export function OfflineEmergencyPage() {
               <WifiOffIcon className="h-8 w-8 text-red-600" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Emergency Mode (Offline)
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Emergency Mode (Offline)</h1>
           <p className="text-gray-600">
-            Report emergencies even without internet connection. Reports will sync automatically when you're back online.
+            Report emergencies even without internet connection. Reports will sync automatically
+            when you&apos;re back online.
           </p>
         </div>
 
@@ -152,9 +154,7 @@ export function OfflineEmergencyPage() {
         <Card className="p-6">
           <div className="flex items-center space-x-2 mb-6">
             <AlertTriangleIcon className="h-6 w-6 text-red-600" />
-            <h2 className="text-xl font-semibold text-gray-900">
-              Report Emergency
-            </h2>
+            <h2 className="text-xl font-semibold text-gray-900">Report Emergency</h2>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -164,14 +164,15 @@ export function OfflineEmergencyPage() {
                 Emergency Type *
               </label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {emergencyTypes.map((type) => (
+                {emergencyTypes.map(type => (
                   <button
                     key={type.value}
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, type: type.value }))}
-                    className={`p-3 text-center rounded-lg border-2 transition-colors ${formData.type === type.value
-                      ? 'border-red-500 bg-red-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                    className={`p-3 text-center rounded-lg border-2 transition-colors ${
+                      formData.type === type.value
+                        ? 'border-red-500 bg-red-50'
+                        : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
                     <div className="text-2xl mb-1">{type.icon}</div>
@@ -183,18 +184,17 @@ export function OfflineEmergencyPage() {
 
             {/* Severity */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Severity Level
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Severity Level</label>
               <div className="flex flex-wrap gap-2">
-                {severityLevels.map((level) => (
+                {severityLevels.map(level => (
                   <button
                     key={level.value}
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, severity: level.value as any }))}
-                    className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${formData.severity === level.value
-                      ? level.color
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                      formData.severity === level.value
+                        ? level.color
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
                     {level.label}
@@ -205,12 +205,10 @@ export function OfflineEmergencyPage() {
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
               <textarea
                 value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 rows={4}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                 placeholder="Describe the emergency situation..."
@@ -227,7 +225,7 @@ export function OfflineEmergencyPage() {
               <input
                 type="text"
                 value={formData.location}
-                onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                onChange={e => setFormData(prev => ({ ...prev, location: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                 placeholder="Enter location or address..."
               />
@@ -242,7 +240,7 @@ export function OfflineEmergencyPage() {
               <input
                 type="text"
                 value={formData.contact}
-                onChange={(e) => setFormData(prev => ({ ...prev, contact: e.target.value }))}
+                onChange={e => setFormData(prev => ({ ...prev, contact: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                 placeholder="Phone number or email..."
               />
@@ -276,7 +274,7 @@ export function OfflineEmergencyPage() {
               Queued Emergency Reports ({queuedReports.length})
             </h3>
             <div className="space-y-3">
-              {queuedReports.map((report) => (
+              {queuedReports.map(report => (
                 <div key={report.id} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -285,7 +283,9 @@ export function OfflineEmergencyPage() {
                         <span className="font-medium text-gray-900">
                           {emergencyTypes.find(t => t.value === report.type)?.label}
                         </span>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(report.severity)}`}>
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(report.severity)}`}
+                        >
                           {report.severity.toUpperCase()}
                         </span>
                       </div>
@@ -323,9 +323,7 @@ export function OfflineEmergencyPage() {
 
         {/* Emergency Contacts */}
         <Card className="p-6 bg-blue-50 border-blue-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Emergency Contacts (Cached)
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Emergency Contacts (Cached)</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-red-100 rounded-full">

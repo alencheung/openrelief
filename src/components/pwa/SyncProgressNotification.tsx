@@ -51,14 +51,8 @@ export function SyncProgressNotification({
   autoHide = true,
   autoHideDelay = 5000
 }: SyncNotificationProps) {
-  const {
-    isSyncing,
-    syncProgress,
-    pendingActions,
-    failedActions,
-    lastSyncTime,
-    metrics
-  } = useOfflineStore()
+  const { isSyncing, syncProgress, pendingActions, failedActions, lastSyncTime, metrics } =
+    useOfflineStore()
 
   const { announcePolite, announceAssertive } = useAriaAnnouncer()
   const { prefersReducedMotion } = useReducedMotion()
@@ -108,7 +102,9 @@ export function SyncProgressNotification({
       name: 'Other Data',
       status: 'pending',
       progress: 0,
-      total: pendingActions.filter(a => !['emergency_reports', 'locations', 'users'].includes(a.table)).length,
+      total: pendingActions.filter(
+        a => !['emergency_reports', 'locations', 'users'].includes(a.table)
+      ).length,
       icon: DatabaseIcon
     },
     {
@@ -148,22 +144,17 @@ export function SyncProgressNotification({
       let stageIndex = 0
       if (progressPercentage >= 90) {
         stageIndex = 5
-      } // completion
-      else if (progressPercentage >= 75) {
+      } else if (progressPercentage >= 75) {
         stageIndex = 4
-      } // other-data
-      else if (progressPercentage >= 50) {
+      } else if (progressPercentage >= 50) {
         stageIndex = 3
-      } // user-data
-      else if (progressPercentage >= 25) {
+      } else if (progressPercentage >= 25) {
         stageIndex = 2
-      } // locations
-      else if (progressPercentage >= 10) {
+      } else if (progressPercentage >= 10) {
         stageIndex = 1
-      } // emergency-reports
-      else {
+      } else {
         stageIndex = 0
-      } // validation
+      }
 
       // Update stage statuses
       stages.forEach((stage, index) => {
@@ -172,7 +163,10 @@ export function SyncProgressNotification({
           stage.progress = stage.total
         } else if (index === stageIndex) {
           stage.status = 'in-progress'
-          stage.progress = Math.min(stage.total, Math.floor((progressPercentage / 100) * stage.total))
+          stage.progress = Math.min(
+            stage.total,
+            Math.floor((progressPercentage / 100) * stage.total)
+          )
         } else {
           stage.status = 'pending'
           stage.progress = 0
@@ -183,35 +177,44 @@ export function SyncProgressNotification({
       setCurrentStage(stages[stageIndex].id)
 
       // Announce progress
-      announcePolite(`Sync progress: ${Math.round(progressPercentage)}% - ${stages[stageIndex].name}`)
-    } else {
-      // Sync completed or failed
-      if (syncProgress.current === syncProgress.total && syncProgress.total > 0) {
-        // Success
-        const stages = syncStages.map(stage => ({
-          ...stage,
-          status: 'completed' as const,
-          progress: stage.total
-        }))
-        setSyncStages(stages)
-        setCurrentStage('completion')
+      announcePolite(
+        `Sync progress: ${Math.round(progressPercentage)}% - ${stages[stageIndex].name}`
+      )
+    } else if (syncProgress.current === syncProgress.total && syncProgress.total > 0) {
+      // Success
+      const stages = syncStages.map(stage => ({
+        ...stage,
+        status: 'completed' as const,
+        progress: stage.total
+      }))
+      setSyncStages(stages)
+      setCurrentStage('completion')
 
-        announcePolite('Synchronization completed successfully')
+      announcePolite('Synchronization completed successfully')
 
-        // Auto-hide after delay
-        if (autoHide) {
-          const timer = setTimeout(() => {
-            setVisible(false)
-            onDismiss?.()
-          }, autoHideDelay)
-          setAutoHideTimer(timer)
-        }
-      } else if (failedActions.length > 0) {
-        // Some failures
-        announceAssertive('Synchronization completed with some errors')
+      // Auto-hide after delay
+      if (autoHide) {
+        const timer = setTimeout(() => {
+          setVisible(false)
+          onDismiss?.()
+        }, autoHideDelay)
+        setAutoHideTimer(timer)
       }
+    } else if (failedActions.length > 0) {
+      // Some failures
+      announceAssertive('Synchronization completed with some errors')
     }
-  }, [isSyncing, syncProgress, pendingActions, failedActions, announcePolite, announceAssertive, autoHide, autoHideDelay, onDismiss])
+  }, [
+    isSyncing,
+    syncProgress,
+    pendingActions,
+    failedActions,
+    announcePolite,
+    announceAssertive,
+    autoHide,
+    autoHideDelay,
+    onDismiss
+  ])
 
   // Handle dismiss
   const handleDismiss = () => {
@@ -231,9 +234,8 @@ export function SyncProgressNotification({
   }
 
   // Calculate overall progress
-  const overallProgress = syncProgress.total > 0
-    ? (syncProgress.current / syncProgress.total) * 100
-    : 0
+  const overallProgress =
+    syncProgress.total > 0 ? (syncProgress.current / syncProgress.total) * 100 : 0
 
   // Get position classes
   const getPositionClasses = () => {
@@ -256,35 +258,44 @@ export function SyncProgressNotification({
   }
 
   const hasErrors = failedActions.length > 0
-  const isCompleted = !isSyncing && syncProgress.current === syncProgress.total && syncProgress.total > 0
+  const isCompleted =
+    !isSyncing && syncProgress.current === syncProgress.total && syncProgress.total > 0
 
   return (
     <>
       {/* Main Notification */}
-      <div className={`fixed z-50 ${getPositionClasses()} ${prefersReducedMotion ? '' : 'animate-slide-in-right'}`}>
-        <Card className={`
+      <div
+        className={`fixed z-50 ${getPositionClasses()} ${prefersReducedMotion ? '' : 'animate-slide-in-right'}`}
+      >
+        <Card
+          className={`
           w-96 shadow-lg border-2
-          ${isCompleted
-      ? 'border-green-200 bg-green-50'
-      : hasErrors
-        ? 'border-red-200 bg-red-50'
-        : 'border-blue-200 bg-blue-50'
-    }
-        `}>
+          ${
+            isCompleted
+              ? 'border-green-200 bg-green-50'
+              : hasErrors
+                ? 'border-red-200 bg-red-50'
+                : 'border-blue-200 bg-blue-50'
+          }
+        `}
+        >
           <div className="p-4">
             {/* Header */}
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
                 {/* Status Icon */}
-                <div className={`
+                <div
+                  className={`
                   flex items-center justify-center w-10 h-10 rounded-full
-                  ${isCompleted
-      ? 'bg-green-100 text-green-600'
-      : hasErrors
-        ? 'bg-red-100 text-red-600'
-        : 'bg-blue-100 text-blue-600'
-    }
-                `}>
+                  ${
+                    isCompleted
+                      ? 'bg-green-100 text-green-600'
+                      : hasErrors
+                        ? 'bg-red-100 text-red-600'
+                        : 'bg-blue-100 text-blue-600'
+                  }
+                `}
+                >
                   {isCompleted ? (
                     <CheckCircle2Icon className="w-5 h-5" />
                   ) : hasErrors ? (
@@ -306,8 +317,7 @@ export function SyncProgressNotification({
                       ? `${syncProgress.total} actions synchronized`
                       : hasErrors
                         ? `${failedActions.length} actions failed`
-                        : `${syncProgress.current} of ${syncProgress.total} actions`
-                    }
+                        : `${syncProgress.current} of ${syncProgress.total} actions`}
                   </p>
                 </div>
               </div>
@@ -329,9 +339,7 @@ export function SyncProgressNotification({
               <div className="mb-3">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-sm font-medium text-gray-700">Progress</span>
-                  <span className="text-sm text-gray-600">
-                    {Math.round(overallProgress)}%
-                  </span>
+                  <span className="text-sm text-gray-600">{Math.round(overallProgress)}%</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
@@ -364,12 +372,7 @@ export function SyncProgressNotification({
             {/* Action Buttons */}
             <div className="flex gap-2">
               {hasErrors && (
-                <Button
-                  onClick={handleRetry}
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                >
+                <Button onClick={handleRetry} variant="outline" size="sm" className="flex-1">
                   <RefreshCwIcon className="w-4 h-4 mr-2" />
                   Retry Failed
                 </Button>
@@ -400,27 +403,32 @@ export function SyncProgressNotification({
 
           {/* Detailed Progress */}
           {showDetails && (
-            <div className={`
+            <div
+              className={`
               border-t border-gray-200 p-4 bg-white
               ${prefersReducedMotion ? '' : 'animate-slide-in-down'}
-            `}>
+            `}
+            >
               <h4 className="font-medium text-gray-900 mb-3">Sync Details</h4>
 
               <div className="space-y-2">
-                {syncStages.map((stage) => (
+                {syncStages.map(stage => (
                   <div key={stage.id} className="flex items-center gap-3">
                     {/* Stage Icon */}
-                    <div className={`
+                    <div
+                      className={`
                       flex items-center justify-center w-8 h-8 rounded-full
-                      ${stage.status === 'completed'
-                    ? 'bg-green-100 text-green-600'
-                    : stage.status === 'in-progress'
-                      ? 'bg-blue-100 text-blue-600'
-                      : stage.status === 'failed'
-                        ? 'bg-red-100 text-red-600'
-                        : 'bg-gray-100 text-gray-400'
-                  }
-                    `}>
+                      ${
+                        stage.status === 'completed'
+                          ? 'bg-green-100 text-green-600'
+                          : stage.status === 'in-progress'
+                            ? 'bg-blue-100 text-blue-600'
+                            : stage.status === 'failed'
+                              ? 'bg-red-100 text-red-600'
+                              : 'bg-gray-100 text-gray-400'
+                      }
+                    `}
+                    >
                       {stage.status === 'in-progress' ? (
                         <Loader2Icon className="w-4 h-4 animate-spin" />
                       ) : (
@@ -431,9 +439,7 @@ export function SyncProgressNotification({
                     {/* Stage Info */}
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-900">
-                          {stage.name}
-                        </span>
+                        <span className="text-sm font-medium text-gray-900">{stage.name}</span>
                         <span className="text-sm text-gray-600">
                           {stage.progress > 0 ? `${stage.progress}/${stage.total}` : ''}
                         </span>
@@ -445,34 +451,36 @@ export function SyncProgressNotification({
                           <div
                             className={`
                               h-1 rounded-full transition-all duration-300
-                              ${stage.status === 'failed'
-                          ? 'bg-red-500'
-                          : stage.status === 'completed'
-                            ? 'bg-green-500'
-                            : 'bg-blue-500'
-                        }
+                              ${
+                                stage.status === 'failed'
+                                  ? 'bg-red-500'
+                                  : stage.status === 'completed'
+                                    ? 'bg-green-500'
+                                    : 'bg-blue-500'
+                              }
                             `}
                             style={{
-                              width: stage.total > 0 ? `${(stage.progress / stage.total) * 100}%` : '0%'
+                              width:
+                                stage.total > 0 ? `${(stage.progress / stage.total) * 100}%` : '0%'
                             }}
                           />
                         </div>
                       )}
 
                       {/* Error Message */}
-                      {stage.error && (
-                        <p className="text-xs text-red-600 mt-1">
-                          {stage.error}
-                        </p>
-                      )}
+                      {stage.error && <p className="text-xs text-red-600 mt-1">{stage.error}</p>}
                     </div>
 
                     {/* Status Indicator */}
                     <StatusIndicator
                       status={
-                        stage.status === 'completed' ? 'active'
-                          : stage.status === 'in-progress' ? 'pending'
-                            : stage.status === 'failed' ? 'critical' : 'inactive'
+                        stage.status === 'completed'
+                          ? 'active'
+                          : stage.status === 'in-progress'
+                            ? 'pending'
+                            : stage.status === 'failed'
+                              ? 'critical'
+                              : 'inactive'
                       }
                       size="sm"
                       animated={stage.status === 'in-progress'}

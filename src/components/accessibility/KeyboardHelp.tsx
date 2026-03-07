@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils'
 import { X, Keyboard, ChevronDown, ChevronUp } from 'lucide-react'
 
 export interface KeyboardShortcut {
-
   /**
    * Key combination (e.g., 'Ctrl+K', 'Enter', 'Space')
    */
@@ -34,7 +33,6 @@ export interface KeyboardShortcut {
 }
 
 export interface KeyboardHelpProps {
-
   /**
    * Array of keyboard shortcuts to display
    */
@@ -93,7 +91,8 @@ export function KeyboardHelp({
   // Register keyboard shortcut to open help
   const { registerShortcut } = useKeyboardNavigation({
     enabled: true,
-    enableHelp: false // We'll handle this ourselves
+    // We'll handle this ourselves
+    enableHelp: false
   })
 
   // Register '?' shortcut to open help
@@ -122,11 +121,12 @@ export function KeyboardHelp({
     }
 
     const query = searchQuery.toLowerCase()
-    return shortcuts.filter(shortcut =>
-      shortcut.keys.toLowerCase().includes(query)
-      || shortcut.description.toLowerCase().includes(query)
-      || shortcut.category?.toLowerCase().includes(query)
-      || shortcut.context?.toLowerCase().includes(query)
+    return shortcuts.filter(
+      shortcut =>
+        shortcut.keys.toLowerCase().includes(query) ||
+        shortcut.description.toLowerCase().includes(query) ||
+        shortcut.category?.toLowerCase().includes(query) ||
+        shortcut.context?.toLowerCase().includes(query)
     )
   }, [shortcuts, searchQuery])
 
@@ -140,14 +140,17 @@ export function KeyboardHelp({
       return { '': filtered }
     }
 
-    return filtered.reduce((groups, shortcut) => {
-      const category = shortcut.category || 'Other'
-      if (!groups[category]) {
-        groups[category] = []
-      }
-      groups[category].push(shortcut)
-      return groups
-    }, {} as Record<string, KeyboardShortcut[]>)
+    return filtered.reduce(
+      (groups, shortcut) => {
+        const category = shortcut.category || 'Other'
+        if (!groups[category]) {
+          groups[category] = []
+        }
+        groups[category].push(shortcut)
+        return groups
+      },
+      {} as Record<string, KeyboardShortcut[]>
+    )
   }, [filteredShortcuts, groupByCategory])
 
   /**
@@ -217,10 +220,7 @@ export function KeyboardHelp({
 
   return (
     <div
-      className={cn(
-        'fixed inset-0 z-50 flex items-center justify-center bg-black/50',
-        className
-      )}
+      className={cn('fixed inset-0 z-50 flex items-center justify-center bg-black/50', className)}
       role="dialog"
       aria-modal="true"
       aria-labelledby="keyboard-help-title"
@@ -249,7 +249,7 @@ export function KeyboardHelp({
               type="text"
               placeholder="Search shortcuts..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={e => setSearchQuery(e.target.value)}
               className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
               autoFocus
             />
@@ -291,9 +291,7 @@ export function KeyboardHelp({
                   aria-expanded={expandedCategories.has(category)}
                   aria-controls={`category-${category.replace(/\s+/g, '-')}`}
                 >
-                  <h3 className="font-medium text-left">
-                    {category || 'Other'}
-                  </h3>
+                  <h3 className="font-medium text-left">{category || 'Other'}</h3>
                   {expandedCategories.has(category) ? (
                     <ChevronUp className="w-4 h-4" />
                   ) : (
@@ -322,14 +320,10 @@ export function KeyboardHelp({
                     <div className="flex-1">
                       <div className="font-medium">{shortcut.description}</div>
                       {shortcut.context && (
-                        <div className="text-sm text-muted-foreground">
-                          {shortcut.context}
-                        </div>
+                        <div className="text-sm text-muted-foreground">{shortcut.context}</div>
                       )}
                     </div>
-                    <div className="flex-shrink-0 ml-4">
-                      {formatKeys(shortcut.keys)}
-                    </div>
+                    <div className="flex-shrink-0 ml-4">{formatKeys(shortcut.keys)}</div>
                   </div>
                 ))}
               </div>
@@ -339,7 +333,7 @@ export function KeyboardHelp({
           {/* No results */}
           {filteredShortcuts().length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
-              No keyboard shortcuts found matching "{searchQuery}"
+              No keyboard shortcuts found matching &quot;{searchQuery}&quot;
             </div>
           )}
         </div>
@@ -347,7 +341,9 @@ export function KeyboardHelp({
         {/* Footer */}
         <div className="p-4 border-t border-border bg-muted/30">
           <div className="text-sm text-muted-foreground text-center">
-            Press <kbd className="px-2 py-1 text-xs bg-muted border border-border rounded">Escape</kbd> to close this dialog
+            Press{' '}
+            <kbd className="px-2 py-1 text-xs bg-muted border border-border rounded">Escape</kbd> to
+            close this dialog
           </div>
         </div>
       </div>

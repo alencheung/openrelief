@@ -6,37 +6,30 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { iOSBackgroundManager, EmergencyPushPayload, iOSBackgroundConfig } from '@/lib/ios-background-strategy'
+import {
+  iOSBackgroundManager,
+  EmergencyPushPayload,
+  iOSBackgroundConfig
+} from '@/lib/ios-background-strategy'
 
-interface UseiOSBackgroundReturn {
-  // Configuration
+interface UseIOSBackgroundReturn {
   config: iOSBackgroundConfig
   isInitialized: boolean
   isInitializing: boolean
-
-  // Queue status
   queueStatus: {
     queued: number
     processing: boolean
   }
-
-  // Actions
   initialize: () => Promise<boolean>
   updateConfig: (updates: Partial<iOSBackgroundConfig>) => void
-
-  // Emergency handling
   sendTestEmergency: (payload: Partial<EmergencyPushPayload>) => void
   clearEmergencyQueue: () => void
-
-  // Permissions
   requestPermissions: () => Promise<boolean>
-
-  // Background tasks
   triggerLocationCheck: () => Promise<void>
   triggerQueueProcessing: () => Promise<void>
 }
 
-export function useiOSBackground(): UseiOSBackgroundReturn {
+export function useIOSBackground(): UseIOSBackgroundReturn {
   const [config, setConfig] = useState<iOSBackgroundConfig>({
     silentPushEnabled: false,
     backgroundLocationEnabled: false,
@@ -240,7 +233,7 @@ export function useEmergencyNotifications() {
 }
 
 // Hook for iOS-specific features
-export function useiOSSpecificFeatures() {
+export function useIOSSpecificFeatures() {
   const [batteryLevel, setBatteryLevel] = useState<number | null>(null)
   const [isCharging, setIsCharging] = useState<boolean | null>(null)
   const [backgroundAppRefreshEnabled, setBackgroundAppRefreshEnabled] = useState<boolean>(false)

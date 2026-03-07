@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { Database } from '@/types/database'
 import { withAPISecurity, API_SECURITY_CONFIGS } from '@/lib/security/api-security'
-import { inputValidator } from '@/lib/security/input-validation'
 import { securityMonitor } from '@/lib/audit/security-monitor'
 import { trustScoreManager } from '@/lib/security/trust-integration'
 
@@ -13,7 +11,7 @@ const supabase = createClient(
 
 export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
   request: NextRequest,
-  context
+  _context
 ) => {
   try {
     const { searchParams } = new URL(request.url)
@@ -104,7 +102,7 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
 ) => {
   try {
     const body = await request.json()
-    const { event_id, confirmation_type, location, notes } = body
+    const { event_id, confirmation_type, location } = body
 
     if (!event_id || !confirmation_type) {
       return NextResponse.json(
@@ -124,7 +122,7 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
-    const { data: existingConfirmation, error: checkError } = await supabase
+    const { data: existingConfirmation, error: _checkError } = await supabase
       .from('event_confirmations')
       .select('id, confirmation_type')
       .eq('event_id', event_id)
@@ -157,7 +155,7 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
         'consensus'
       )
     } else if (!existingConfirmation) {
-      const { data: userProfile, error: profileError } = await supabase
+      const { data: userProfile, error: _profileError } = await supabase
         .from('user_profiles')
         .select('trust_score')
         .eq('user_id', context.userId)

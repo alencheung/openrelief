@@ -16,34 +16,34 @@ import { useToast } from '@/hooks/use-toast'
 
 // Types for data export and deletion
 interface DataExportRequest {
-  id: string;
-  dataType: string;
-  format: 'json' | 'csv' | 'pdf';
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  createdAt: Date;
-  completedAt?: Date;
-  downloadUrl?: string;
+  id: string
+  dataType: string
+  format: 'json' | 'csv' | 'pdf'
+  status: 'pending' | 'processing' | 'completed' | 'failed'
+  createdAt: Date
+  completedAt?: Date
+  downloadUrl?: string
 }
 
 interface DataDeletionRequest {
-  id: string;
-  dataType: string;
-  reason: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  createdAt: Date;
-  completedAt?: Date;
-  confirmationCode?: string;
+  id: string
+  dataType: string
+  reason: string
+  status: 'pending' | 'processing' | 'completed' | 'failed'
+  createdAt: Date
+  completedAt?: Date
+  confirmationCode?: string
 }
 
 interface DataSummary {
-  totalRecords: number;
-  dataSize: string;
-  lastUpdated: Date;
+  totalRecords: number
+  dataSize: string
+  lastUpdated: Date
   dataTypes: Array<{
-    name: string;
-    count: number;
-    size: string;
-  }>;
+    name: string
+    count: number
+    size: string
+  }>
 }
 
 const DataExportTool: React.FC = () => {
@@ -59,7 +59,7 @@ const DataExportTool: React.FC = () => {
   // Data deletion state
   const [deletionReason, setDeletionReason] = useState('')
   const [deletionRequests, setDeletionRequests] = useState<DataDeletionRequest[]>([])
-  const [confirmationCode, setConfirmationCode] = useState('')
+  const [_confirmationCode, _setConfirmationCode] = useState('')
 
   // Data summary
   const [dataSummary, setDataSummary] = useState<DataSummary>({
@@ -77,7 +77,11 @@ const DataExportTool: React.FC = () => {
   // Available data types for export/deletion
   const availableDataTypes = [
     { id: 'location', name: 'Location Data', description: 'Your location history and coordinates' },
-    { id: 'emergency', name: 'Emergency Reports', description: 'Emergency reports you have submitted' },
+    {
+      id: 'emergency',
+      name: 'Emergency Reports',
+      description: 'Emergency reports you have submitted'
+    },
     { id: 'trust', name: 'Trust Score History', description: 'Historical trust score data' },
     { id: 'profile', name: 'User Profile', description: 'Your profile information and preferences' }
   ]
@@ -134,8 +138,8 @@ const DataExportTool: React.FC = () => {
             dataType: 'location',
             format: 'json',
             status: 'completed',
-            createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-            completedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+            createdAt: new Date(Date.now() - 2 * (24 * 60 * 60 * 1000)),
+            completedAt: new Date(Date.now() - 1 * (24 * 60 * 60 * 1000)),
             downloadUrl: '/api/privacy/download/exp-123'
           }
         ])
@@ -157,9 +161,7 @@ const DataExportTool: React.FC = () => {
   // Handle data type selection
   const handleDataTypeToggle = (typeId: string) => {
     setSelectedDataTypes(prev =>
-      prev.includes(typeId)
-        ? prev.filter(id => id !== typeId)
-        : [...prev, typeId]
+      prev.includes(typeId) ? prev.filter(id => id !== typeId) : [...prev, typeId]
     )
   }
 
@@ -201,7 +203,8 @@ const DataExportTool: React.FC = () => {
 
       toast({
         title: 'Export Requested',
-        description: "Your data export request has been submitted. You will be notified when it's ready for download."
+        description:
+          "Your data export request has been submitted. You will be notified when it's ready for download."
       })
     } catch (error) {
       toast({
@@ -287,11 +290,16 @@ const DataExportTool: React.FC = () => {
   // Get status color for requests
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'green'
-      case 'processing': return 'blue'
-      case 'pending': return 'yellow'
-      case 'failed': return 'red'
-      default: return 'gray'
+      case 'completed':
+        return 'green'
+      case 'processing':
+        return 'blue'
+      case 'pending':
+        return 'yellow'
+      case 'failed':
+        return 'red'
+      default:
+        return 'gray'
     }
   }
 
@@ -325,7 +333,9 @@ const DataExportTool: React.FC = () => {
             {dataSummary.dataTypes.map((type, index) => (
               <div key={index} className="flex justify-between p-2 border rounded">
                 <span>{type.name}</span>
-                <span className="text-gray-600">{type.count} records ({type.size})</span>
+                <span className="text-gray-600">
+                  {type.count} records ({type.size})
+                </span>
               </div>
             ))}
           </div>
@@ -334,7 +344,7 @@ const DataExportTool: React.FC = () => {
 
       {/* Tab Navigation */}
       <div className="flex space-x-1 border-b">
-        {(['export', 'delete', 'requests'] as const).map((tab) => (
+        {(['export', 'delete', 'requests'] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -359,7 +369,7 @@ const DataExportTool: React.FC = () => {
               <div>
                 <h3 className="font-medium mb-2">Select Data Types</h3>
                 <div className="space-y-2">
-                  {availableDataTypes.map((type) => (
+                  {availableDataTypes.map(type => (
                     <label key={type.id} className="flex items-start space-x-3">
                       <input
                         type="checkbox"
@@ -379,7 +389,7 @@ const DataExportTool: React.FC = () => {
               <div>
                 <h3 className="font-medium mb-2">Export Format</h3>
                 <div className="flex space-x-4">
-                  {(['json', 'csv', 'pdf'] as const).map((format) => (
+                  {(['json', 'csv', 'pdf'] as const).map(format => (
                     <label key={format} className="flex items-center space-x-2">
                       <input
                         type="radio"
@@ -414,7 +424,8 @@ const DataExportTool: React.FC = () => {
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
               <h3 className="font-medium text-yellow-800">Warning</h3>
               <p className="text-yellow-700">
-                Data deletion is permanent and cannot be undone. Please be certain before proceeding.
+                Data deletion is permanent and cannot be undone. Please be certain before
+                proceeding.
               </p>
             </div>
 
@@ -422,7 +433,7 @@ const DataExportTool: React.FC = () => {
               <div>
                 <h3 className="font-medium mb-2">Select Data Types to Delete</h3>
                 <div className="space-y-2">
-                  {availableDataTypes.map((type) => (
+                  {availableDataTypes.map(type => (
                     <label key={type.id} className="flex items-start space-x-3">
                       <input
                         type="checkbox"
@@ -446,7 +457,7 @@ const DataExportTool: React.FC = () => {
                   rows={4}
                   placeholder="Please provide a reason for your data deletion request..."
                   value={deletionReason}
-                  onChange={(e) => setDeletionReason(e.target.value)}
+                  onChange={e => setDeletionReason(e.target.value)}
                 />
               </div>
 
@@ -475,13 +486,16 @@ const DataExportTool: React.FC = () => {
                   <p className="text-gray-600">No export requests found</p>
                 ) : (
                   <div className="space-y-2">
-                    {exportRequests.map((request) => (
-                      <div key={request.id} className="flex items-center justify-between p-3 border rounded">
+                    {exportRequests.map(request => (
+                      <div
+                        key={request.id}
+                        className="flex items-center justify-between p-3 border rounded"
+                      >
                         <div>
                           <div className="font-medium">{request.dataType}</div>
                           <div className="text-sm text-gray-600">
-                            Format: {request.format.toUpperCase()} |
-                            Created: {request.createdAt.toLocaleDateString()}
+                            Format: {request.format.toUpperCase()} | Created:{' '}
+                            {request.createdAt.toLocaleDateString()}
                           </div>
                           {request.completedAt && (
                             <div className="text-sm text-gray-600">
@@ -490,7 +504,10 @@ const DataExportTool: React.FC = () => {
                           )}
                         </div>
                         <div className="flex items-center space-x-2">
-                          <StatusIndicator status={getStatusColor(request.status)} text={request.status} />
+                          <StatusIndicator
+                            status={getStatusColor(request.status)}
+                            text={request.status}
+                          />
                           {request.status === 'completed' && request.downloadUrl && (
                             <Button size="sm" onClick={() => downloadExport(request)}>
                               Download
@@ -509,8 +526,11 @@ const DataExportTool: React.FC = () => {
                   <p className="text-gray-600">No deletion requests found</p>
                 ) : (
                   <div className="space-y-2">
-                    {deletionRequests.map((request) => (
-                      <div key={request.id} className="flex items-center justify-between p-3 border rounded">
+                    {deletionRequests.map(request => (
+                      <div
+                        key={request.id}
+                        className="flex items-center justify-between p-3 border rounded"
+                      >
                         <div>
                           <div className="font-medium">{request.dataType}</div>
                           <div className="text-sm text-gray-600">
@@ -527,7 +547,10 @@ const DataExportTool: React.FC = () => {
                             </div>
                           )}
                         </div>
-                        <StatusIndicator status={getStatusColor(request.status)} text={request.status} />
+                        <StatusIndicator
+                          status={getStatusColor(request.status)}
+                          text={request.status}
+                        />
                       </div>
                     ))}
                   </div>

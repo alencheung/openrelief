@@ -1,4 +1,8 @@
-import { EnhancedInputProps, EnhancedTextareaProps, EnhancedSelectProps } from '@/components/ui/forms'
+import {
+  EnhancedInputProps as _EnhancedInputProps,
+  EnhancedTextareaProps as _EnhancedTextareaProps,
+  EnhancedSelectProps as _EnhancedSelectProps
+} from '@/components/ui/forms'
 
 // Validation rule types
 export interface ValidationRule {
@@ -293,7 +297,10 @@ export const validateField = (value: any, rules: ValidationRule[]): string | nul
   return null
 }
 
-export const validateForm = (data: Record<string, any>, fieldRules: Record<string, ValidationRule[]>): ValidationResult => {
+export const validateForm = (
+  data: Record<string, any>,
+  fieldRules: Record<string, ValidationRule[]>
+): ValidationResult => {
   const errors: Record<string, string> = {}
   const warnings: Record<string, string> = {}
   let isValid = true
@@ -386,9 +393,7 @@ export const validationSchemas = {
       validators.min(1, 'Severity must be at least 1'),
       validators.max(5, 'Severity must be no more than 5')
     ],
-    location: [
-      validators.required('Location is required')
-    ]
+    location: [validators.required('Location is required')]
   },
 
   // User registration validation
@@ -424,9 +429,7 @@ export const validationSchemas = {
         message: 'Passwords do not match'
       }
     ],
-    terms: [
-      validators.required('You must agree to the terms and conditions')
-    ]
+    terms: [validators.required('You must agree to the terms and conditions')]
   },
 
   // Profile update validation
@@ -441,12 +444,8 @@ export const validationSchemas = {
       validators.minLength(2, 'Last name must be at least 2 characters'),
       validators.maxLength(50, 'Last name must be less than 50 characters')
     ],
-    phone: [
-      validators.phone('Please enter a valid phone number')
-    ],
-    bio: [
-      validators.maxLength(500, 'Bio must be less than 500 characters')
-    ]
+    phone: [validators.phone('Please enter a valid phone number')],
+    bio: [validators.maxLength(500, 'Bio must be less than 500 characters')]
   }
 }
 

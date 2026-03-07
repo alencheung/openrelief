@@ -36,12 +36,14 @@ export interface PerformanceMetricsRequest {
 export interface EmergencyModeRequest {
   action: 'activate' | 'deactivate' | 'status'
   reason?: string
-  duration?: number // minutes
+  // minutes
+  duration?: number
 }
 
 // Performance test request
 export interface PerformanceTestRequest {
   scenario?: string
+  // minutes
   concurrency?: number
   duration?: number
   emergency?: boolean
@@ -139,10 +141,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<Performanc
   try {
     // Validate API key
     if (!validateAPIKey(request)) {
-      return NextResponse.json(
-        createAPIResponse(false, null, 'Invalid API key', requestId),
-        { status: 401 }
-      )
+      return NextResponse.json(createAPIResponse(false, null, 'Invalid API key', requestId), {
+        status: 401
+      })
     }
 
     const { searchParams } = new URL(request.url)
@@ -151,7 +152,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<Performanc
     const timeRangeEnd = searchParams.get('end')
     const metrics = searchParams.get('metrics')?.split(',')
     const components = searchParams.get('components')?.split(',')
-    const format = searchParams.get('format') as 'json' | 'csv' || 'json'
+    const format = (searchParams.get('format') as 'json' | 'csv') || 'json'
 
     let data: any
 
@@ -162,10 +163,13 @@ export async function GET(request: NextRequest): Promise<NextResponse<Performanc
 
       case 'metrics':
         data = await getPerformanceMetrics({
-          timeRange: timeRangeStart && timeRangeEnd ? {
-            start: timeRangeStart,
-            end: timeRangeEnd
-          } : undefined,
+          timeRange:
+            timeRangeStart && timeRangeEnd
+              ? {
+                  start: timeRangeStart,
+                  end: timeRangeEnd
+                }
+              : undefined,
           metrics,
           components,
           format
@@ -210,10 +214,12 @@ export async function GET(request: NextRequest): Promise<NextResponse<Performanc
         break
 
       case 'emergency':
+        // Would be populated from actual configuration
+        // Would be populated from actual history
         data = {
           active: performanceIntegration.getStatus().emergencyMode,
-          triggers: [], // Would be populated from actual configuration
-          history: [] // Would be populated from actual history
+          triggers: [],
+          history: []
         }
         break
 
@@ -239,9 +245,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<Performanc
       })
     }
 
-    return NextResponse.json(
-      createAPIResponse(true, data, undefined, requestId)
-    )
+    return NextResponse.json(createAPIResponse(true, data, undefined, requestId))
   } catch (error) {
     console.error('[PerformanceAPI] GET error:', error)
     return NextResponse.json(
@@ -258,10 +262,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<Performan
   try {
     // Validate API key
     if (!validateAPIKey(request)) {
-      return NextResponse.json(
-        createAPIResponse(false, null, 'Invalid API key', requestId),
-        { status: 401 }
-      )
+      return NextResponse.json(createAPIResponse(false, null, 'Invalid API key', requestId), {
+        status: 401
+      })
     }
 
     const { searchParams } = new URL(request.url)
@@ -343,9 +346,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<Performan
         )
     }
 
-    return NextResponse.json(
-      createAPIResponse(true, data, undefined, requestId)
-    )
+    return NextResponse.json(createAPIResponse(true, data, undefined, requestId))
   } catch (error) {
     console.error('[PerformanceAPI] POST error:', error)
     return NextResponse.json(
@@ -362,10 +363,9 @@ export async function PUT(request: NextRequest): Promise<NextResponse<Performanc
   try {
     // Validate API key
     if (!validateAPIKey(request)) {
-      return NextResponse.json(
-        createAPIResponse(false, null, 'Invalid API key', requestId),
-        { status: 401 }
-      )
+      return NextResponse.json(createAPIResponse(false, null, 'Invalid API key', requestId), {
+        status: 401
+      })
     }
 
     const { searchParams } = new URL(request.url)
@@ -403,9 +403,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse<Performanc
         )
     }
 
-    return NextResponse.json(
-      createAPIResponse(true, data, undefined, requestId)
-    )
+    return NextResponse.json(createAPIResponse(true, data, undefined, requestId))
   } catch (error) {
     console.error('[PerformanceAPI] PUT error:', error)
     return NextResponse.json(
@@ -422,10 +420,9 @@ export async function DELETE(request: NextRequest): Promise<NextResponse<Perform
   try {
     // Validate API key
     if (!validateAPIKey(request)) {
-      return NextResponse.json(
-        createAPIResponse(false, null, 'Invalid API key', requestId),
-        { status: 401 }
-      )
+      return NextResponse.json(createAPIResponse(false, null, 'Invalid API key', requestId), {
+        status: 401
+      })
     }
 
     const { searchParams } = new URL(request.url)
@@ -466,9 +463,7 @@ export async function DELETE(request: NextRequest): Promise<NextResponse<Perform
         )
     }
 
-    return NextResponse.json(
-      createAPIResponse(true, data, undefined, requestId)
-    )
+    return NextResponse.json(createAPIResponse(true, data, undefined, requestId))
   } catch (error) {
     console.error('[PerformanceAPI] DELETE error:', error)
     return NextResponse.json(
@@ -485,9 +480,6 @@ async function getPerformanceMetrics(request: PerformanceMetricsRequest): Promis
 
   // Filter by time range if specified
   if (request.timeRange) {
-    const startDate = new Date(request.timeRange.start)
-    const endDate = new Date(request.timeRange.end)
-
     // In a real implementation, this would filter historical data
     // For now, just return current data with time range info
     return {
@@ -553,8 +545,8 @@ async function handlePerformanceTestAction(request: PerformanceTestRequest): Pro
   try {
     let testId: string
 
-    if (request.emergency || request.concurrency && request.concurrency >= 50000) {
-      // Run 50K concurrency test
+    // Run 50K concurrency test
+    if (request.emergency || (request.concurrency && request.concurrency >= 50000)) {
       testId = await loadTestingFramework.execute50KConcurrencyTest()
     } else {
       // Run custom test
@@ -613,7 +605,11 @@ async function handleAlertManagementAction(request: AlertManagementRequest): Pro
       if (!request.alertId || !request.resolvedBy || !request.resolution) {
         throw new Error('Alert ID, resolvedBy, and resolution are required')
       }
-      await performanceDashboard.resolveAlert(request.alertId, request.resolvedBy, request.resolution)
+      await performanceDashboard.resolveAlert(
+        request.alertId,
+        request.resolvedBy,
+        request.resolution
+      )
       return {
         alertId: request.alertId,
         action: 'resolved',
@@ -722,7 +718,8 @@ async function handleCacheClear(cacheId?: string): Promise<any> {
   try {
     if (cacheId === 'all') {
       // Clear all caches
-      const serviceWorker = (await import('@/lib/pwa/service-worker-optimizer')).serviceWorkerOptimizer
+      const serviceWorker = (await import('@/lib/pwa/service-worker-optimizer'))
+        .serviceWorkerOptimizer
       await serviceWorker.clearAllCaches()
 
       return {
@@ -802,9 +799,4 @@ function convertToCSV(data: any): string {
 }
 
 // Export for testing
-export {
-  generateRequestId,
-  createAPIResponse,
-  validateAPIKey,
-  parseRequestBody
-}
+export { generateRequestId, createAPIResponse, validateAPIKey, parseRequestBody }

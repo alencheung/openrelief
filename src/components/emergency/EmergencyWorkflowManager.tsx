@@ -1,44 +1,16 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import React, { useState, useEffect, useMemo } from 'react'
+import { motion } from 'framer-motion'
 import {
   AlertTriangle,
   CheckCircle,
   XCircle,
   Clock,
-  Users,
   MapPin,
-  MessageSquare,
-  Eye,
-  EyeOff,
   RefreshCw,
-  Send,
   Archive,
-  Flag,
-  Shield,
-  Activity,
-  TrendingUp,
-  TrendingDown,
-  Calendar,
-  Filter,
-  Search,
-  MoreVertical,
-  ChevronRight,
-  Bell,
-  BellOff,
-  UserCheck,
-  UserX,
-  ThumbsUp,
-  ThumbsDown,
-  MessageCircle,
-  FileText,
-  Download,
-  Share2,
-  Edit,
-  Trash2,
-  Plus,
-  Minus
+  ChevronRight
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useEmergencyStore, useEmergencyActions } from '@/store'
@@ -116,59 +88,69 @@ interface EmergencyEvent {
 }
 
 export function EmergencyWorkflowManager({ className }: EmergencyWorkflowManagerProps) {
-  const { selectedEvent, events } = useEmergencyStore()
+  const { selectedEvent } = useEmergencyStore()
   const { updateEvent, setSelectedEvent } = useEmergencyActions()
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'workflow' | 'consensus' | 'actions'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'workflow' | 'consensus' | 'actions'>(
+    'overview'
+  )
   const [workflowSteps, setWorkflowSteps] = useState<WorkflowStep[]>([])
   const [availableActions, setAvailableActions] = useState<WorkflowAction[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
-  const [filter, setFilter] = useState({
-    status: 'all',
-    severity: 'all',
-    type: 'all'
-  })
 
-  // Mock emergency event for demonstration
-  const mockEmergency: EmergencyEvent = {
-    id: 'emergency-123',
-    type: 'fire',
-    severity: 'high',
-    title: 'Building Fire Reported',
-    description: 'Multiple reports of fire in downtown commercial building. Smoke visible from several blocks away.',
-    location: {
-      latitude: 37.7749,
-      longitude: -122.4194,
-      radius: 500,
-      address: '123 Market St, San Francisco, CA'
-    },
-    reporter: {
-      id: 'user-456',
-      name: 'John Doe',
-      trustScore: 0.85
-    },
-    status: 'active',
-    trustWeight: 0.75,
-    confirmationCount: 12,
-    disputeCount: 2,
-    createdAt: '2024-01-15T10:30:00Z',
-    updatedAt: '2024-01-15T11:45:00Z',
-    expiresAt: '2024-01-16T10:30:00Z',
-    metadata: {
-      images: ['image1.jpg', 'image2.jpg'],
-      videos: ['video1.mp4'],
-      audio: 'audio1.mp3',
-      tags: ['fire', 'building', 'downtown'],
-      source: 'mobile_app',
-      deviceInfo: 'iPhone 14 Pro'
-    },
-    consensus: {
-      status: 'gathering',
-      confidence: 0.65,
-      requiredConfirmations: 5,
-      currentConfirmations: 3,
-      timeRemaining: 1800 // 30 minutes
+  const mockEmergency: EmergencyEvent = useMemo(
+    () => ({
+      id: 'emergency-123',
+      type: 'fire',
+      severity: 'high',
+      title: 'Building Fire Reported',
+      description:
+        'Multiple reports of fire in downtown commercial building. Smoke visible from several blocks away.',
+      location: {
+        latitude: 37.7749,
+        longitude: -122.4194,
+        radius: 500,
+        address: '123 Market St, San Francisco, CA'
+      },
+      reporter: {
+        id: 'user-456',
+        name: 'John Doe',
+        trustScore: 0.85
+      },
+      status: 'active',
+      trustWeight: 0.75,
+      confirmationCount: 12,
+      disputeCount: 2,
+      createdAt: '2024-01-15T10:30:00Z',
+      updatedAt: '2024-01-15T11:45:00Z',
+      expiresAt: '2024-01-16T10:30:00Z',
+      metadata: {
+        images: ['image1.jpg', 'image2.jpg'],
+        videos: ['video1.mp4'],
+        audio: 'audio1.mp3',
+        tags: ['fire', 'building', 'downtown'],
+        source: 'mobile_app',
+        deviceInfo: 'iPhone 14 Pro'
+      },
+      consensus: {
+        status: 'gathering',
+        confidence: 0.65,
+        requiredConfirmations: 5,
+        currentConfirmations: 3,
+        timeRemaining: 1800
+      }
+    }),
+    []
+  )
+
+  const getConsensusStatus = (status: string | undefined): WorkflowStep['status'] => {
+    if (status === 'gathering') {
+      return 'in_progress'
     }
+    if (status === 'reached') {
+      return 'completed'
+    }
+    return 'pending'
   }
 
   // Initialize workflow steps
@@ -187,30 +169,32 @@ export function EmergencyWorkflowManager({ className }: EmergencyWorkflowManager
         title: 'Location Verification',
         description: 'Verifying report location and accuracy',
         status: emergency.status === 'pending' ? 'in_progress' : 'completed',
-        timestamp: new Date(emergency.createdAt).getTime() + 300000 // 5 minutes later
+        timestamp: new Date(emergency.createdAt).getTime() + 300000
       },
       {
         id: 'trust_assessment',
         title: 'Trust Assessment',
         description: 'Evaluating reporter trust score and history',
         status: 'completed',
-        timestamp: new Date(emergency.createdAt).getTime() + 600000, // 10 minutes later
+        timestamp: new Date(emergency.createdAt).getTime() + 600000,
         assignee: 'Trust System'
       },
       {
         id: 'consensus_building',
         title: 'Consensus Building',
         description: 'Gathering confirmations from trusted users in area',
-        status: emergency.consensus?.status === 'gathering' ? 'in_progress'
-          : emergency.consensus?.status === 'reached' ? 'completed' : 'pending',
-        timestamp: emergency.consensus ? Date.now() - emergency.consensus.timeRemaining! * 1000 : undefined
+        status: getConsensusStatus(emergency.consensus?.status),
+        timestamp:
+          emergency.consensus && emergency.consensus.timeRemaining
+            ? Date.now() - emergency.consensus.timeRemaining * 1000
+            : undefined
       },
       {
         id: 'alert_dispatch',
         title: 'Alert Dispatch',
         description: 'Dispatching alerts to nearby users',
         status: emergency.status === 'active' ? 'completed' : 'pending',
-        timestamp: emergency.status === 'active' ? Date.now() - 900000 : undefined // 15 minutes ago
+        timestamp: emergency.status === 'active' ? Date.now() - 900000 : undefined
       }
     ]
 
@@ -297,8 +281,6 @@ export function EmergencyWorkflowManager({ className }: EmergencyWorkflowManager
           break
 
         case 'escalate':
-          // Implement escalation logic
-          console.log('Escalating emergency:', emergency.id)
           break
 
         case 'resolve':
@@ -314,10 +296,7 @@ export function EmergencyWorkflowManager({ className }: EmergencyWorkflowManager
           })
           break
       }
-
-      console.log(`Action ${action.type} completed for emergency ${emergency.id}`)
     } catch (error) {
-      console.error('Failed to execute workflow action:', error)
     } finally {
       setIsProcessing(false)
     }
@@ -326,20 +305,28 @@ export function EmergencyWorkflowManager({ className }: EmergencyWorkflowManager
   // Get status color
   const getStatusColor = (status: WorkflowStep['status']) => {
     switch (status) {
-      case 'completed': return 'text-green-600'
-      case 'in_progress': return 'text-blue-600'
-      case 'failed': return 'text-red-600'
-      default: return 'text-gray-600'
+      case 'completed':
+        return 'text-green-600'
+      case 'in_progress':
+        return 'text-blue-600'
+      case 'failed':
+        return 'text-red-600'
+      default:
+        return 'text-gray-600'
     }
   }
 
   // Get status icon
   const getStatusIcon = (status: WorkflowStep['status']) => {
     switch (status) {
-      case 'completed': return CheckCircle
-      case 'in_progress': return RefreshCw
-      case 'failed': return XCircle
-      default: return Clock
+      case 'completed':
+        return CheckCircle
+      case 'in_progress':
+        return RefreshCw
+      case 'failed':
+        return XCircle
+      default:
+        return Clock
     }
   }
 
@@ -361,11 +348,7 @@ export function EmergencyWorkflowManager({ className }: EmergencyWorkflowManager
                 size="sm"
                 label={emergency.status.toUpperCase()}
               />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSelectedEvent(emergency)}
-              >
+              <Button variant="outline" size="sm" onClick={() => setSelectedEvent(emergency)}>
                 View Details
               </Button>
             </div>
@@ -388,26 +371,23 @@ export function EmergencyWorkflowManager({ className }: EmergencyWorkflowManager
                   showSeverity
                 />
 
-                <TrustBadge
-                  score={emergency.trustWeight * 100}
-                  showTrend
-                  size="sm"
-                />
+                <TrustBadge score={emergency.trustWeight * 100} showTrend size="sm" />
               </div>
 
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4" />
-                <span>{emergency.location.address || `${emergency.location.latitude.toFixed(4)}, ${emergency.location.longitude.toFixed(4)}`}</span>
+                <span>
+                  {emergency.location.address ||
+                    `${emergency.location.latitude.toFixed(4)}, ${emergency.location.longitude.toFixed(4)}`}
+                </span>
               </div>
 
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Users className="h-4 w-4" />
-                <span>Reported by {emergency.reporter.name}</span>
-                <TrustBadge
-                  score={emergency.reporter.trustScore * 100}
-                  size="sm"
-                  variant="subtle"
-                />
+                <MapPin className="h-4 w-4" />
+                <span>
+                  {emergency.location.address ||
+                    `${emergency.location.latitude.toFixed(4)}, ${emergency.location.longitude.toFixed(4)}`}
+                </span>
               </div>
             </div>
 
@@ -418,9 +398,7 @@ export function EmergencyWorkflowManager({ className }: EmergencyWorkflowManager
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Progress</span>
-                    <Badge variant="outline">
-                      {emergency.consensus.status}
-                    </Badge>
+                    <Badge variant="outline">{emergency.consensus.status}</Badge>
                   </div>
 
                   <div className="w-full bg-gray-200 rounded-full h-2">
@@ -433,14 +411,20 @@ export function EmergencyWorkflowManager({ className }: EmergencyWorkflowManager
                   </div>
 
                   <div className="flex items-center justify-between text-sm">
-                    <span>{emergency.consensus.currentConfirmations} / {emergency.consensus.requiredConfirmations} confirmations</span>
+                    <span>
+                      {emergency.consensus.currentConfirmations} /{' '}
+                      {emergency.consensus.requiredConfirmations} confirmations
+                    </span>
                     <span>{emergency.consensus.confidence.toFixed(1)}% confidence</span>
                   </div>
 
                   {emergency.consensus.timeRemaining && (
                     <div className="flex items-center gap-2 text-sm text-orange-600">
                       <Clock className="h-4 w-4" />
-                      <span>{Math.floor(emergency.consensus.timeRemaining / 60)}m {emergency.consensus.timeRemaining % 60}s remaining</span>
+                      <span>
+                        {Math.floor(emergency.consensus.timeRemaining / 60)}m{' '}
+                        {emergency.consensus.timeRemaining % 60}s remaining
+                      </span>
                     </div>
                   )}
                 </div>
@@ -479,15 +463,18 @@ export function EmergencyWorkflowManager({ className }: EmergencyWorkflowManager
                 </div>
 
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-orange-600">
-                    {emergency.disputeCount}
-                  </div>
+                  <div className="text-2xl font-bold text-orange-600">{emergency.disputeCount}</div>
                   <p className="text-sm text-muted-foreground">Disputes</p>
                 </div>
 
                 <div className="text-center">
                   <div className="text-2xl font-bold text-green-600">
-                    {(emergency.confirmationCount / Math.max(1, emergency.confirmationCount + emergency.disputeCount) * 100).toFixed(0)}%
+                    {(
+                      (emergency.confirmationCount /
+                        Math.max(1, emergency.confirmationCount + emergency.disputeCount)) *
+                      100
+                    ).toFixed(0)}
+                    %
                   </div>
                   <p className="text-sm text-muted-foreground">Accuracy</p>
                 </div>
@@ -534,9 +521,7 @@ export function EmergencyWorkflowManager({ className }: EmergencyWorkflowManager
                           <h4 className="font-medium">{step.title}</h4>
                           <p className="text-sm text-muted-foreground">{step.description}</p>
                         </div>
-                        <Badge variant="outline">
-                          {step.status.replace('_', ' ')}
-                        </Badge>
+                        <Badge variant="outline">{step.status.replace('_', ' ')}</Badge>
                       </div>
 
                       {step.assignee && (
@@ -577,15 +562,14 @@ export function EmergencyWorkflowManager({ className }: EmergencyWorkflowManager
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-sm">Status</span>
-                      <Badge variant="outline">
-                        {emergency.consensus.status}
-                      </Badge>
+                      <Badge variant="outline">{emergency.consensus.status}</Badge>
                     </div>
 
                     <div className="flex items-center justify-between">
                       <span className="text-sm">Confirmations</span>
                       <span className="font-medium">
-                        {emergency.consensus.currentConfirmations} / {emergency.consensus.requiredConfirmations}
+                        {emergency.consensus.currentConfirmations} /{' '}
+                        {emergency.consensus.requiredConfirmations}
                       </span>
                     </div>
                   </div>
@@ -596,7 +580,8 @@ export function EmergencyWorkflowManager({ className }: EmergencyWorkflowManager
                   {emergency.consensus.timeRemaining && (
                     <div className="text-center">
                       <div className="text-3xl font-bold text-orange-600">
-                        {Math.floor(emergency.consensus.timeRemaining / 60)}:{(emergency.consensus.timeRemaining % 60).toString().padStart(2, '0')}
+                        {Math.floor(emergency.consensus.timeRemaining / 60)}:
+                        {(emergency.consensus.timeRemaining % 60).toString().padStart(2, '0')}
                       </div>
                       <p className="text-sm text-muted-foreground">Until consensus timeout</p>
                     </div>
@@ -610,7 +595,7 @@ export function EmergencyWorkflowManager({ className }: EmergencyWorkflowManager
           {activeTab === 'actions' && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {availableActions.map((action) => {
+                {availableActions.map(action => {
                   const IconComponent = action.icon
                   return (
                     <motion.div
@@ -639,9 +624,7 @@ export function EmergencyWorkflowManager({ className }: EmergencyWorkflowManager
                         )}
 
                         {action.requiresAuth && (
-                          <div className="text-xs opacity-75">
-                            Requires authentication
-                          </div>
+                          <div className="text-xs opacity-75">Requires authentication</div>
                         )}
                       </Button>
                     </motion.div>

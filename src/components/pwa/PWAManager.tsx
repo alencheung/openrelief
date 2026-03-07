@@ -20,8 +20,9 @@ export function PWAManager({ children }: PWAManagerProps) {
   useEffect(() => {
     // Initialize service worker
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js')
-        .then((registration) => {
+      navigator.serviceWorker
+        .register('/sw.js')
+        .then(registration => {
           console.log('[PWA] Service Worker registered:', registration)
           setServiceWorkerReady(true)
 
@@ -38,7 +39,7 @@ export function PWAManager({ children }: PWAManagerProps) {
             }
           })
         })
-        .catch((error) => {
+        .catch(error => {
           console.error('[PWA] Service Worker registration failed:', error)
         })
     }
@@ -88,10 +89,11 @@ export function PWAManager({ children }: PWAManagerProps) {
   }, [isOffline])
 
   const handleNewVersionAvailable = () => {
+    // eslint-disable-next-line no-alert
     if (confirm('A new version of OpenRelief is available. Would you like to update?')) {
       // Skip waiting and activate new service worker
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.ready.then((registration) => {
+        navigator.serviceWorker.ready.then(registration => {
           registration.waiting?.postMessage({ type: 'SKIP_WAITING' })
         })
       }
@@ -119,7 +121,7 @@ export function PWAManager({ children }: PWAManagerProps) {
             <div className="flex items-center space-x-2">
               <span className="text-lg">⚠️</span>
               <span className="text-sm font-medium">
-                You're currently offline. Emergency features remain available.
+                You&apos;re currently offline. Emergency features remain available.
               </span>
               {lastOnlineTime && (
                 <span className="text-xs opacity-75">
@@ -142,16 +144,13 @@ export function PWAManager({ children }: PWAManagerProps) {
       {!serviceWorkerReady && (
         <div className="fixed bottom-20 left-4 right-4 z-40 bg-yellow-100 border border-yellow-400 text-yellow-800 p-3 rounded-lg text-sm">
           <div className="flex items-center justify-between">
-            <span>
-              ⚡ OpenRelief is loading offline capabilities...
-            </span>
+            <span>⚡ OpenRelief is loading offline capabilities...</span>
           </div>
         </div>
       )}
     </>
   )
 }
-
 
 // Hook for PWA status and management
 export function usePWAStatus() {
@@ -168,7 +167,7 @@ export function usePWAStatus() {
           setIsReady(true)
 
           // Listen for service worker messages
-          navigator.serviceWorker.addEventListener('message', (event) => {
+          navigator.serviceWorker.addEventListener('message', event => {
             if (event.data?.type === 'SW_UPDATED') {
               setHasUpdate(true)
             }
@@ -189,7 +188,7 @@ export function usePWAStatus() {
 
   const updateApp = () => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.ready.then((registration) => {
+      navigator.serviceWorker.ready.then(registration => {
         registration.waiting?.postMessage({ type: 'SKIP_WAITING' })
       })
     }
@@ -197,7 +196,7 @@ export function usePWAStatus() {
 
   const clearCache = async () => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.ready.then((registration) => {
+      navigator.serviceWorker.ready.then(registration => {
         registration.active?.postMessage({ type: 'CLEAR_CACHE' })
       })
     }

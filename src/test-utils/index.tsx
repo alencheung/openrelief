@@ -32,9 +32,7 @@ const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider className="class" defaultTheme="light" enableSystem={false}>
           <ConfigProvider>
-            <Providers>
-              {children}
-            </Providers>
+            <Providers>{children}</Providers>
           </ConfigProvider>
         </ThemeProvider>
       </QueryClientProvider>
@@ -42,10 +40,8 @@ const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
   )
 }
 
-const customRender = (
-  ui: ReactElement,
-  options?: Omit<RenderOptions, 'wrapper'>
-) => render(ui, { wrapper: AllTheProviders, ...options })
+const customRender = (ui: ReactElement, options?: Omit<RenderOptions, 'wrapper'>) =>
+  render(ui, { wrapper: AllTheProviders, ...options })
 
 // Re-export everything from React Testing Library
 export * from '@testing-library/react'
@@ -53,7 +49,7 @@ export { customRender as render }
 export { default as userEvent } from '@testing-library/user-event'
 
 // Emergency-specific test utilities
-export const createMockEmergencyEvent = (overrides: {}) => ({
+export const createMockEmergencyEvent = (overrides: Record<string, unknown>) => ({
   id: 'test-emergency-1',
   type: 'medical',
   severity: 'high',
@@ -61,7 +57,7 @@ export const createMockEmergencyEvent = (overrides: {}) => ({
   description: 'Test emergency description',
   location: {
     latitude: 40.7128,
-    longitude: -74.0060,
+    longitude: -74.006,
     address: '123 Test St, Test City'
   },
   reportedBy: 'test-user-id',
@@ -83,7 +79,7 @@ export const createMockUser = (overrides = {}) => ({
   verified: true,
   location: {
     latitude: 40.7128,
-    longitude: -74.0060
+    longitude: -74.006
   },
   skills: ['first_aid', 'search_rescue'],
   availability: 'available',
@@ -118,7 +114,7 @@ export const createMockNotification = (overrides = {}) => ({
     emergencyId: 'test-emergency-1',
     location: {
       latitude: 40.7128,
-      longitude: -74.0060
+      longitude: -74.006
     }
   },
   ...overrides
@@ -143,8 +139,8 @@ export const createMockMapInstance = () => ({
   removeSource: jest.fn()
 })
 
-export const createMockGeolocation = (position = { latitude: 40.7128, longitude: -74.0060 }) => ({
-  getCurrentPosition: jest.fn().mockImplementation((success) => {
+export const createMockGeolocation = (position = { latitude: 40.7128, longitude: -74.006 }) => ({
+  getCurrentPosition: jest.fn().mockImplementation(success => {
     success({
       coords: {
         latitude: position.latitude,
@@ -158,7 +154,7 @@ export const createMockGeolocation = (position = { latitude: 40.7128, longitude:
       timestamp: Date.now()
     })
   }),
-  watchPosition: jest.fn().mockImplementation((success) => {
+  watchPosition: jest.fn().mockImplementation(success => {
     const watchId = Math.random().toString(36)
     success({
       coords: {
@@ -207,17 +203,17 @@ export const createMockServiceWorker = () => ({
 export const createMockStorage = () => {
   const store: Record<string, string> = {}
   return {
-    getItem: jest.fn((key) => store[key] || null),
+    getItem: jest.fn(key => store[key] || null),
     setItem: jest.fn((key, value) => {
       store[key] = value
     }),
-    removeItem: jest.fn((key) => {
+    removeItem: jest.fn(key => {
       delete store[key]
     }),
     clear: jest.fn(() => {
       Object.keys(store).forEach(key => delete store[key])
     }),
-    key: jest.fn((index) => Object.keys(store)[index] || null),
+    key: jest.fn(index => Object.keys(store)[index] || null),
     length: Object.keys(store).length
   }
 }
@@ -239,7 +235,7 @@ export const emergencyScenarios = {
     description: 'Person experiencing chest pain',
     location: {
       latitude: 40.7128,
-      longitude: -74.0060,
+      longitude: -74.006,
       address: '123 Main St, New York, NY'
     },
     requiredResources: ['ambulance', 'paramedic'],

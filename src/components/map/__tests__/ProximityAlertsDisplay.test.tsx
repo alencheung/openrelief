@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { ProximityAlertsDisplay, ProximityAlert } from '../ProximityAlertsDisplay'
@@ -8,17 +8,36 @@ import { createTestUtils } from '@/test-utils'
 // Mock UI components
 vi.mock('@/components/ui', () => ({
   StatusIndicator: ({ status, size, variant, pulse, showIcon, label }: any) => (
-    <div data-testid="status-indicator" data-status={status} data-size={size} data-variant={variant} data-pulse={pulse} data-show-icon={showIcon}>
+    <div
+      data-testid="status-indicator"
+      data-status={status}
+      data-size={size}
+      data-variant={variant}
+      data-pulse={pulse}
+      data-show-icon={showIcon}
+    >
       {label}
     </div>
   ),
   TrustBadge: ({ level, score, size, showPercentage, label }: any) => (
-    <div data-testid="trust-badge" data-level={level} data-score={score} data-size={size} data-show-percentage={showPercentage}>
+    <div
+      data-testid="trust-badge"
+      data-level={level}
+      data-score={score}
+      data-size={size}
+      data-show-percentage={showPercentage}
+    >
       {label}
     </div>
   ),
   Icon: ({ name, size, variant, className }: any) => (
-    <div data-testid="icon" data-name={name} data-size={size} data-variant={variant} className={className}>
+    <div
+      data-testid="icon"
+      data-name={name}
+      data-size={size}
+      data-variant={variant}
+      className={className}
+    >
       {name}
     </div>
   ),
@@ -28,7 +47,13 @@ vi.mock('@/components/ui', () => ({
     </div>
   ),
   EnhancedButton: ({ children, onClick, variant, size, leftIcon, className, ...props }: any) => (
-    <button onClick={onClick} data-variant={variant} data-size={size} className={className} {...props}>
+    <button
+      onClick={onClick}
+      data-variant={variant}
+      data-size={size}
+      className={className}
+      {...props}
+    >
       {leftIcon}
       {children}
     </button>
@@ -88,7 +113,7 @@ describe('ProximityAlertsDisplay', () => {
       severity: 'moderate',
       distance: 1200,
       estimatedTime: 12,
-      trustScore: 0.60,
+      trustScore: 0.6,
       timestamp: '2023-12-06T09:00:00Z',
       isRead: false
     }
@@ -138,7 +163,9 @@ describe('ProximityAlertsDisplay', () => {
     renderWithProviders(<ProximityAlertsDisplay {...defaultProps} />)
 
     // Should show bell ring icon for critical alerts
-    const bellRingIcon = screen.getByTestId('icon').find(el => el.getAttribute('data-name') === 'bellRing')
+    const bellRingIcon = screen
+      .getByTestId('icon')
+      .find(el => el.getAttribute('data-name') === 'bellRing')
     expect(bellRingIcon).toBeInTheDocument()
   })
 
@@ -171,8 +198,8 @@ describe('ProximityAlertsDisplay', () => {
     expect(trustBadges.length).toBeGreaterThan(0)
 
     // Check that trust badge has correct score
-    const criticalTrustBadge = trustBadges.find(badge =>
-      badge.getAttribute('data-level') === 'excellent'
+    const criticalTrustBadge = trustBadges.find(
+      badge => badge.getAttribute('data-level') === 'excellent'
     )
     expect(criticalTrustBadge).toBeInTheDocument()
   })
@@ -189,7 +216,9 @@ describe('ProximityAlertsDisplay', () => {
 
   it('handles alert dismiss', async () => {
     const onAlertDismiss = vi.fn()
-    renderWithProviders(<ProximityAlertsDisplay {...defaultProps} onAlertDismiss={onAlertDismiss} />)
+    renderWithProviders(
+      <ProximityAlertsDisplay {...defaultProps} onAlertDismiss={onAlertDismiss} />
+    )
 
     const dismissButton = screen.getByLabelText(/dismiss alert/i)
     await userEvent.click(dismissButton)
@@ -304,7 +333,9 @@ describe('ProximityAlertsDisplay', () => {
   it('handles dismiss all', async () => {
     const user = userEvent.setup()
     const onDismissAll = vi.fn()
-    renderWithProviders(<ProximityAlertsDisplay {...defaultProps} onDismissAll={onDismissAll} showDismissAll={true} />)
+    renderWithProviders(
+      <ProximityAlertsDisplay {...defaultProps} onDismissAll={onDismissAll} showDismissAll={true} />
+    )
 
     const dismissAllButton = screen.getByText(/dismiss all/i)
     await user.click(dismissAllButton)
@@ -315,7 +346,13 @@ describe('ProximityAlertsDisplay', () => {
   it('handles mark all read', async () => {
     const user = userEvent.setup()
     const onMarkAllRead = vi.fn()
-    renderWithProviders(<ProximityAlertsDisplay {...defaultProps} onMarkAllRead={onMarkAllRead} showMarkAllRead={true} />)
+    renderWithProviders(
+      <ProximityAlertsDisplay
+        {...defaultProps}
+        onMarkAllRead={onMarkAllRead}
+        showMarkAllRead={true}
+      />
+    )
 
     const markAllReadButton = screen.getByText(/mark all read/i)
     await user.click(markAllReadButton)
@@ -335,7 +372,9 @@ describe('ProximityAlertsDisplay', () => {
   })
 
   it('auto-dismisses alerts when enabled', () => {
-    renderWithProviders(<ProximityAlertsDisplay {...defaultProps} autoDismiss={true} autoDismissDelay={1000} />)
+    renderWithProviders(
+      <ProximityAlertsDisplay {...defaultProps} autoDismiss={true} autoDismissDelay={1000} />
+    )
 
     // Initially shows alerts
     expect(screen.getByText(/building fire/i)).toBeInTheDocument()
@@ -435,7 +474,13 @@ describe('ProximityAlertsDisplay', () => {
     const user = userEvent.setup()
     const onFilterChange = vi.fn()
 
-    renderWithProviders(<ProximityAlertsDisplay {...defaultProps} showFilterControls={true} onFilterChange={onFilterChange} />)
+    renderWithProviders(
+      <ProximityAlertsDisplay
+        {...defaultProps}
+        showFilterControls={true}
+        onFilterChange={onFilterChange}
+      />
+    )
 
     const unreadButton = screen.getByText(/unread \(2\)/i)
     await user.click(unreadButton)
@@ -467,9 +512,10 @@ describe('ProximityAlertsDisplay', () => {
     const statusIndicators = screen.getAllByTestId('status-indicator')
 
     // Should have critical status for critical alert
-    const criticalStatus = statusIndicators.find(indicator =>
-      indicator.getAttribute('data-status') === 'critical'
-      && indicator.getAttribute('data-pulse') === 'true'
+    const criticalStatus = statusIndicators.find(
+      indicator =>
+        indicator.getAttribute('data-status') === 'critical' &&
+        indicator.getAttribute('data-pulse') === 'true'
     )
     expect(criticalStatus).toBeInTheDocument()
   })
@@ -478,10 +524,11 @@ describe('ProximityAlertsDisplay', () => {
     renderWithProviders(<ProximityAlertsDisplay {...defaultProps} />)
 
     // Should show unread indicator dots
-    const unreadIndicators = screen.getAllByText('').filter(el =>
-      el.classList.contains('bg-primary') && el.classList.contains('rounded-full')
-    )
-    expect(unreadIndicators.length).toBe(2) // Two unread alerts
+    const unreadIndicators = screen
+      .getAllByText('')
+      .filter(el => el.classList.contains('bg-primary') && el.classList.contains('rounded-full'))
+    // Two unread alerts
+    expect(unreadIndicators.length).toBe(2)
   })
 
   it('handles alert item dismiss with stop propagation', async () => {
@@ -523,12 +570,7 @@ describe('ProximityAlertsDisplay', () => {
       }
     ]
 
-    renderWithProviders(
-      <ProximityAlertsDisplay
-        alerts={alerts}
-        onAlertClick={onAlertClick}
-      />
-    )
+    renderWithProviders(<ProximityAlertsDisplay alerts={alerts} onAlertClick={onAlertClick} />)
 
     // Expand alert first
     const expandButton = screen.getByLabelText(/expand details/i)

@@ -20,27 +20,15 @@ import {
   WifiOffIcon,
   SmartphoneIcon,
   MonitorIcon,
-  TabletIcon,
   CheckCircle2Icon,
   AlertTriangleIcon,
-  InfoIcon,
   XIcon,
   SettingsIcon,
   RefreshCwIcon,
   ZapIcon,
   ShieldIcon,
-  DatabaseIcon,
-  CloudIcon,
-  CloudOffIcon,
   BellIcon,
-  BellOffIcon,
-  BatteryIcon,
-  SignalIcon,
   Loader2Icon,
-  ExternalLinkIcon,
-  ChevronRightIcon,
-  StarIcon,
-  HeartIcon,
   GiftIcon
 } from 'lucide-react'
 
@@ -82,7 +70,7 @@ export function EnhancedPWAManager({
   showSyncNotifications = true,
   position = 'bottom-left'
 }: PWAManagerProps) {
-  const { isOnline, isOffline, lastOnlineTime, lastOfflineTime } = useNetworkStatus()
+  const { isOnline, isOffline, lastOnlineTime } = useNetworkStatus()
   const { pendingActions, failedActions, isSyncing } = useOfflineStore()
   const { announcePolite, announceAssertive } = useAriaAnnouncer()
   const { prefersReducedMotion } = useReducedMotion()
@@ -122,10 +110,10 @@ export function EnhancedPWAManager({
   useEffect(() => {
     const detectPWAStatus = () => {
       // Check if running as standalone PWA
-      const isStandalone
-        = window.matchMedia('(display-mode: standalone)').matches
-        || (window.navigator as any).standalone
-        || document.referrer.includes('android-app://')
+      const isStandalone =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        (window.navigator as any).standalone ||
+        document.referrer.includes('android-app://')
 
       // Detect platform
       const userAgent = navigator.userAgent.toLowerCase()
@@ -187,7 +175,8 @@ export function EnhancedPWAManager({
       setPwaFeatures({
         offlineSupport: 'serviceWorker' in navigator,
         pushNotifications: 'PushManager' in window,
-        backgroundSync: 'serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype,
+        backgroundSync:
+          'serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype,
         fileSystemAccess: 'showDirectoryPicker' in window,
         cameraAccess: 'mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices,
         locationAccess: 'geolocation' in navigator,
@@ -203,8 +192,10 @@ export function EnhancedPWAManager({
   // Initialize service worker
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js')
-        .then((registration) => {
+      navigator.serviceWorker
+        .register('/sw.js')
+        .then(registration => {
+          // eslint-disable-next-line no-console
           console.log('[PWA] Service Worker registered:', registration)
           setServiceWorkerReady(true)
 
@@ -221,7 +212,7 @@ export function EnhancedPWAManager({
             }
           })
         })
-        .catch((error) => {
+        .catch(error => {
           console.error('[PWA] Service Worker registration failed:', error)
         })
     }
@@ -257,8 +248,9 @@ export function EnhancedPWAManager({
 
     if (isOffline) {
       timer = setTimeout(() => {
+        // Show after 3 seconds offline
         setShowOfflineBanner(true)
-      }, 3000) // Show after 3 seconds offline
+      }, 3000)
     } else {
       setShowOfflineBanner(false)
     }
@@ -329,7 +321,7 @@ export function EnhancedPWAManager({
   // Handle update
   const handleUpdate = () => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.ready.then((registration) => {
+      navigator.serviceWorker.ready.then(registration => {
         registration.waiting?.postMessage({ type: 'SKIP_WAITING' })
         window.location.reload()
       })
@@ -374,10 +366,12 @@ export function EnhancedPWAManager({
 
       {/* Install Prompt */}
       {showInstallPrompt && pwaStatus.isInstallable && !pwaStatus.isInstalled && (
-        <div className={`
+        <div
+          className={`
           fixed top-4 left-4 right-4 z-50 max-w-md mx-auto
           ${prefersReducedMotion ? '' : 'animate-slide-in-down'}
-        `}>
+        `}
+        >
           <Card className="p-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white border-0 shadow-xl">
             <div className="flex items-start gap-4">
               <div className="flex items-center justify-center w-12 h-12 bg-white/20 rounded-xl backdrop-blur-sm">
@@ -387,7 +381,8 @@ export function EnhancedPWAManager({
               <div className="flex-1">
                 <h3 className="font-semibold text-lg mb-1">Install OpenRelief</h3>
                 <p className="text-white/90 text-sm mb-3">
-                  Get instant access to emergency features, work offline, and receive critical alerts.
+                  Get instant access to emergency features, work offline, and receive critical
+                  alerts.
                 </p>
 
                 {/* Installation Progress */}
@@ -464,10 +459,12 @@ export function EnhancedPWAManager({
 
       {/* Welcome Message for PWA Users */}
       {showWelcomeMessage && pwaStatus.isStandalone && (
-        <div className={`
+        <div
+          className={`
           fixed top-4 left-4 right-4 z-50 max-w-md mx-auto
           ${prefersReducedMotion ? '' : 'animate-slide-in-down'}
-        `}>
+        `}
+        >
           <Card className="p-4 bg-green-50 border-green-200 shadow-lg">
             <div className="flex items-start gap-3">
               <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-full">
@@ -477,7 +474,8 @@ export function EnhancedPWAManager({
               <div className="flex-1">
                 <h3 className="font-semibold text-green-900 mb-1">Welcome to OpenRelief!</h3>
                 <p className="text-green-700 text-sm mb-3">
-                  You're using the installed app with full offline capabilities and instant access to emergency features.
+                  You&apos;re using the installed app with full offline capabilities and instant
+                  access to emergency features.
                 </p>
 
                 <Button
@@ -504,16 +502,18 @@ export function EnhancedPWAManager({
 
       {/* Offline Banner */}
       {showOfflineBanner && isOffline && (
-        <div className={`
+        <div
+          className={`
           fixed top-0 left-0 right-0 z-40 bg-red-600 text-white
           ${prefersReducedMotion ? '' : 'animate-slide-in-down'}
-        `}>
+        `}
+        >
           <div className="max-w-4xl mx-auto px-4 py-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <WifiOffIcon className="w-5 h-5" />
                 <div>
-                  <span className="font-medium">You're offline</span>
+                  <span className="font-medium">You&apos;re offline</span>
                   <span className="text-red-200 text-sm ml-2">
                     Emergency features remain available
                   </span>
@@ -540,10 +540,12 @@ export function EnhancedPWAManager({
 
       {/* Update Available Banner */}
       {updateAvailable && (
-        <div className={`
+        <div
+          className={`
           fixed top-16 left-0 right-0 z-40 bg-blue-600 text-white
           ${prefersReducedMotion ? '' : 'animate-slide-in-down'}
-        `}>
+        `}
+        >
           <div className="max-w-4xl mx-auto px-4 py-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -580,10 +582,12 @@ export function EnhancedPWAManager({
       )}
 
       {/* PWA Status Indicator */}
-      <div className={`
+      <div
+        className={`
         fixed ${getPositionClasses()} z-30
         ${prefersReducedMotion ? '' : 'animate-fade-in'}
-      `}>
+      `}
+      >
         <div className="flex items-center gap-2 p-2 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200">
           {/* PWA Status */}
           <div className="flex items-center gap-2">
@@ -592,17 +596,13 @@ export function EnhancedPWAManager({
               size="sm"
               animated={!serviceWorkerReady}
             />
-            <div className="text-xs text-gray-600">
-              {pwaStatus.isStandalone ? 'PWA' : 'Web'}
-            </div>
+            <div className="text-xs text-gray-600">{pwaStatus.isStandalone ? 'PWA' : 'Web'}</div>
           </div>
 
           {/* Platform Indicator */}
           <div className="flex items-center gap-1">
             <PlatformIcon className="w-3 h-3 text-gray-600" />
-            <span className="text-xs text-gray-600">
-              {pwaStatus.platform}
-            </span>
+            <span className="text-xs text-gray-600">{pwaStatus.platform}</span>
           </div>
 
           {/* Features Status */}
@@ -623,7 +623,7 @@ export function EnhancedPWAManager({
             variant="ghost"
             size="sm"
             className="w-6 h-6 p-0"
-            onClick={() => window.location.href = '/pwa-status'}
+            onClick={() => (window.location.href = '/pwa-status')}
           >
             <SettingsIcon className="w-3 h-3" />
           </Button>
@@ -638,7 +638,9 @@ export function EnhancedPWAManager({
       {/* Screen Reader Announcements */}
       <ScreenReaderOnly>
         <div aria-live="polite" aria-atomic="true">
-          {pwaStatus.isInstallable && !pwaStatus.isInstalled && 'OpenRelief can be installed for better experience'}
+          {pwaStatus.isInstallable &&
+            !pwaStatus.isInstalled &&
+            'OpenRelief can be installed for better experience'}
           {pwaStatus.isStandalone && 'You are using the installed OpenRelief application'}
           {isOffline && 'You are currently offline'}
           {isOnline && 'You are now online'}

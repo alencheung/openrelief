@@ -17,110 +17,110 @@ import {
 // Transparency report configuration
 export interface TransparencyReportConfig {
   reportPeriod: {
-    start: Date;
-    end: Date;
-  };
-  includePersonalData: boolean;
-  anonymizeSensitiveInfo: boolean;
-  format: 'json' | 'csv' | 'pdf';
-  language: string;
+    start: Date
+    end: Date
+  }
+  includePersonalData: boolean
+  anonymizeSensitiveInfo: boolean
+  format: 'json' | 'csv' | 'pdf'
+  language: string
 }
 
 // Data processing activity
 export interface DataProcessingActivity {
-  id: string;
-  timestamp: Date;
-  userId?: string;
-  action: string;
-  dataType: string;
-  purpose: string;
-  legalBasis: string;
-  dataController: string;
-  dataProcessor?: string;
-  thirdPartyCountry?: string;
-  retentionPeriod: number;
-  securityMeasures: string[];
-  impactAssessment: boolean;
-  automatedDecision: boolean;
-  decisionLogic?: string;
-  userRights: string[];
+  id: string
+  timestamp: Date
+  userId?: string
+  action: string
+  dataType: string
+  purpose: string
+  legalBasis: string
+  dataController: string
+  dataProcessor?: string
+  thirdPartyCountry?: string
+  retentionPeriod: number
+  securityMeasures: string[]
+  impactAssessment: boolean
+  automatedDecision: boolean
+  decisionLogic?: string
+  userRights: string[]
 }
 
 // Third-party data sharing
 export interface ThirdPartySharing {
-  id: string;
-  timestamp: Date;
-  dataType: string;
-  recipient: string;
-  purpose: string;
-  legalBasis: string;
-  consent: boolean;
-  dataCategories: string[];
-  retentionPeriod: number;
-  securityMeasures: string[];
-  internationalTransfer: boolean;
-  safeguards: string[];
+  id: string
+  timestamp: Date
+  dataType: string
+  recipient: string
+  purpose: string
+  legalBasis: string
+  consent: boolean
+  dataCategories: string[]
+  retentionPeriod: number
+  securityMeasures: string[]
+  internationalTransfer: boolean
+  safeguards: string[]
 }
 
 // Algorithmic decision explanation
 export interface AlgorithmicDecision {
-  id: string;
-  timestamp: Date;
-  userId?: string;
-  algorithm: string;
-  decision: string;
+  id: string
+  timestamp: Date
+  userId?: string
+  algorithm: string
+  decision: string
   factors: {
-    name: string;
-    weight: number;
-    value: any;
-  }[];
-  confidence: number;
-  explanation: string;
-  impact: 'positive' | 'negative' | 'neutral';
-  userCanAppeal: boolean;
-  appealProcess: string;
+    name: string
+    weight: number
+    value: any
+  }[]
+  confidence: number
+  explanation: string
+  impact: 'positive' | 'negative' | 'neutral'
+  userCanAppeal: boolean
+  appealProcess: string
 }
 
 // Privacy impact assessment
 export interface PrivacyImpactAssessment {
-  id: string;
-  timestamp: Date;
-  projectName: string;
-  projectDescription: string;
-  dataTypes: string[];
-  processingPurposes: string[];
-  legalBasis: string;
+  id: string
+  timestamp: Date
+  projectName: string
+  projectDescription: string
+  dataTypes: string[]
+  processingPurposes: string[]
+  legalBasis: string
   necessityAndProportionality: {
-    necessity: string;
-    proportionality: string;
-  };
+    necessity: string
+    proportionality: string
+  }
   risksToRights: {
-    risk: string;
-    likelihood: 'low' | 'medium' | 'high';
-    impact: 'low' | 'medium' | 'high';
-    mitigation: string;
-  }[];
-  securityMeasures: string[];
-  complianceMeasures: string[];
-  recommendations: string[];
-  approvalStatus: 'pending' | 'approved' | 'rejected';
-  approvedBy?: string;
-  approvedAt?: Date;
+    risk: string
+    likelihood: 'low' | 'medium' | 'high'
+    impact: 'low' | 'medium' | 'high'
+    mitigation: string
+  }[]
+  securityMeasures: string[]
+  complianceMeasures: string[]
+  recommendations: string[]
+  approvalStatus: 'pending' | 'approved' | 'rejected'
+  approvedBy?: string
+  approvedAt?: Date
 }
 
 // System-wide transparency metrics
 export interface SystemTransparencyMetrics {
-  totalUsers: number;
-  activeUsers: number;
-  dataProcessingOperations: number;
-  dataSubjects: number;
-  thirdPartySharingEvents: number;
-  legalRequestsReceived: number;
-  legalRequestsProcessed: number;
-  dataBreaches: number;
-  averageResponseTime: number;
-  complianceScore: number;
-  lastUpdated: Date;
+  totalUsers: number
+  activeUsers: number
+  dataProcessingOperations: number
+  dataSubjects: number
+  thirdPartySharingEvents: number
+  legalRequestsReceived: number
+  legalRequestsProcessed: number
+  dataBreaches: number
+  averageResponseTime: number
+  complianceScore: number
+  lastUpdated: Date
 }
 
 // Generate transparency report
@@ -160,10 +160,16 @@ export const generateTransparencyReport = (
   }))
 
   // Generate third-party sharing report
-  const thirdPartySharing: ThirdPartySharing[] = extractThirdPartySharing(filteredLogs, anonymizeSensitiveInfo)
+  const thirdPartySharing: ThirdPartySharing[] = extractThirdPartySharing(
+    filteredLogs,
+    anonymizeSensitiveInfo
+  )
 
   // Generate algorithmic decision explanations
-  const algorithmicDecisions: AlgorithmicDecision[] = extractAlgorithmicDecisions(filteredLogs, anonymizeSensitiveInfo)
+  const algorithmicDecisions: AlgorithmicDecision[] = extractAlgorithmicDecisions(
+    filteredLogs,
+    anonymizeSensitiveInfo
+  )
 
   // Calculate system metrics
   const systemMetrics: SystemTransparencyMetrics = calculateSystemMetrics(
@@ -225,7 +231,9 @@ const anonymizeUserId = (userId?: string): string | undefined => {
   let hash = 0
   for (let i = 0; i < userId.length; i++) {
     const char = userId.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
+    // eslint-disable-next-line no-bitwise
+    hash = (hash << 5) - hash + char
+    // eslint-disable-next-line no-bitwise
     hash &= hash // Convert to 32-bit integer
   }
 
@@ -233,10 +241,7 @@ const anonymizeUserId = (userId?: string): string | undefined => {
 }
 
 // Get data processing purpose for a data type
-const getDataProcessingPurpose = (
-  dataType: string,
-  purposes: DataProcessingPurpose[]
-): string => {
+const getDataProcessingPurpose = (dataType: string, purposes: DataProcessingPurpose[]): string => {
   const purpose = purposes.find(p => p.dataTypes.includes(dataType))
   return purpose?.name || 'service_delivery'
 }
@@ -277,21 +282,9 @@ const getSecurityMeasuresForDataType = (dataType: string): string[] => {
   ]
 
   const specificMeasures: Record<string, string[]> = {
-    location: [
-      'Differential privacy',
-      'K-anonymity',
-      'Location precision reduction'
-    ],
-    profile: [
-      'Data anonymization',
-      'Pseudonymization',
-      'Access logging'
-    ],
-    health: [
-      'Enhanced encryption',
-      'Strict access controls',
-      'Audit trails'
-    ]
+    location: ['Differential privacy', 'K-anonymity', 'Location precision reduction'],
+    profile: ['Data anonymization', 'Pseudonymization', 'Access logging'],
+    health: ['Enhanced encryption', 'Strict access controls', 'Audit trails']
   }
 
   return [...baseMeasures, ...(specificMeasures[dataType] || [])]
@@ -307,18 +300,9 @@ const getUserRightsForDataType = (dataType: string): string[] => {
   ]
 
   const specificRights: Record<string, string[]> = {
-    location: [
-      'Right to object to processing',
-      'Right to data portability'
-    ],
-    profile: [
-      'Right to object to processing',
-      'Right to data portability'
-    ],
-    health: [
-      'Right to object to processing',
-      'Right to data portability'
-    ]
+    location: ['Right to object to processing', 'Right to data portability'],
+    profile: ['Right to object to processing', 'Right to data portability'],
+    health: ['Right to object to processing', 'Right to data portability']
   }
 
   return [...baseRights, ...(specificRights[dataType] || [])]
@@ -327,10 +311,14 @@ const getUserRightsForDataType = (dataType: string): string[] => {
 // Get decision logic for automated decisions
 const getDecisionLogic = (action: string): string => {
   const decisionLogic: Record<string, string> = {
-    location_query: 'Location is processed using differential privacy with ε=0.1 to balance utility and privacy',
-    profile_view: 'Profile data is anonymized using k-anonymity with k=5 to ensure individual privacy',
-    emergency_response: 'Emergency data is shared with verified responders based on proximity and availability',
-    trust_score_calculation: 'Trust score is calculated based on response time, reliability, and community feedback'
+    location_query:
+      'Location is processed using differential privacy with ε=0.1 to balance utility and privacy',
+    profile_view:
+      'Profile data is anonymized using k-anonymity with k=5 to ensure individual privacy',
+    emergency_response:
+      'Emergency data is shared with verified responders based on proximity and availability',
+    trust_score_calculation:
+      'Trust score is calculated based on response time, reliability, and community feedback'
   }
 
   return decisionLogic[action] || 'Decision logic is not documented for this action'
@@ -355,9 +343,10 @@ const extractThirdPartySharing = (
       retentionPeriod: log.retentionPeriod,
       securityMeasures: getSecurityMeasuresForDataType(log.dataType),
       internationalTransfer: determineDataLocation(log.dataType) !== 'EU',
-      safeguards: determineDataLocation(log.dataType) !== 'EU'
-        ? ['Standard Contractual Clauses', 'Technical safeguards']
-        : []
+      safeguards:
+        determineDataLocation(log.dataType) !== 'EU'
+          ? ['Standard Contractual Clauses', 'Technical safeguards']
+          : []
     }))
 }
 
@@ -391,9 +380,7 @@ const calculateSystemMetrics = (
 ): SystemTransparencyMetrics => {
   const totalUsers = new Set(logs.map(log => log.userId)).size
   const activeUsers = new Set(
-    logs
-      .filter(log => log.timestamp >= reportPeriod.start)
-      .map(log => log.userId)
+    logs.filter(log => log.timestamp >= reportPeriod.start).map(log => log.userId)
   ).size
 
   const dataProcessingOperations = logs.length
@@ -403,27 +390,27 @@ const calculateSystemMetrics = (
   ).length
 
   const legalRequestsReceived = legalRequests.length
-  const legalRequestsProcessed = legalRequests.filter(r =>
-    r.status === 'completed'
-  ).length
+  const legalRequestsProcessed = legalRequests.filter(r => r.status === 'completed').length
 
-  const dataBreaches = logs.filter(log =>
-    log.action.includes('data_breach')
-  ).length
+  const dataBreaches = logs.filter(log => log.action.includes('data_breach')).length
 
   // Calculate average response time for legal requests
   const completedRequests = legalRequests.filter(r => r.status === 'completed')
-  const averageResponseTime = completedRequests.length > 0
-    ? completedRequests.reduce((sum, r) => {
-      const responseTime = r.updatedAt.getTime() - r.createdAt.getTime()
-      return sum + responseTime
-    }, 0) / completedRequests.length / (1000 * 60 * 60 * 24) // Convert to days
-    : 0
+  const averageResponseTime =
+    completedRequests.length > 0
+      ? completedRequests.reduce((sum, r) => {
+          const responseTime = r.updatedAt.getTime() - r.createdAt.getTime()
+          return sum + responseTime
+        }, 0) /
+        completedRequests.length /
+        (1000 * 60 * 60 * 24) // Convert to days
+      : 0
 
   // Calculate compliance score (0-100)
-  const complianceScore = Math.min(100, Math.max(0,
-    100 - (dataBreaches * 10) - (averageResponseTime * 2)
-  ))
+  const complianceScore = Math.min(
+    100,
+    Math.max(0, 100 - dataBreaches * 10 - averageResponseTime * 2)
+  )
 
   return {
     totalUsers,
@@ -446,13 +433,16 @@ const generatePrivacyImpactAssessments = (
   reportPeriod: { start: Date; end: Date }
 ): PrivacyImpactAssessment[] => {
   // Group activities by project/purpose
-  const activitiesByPurpose = activities.reduce((acc, activity) => {
-    if (!acc[activity.purpose]) {
-      acc[activity.purpose] = []
-    }
-    acc[activity.purpose].push(activity)
-    return acc
-  }, {} as Record<string, DataProcessingActivity[]>)
+  const activitiesByPurpose = activities.reduce(
+    (acc, activity) => {
+      if (!acc[activity.purpose]) {
+        acc[activity.purpose] = []
+      }
+      acc[activity.purpose].push(activity)
+      return acc
+    },
+    {} as Record<string, DataProcessingActivity[]>
+  )
 
   return Object.entries(activitiesByPurpose).map(([purpose, purposeActivities]) => ({
     id: `pia_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -510,24 +500,29 @@ const assessGDPRCompliance = (
 ) => {
   const hasLegalBasis = activities.every(a => a.legalBasis)
   const hasPurposeLimitation = activities.every(a => a.purpose)
-  const hasDataMinimization = activities.every(a => a.securityMeasures.includes('Data minimization'))
+  const hasDataMinimization = activities.every(a =>
+    a.securityMeasures.includes('Data minimization')
+  )
   const hasRetentionPeriod = activities.every(a => a.retentionPeriod > 0)
   const hasSecurityMeasures = activities.every(a => a.securityMeasures.length > 0)
   const hasUserRights = activities.every(a => a.userRights.length > 0)
 
-  const legalRequestCompliance = legalRequests.every(r =>
-    r.status === 'completed' || r.status === 'processing'
+  const legalRequestCompliance = legalRequests.every(
+    r => r.status === 'completed' || r.status === 'processing'
   )
 
-  const score = [
-    hasLegalBasis,
-    hasPurposeLimitation,
-    hasDataMinimization,
-    hasRetentionPeriod,
-    hasSecurityMeasures,
-    hasUserRights,
-    legalRequestCompliance
-  ].filter(Boolean).length / 7 * 100
+  const score =
+    ([
+      hasLegalBasis,
+      hasPurposeLimitation,
+      hasDataMinimization,
+      hasRetentionPeriod,
+      hasSecurityMeasures,
+      hasUserRights,
+      legalRequestCompliance
+    ].filter(Boolean).length /
+      7) *
+    100
 
   return {
     score,
@@ -545,14 +540,20 @@ const assessGDPRCompliance = (
 const assessDataProtectionImpact = (activities: DataProcessingActivity[]) => {
   const highImpactActivities = activities.filter(a => a.impactAssessment)
   const automatedDecisions = activities.filter(a => a.automatedDecision)
-  const internationalTransfers = activities.filter(a => a.thirdPartyCountry && a.thirdPartyCountry !== 'EU')
+  const internationalTransfers = activities.filter(
+    a => a.thirdPartyCountry && a.thirdPartyCountry !== 'EU'
+  )
 
   return {
     highImpactActivities: highImpactActivities.length,
     automatedDecisions: automatedDecisions.length,
     internationalTransfers: internationalTransfers.length,
-    overallRisk: highImpactActivities.length > 0 ? 'high'
-      : automatedDecisions.length > activities.length / 2 ? 'medium' : 'low'
+    overallRisk:
+      highImpactActivities.length > 0
+        ? 'high'
+        : automatedDecisions.length > activities.length / 2
+          ? 'medium'
+          : 'low'
   }
 }
 
@@ -561,18 +562,19 @@ const assessUserRightsFulfillment = (legalRequests: LegalRequest[]) => {
   const totalRequests = legalRequests.length
   const completedRequests = legalRequests.filter(r => r.status === 'completed').length
   const pendingRequests = legalRequests.filter(r => r.status === 'pending').length
-  const overdueRequests = legalRequests.filter(r =>
-    r.status === 'pending'
-    && r.responseDeadline
-    && new Date() > r.responseDeadline
+  const overdueRequests = legalRequests.filter(
+    r => r.status === 'pending' && r.responseDeadline && new Date() > r.responseDeadline
   ).length
 
-  const averageProcessingTime = completedRequests.length > 0
-    ? completedRequests.reduce((sum, r) => {
-      const processingTime = r.updatedAt.getTime() - r.createdAt.getTime()
-      return sum + processingTime
-    }, 0) / completedRequests.length / (1000 * 60 * 60 * 24) // Convert to days
-    : 0
+  const averageProcessingTime =
+    completedRequests.length > 0
+      ? completedRequests.reduce((sum, r) => {
+          const processingTime = r.updatedAt.getTime() - r.createdAt.getTime()
+          return sum + processingTime
+        }, 0) /
+        completedRequests.length /
+        (1000 * 60 * 60 * 24) // Convert to days
+      : 0
 
   return {
     totalRequests,
@@ -628,9 +630,7 @@ const convertToCSV = (report: any): string => {
     activity.automatedDecision ? 'Yes' : 'No'
   ])
 
-  return [headers, ...rows]
-    .map(row => row.map(cell => `"${cell}"`).join(','))
-    .join('\n')
+  return [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n')
 }
 
 // Generate user-specific transparency report

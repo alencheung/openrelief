@@ -12,7 +12,6 @@ import {
   WifiIcon,
   WifiOffIcon,
   Loader2Icon,
-  AlertTriangleIcon,
   CheckCircle2Icon,
   SignalIcon,
   SignalLowIcon,
@@ -44,7 +43,7 @@ interface NetworkType {
 export function EnhancedNetworkStatusIndicator() {
   const {
     isOnline,
-    isOffline,
+    isOffline: _isOffline,
     reconnectAttempts,
     connectionType,
     effectiveType,
@@ -59,7 +58,7 @@ export function EnhancedNetworkStatusIndicator() {
     syncProgress,
     pendingActions,
     failedActions,
-    metrics
+    metrics: _metrics
   } = useOfflineStore()
 
   const { announcePolite, announceAssertive } = useAriaAnnouncer()
@@ -67,9 +66,11 @@ export function EnhancedNetworkStatusIndicator() {
 
   const [expanded, setExpanded] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
-  const [connectionStatus, setConnectionStatus] = useState<'stable' | 'unstable' | 'connecting' | 'offline'>('stable')
+  const [, setConnectionStatus] = useState<'stable' | 'unstable' | 'connecting' | 'offline'>(
+    'stable'
+  )
   const [showSuccess, setShowSuccess] = useState(false)
-  const [lastStatusChange, setLastStatusChange] = useState<Date | null>(null)
+  const [, setLastStatusChange] = useState<Date | null>(null)
 
   // Determine connection quality
   const getConnectionQuality = (): ConnectionQuality => {
@@ -83,8 +84,10 @@ export function EnhancedNetworkStatusIndicator() {
       }
     }
 
-    const speed = downlink // in Mbps
-    const latency = rtt || 0 // in ms
+    // in Mbps
+    const speed = downlink
+    // in ms
+    const latency = rtt || 0
 
     let level: ConnectionQuality['level']
     let color: string
@@ -239,29 +242,36 @@ export function EnhancedNetworkStatusIndicator() {
     <>
       {/* Main Status Indicator */}
       <div className="fixed bottom-4 left-4 z-50">
-        <div className={`
+        <div
+          className={`
           relative flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg backdrop-blur-sm
           transition-all duration-300 ease-in-out
-          ${isOnline
-      ? 'bg-white/90 border border-gray-200 text-gray-900'
-      : 'bg-red-600/90 border border-red-700 text-white'
-    }
+          ${
+            isOnline
+              ? 'bg-white/90 border border-gray-200 text-gray-900'
+              : 'bg-red-600/90 border border-red-700 text-white'
+          }
           ${prefersReducedMotion ? '' : 'hover:shadow-xl'}
-        `}>
+        `}
+        >
           {/* Status Icon and Text */}
           <div className="flex items-center gap-2">
-            <div className={`
+            <div
+              className={`
               relative flex items-center justify-center w-8 h-8 rounded-full
               transition-all duration-300
               ${isOnline ? 'bg-green-100' : 'bg-red-100'}
-            `}>
-              {isConnecting ? (
-                <Loader2Icon className="w-4 h-4 animate-spin text-blue-600" />
-              ) : isOnline ? (
-                <NetworkIcon className={`w-4 h-4 ${networkType.color}`} />
-              ) : (
-                <WifiOffIcon className="w-4 h-4 text-red-600" />
-              )}
+            `}
+            >
+              {(() => {
+                if (isConnecting) {
+                  return <Loader2Icon className="w-4 h-4 animate-spin text-blue-600" />
+                }
+                if (isOnline) {
+                  return <NetworkIcon className={`w-4 h-4 ${networkType.color}`} />
+                }
+                return <WifiOffIcon className="w-4 h-4 text-red-600" />
+              })()}
 
               {/* Pulse animation for active connection */}
               {isOnline && !prefersReducedMotion && (
@@ -271,7 +281,15 @@ export function EnhancedNetworkStatusIndicator() {
 
             <div className="flex flex-col">
               <span className="text-sm font-medium">
-                {isConnecting ? 'Connecting...' : isOnline ? 'Online' : 'Offline'}
+                {(() => {
+                  if (isConnecting) {
+                    return 'Connecting...'
+                  }
+                  if (isOnline) {
+                    return 'Online'
+                  }
+                  return 'Offline'
+                })()}
               </span>
               {isOnline && (
                 <span className="text-xs opacity-75">
@@ -286,15 +304,16 @@ export function EnhancedNetworkStatusIndicator() {
             <div className="flex items-center gap-1">
               <SignalIconComponent className={`w-4 h-4 ${quality.color}`} />
               <div className="flex items-center gap-0.5">
-                {[1, 2, 3, 4].map((bar) => (
+                {[1, 2, 3, 4].map(bar => (
                   <div
                     key={bar}
                     className={`
                       w-1 h-3 rounded-sm transition-all duration-300
-                      ${quality.signalStrength >= bar * 25
-                    ? quality.color.replace('text', 'bg')
-                    : 'bg-gray-300'
-                  }
+                      ${
+                        quality.signalStrength >= bar * 25
+                          ? quality.color.replace('text', 'bg')
+                          : 'bg-gray-300'
+                      }
                     `}
                     style={{
                       height: `${bar * 3}px`
@@ -308,9 +327,7 @@ export function EnhancedNetworkStatusIndicator() {
           {/* Sync Status */}
           {(isSyncing || pendingActions.length > 0) && (
             <div className="flex items-center gap-2">
-              {isSyncing && (
-                <Loader2Icon className="w-4 h-4 animate-spin text-blue-600" />
-              )}
+              {isSyncing && <Loader2Icon className="w-4 h-4 animate-spin text-blue-600" />}
               {pendingActions.length > 0 && (
                 <span className="text-xs font-medium bg-orange-100 text-orange-800 px-2 py-1 rounded-full">
                   {pendingActions.length} pending
@@ -327,22 +344,20 @@ export function EnhancedNetworkStatusIndicator() {
             className="w-8 h-8 p-0"
             aria-label={expanded ? 'Hide network details' : 'Show network details'}
           >
-            {expanded ? (
-              <XIcon className="w-4 h-4" />
-            ) : (
-              <SettingsIcon className="w-4 h-4" />
-            )}
+            {expanded ? <XIcon className="w-4 h-4" /> : <SettingsIcon className="w-4 h-4" />}
           </Button>
         </div>
 
         {/* Success Indicator */}
         {showSuccess && isOnline && (
-          <div className={`
+          <div
+            className={`
             absolute -top-12 left-0 right-0 mx-auto w-fit
             px-3 py-2 bg-green-600 text-white text-sm font-medium
             rounded-lg shadow-lg flex items-center gap-2
             ${prefersReducedMotion ? '' : 'animate-slide-in-down'}
-          `}>
+          `}
+          >
             <CheckCircle2Icon className="w-4 h-4" />
             Connection Restored
           </div>
@@ -350,11 +365,13 @@ export function EnhancedNetworkStatusIndicator() {
 
         {/* Expanded Details Panel */}
         {expanded && (
-          <div className={`
+          <div
+            className={`
             absolute bottom-full left-0 right-0 mb-2 p-4
             bg-white rounded-xl shadow-2xl border border-gray-200
             ${prefersReducedMotion ? '' : 'animate-slide-in-up'}
-          `}>
+          `}
+          >
             <div className="space-y-4">
               {/* Connection Status */}
               <div className="flex items-center justify-between">
@@ -403,9 +420,7 @@ export function EnhancedNetworkStatusIndicator() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Sync Status</span>
-                    {isSyncing && (
-                      <Loader2Icon className="w-4 h-4 animate-spin text-blue-600" />
-                    )}
+                    {isSyncing && <Loader2Icon className="w-4 h-4 animate-spin text-blue-600" />}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -447,9 +462,7 @@ export function EnhancedNetworkStatusIndicator() {
                 {lastOfflineTime && (
                   <div>
                     <span className="text-xs text-gray-500">Last Offline</span>
-                    <p className="text-sm font-medium">
-                      {lastOfflineTime.toLocaleTimeString()}
-                    </p>
+                    <p className="text-sm font-medium">{lastOfflineTime.toLocaleTimeString()}</p>
                   </div>
                 )}
               </div>

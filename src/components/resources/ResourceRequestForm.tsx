@@ -87,7 +87,9 @@ const ResourceRequestForm = React.forwardRef<HTMLDivElement, ResourceRequestForm
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault()
 
-      if (!validate()) return
+      if (!validate()) {
+        return
+      }
 
       const request: ResourceRequest = {
         resourceType,

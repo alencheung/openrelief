@@ -17,8 +17,6 @@ import {
   Activity,
   AlertTriangle,
   CheckCircle,
-  TrendingUp,
-  TrendingDown,
   Zap,
   Clock,
   Server,
@@ -26,18 +24,13 @@ import {
   Globe,
   BarChart3,
   Settings,
-  RefreshCw,
   Download,
-  Filter,
   Calendar,
   Cpu,
-  HardDrive,
-  Wifi,
-  Users
+  HardDrive
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
-  usePerformanceMonitor,
   usePerformanceMetrics,
   usePerformanceAlerts,
   usePerformanceActions
@@ -60,8 +53,8 @@ export function PerformanceDashboard({
 }: PerformanceDashboardProps) {
   const metrics = usePerformanceMetrics()
   const alerts = usePerformanceAlerts()
-  const { startMonitoring, stopMonitoring, triggerOptimization, generateReport, exportMetrics }
-    = usePerformanceActions()
+  const { startMonitoring, stopMonitoring, triggerOptimization, generateReport, exportMetrics } =
+    usePerformanceActions()
 
   const [isMonitoring, setIsMonitoring] = useState(false)
   const [timeRange, setTimeRange] = useState<'1h' | '24h' | '7d' | '30d'>('1h')
@@ -73,7 +66,6 @@ export function PerformanceDashboard({
     if (autoRefresh) {
       const interval = setInterval(() => {
         // This would trigger real-time metrics update
-        console.log('Refreshing performance metrics...')
       }, refreshInterval)
 
       return () => clearInterval(interval)
@@ -145,7 +137,7 @@ export function PerformanceDashboard({
     }
   }
 
-  const criticalAlerts = alerts.filter(alert => alert.severity === 'critical')
+  const _criticalAlerts = alerts.filter(alert => alert.severity === 'critical')
   const unresolvedAlerts = alerts.filter(alert => !alert.resolved)
 
   // Prepare chart data
@@ -257,11 +249,9 @@ export function PerformanceDashboard({
                     <div
                       className={cn(
                         'w-2 h-2 rounded-full',
-                        alert.severity === 'critical'
-                          ? 'bg-red-600'
-                          : alert.severity === 'high'
-                            ? 'bg-orange-600'
-                            : 'bg-yellow-600'
+                        alert.severity === 'critical' && 'bg-red-600',
+                        alert.severity === 'high' && 'bg-orange-600',
+                        alert.severity === 'medium' && 'bg-yellow-600'
                       )}
                     />
                     <div>

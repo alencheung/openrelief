@@ -1,20 +1,16 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { AlertTriangle, MapPin, Camera, Mic, Send, X, Plus, Minus } from 'lucide-react'
+import { AlertTriangle, MapPin, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useEmergencyStore, useLocationStore, useOfflineStore } from '@/store'
 import { EmergencyEvent } from '@/types'
-import { Database } from '@/types/database'
-import { useFocusManagement, useAriaAnnouncer, useFormValidationAnnouncer } from '@/hooks/accessibility'
 import {
-  EnhancedCard,
-  EnhancedCardHeader,
-  EnhancedCardTitle,
-  EnhancedCardContent,
-  FormFeedback,
-  EnhancedButton
-} from '@/components/ui'
+  useFocusManagement,
+  useAriaAnnouncer,
+  useFormValidationAnnouncer
+} from '@/hooks/accessibility'
+import { EnhancedCard, FormFeedback, EnhancedButton } from '@/components/ui'
 import {
   EnhancedInput,
   EnhancedTextarea,
@@ -22,7 +18,6 @@ import {
   EnhancedRangeSlider,
   EnhancedFileUpload,
   AudioRecorder,
-  ImagePreview,
   EmergencyFormLayout,
   EmergencyFormSection,
   EmergencyFormActions,
@@ -35,7 +30,8 @@ interface EmergencyReportInterfaceProps {
   onClose: () => void
   onReportSubmitted: (report: Omit<EmergencyEvent, 'id' | 'created_at' | 'updated_at'>) => void
   initialLocation?: { lat: number; lng: number }
-  mapInstance?: any // MapLibre GL map instance
+  // MapLibre GL map instance
+  mapInstance?: any
 }
 
 interface EmergencyType {
@@ -116,20 +112,29 @@ export default function EmergencyReportInterface({
   const [images, setImages] = useState<any[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [mapPreview, setMapPreview] = useState(false)
-  const [audioPermission, setAudioPermission] = useState<'granted' | 'denied' | 'prompt' | null>(null)
-  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true)
+  const [_audioPermission, setAudioPermission] = useState<'granted' | 'denied' | 'prompt' | null>(
+    null
+  )
+  const [isOnline, setIsOnline] = useState(
+    typeof navigator !== 'undefined' ? navigator.onLine : true
+  )
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
 
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const _fileInputRef = useRef<HTMLInputElement>(null)
 
   // Accessibility hooks
-  const { containerRef, getFocusableElements, focusFirstElement } = useFocusManagement({
+  const {
+    containerRef,
+    getFocusableElements: _getFocusableElements,
+    focusFirstElement: _focusFirstElement
+  } = useFocusManagement({
     trapFocus: true,
     autoFocus: true,
     restoreFocus: true
   })
   const { announcePolite, announceAssertive } = useAriaAnnouncer()
-  const { announceValidationErrors, announceFieldError, announceFieldSuccess } = useFormValidationAnnouncer()
+  const { announceValidationErrors, announceFieldError, announceFieldSuccess } =
+    useFormValidationAnnouncer()
 
   const { currentLocation } = useLocationStore()
   const { addOfflineAction } = useEmergencyStore()
@@ -170,7 +175,9 @@ export default function EmergencyReportInterface({
   useEffect(() => {
     const checkAudioPermission = async () => {
       try {
-        const permission = await navigator.permissions.query({ name: 'microphone' as PermissionName })
+        const permission = await navigator.permissions.query({
+          name: 'microphone' as PermissionName
+        })
         setAudioPermission(permission.state as 'granted' | 'denied' | 'prompt')
 
         permission.addEventListener('change', () => {
@@ -190,7 +197,8 @@ export default function EmergencyReportInterface({
     const errors: Record<string, string> = {}
 
     switch (stepIndex) {
-      case 0: // Emergency Type
+      // Emergency Type
+      case 0:
         if (!selectedType) {
           errors.type = 'Please select an emergency type'
           announceFieldError('Emergency type', 'Please select an emergency type')
@@ -198,7 +206,8 @@ export default function EmergencyReportInterface({
           announceFieldSuccess('Emergency type', 'Emergency type selected')
         }
         break
-      case 1: // Emergency Details
+      // Emergency Details
+      case 1:
         if (!title.trim()) {
           errors.title = 'Title is required'
           announceFieldError('Title', 'Title is required')
@@ -225,7 +234,8 @@ export default function EmergencyReportInterface({
           announceFieldSuccess('Description', 'Description is valid')
         }
         break
-      case 2: // Location
+      // Location
+      case 2:
         if (!location) {
           errors.location = 'Please select a location on the map'
           announceFieldError('Location', 'Please select a location on the map')
@@ -299,10 +309,11 @@ export default function EmergencyReportInterface({
 
   // Handle file uploads
   const handleImageUpload = (files: File[], previews: any[]) => {
-    setImages(prev => [...prev, ...previews].slice(0, 5)) // Limit to 5 images
+    // Limit to 5 images
+    setImages(prev => [...prev, ...previews].slice(0, 5))
   }
 
-  const handleImageRemove = (imageId: string, image: any) => {
+  const handleImageRemove = (imageId: string, _image: any) => {
     setImages(prev => prev.filter(img => img.id !== imageId))
   }
 
@@ -310,7 +321,7 @@ export default function EmergencyReportInterface({
     setAudioRecording(recording)
   }
 
-  const handleAudioRemove = () => {
+  const _handleAudioRemove = () => {
     setAudioRecording(null)
   }
 
@@ -358,30 +369,34 @@ export default function EmergencyReportInterface({
 
     const emergencyReport: Omit<EmergencyEvent, 'id' | 'created_at' | 'updated_at'> = {
       type_id: selectedType!.id,
-      reporter_id: 'current-user', // This would come from auth
+      // This would come from auth
+      reporter_id: 'current-user',
       title,
       description,
       location: `${location!.lat} ${location!.lng}`,
       radius_meters: radius,
       severity,
       status: 'pending',
-      trust_weight: 1.0, // Default trust weight
+      // Default trust weight
+      trust_weight: 1.0,
       confirmation_count: 0,
       dispute_count: 0,
       metadata: {
         images: images.map(img => img.url),
         audio: audioRecording ? audioRecording.url : null,
+        // Reported at timestamp
         reported_at: new Date().toISOString(),
         device_info: navigator.userAgent
       },
-      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
+      // 24 hours
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       resolved_at: null,
       resolved_by: null
     }
 
     try {
+      // Try to submit immediately
       if (isOnline) {
-        // Try to submit immediately
         onReportSubmitted(emergencyReport)
       } else {
         // Store offline with proper offline action
@@ -470,14 +485,13 @@ export default function EmergencyReportInterface({
         <div className="px-6 py-2 bg-muted/20 border-b">
           <div className="flex items-center gap-2">
             <div
-              className={cn(
-                'w-2 h-2 rounded-full',
-                isOnline ? 'bg-success' : 'bg-destructive'
-              )}
+              className={cn('w-2 h-2 rounded-full', isOnline ? 'bg-success' : 'bg-destructive')}
               aria-hidden="true"
             />
             <span className="text-sm text-muted-foreground">
-              {isOnline ? 'Online - Report will be submitted immediately' : 'Offline - Report will be saved locally'}
+              {isOnline
+                ? 'Online - Report will be submitted immediately'
+                : 'Offline - Report will be saved locally'}
             </span>
           </div>
         </div>
@@ -485,7 +499,8 @@ export default function EmergencyReportInterface({
         {/* Form Content */}
         <div className="flex-1 overflow-y-auto">
           <div id="emergency-report-description" className="sr-only">
-            Complete this form to report an emergency. The form has 5 steps: emergency type, details, location, evidence, and review.
+            Complete this form to report an emergency. The form has 5 steps: emergency type,
+            details, location, evidence, and review.
           </div>
           <EmergencyFormLayout className="p-6">
             {/* Step 1: Emergency Type */}
@@ -495,11 +510,15 @@ export default function EmergencyReportInterface({
                 description="Select the type of emergency you are reporting"
                 aria-label="Step 1 of 5: Emergency Type"
               >
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" role="radiogroup" aria-labelledby="emergency-type-heading">
+                <div
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+                  role="radiogroup"
+                  aria-labelledby="emergency-type-heading"
+                >
                   <h3 id="emergency-type-heading" className="sr-only">
                     Select emergency type
                   </h3>
-                  {emergencyTypes.map((type) => (
+                  {emergencyTypes.map(type => (
                     <EnhancedCard
                       key={type.id}
                       className={cn(
@@ -523,9 +542,7 @@ export default function EmergencyReportInterface({
                     </EnhancedCard>
                   ))}
                 </div>
-                {formErrors.type && (
-                  <FormFeedback type="error" message={formErrors.type} />
-                )}
+                {formErrors.type && <FormFeedback type="error" message={formErrors.type} />}
               </EmergencyFormSection>
             )}
 
@@ -540,14 +557,14 @@ export default function EmergencyReportInterface({
                   <EnhancedInput
                     label="Title"
                     value={title}
-                    onChange={(e) => setTitle(e.target.value)}
+                    onChange={e => setTitle(e.target.value)}
                     placeholder="Brief description of the emergency"
                     maxLength={100}
                     required
                     errorText={formErrors.title}
                     floatingLabel
                     validateOnChange
-                    validator={(value) => {
+                    validator={value => {
                       if (!value.trim()) {
                         return 'Title is required'
                       }
@@ -564,7 +581,7 @@ export default function EmergencyReportInterface({
                   <EnhancedTextarea
                     label="Description"
                     value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                    onChange={e => setDescription(e.target.value)}
                     placeholder="Detailed description of the emergency situation"
                     maxLength={500}
                     showCharacterCount
@@ -572,7 +589,7 @@ export default function EmergencyReportInterface({
                     errorText={formErrors.description}
                     floatingLabel
                     validateOnChange
-                    validator={(value) => {
+                    validator={value => {
                       if (!value.trim()) {
                         return 'Description is required'
                       }
@@ -596,7 +613,7 @@ export default function EmergencyReportInterface({
                       { value: '5', label: 'Critical - Life-threatening' }
                     ]}
                     value={severity.toString()}
-                    onChange={(value) => setSeverity(parseInt(value))}
+                    onChange={value => setSeverity(parseInt(value, 10))}
                     orientation="horizontal"
                     required
                   />
@@ -640,7 +657,7 @@ export default function EmergencyReportInterface({
                       max={5000}
                       step={50}
                       showValue
-                      valueFormatter={(value) => `${value}m`}
+                      valueFormatter={value => `${value}m`}
                       marks={[
                         { value: 200, label: '200m' },
                         { value: 500, label: '500m' },
@@ -679,7 +696,8 @@ export default function EmergencyReportInterface({
                     accept="image/*"
                     multiple
                     maxFiles={5}
-                    maxSize={5 * 1024 * 1024} // 5MB
+                    // 5MB
+                    maxSize={5 * 1024 * 1024}
                     showPreviews
                     onFilesChange={handleImageUpload}
                     onFileRemove={handleImageRemove}
@@ -687,7 +705,8 @@ export default function EmergencyReportInterface({
 
                   <AudioRecorder
                     label="Audio Recording"
-                    maxDuration={60} // 1 minute
+                    // 1 minute
+                    maxDuration={60}
                     showLevels
                     showDuration
                     showPlayback
@@ -709,17 +728,28 @@ export default function EmergencyReportInterface({
                     <div className="space-y-4">
                       <h3 className="text-lg font-medium text-foreground">Emergency Details</h3>
                       <div className="space-y-2 text-sm">
-                        <div><span className="font-medium">Type:</span> {selectedType?.name}</div>
-                        <div><span className="font-medium">Title:</span> {title}</div>
-                        <div><span className="font-medium">Severity:</span> {severity}/5</div>
+                        <div>
+                          <span className="font-medium">Type:</span> {selectedType?.name}
+                        </div>
+                        <div>
+                          <span className="font-medium">Title:</span> {title}
+                        </div>
+                        <div>
+                          <span className="font-medium">Severity:</span> {severity}/5
+                        </div>
                       </div>
                     </div>
 
                     <div className="space-y-4">
                       <h3 className="text-lg font-medium text-foreground">Location</h3>
                       <div className="space-y-2 text-sm">
-                        <div><span className="font-medium">Coordinates:</span> {location?.lat.toFixed(6)}, {location?.lng.toFixed(6)}</div>
-                        <div><span className="font-medium">Radius:</span> {radius}m</div>
+                        <div>
+                          <span className="font-medium">Coordinates:</span>{' '}
+                          {location?.lat.toFixed(6)}, {location?.lng.toFixed(6)}
+                        </div>
+                        <div>
+                          <span className="font-medium">Radius:</span> {radius}m
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -745,9 +775,7 @@ export default function EmergencyReportInterface({
                         </div>
                       )}
                       {images.length === 0 && !audioRecording && (
-                        <div className="text-sm text-muted-foreground">
-                          No evidence attached
-                        </div>
+                        <div className="text-sm text-muted-foreground">No evidence attached</div>
                       )}
                     </div>
                   </div>

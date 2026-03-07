@@ -1,45 +1,27 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import React, { useState, useEffect, useMemo } from 'react'
+import { motion } from 'framer-motion'
 import {
   Users,
   CheckCircle,
   XCircle,
   Clock,
-  TrendingUp,
-  TrendingDown,
-  Activity,
-  Shield,
   AlertTriangle,
-  Zap,
   Eye,
   EyeOff,
   RefreshCw,
-  BarChart3,
-  PieChart,
   Target,
   ThumbsUp,
   ThumbsDown,
-  MessageSquare,
-  UserCheck,
-  Timer,
-  Radio,
   MapPin,
-  Filter,
-  Settings,
-  Info,
-  ChevronRight,
-  ChevronDown,
   Plus,
   Minus,
   Play,
-  Pause,
-  SkipForward,
-  RotateCcw
+  Pause
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useTrustStore, useTrustScore } from '@/store'
+import { useTrustScore } from '@/store'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -123,7 +105,6 @@ interface ConsensusAction {
 export function ConsensusEngineUI({ className, emergencyId }: ConsensusEngineUIProps) {
   const [consensusEvent, setConsensusEvent] = useState<ConsensusEvent | null>(null)
   const [isRealtime, setIsRealtime] = useState(true)
-  const [expandedSection, setExpandedSection] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'participants' | 'metrics' | 'timeline' | 'map'>(
     'participants'
   )
@@ -133,140 +114,137 @@ export function ConsensusEngineUI({ className, emergencyId }: ConsensusEngineUIP
     expertise: 'all'
   })
   const [isAutoRefresh, setIsAutoRefresh] = useState(true)
-  const [refreshInterval, setRefreshInterval] = useState(5000) // 5 seconds
+  const [refreshInterval] = useState(5000)
 
   const currentUserTrustScore = useTrustScore()
-  const animationRef = useRef<HTMLDivElement>(null)
 
-  // Mock consensus event for demonstration
-  const mockConsensusEvent: ConsensusEvent = {
-    id: emergencyId || 'consensus-123',
-    title: 'Building Fire Emergency',
-    description: 'Multiple reports of fire in downtown commercial building',
-    type: 'fire',
-    severity: 'high',
-    location: {
-      latitude: 37.7749,
-      longitude: -122.4194,
-      radius: 500
-    },
-    reporter: {
-      id: 'user-456',
-      name: 'Jane Smith',
-      trustScore: 0.85
-    },
-    status: 'building',
-    createdAt: '2024-01-15T10:30:00Z',
-    expiresAt: '2024-01-15T12:30:00Z',
-    metrics: {
-      totalParticipants: 24,
-      confirmVotes: 18,
-      disputeVotes: 2,
-      pendingVotes: 4,
-      confidence: 0.75,
-      requiredVotes: 5,
-      timeRemaining: 1800, // 30 minutes
-      averageResponseTime: 45000, // 45 seconds
-      trustWeightedScore: 0.72,
-      geographicDistribution: {
-        withinRadius: 18,
-        outsideRadius: 6,
-        averageDistance: 850
+  const mockConsensusEvent: ConsensusEvent = useMemo(
+    () => ({
+      id: emergencyId || 'consensus-123',
+      title: 'Building Fire Emergency',
+      description: 'Multiple reports of fire in downtown commercial building',
+      type: 'fire',
+      severity: 'high',
+      location: {
+        latitude: 37.7749,
+        longitude: -122.4194,
+        radius: 500
       },
-      expertiseDistribution: {
-        fire: 8,
-        medical: 3,
-        security: 4,
-        infrastructure: 2,
-        natural: 7
-      }
-    },
-    participants: [
-      {
-        id: 'user-1',
-        userId: 'user-1',
-        name: 'Alice Johnson',
-        trustScore: 0.92,
-        vote: 'confirm',
-        location: {
-          latitude: 37.7751,
-          longitude: -122.4188,
-          accuracy: 10,
-          distance: 120
+      reporter: {
+        id: 'user-456',
+        name: 'Jane Smith',
+        trustScore: 0.85
+      },
+      status: 'building',
+      createdAt: '2024-01-15T10:30:00Z',
+      expiresAt: '2024-01-15T12:30:00Z',
+      metrics: {
+        totalParticipants: 24,
+        confirmVotes: 18,
+        disputeVotes: 2,
+        pendingVotes: 4,
+        confidence: 0.75,
+        requiredVotes: 5,
+        timeRemaining: 1800,
+        averageResponseTime: 45000,
+        trustWeightedScore: 0.72,
+        geographicDistribution: {
+          withinRadius: 18,
+          outsideRadius: 6,
+          averageDistance: 850
         },
-        responseTime: 15000,
-        weight: 1.0,
-        expertise: ['fire', 'medical'],
-        isOnline: true,
-        lastActive: Date.now() - 300000
+        expertiseDistribution: {
+          fire: 8,
+          medical: 3,
+          security: 4,
+          infrastructure: 2,
+          natural: 7
+        }
       },
-      {
-        id: 'user-2',
-        userId: 'user-2',
-        name: 'Bob Wilson',
-        trustScore: 0.78,
-        vote: 'confirm',
-        location: {
-          latitude: 37.7745,
-          longitude: -122.4192,
-          accuracy: 15,
-          distance: 200
+      participants: [
+        {
+          id: 'user-1',
+          userId: 'user-1',
+          name: 'Alice Johnson',
+          trustScore: 0.92,
+          vote: 'confirm',
+          location: {
+            latitude: 37.7751,
+            longitude: -122.4188,
+            accuracy: 10,
+            distance: 120
+          },
+          responseTime: 15000,
+          weight: 1.0,
+          expertise: ['fire', 'medical'],
+          isOnline: true,
+          lastActive: Date.now() - 300000
         },
-        responseTime: 35000,
-        weight: 0.85,
-        expertise: ['security'],
-        isOnline: true,
-        lastActive: Date.now() - 120000
-      },
-      {
-        id: 'user-3',
-        userId: 'user-3',
-        name: 'Carol Davis',
-        trustScore: 0.65,
-        vote: 'pending',
-        location: {
-          latitude: 37.7752,
-          longitude: -122.419,
-          accuracy: 20,
-          distance: 350
+        {
+          id: 'user-2',
+          userId: 'user-2',
+          name: 'Bob Wilson',
+          trustScore: 0.78,
+          vote: 'confirm',
+          location: {
+            latitude: 37.7745,
+            longitude: -122.4192,
+            accuracy: 15,
+            distance: 200
+          },
+          responseTime: 35000,
+          weight: 0.85,
+          expertise: ['security'],
+          isOnline: true,
+          lastActive: Date.now() - 120000
         },
-        responseTime: 60000,
-        weight: 0.7,
-        expertise: ['medical'],
-        isOnline: true,
-        lastActive: Date.now() - 600000
-      }
-    ],
-    history: [
-      {
-        id: 'action-1',
-        type: 'confirm',
-        participantId: 'user-1',
-        timestamp: '2024-01-15T10:35:00Z'
-      },
-      {
-        id: 'action-2',
-        type: 'dispute',
-        participantId: 'user-4',
-        timestamp: '2024-01-15T10:40:00Z'
-      }
-    ]
-  }
+        {
+          id: 'user-3',
+          userId: 'user-3',
+          name: 'Carol Davis',
+          trustScore: 0.65,
+          vote: 'pending',
+          location: {
+            latitude: 37.7752,
+            longitude: -122.419,
+            accuracy: 20,
+            distance: 350
+          },
+          responseTime: 60000,
+          weight: 0.7,
+          expertise: ['medical'],
+          isOnline: true,
+          lastActive: Date.now() - 600000
+        }
+      ],
+      history: [
+        {
+          id: 'action-1',
+          type: 'confirm',
+          participantId: 'user-1',
+          timestamp: '2024-01-15T10:35:00Z'
+        },
+        {
+          id: 'action-2',
+          type: 'dispute',
+          participantId: 'user-4',
+          timestamp: '2024-01-15T10:40:00Z'
+        }
+      ]
+    }),
+    [emergencyId]
+  )
 
   useEffect(() => {
     setConsensusEvent(mockConsensusEvent)
-  }, [emergencyId])
+  }, [mockConsensusEvent])
 
-  // Auto-refresh effect
   useEffect(() => {
     if (!isAutoRefresh) {
       return
     }
 
-    const interval = setInterval(() => {
-      // This would fetch real-time consensus data
-      console.log('Refreshing consensus data...')
-    }, refreshInterval)
+    const interval = setInterval(() => {}, refreshInterval)
 
     return () => clearInterval(interval)
   }, [isAutoRefresh, refreshInterval])
@@ -297,6 +275,16 @@ export function ConsensusEngineUI({ className, emergencyId }: ConsensusEngineUIP
       return 'text-yellow-600'
     }
     return 'text-red-600'
+  }
+
+  const getActionTypeBgColor = (type: string) => {
+    if (type === 'confirm') {
+      return 'bg-green-100'
+    }
+    if (type === 'dispute') {
+      return 'bg-red-100'
+    }
+    return 'bg-gray-100'
   }
 
   const event = consensusEvent || mockConsensusEvent
@@ -460,14 +448,7 @@ export function ConsensusEngineUI({ className, emergencyId }: ConsensusEngineUIP
                 >
                   {isAutoRefresh ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    // This would refresh consensus data
-                    console.log('Manual refresh triggered')
-                  }}
-                >
+                <Button variant="outline" size="sm" onClick={() => {}}>
                   <RefreshCw className="h-4 w-4" />
                 </Button>
               </div>
@@ -630,11 +611,7 @@ export function ConsensusEngineUI({ className, emergencyId }: ConsensusEngineUIP
                     <div
                       className={cn(
                         'w-8 h-8 rounded-full flex items-center justify-center',
-                        action.type === 'confirm'
-                          ? 'bg-green-100'
-                          : action.type === 'dispute'
-                            ? 'bg-red-100'
-                            : 'bg-gray-100'
+                        getActionTypeBgColor(action.type)
                       )}
                     >
                       {action.type === 'confirm' && (
@@ -701,25 +678,12 @@ export function ConsensusEngineUI({ className, emergencyId }: ConsensusEngineUIP
 
               {canParticipate && (
                 <div className="flex gap-2">
-                  <Button
-                    className="flex-1"
-                    onClick={() => {
-                      // This would submit a confirmation vote
-                      console.log('Submitting confirmation vote...')
-                    }}
-                  >
+                  <Button className="flex-1" onClick={() => {}}>
                     <ThumbsUp className="h-4 w-4 mr-2" />
                     Confirm Emergency
                   </Button>
 
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => {
-                      // This would submit a dispute vote
-                      console.log('Submitting dispute vote...')
-                    }}
-                  >
+                  <Button variant="outline" className="flex-1" onClick={() => {}}>
                     <ThumbsDown className="h-4 w-4 mr-2" />
                     Dispute Report
                   </Button>

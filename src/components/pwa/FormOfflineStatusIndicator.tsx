@@ -16,16 +16,10 @@ import {
   CheckCircle2Icon,
   AlertTriangleIcon,
   SaveIcon,
-  UploadIcon,
   DatabaseIcon,
   FileTextIcon,
   RefreshCwIcon,
-  EyeIcon,
-  EyeOffIcon,
-  LockIcon,
-  UnlockIcon,
   AlertCircleIcon,
-  InfoIcon,
   SettingsIcon,
   XIcon,
   ChevronDownIcon,
@@ -82,8 +76,8 @@ export function FormOfflineStatusIndicator({
   formName,
   fields,
   onSubmit,
-  onFieldChange,
-  onValidationChange,
+  onFieldChange: _onFieldChange,
+  onValidationChange: _onValidationChange,
   showOfflineIndicator = true,
   position = 'top',
   autoSave = true,
@@ -107,7 +101,9 @@ export function FormOfflineStatusIndicator({
   })
 
   const [expanded, setExpanded] = useState(false)
-  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>(
+    'idle'
+  )
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [autoSaveTimer, setAutoSaveTimer] = useState<NodeJS.Timeout | null>(null)
 
@@ -154,10 +150,13 @@ export function FormOfflineStatusIndicator({
 
     try {
       // Create form data object
-      const formData = fields.reduce((acc, field) => {
-        acc[field.id] = field.value
-        return acc
-      }, {} as Record<string, any>)
+      const formData = fields.reduce(
+        (acc, field) => {
+          acc[field.id] = field.value
+          return acc
+        },
+        {} as Record<string, any>
+      )
 
       // Add to offline queue
       const actionId = addAction({
@@ -274,10 +273,13 @@ export function FormOfflineStatusIndicator({
 
     try {
       // Retry submission
-      const formData = fields.reduce((acc, field) => {
-        acc[field.id] = field.value
-        return acc
-      }, {} as Record<string, any>)
+      const formData = fields.reduce(
+        (acc, field) => {
+          acc[field.id] = field.value
+          return acc
+        },
+        {} as Record<string, any>
+      )
 
       await handleSubmit(formData)
     } catch (error) {
@@ -347,16 +349,20 @@ export function FormOfflineStatusIndicator({
   return (
     <>
       {/* Form Status Bar */}
-      <div className={`
+      <div
+        className={`
         ${position === 'inline' ? 'relative' : 'fixed z-40'}
         ${getPositionClasses()}
-      `}>
-        <div className={`
+      `}
+      >
+        <div
+          className={`
           flex items-center justify-between p-3 border-b
           ${position === 'inline' ? 'bg-gray-50' : 'bg-white'}
           ${getStatusColor()}
           ${prefersReducedMotion ? '' : 'transition-all duration-300'}
-        `}>
+        `}
+        >
           <div className="flex items-center gap-3">
             {/* Status Icon */}
             <div className="flex items-center gap-2">
@@ -374,10 +380,15 @@ export function FormOfflineStatusIndicator({
 
               <div className="flex flex-col">
                 <span className="text-sm font-medium">
-                  {formStatus.isSubmitting ? 'Submitting...'
-                    : formStatus.lastError ? 'Submission Failed'
-                      : formStatus.isSubmitted ? 'Submitted'
-                        : isFormDirty ? 'Unsaved Changes' : 'Ready'}
+                  {formStatus.isSubmitting
+                    ? 'Submitting...'
+                    : formStatus.lastError
+                      ? 'Submission Failed'
+                      : formStatus.isSubmitted
+                        ? 'Submitted'
+                        : isFormDirty
+                          ? 'Unsaved Changes'
+                          : 'Ready'}
                 </span>
 
                 {/* Offline Status */}
@@ -392,26 +403,22 @@ export function FormOfflineStatusIndicator({
             {/* Auto-save Status */}
             {autoSave && isFormDirty && !formStatus.isSubmitted && (
               <div className="flex items-center gap-2">
-                {autoSaveStatus === 'saving' && (
-                  <Loader2Icon className="w-3 h-3 animate-spin" />
-                )}
-                {autoSaveStatus === 'saved' && (
-                  <CheckCircle2Icon className="w-3 h-3" />
-                )}
-                {autoSaveStatus === 'error' && (
-                  <AlertTriangleIcon className="w-3 h-3" />
-                )}
+                {autoSaveStatus === 'saving' && <Loader2Icon className="w-3 h-3 animate-spin" />}
+                {autoSaveStatus === 'saved' && <CheckCircle2Icon className="w-3 h-3" />}
+                {autoSaveStatus === 'error' && <AlertTriangleIcon className="w-3 h-3" />}
 
                 <span className={`text-xs ${getAutoSaveColor()}`}>
-                  {autoSaveStatus === 'saving' ? 'Auto-saving...'
-                    : autoSaveStatus === 'saved' ? 'Auto-saved'
-                      : autoSaveStatus === 'error' ? 'Auto-save failed' : ''}
+                  {autoSaveStatus === 'saving'
+                    ? 'Auto-saving...'
+                    : autoSaveStatus === 'saved'
+                      ? 'Auto-saved'
+                      : autoSaveStatus === 'error'
+                        ? 'Auto-save failed'
+                        : ''}
                 </span>
 
                 {lastSaved && (
-                  <span className="text-xs text-gray-500">
-                    at {lastSaved.toLocaleTimeString()}
-                  </span>
+                  <span className="text-xs text-gray-500">at {lastSaved.toLocaleTimeString()}</span>
                 )}
               </div>
             )}
@@ -447,17 +454,17 @@ export function FormOfflineStatusIndicator({
 
         {/* Expanded Details */}
         {expanded && (
-          <div className={`
+          <div
+            className={`
             p-4 border-b border-gray-200 bg-white
             ${position === 'inline' ? '' : 'shadow-lg'}
             ${prefersReducedMotion ? '' : 'animate-slide-in-down'}
-          `}>
+          `}
+          >
             <div className="space-y-4">
               {/* Form Information */}
               <div className="flex items-center justify-between">
-                <h4 className="text-sm font-medium text-gray-900">
-                  {formName}
-                </h4>
+                <h4 className="text-sm font-medium text-gray-900">{formName}</h4>
                 <StatusIndicator
                   status={isFormValid ? 'active' : 'inactive'}
                   size="sm"
@@ -471,19 +478,13 @@ export function FormOfflineStatusIndicator({
                   Field Status
                 </h5>
                 <div className="space-y-1">
-                  {fields.map((field) => (
+                  {fields.map(field => (
                     <div key={field.id} className="flex items-center justify-between text-sm">
                       <span className="text-gray-600">{field.label}</span>
                       <div className="flex items-center gap-2">
-                        {field.required && (
-                          <span className="text-xs text-red-600">Required</span>
-                        )}
-                        {field.dirty && (
-                          <span className="text-xs text-blue-600">Modified</span>
-                        )}
-                        {field.error && (
-                          <span className="text-xs text-red-600">Error</span>
-                        )}
+                        {field.required && <span className="text-xs text-red-600">Required</span>}
+                        {field.dirty && <span className="text-xs text-blue-600">Modified</span>}
+                        {field.error && <span className="text-xs text-red-600">Error</span>}
                         <StatusIndicator
                           status={field.valid ? 'active' : 'inactive'}
                           size="sm"
@@ -525,9 +526,7 @@ export function FormOfflineStatusIndicator({
                     Error Information
                   </h5>
                   <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-sm text-red-800">
-                      {formStatus.lastError}
-                    </p>
+                    <p className="text-sm text-red-800">{formStatus.lastError}</p>
                     <div className="mt-2 text-xs text-red-600">
                       Retry attempts: {formStatus.retryCount}
                     </div>

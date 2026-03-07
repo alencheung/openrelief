@@ -14,7 +14,8 @@ import {
   Minus,
   Locate,
   Filter,
-  Settings
+  Settings,
+  X
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { EmergencyIndicator } from '@/components/ui/EmergencyIndicator'
@@ -50,7 +51,7 @@ export function MobileMapControls({
 }: MobileMapControlsProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [activeControl, setActiveControl] = useState<string | null>(null)
-  const { isMobile, isTouch } = useMobileDetection()
+  const { isMobile, isTouch: _isTouch } = useMobileDetection()
 
   // Auto-collapse controls after inactivity
   useEffect(() => {
@@ -70,7 +71,8 @@ export function MobileMapControls({
   // Handle control activation
   const handleControlActivate = (controlId: string) => {
     setActiveControl(controlId)
-    setTimeout(() => setActiveControl(null), 1000) // Auto-deactivate after 1 second
+    // Auto-deactivate after 1 second
+    setTimeout(() => setActiveControl(null), 1000)
   }
 
   // Touch gesture for expanding controls
@@ -124,9 +126,11 @@ export function MobileMapControls({
       <div
         className={cn(
           'flex flex-col gap-2 transition-all duration-normal',
-          variant === 'compact' ? (
-            isExpanded ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
-          ) : 'opacity-100 scale-100'
+          variant === 'compact' && isExpanded
+            ? 'opacity-100 scale-100'
+            : variant === 'compact'
+              ? 'opacity-0 scale-95 pointer-events-none'
+              : 'opacity-100 scale-100'
         )}
       >
         {/* Primary Controls */}
@@ -357,7 +361,7 @@ export function MobileEmergencyControls({
   emergencies,
   selectedEmergency,
   onEmergencySelect,
-  onNavigate,
+  onNavigate: _onNavigate,
   onFilter,
   disabled = false,
   className
@@ -414,7 +418,7 @@ export function MobileEmergencyControls({
 
           <div className="mobile-emergency-form-content">
             <div className="space-y-2">
-              {emergencies.slice(0, 5).map((emergency) => (
+              {emergencies.slice(0, 5).map(emergency => (
                 <button
                   key={emergency.id}
                   className={cn(
@@ -428,15 +432,9 @@ export function MobileEmergencyControls({
                   }}
                 >
                   <div className="flex items-start gap-3">
-                    <EmergencyIndicator
-                      type={emergency.type}
-                      size="sm"
-                      className="mt-1"
-                    />
+                    <EmergencyIndicator type={emergency.type} size="sm" className="mt-1" />
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm truncate">
-                        {emergency.title}
-                      </div>
+                      <div className="font-medium text-sm truncate">{emergency.title}</div>
                       <div className="text-xs text-muted-foreground">
                         {emergency.distance} away • {emergency.time}
                       </div>

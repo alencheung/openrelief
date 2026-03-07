@@ -6,7 +6,6 @@ import { useOfflineStore } from '@/store/offlineStore'
 import { useAriaAnnouncer } from '@/hooks/accessibility/useAriaAnnouncer'
 import { useReducedMotion } from '@/hooks/accessibility/useReducedMotion'
 import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/Card'
 import { StatusIndicator } from '@/components/ui/StatusIndicator'
 import { ScreenReaderOnly } from '@/components/accessibility/ScreenReaderOnly'
 import {
@@ -14,37 +13,20 @@ import {
   WifiOffIcon,
   WifiIcon,
   CheckCircle2Icon,
-  ClockIcon,
   MapPinIcon,
   PhoneIcon,
   ShieldIcon,
   FileTextIcon,
   UsersIcon,
-  ActivityIcon,
-  DatabaseIcon,
-  CloudIcon,
-  CloudOffIcon,
   BatteryIcon,
-  SignalIcon,
   RefreshCwIcon,
-  SettingsIcon,
-  InfoIcon,
   ChevronRightIcon,
-  ExternalLinkIcon,
-  BellIcon,
-  BellOffIcon,
-  EyeIcon,
-  EyeOffIcon,
-  LockIcon,
-  UnlockIcon,
-  SaveIcon,
-  UploadIcon,
-  DownloadIcon,
   AlertCircleIcon,
   HomeIcon,
   ZapIcon,
   HeartIcon,
-  RadioIcon
+  RadioIcon,
+  EyeIcon
 } from 'lucide-react'
 
 interface EmergencyFeature {
@@ -71,21 +53,10 @@ interface OfflineMode {
 }
 
 export function EmergencyOfflineIndicator() {
-  const {
-    isOnline,
-    isOffline,
-    connectionType,
-    effectiveType,
-    downlink,
-    lastOnlineTime
-  } = useNetworkStatus()
+  const { isOnline, isOffline, connectionType, effectiveType, downlink, lastOnlineTime } =
+    useNetworkStatus()
 
-  const {
-    pendingActions,
-    failedActions,
-    metrics,
-    storageQuota
-  } = useOfflineStore()
+  const { pendingActions, failedActions, metrics, storageQuota } = useOfflineStore()
 
   const { announcePolite, announceAssertive } = useAriaAnnouncer()
   const { prefersReducedMotion } = useReducedMotion()
@@ -269,25 +240,25 @@ export function EmergencyOfflineIndicator() {
 
   // Update offline mode status
   useEffect(() => {
-    const reason = isOffline ? 'network'
-      : batteryLevel !== null && batteryLevel < 20 && !isCharging ? 'battery'
-        : 'user'
+    let reason: OfflineMode['reason'] = 'user'
+    if (isOffline) {
+      reason = 'network'
+    } else if (batteryLevel !== null && batteryLevel < 20 && !isCharging) {
+      reason = 'battery'
+    }
 
     const features = emergencyFeatures
       .filter(feature => feature.offlineCapable)
       .map(feature => feature.id)
 
-    const restrictions = isOffline
-      ? ['real-time-sync', 'live-updates', 'push-notifications']
-      : []
+    const restrictions = isOffline ? ['real-time-sync', 'live-updates', 'push-notifications'] : []
 
     setOfflineMode({
       enabled: isOffline || (batteryLevel !== null && batteryLevel < 20 && !isCharging),
       reason,
       features,
       restrictions,
-      estimatedDuration: isOffline && lastOnlineTime
-        ? Date.now() - lastOnlineTime.getTime() : null,
+      estimatedDuration: isOffline && lastOnlineTime ? Date.now() - lastOnlineTime.getTime() : null,
       lastActivated: isOffline ? new Date() : null
     })
 
@@ -296,14 +267,24 @@ export function EmergencyOfflineIndicator() {
     } else {
       announcePolite('Emergency offline mode deactivated. Full functionality restored.')
     }
-  }, [isOffline, batteryLevel, isCharging, lastOnlineTime, emergencyFeatures, announcePolite, announceAssertive])
+  }, [
+    isOffline,
+    batteryLevel,
+    isCharging,
+    lastOnlineTime,
+    emergencyFeatures,
+    announcePolite,
+    announceAssertive
+  ])
 
   // Handle feature selection
   const handleFeatureSelect = (featureId: string) => {
     setSelectedFeature(selectedFeature === featureId ? null : featureId)
     const feature = emergencyFeatures.find(f => f.id === featureId)
     if (feature) {
-      announcePolite(`Selected ${feature.name}. ${feature.offlineCapable ? 'Available offline.' : 'Requires network connection.'}`)
+      announcePolite(
+        `Selected ${feature.name}. ${feature.offlineCapable ? 'Available offline.' : 'Requires network connection.'}`
+      )
     }
   }
 
@@ -360,22 +341,27 @@ export function EmergencyOfflineIndicator() {
     <>
       {/* Main Emergency Offline Indicator */}
       <div className="fixed top-4 right-4 z-50 max-w-sm">
-        <div className={`
+        <div
+          className={`
           relative flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg backdrop-blur-sm
           transition-all duration-300 ease-in-out
-          ${isOfflineMode
-      ? 'bg-red-600/90 border border-red-700 text-white'
-      : 'bg-green-600/90 border border-green-700 text-white'
-    }
+          ${
+            isOfflineMode
+              ? 'bg-red-600/90 border border-red-700 text-white'
+              : 'bg-green-600/90 border border-green-700 text-white'
+          }
           ${prefersReducedMotion ? '' : 'hover:shadow-xl'}
-        `}>
+        `}
+        >
           {/* Status Icon and Text */}
           <div className="flex items-center gap-2">
-            <div className={`
+            <div
+              className={`
               relative flex items-center justify-center w-8 h-8 rounded-full
               transition-all duration-300
               ${isOfflineMode ? 'bg-white/20' : 'bg-white/20'}
-            `}>
+            `}
+            >
               {isOfflineMode ? (
                 <WifiOffIcon className="w-4 h-4" />
               ) : (
@@ -395,8 +381,7 @@ export function EmergencyOfflineIndicator() {
               <span className="text-xs opacity-75">
                 {isOfflineMode
                   ? `${criticalFeatures.length} critical features available`
-                  : 'All systems operational'
-                }
+                  : 'All systems operational'}
               </span>
             </div>
           </div>
@@ -405,12 +390,8 @@ export function EmergencyOfflineIndicator() {
           {batteryLevel !== null && (
             <div className="flex items-center gap-1">
               <BatteryIcon className={`w-4 h-4 ${getBatteryColor()}`} />
-              <span className="text-xs font-medium">
-                {Math.round(batteryLevel)}%
-              </span>
-              {isCharging && (
-                <RefreshCwIcon className="w-3 h-3 animate-spin" />
-              )}
+              <span className="text-xs font-medium">{Math.round(batteryLevel)}%</span>
+              {isCharging && <RefreshCwIcon className="w-3 h-3 animate-spin" />}
             </div>
           )}
 
@@ -432,17 +413,17 @@ export function EmergencyOfflineIndicator() {
 
         {/* Expanded Emergency Features Panel */}
         {expanded && (
-          <div className={`
+          <div
+            className={`
             absolute top-full right-0 mt-2 p-4 w-96
             bg-white rounded-xl shadow-2xl border border-gray-200
             ${prefersReducedMotion ? '' : 'animate-slide-in-up'}
-          `}>
+          `}
+          >
             <div className="space-y-4">
               {/* Header */}
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Emergency Features
-                </h3>
+                <h3 className="text-lg font-semibold text-gray-900">Emergency Features</h3>
                 <StatusIndicator
                   status={isOfflineMode ? 'critical' : 'active'}
                   size="sm"
@@ -451,18 +432,19 @@ export function EmergencyOfflineIndicator() {
               </div>
 
               {/* Mode Status */}
-              <div className={`
+              <div
+                className={`
                 p-3 rounded-lg border
-                ${isOfflineMode
-            ? 'bg-red-50 border-red-200'
-            : 'bg-green-50 border-green-200'
-          }
-              `}>
+                ${isOfflineMode ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}
+              `}
+              >
                 <div className="flex items-center gap-3">
-                  <div className={`
+                  <div
+                    className={`
                     flex items-center justify-center w-10 h-10 rounded-full
                     ${isOfflineMode ? 'bg-red-100' : 'bg-green-100'}
-                  `}>
+                  `}
+                  >
                     {isOfflineMode ? (
                       <AlertTriangleIcon className="w-5 h-5 text-red-600" />
                     ) : (
@@ -476,11 +458,14 @@ export function EmergencyOfflineIndicator() {
                     </h4>
                     <p className="text-sm text-gray-600">
                       {isOfflineMode
-                        ? `Reason: ${offlineMode.reason === 'network' ? 'No network connection'
-                          : offlineMode.reason === 'battery' ? 'Low battery'
-                            : 'Manual activation'}`
-                        : 'All systems operational with full network access'
-                      }
+                        ? `Reason: ${
+                            offlineMode.reason === 'network'
+                              ? 'No network connection'
+                              : offlineMode.reason === 'battery'
+                                ? 'Low battery'
+                                : 'Manual activation'
+                          }`
+                        : 'All systems operational with full network access'}
                     </p>
 
                     {offlineMode.estimatedDuration && (
@@ -496,16 +481,17 @@ export function EmergencyOfflineIndicator() {
               <div className="space-y-2">
                 <h4 className="text-sm font-medium text-gray-900">Critical Features</h4>
                 <div className="grid gap-2">
-                  {criticalFeatures.map((feature) => (
+                  {criticalFeatures.map(feature => (
                     <div
                       key={feature.id}
                       className={`
                         flex items-center justify-between p-3 rounded-lg border
                         transition-all duration-200 cursor-pointer
-                        ${selectedFeature === feature.id
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                    }
+                        ${
+                          selectedFeature === feature.id
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                        }
                         ${getPriorityColor(feature.priority)}
                       `}
                       onClick={() => handleFeatureSelect(feature.id)}
@@ -514,19 +500,22 @@ export function EmergencyOfflineIndicator() {
                         <feature.icon className="w-4 h-4" />
                         <div>
                           <p className="text-sm font-medium">{feature.name}</p>
-                          <p className="text-xs text-gray-600">
-                            {feature.description}
-                          </p>
+                          <p className="text-xs text-gray-600">{feature.description}</p>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-1">
                         {feature.offlineCapable && (
-                          <div className="w-2 h-2 bg-green-500 rounded-full" title="Available offline" />
+                          <div
+                            className="w-2 h-2 bg-green-500 rounded-full"
+                            title="Available offline"
+                          />
                         )}
                         {feature.dataUsage && (
-                          <div className={`w-2 h-2 rounded-full ${getDataUsageColor(feature.dataUsage).replace('text', 'bg').replace('-600', '-500')}`}
-                            title={`Data usage: ${feature.dataUsage}`} />
+                          <div
+                            className={`w-2 h-2 rounded-full ${getDataUsageColor(feature.dataUsage).replace('text', 'bg').replace('-600', '-500')}`}
+                            title={`Data usage: ${feature.dataUsage}`}
+                          />
                         )}
                         <ChevronRightIcon className="w-4 h-4 text-gray-400" />
                       </div>
@@ -539,16 +528,17 @@ export function EmergencyOfflineIndicator() {
               <div className="space-y-2">
                 <h4 className="text-sm font-medium text-gray-900">High Priority Features</h4>
                 <div className="grid gap-2">
-                  {highPriorityFeatures.map((feature) => (
+                  {highPriorityFeatures.map(feature => (
                     <div
                       key={feature.id}
                       className={`
                         flex items-center justify-between p-3 rounded-lg border
                         transition-all duration-200 cursor-pointer
-                        ${selectedFeature === feature.id
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                    }
+                        ${
+                          selectedFeature === feature.id
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                        }
                         ${getPriorityColor(feature.priority)}
                       `}
                       onClick={() => handleFeatureSelect(feature.id)}
@@ -557,19 +547,22 @@ export function EmergencyOfflineIndicator() {
                         <feature.icon className="w-4 h-4" />
                         <div>
                           <p className="text-sm font-medium">{feature.name}</p>
-                          <p className="text-xs text-gray-600">
-                            {feature.description}
-                          </p>
+                          <p className="text-xs text-gray-600">{feature.description}</p>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-1">
                         {feature.offlineCapable && (
-                          <div className="w-2 h-2 bg-green-500 rounded-full" title="Available offline" />
+                          <div
+                            className="w-2 h-2 bg-green-500 rounded-full"
+                            title="Available offline"
+                          />
                         )}
                         {feature.dataUsage && (
-                          <div className={`w-2 h-2 rounded-full ${getDataUsageColor(feature.dataUsage).replace('text', 'bg').replace('-600', '-500')}`}
-                            title={`Data usage: ${feature.dataUsage}`} />
+                          <div
+                            className={`w-2 h-2 rounded-full ${getDataUsageColor(feature.dataUsage).replace('text', 'bg').replace('-600', '-500')}`}
+                            title={`Data usage: ${feature.dataUsage}`}
+                          />
                         )}
                         <ChevronRightIcon className="w-4 h-4 text-gray-400" />
                       </div>
@@ -590,9 +583,7 @@ export function EmergencyOfflineIndicator() {
                     return (
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                          <h4 className="text-sm font-medium text-gray-900">
-                            {feature.name}
-                          </h4>
+                          <h4 className="text-sm font-medium text-gray-900">{feature.name}</h4>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -602,9 +593,7 @@ export function EmergencyOfflineIndicator() {
                           </Button>
                         </div>
 
-                        <p className="text-sm text-gray-600">
-                          {feature.description}
-                        </p>
+                        <p className="text-sm text-gray-600">{feature.description}</p>
 
                         <div className="grid grid-cols-2 gap-3 text-sm">
                           <div className="flex items-center gap-2">
@@ -641,7 +630,7 @@ export function EmergencyOfflineIndicator() {
                           <Button
                             size="sm"
                             className="flex-1"
-                            onClick={() => window.location.href = `/emergency/${feature.id}`}
+                            onClick={() => (window.location.href = `/emergency/${feature.id}`)}
                           >
                             <AlertTriangleIcon className="w-3 h-3 mr-1" />
                             Use Feature
@@ -658,9 +647,7 @@ export function EmergencyOfflineIndicator() {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-gray-600">Pending Actions:</span>
-                    <p className="font-medium text-orange-600">
-                      {pendingActions.length}
-                    </p>
+                    <p className="font-medium text-orange-600">{pendingActions.length}</p>
                   </div>
                   <div>
                     <span className="text-gray-600">Storage Used:</span>
@@ -678,9 +665,7 @@ export function EmergencyOfflineIndicator() {
                   )}
                   <div>
                     <span className="text-gray-600">Network:</span>
-                    <p className="font-medium">
-                      {isOnline ? 'Available' : 'Offline'}
-                    </p>
+                    <p className="font-medium">{isOnline ? 'Available' : 'Offline'}</p>
                   </div>
                 </div>
               </div>
@@ -694,8 +679,11 @@ export function EmergencyOfflineIndicator() {
         <div aria-live="polite" aria-atomic="true">
           {isOfflineMode && 'Emergency offline mode is active'}
           {isOfflineMode && `${criticalFeatures.length} critical features available`}
-          {batteryLevel !== null && batteryLevel < 20 && `Battery level is critically low at ${Math.round(batteryLevel)}%`}
-          {pendingActions.length > 0 && `You have ${pendingActions.length} pending emergency actions`}
+          {batteryLevel !== null &&
+            batteryLevel < 20 &&
+            `Battery level is critically low at ${Math.round(batteryLevel)}%`}
+          {pendingActions.length > 0 &&
+            `You have ${pendingActions.length} pending emergency actions`}
         </div>
       </ScreenReaderOnly>
     </>

@@ -30,8 +30,12 @@ let redisClient: RedisClient | null = null
 let redisInitPromise: Promise<RedisClient | null> | null = null
 
 async function getRedisClient(): Promise<RedisClient | null> {
-  if (redisClient) return redisClient
-  if (redisInitPromise) return redisInitPromise
+  if (redisClient) {
+    return redisClient
+  }
+  if (redisInitPromise) {
+    return redisInitPromise
+  }
 
   redisInitPromise = (async () => {
     const redisUrl = process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL
@@ -191,7 +195,9 @@ async function revalidateInBackground<T>(
   config: CacheConfig
 ): Promise<void> {
   const redis = await getRedisClient()
-  if (!redis) return
+  if (!redis) {
+    return
+  }
 
   try {
     const data = await fetcher()
@@ -209,11 +215,15 @@ async function revalidateInBackground<T>(
 
 export async function invalidateCache(pattern: string): Promise<number> {
   const redis = await getRedisClient()
-  if (!redis) return 0
+  if (!redis) {
+    return 0
+  }
 
   try {
     const keys = await redis.keys(`api:${pattern}:*`)
-    if (keys.length === 0) return 0
+    if (keys.length === 0) {
+      return 0
+    }
 
     for (const key of keys) {
       await redis.del(key)
@@ -233,7 +243,9 @@ export async function invalidateEmergencyCache(): Promise<number> {
 export async function invalidateTrustCache(userId?: string): Promise<number> {
   if (userId) {
     const redis = await getRedisClient()
-    if (!redis) return 0
+    if (!redis) {
+      return 0
+    }
 
     try {
       const keys = await redis.keys(`api:trust:*${userId}*`)
@@ -250,7 +262,9 @@ export async function invalidateTrustCache(userId?: string): Promise<number> {
 }
 
 export function checkETagMatch(requestETag: string | null, currentETag: string): boolean {
-  if (!requestETag) return false
+  if (!requestETag) {
+    return false
+  }
   return requestETag === currentETag || requestETag === `W/"${currentETag}"`
 }
 

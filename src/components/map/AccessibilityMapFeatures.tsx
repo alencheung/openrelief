@@ -1,19 +1,10 @@
 'use client'
 
-import React, { useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
-import {
-  Volume2,
-  VolumeX,
-  Eye,
-  EyeOff,
-  Keyboard,
-  Navigation,
-  Info,
-  Settings
-} from 'lucide-react'
-import { Icon, EnhancedCard, EnhancedButton } from '@/components/ui'
+import { Volume2, VolumeX, Eye, Keyboard, Navigation } from 'lucide-react'
+import { Icon, EnhancedButton } from '@/components/ui'
 
 const accessibilityControlsVariants = cva(
   'absolute bg-card/95 backdrop-blur-sm rounded-xl shadow-xl border transition-all duration-normal z-30',
@@ -56,11 +47,11 @@ export interface AccessibilitySettings {
 }
 
 export interface AccessibilityMapFeaturesProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof accessibilityControlsVariants> {
+  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof accessibilityControlsVariants> {
   settings: AccessibilitySettings
   onSettingsChange: (settings: Partial<AccessibilitySettings>) => void
-  mapInstance?: any // MapLibre GL JS map instance
+  // MapLibre GL JS map instance
+  mapInstance?: any
   showControls?: boolean
   compactMode?: boolean
 }
@@ -90,116 +81,122 @@ const AccessibilityMapFeatures: React.FC<AccessibilityMapFeaturesProps> = ({
   const announcementIdRef = useRef(0)
 
   // Screen reader announcements
-  const announce = useCallback((message: string, priority: 'low' | 'medium' | 'high' | 'critical' = 'medium') => {
-    if (!settings.screenReaderEnabled && !settings.audioAnnouncements) {
-      return
-    }
+  const announce = useCallback(
+    (message: string, priority: 'low' | 'medium' | 'high' | 'critical' = 'medium') => {
+      if (!settings.screenReaderEnabled && !settings.audioAnnouncements) {
+        return
+      }
 
-    const id = `announcement-${++announcementIdRef.current}`
-    const newAnnouncement: AnnouncementMessage = {
-      id,
-      message,
-      priority,
-      timestamp: Date.now()
-    }
+      const id = `announcement-${++announcementIdRef.current}`
+      const newAnnouncement: AnnouncementMessage = {
+        id,
+        message,
+        priority,
+        timestamp: Date.now()
+      }
 
-    setAnnouncements(prev => [...prev.slice(-4), newAnnouncement])
+      setAnnouncements(prev => [...prev.slice(-4), newAnnouncement])
 
-    // Clear old announcements
-    if (announcementTimeoutRef.current) {
-      clearTimeout(announcementTimeoutRef.current)
-    }
+      // Clear old announcements
+      if (announcementTimeoutRef.current) {
+        clearTimeout(announcementTimeoutRef.current)
+      }
 
-    announcementTimeoutRef.current = setTimeout(() => {
-      setAnnouncements(prev => prev.filter(a => a.id !== id))
-    }, 5000)
+      announcementTimeoutRef.current = setTimeout(() => {
+        setAnnouncements(prev => prev.filter(a => a.id !== id))
+      }, 5000)
 
-    // Audio announcement if enabled
-    if (settings.audioAnnouncements && 'speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(message)
-      utterance.rate = priority === 'critical' ? 1.2 : 1.0
-      utterance.pitch = priority === 'critical' ? 1.1 : 1.0
-      utterance.volume = priority === 'critical' ? 1.0 : 0.8
-      speechSynthesis.speak(utterance)
-    }
-  }, [settings.screenReaderEnabled, settings.audioAnnouncements])
+      // Audio announcement if enabled
+      if (settings.audioAnnouncements && 'speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(message)
+        utterance.rate = priority === 'critical' ? 1.2 : 1.0
+        utterance.pitch = priority === 'critical' ? 1.1 : 1.0
+        utterance.volume = priority === 'critical' ? 1.0 : 0.8
+        speechSynthesis.speak(utterance)
+      }
+    },
+    [settings.screenReaderEnabled, settings.audioAnnouncements]
+  )
 
   // Keyboard navigation handler
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (!settings.keyboardNavigation) {
-      return
-    }
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (!settings.keyboardNavigation) {
+        return
+      }
 
-    let handled = false
+      let handled = false
 
-    switch (event.key) {
-      case 'Escape':
-        // Close any open popups or modals
-        document.dispatchEvent(new CustomEvent('closeAllPopups'))
-        announce('Closed all popups')
-        handled = true
-        break
-
-      case 'Tab':
-        // Enhance tab navigation with announcement
-        if (event.shiftKey) {
-          announce('Navigating backwards')
-        } else {
-          announce('Navigating forwards')
-        }
-        break
-
-      case 'Enter':
-      case ' ':
-        // Announce button activation
-        if (event.target instanceof HTMLElement) {
-          const label = event.target.getAttribute('aria-label') || event.target.textContent
-          announce(`Activated ${label}`)
-        }
-        break
-
-      case 'h':
-        if (event.ctrlKey || event.metaKey) {
-          event.preventDefault()
-          onSettingsChange({ highContrastMode: !settings.highContrastMode })
-          announce(`High contrast mode ${settings.highContrastMode ? 'disabled' : 'enabled'}`)
+      switch (event.key) {
+        case 'Escape':
+          // Close any open popups or modals
+          document.dispatchEvent(new CustomEvent('closeAllPopups'))
+          announce('Closed all popups')
           handled = true
-        }
-        break
+          break
 
-      case 'l':
-        if (event.ctrlKey || event.metaKey) {
-          event.preventDefault()
-          onSettingsChange({ largeTextMode: !settings.largeTextMode })
-          announce(`Large text mode ${settings.largeTextMode ? 'disabled' : 'enabled'}`)
-          handled = true
-        }
-        break
+        case 'Tab':
+          // Enhance tab navigation with announcement
+          if (event.shiftKey) {
+            announce('Navigating backwards')
+          } else {
+            announce('Navigating forwards')
+          }
+          break
 
-      case 'm':
-        if (event.ctrlKey || event.metaKey) {
-          event.preventDefault()
-          onSettingsChange({ reducedMotion: !settings.reducedMotion })
-          announce(`Reduced motion ${settings.reducedMotion ? 'disabled' : 'enabled'}`)
-          handled = true
-        }
-        break
+        case 'Enter':
+        case ' ':
+          // Announce button activation
+          if (event.target instanceof HTMLElement) {
+            const label = event.target.getAttribute('aria-label') || event.target.textContent
+            announce(`Activated ${label}`)
+          }
+          break
 
-      case 'a':
-        if (event.ctrlKey || event.metaKey) {
-          event.preventDefault()
-          setIsSettingsOpen(!isSettingsOpen)
-          announce(`Accessibility settings ${isSettingsOpen ? 'closed' : 'opened'}`)
-          handled = true
-        }
-        break
-    }
+        case 'h':
+          if (event.ctrlKey || event.metaKey) {
+            event.preventDefault()
+            onSettingsChange({ highContrastMode: !settings.highContrastMode })
+            announce(`High contrast mode ${settings.highContrastMode ? 'disabled' : 'enabled'}`)
+            handled = true
+          }
+          break
 
-    if (handled) {
-      event.preventDefault()
-      event.stopPropagation()
-    }
-  }, [settings, onSettingsChange, isSettingsOpen, announce])
+        case 'l':
+          if (event.ctrlKey || event.metaKey) {
+            event.preventDefault()
+            onSettingsChange({ largeTextMode: !settings.largeTextMode })
+            announce(`Large text mode ${settings.largeTextMode ? 'disabled' : 'enabled'}`)
+            handled = true
+          }
+          break
+
+        case 'm':
+          if (event.ctrlKey || event.metaKey) {
+            event.preventDefault()
+            onSettingsChange({ reducedMotion: !settings.reducedMotion })
+            announce(`Reduced motion ${settings.reducedMotion ? 'disabled' : 'enabled'}`)
+            handled = true
+          }
+          break
+
+        case 'a':
+          if (event.ctrlKey || event.metaKey) {
+            event.preventDefault()
+            setIsSettingsOpen(!isSettingsOpen)
+            announce(`Accessibility settings ${isSettingsOpen ? 'closed' : 'opened'}`)
+            handled = true
+          }
+          break
+      }
+
+      if (handled) {
+        event.preventDefault()
+        event.stopPropagation()
+      }
+    },
+    [settings, onSettingsChange, isSettingsOpen, announce]
+  )
 
   // Set up keyboard navigation
   useEffect(() => {
@@ -256,14 +253,13 @@ const AccessibilityMapFeatures: React.FC<AccessibilityMapFeaturesProps> = ({
 
     // High contrast map style
     if (settings.highContrastMode && mapInstance.setStyle) {
-      // Apply high contrast style
-      const highContrastStyle = {
-        ...mapConfiguration.style,
-        layers: mapConfiguration.style.layers.map(layer => ({
+      // Apply high contrast style - using map instance directly
+      const currentStyle = mapInstance.getStyle()
+      if (currentStyle && currentStyle.layers) {
+        const highContrastLayers = currentStyle.layers.map(layer => ({
           ...layer,
           paint: {
             ...layer.paint,
-            // Increase contrast for emergency layers
             ...(layer.id.startsWith('emergency-') && {
               'circle-stroke-color': '#000000',
               'circle-stroke-width': 3,
@@ -272,15 +268,17 @@ const AccessibilityMapFeatures: React.FC<AccessibilityMapFeaturesProps> = ({
             })
           }
         }))
+        mapInstance.setStyle({ ...currentStyle, layers: highContrastLayers })
       }
-      mapInstance.setStyle(highContrastStyle)
     }
 
     // Announce map changes
     const handleMapMove = () => {
       const center = mapInstance.getCenter()
       const zoom = mapInstance.getZoom()
-      announce(`Map moved to latitude ${center.lat.toFixed(2)}, longitude ${center.lng.toFixed(2)}, zoom level ${Math.round(zoom)}`)
+      announce(
+        `Map moved to latitude ${center.lat.toFixed(2)}, longitude ${center.lng.toFixed(2)}, zoom level ${Math.round(zoom)}`
+      )
     }
 
     const handleZoom = () => {
@@ -312,11 +310,7 @@ const AccessibilityMapFeatures: React.FC<AccessibilityMapFeaturesProps> = ({
   return (
     <>
       {/* Screen reader announcements */}
-      <div
-        aria-live="polite"
-        aria-atomic="true"
-        className="sr-only"
-      >
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
         {announcements.map(announcement => (
           <div key={announcement.id} className={announcement.priority}>
             {announcement.message}
@@ -343,7 +337,6 @@ const AccessibilityMapFeatures: React.FC<AccessibilityMapFeaturesProps> = ({
             <Keyboard className="w-4 h-4" />
           </EnhancedButton>
         ) : (
-
           /* Full Controls */
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between mb-2">
@@ -354,7 +347,9 @@ const AccessibilityMapFeatures: React.FC<AccessibilityMapFeaturesProps> = ({
               <button
                 onClick={() => setIsSettingsOpen(!isSettingsOpen)}
                 className="p-1 rounded-md hover:bg-muted transition-colors"
-                aria-label={isSettingsOpen ? 'Hide accessibility settings' : 'Show accessibility settings'}
+                aria-label={
+                  isSettingsOpen ? 'Hide accessibility settings' : 'Show accessibility settings'
+                }
                 aria-expanded={isSettingsOpen}
               >
                 <Icon
@@ -372,7 +367,9 @@ const AccessibilityMapFeatures: React.FC<AccessibilityMapFeaturesProps> = ({
                   onClick={() => toggleSetting('screenReaderEnabled')}
                   className={cn(
                     'flex items-center gap-2 w-full p-2 rounded-md transition-colors',
-                    settings.screenReaderEnabled ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+                    settings.screenReaderEnabled
+                      ? 'bg-primary text-primary-foreground'
+                      : 'hover:bg-muted'
                   )}
                   aria-pressed={settings.screenReaderEnabled}
                 >
@@ -389,7 +386,9 @@ const AccessibilityMapFeatures: React.FC<AccessibilityMapFeaturesProps> = ({
                   onClick={() => toggleSetting('highContrastMode')}
                   className={cn(
                     'flex items-center gap-2 w-full p-2 rounded-md transition-colors',
-                    settings.highContrastMode ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+                    settings.highContrastMode
+                      ? 'bg-primary text-primary-foreground'
+                      : 'hover:bg-muted'
                   )}
                   aria-pressed={settings.highContrastMode}
                 >
@@ -428,7 +427,9 @@ const AccessibilityMapFeatures: React.FC<AccessibilityMapFeaturesProps> = ({
                   onClick={() => toggleSetting('keyboardNavigation')}
                   className={cn(
                     'flex items-center gap-2 w-full p-2 rounded-md transition-colors',
-                    settings.keyboardNavigation ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+                    settings.keyboardNavigation
+                      ? 'bg-primary text-primary-foreground'
+                      : 'hover:bg-muted'
                   )}
                   aria-pressed={settings.keyboardNavigation}
                 >
@@ -441,7 +442,9 @@ const AccessibilityMapFeatures: React.FC<AccessibilityMapFeaturesProps> = ({
                   onClick={() => toggleSetting('audioAnnouncements')}
                   className={cn(
                     'flex items-center gap-2 w-full p-2 rounded-md transition-colors',
-                    settings.audioAnnouncements ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+                    settings.audioAnnouncements
+                      ? 'bg-primary text-primary-foreground'
+                      : 'hover:bg-muted'
                   )}
                   aria-pressed={settings.audioAnnouncements}
                 >
@@ -457,11 +460,21 @@ const AccessibilityMapFeatures: React.FC<AccessibilityMapFeaturesProps> = ({
                 <div className="mt-3 pt-3 border-t border-border text-xs text-muted-foreground">
                   <p className="mb-1">Keyboard shortcuts:</p>
                   <ul className="space-y-1">
-                    <li><kbd>Ctrl+H</kbd> - Toggle high contrast</li>
-                    <li><kbd>Ctrl+L</kbd> - Toggle large text</li>
-                    <li><kbd>Ctrl+M</kbd> - Toggle reduced motion</li>
-                    <li><kbd>Ctrl+A</kbd> - Open this menu</li>
-                    <li><kbd>Esc</kbd> - Close popups</li>
+                    <li>
+                      <kbd>Ctrl+H</kbd> - Toggle high contrast
+                    </li>
+                    <li>
+                      <kbd>Ctrl+L</kbd> - Toggle large text
+                    </li>
+                    <li>
+                      <kbd>Ctrl+M</kbd> - Toggle reduced motion
+                    </li>
+                    <li>
+                      <kbd>Ctrl+A</kbd> - Open this menu
+                    </li>
+                    <li>
+                      <kbd>Esc</kbd> - Close popups
+                    </li>
                   </ul>
                 </div>
               </div>

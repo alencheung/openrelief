@@ -1,6 +1,5 @@
 import React from 'react'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { ResponsiveMapContainer, useResponsive, responsiveUtils } from '../ResponsiveMapContainer'
 import { createTestUtils } from '@/test-utils'
@@ -59,7 +58,11 @@ describe('ResponsiveMapContainer', () => {
     const TestChild = () => {
       const responsive = useResponsive()
       return (
-        <div data-testid="test-child" data-breakpoint={responsive.breakpoint} data-orientation={responsive.orientation}>
+        <div
+          data-testid="test-child"
+          data-breakpoint={responsive.breakpoint}
+          data-orientation={responsive.orientation}
+        >
           Test Child
         </div>
       )
@@ -78,13 +81,13 @@ describe('ResponsiveMapContainer', () => {
 
   it('detects mobile breakpoint', async () => {
     // Mock container width to simulate mobile
-    const mockContainer = {
+    const _mockContainer = {
       clientWidth: 500,
       clientHeight: 800
     }
 
-    vi.mocked(global.ResizeObserver).mockImplementation((callback) => ({
-      observe: vi.fn((element) => {
+    vi.mocked(global.ResizeObserver).mockImplementation(callback => ({
+      observe: vi.fn(element => {
         // Simulate mobile dimensions
         Object.defineProperty(element, 'clientWidth', { value: 500, configurable: true })
         Object.defineProperty(element, 'clientHeight', { value: 800, configurable: true })
@@ -117,8 +120,8 @@ describe('ResponsiveMapContainer', () => {
 
   it('detects tablet breakpoint', async () => {
     // Mock container width to simulate tablet
-    vi.mocked(global.ResizeObserver).mockImplementation((callback) => ({
-      observe: vi.fn((element) => {
+    vi.mocked(global.ResizeObserver).mockImplementation(callback => ({
+      observe: vi.fn(element => {
         // Simulate tablet dimensions
         Object.defineProperty(element, 'clientWidth', { value: 900, configurable: true })
         Object.defineProperty(element, 'clientHeight', { value: 1200, configurable: true })
@@ -151,8 +154,8 @@ describe('ResponsiveMapContainer', () => {
 
   it('detects portrait orientation', async () => {
     // Mock container height > width to simulate portrait
-    vi.mocked(global.ResizeObserver).mockImplementation((callback) => ({
-      observe: vi.fn((element) => {
+    vi.mocked(global.ResizeObserver).mockImplementation(callback => ({
+      observe: vi.fn(element => {
         // Simulate portrait dimensions
         Object.defineProperty(element, 'clientWidth', { value: 800, configurable: true })
         Object.defineProperty(element, 'clientHeight', { value: 1200, configurable: true })
@@ -186,8 +189,8 @@ describe('ResponsiveMapContainer', () => {
   it('calls onBreakpointChange callback', async () => {
     const onBreakpointChange = vi.fn()
 
-    vi.mocked(global.ResizeObserver).mockImplementation((callback) => ({
-      observe: vi.fn((element) => {
+    vi.mocked(global.ResizeObserver).mockImplementation(callback => ({
+      observe: vi.fn(element => {
         // Simulate mobile dimensions
         Object.defineProperty(element, 'clientWidth', { value: 500, configurable: true })
         Object.defineProperty(element, 'clientHeight', { value: 800, configurable: true })
@@ -209,8 +212,8 @@ describe('ResponsiveMapContainer', () => {
   it('calls onOrientationChange callback', async () => {
     const onOrientationChange = vi.fn()
 
-    vi.mocked(global.ResizeObserver).mockImplementation((callback) => ({
-      observe: vi.fn((element) => {
+    vi.mocked(global.ResizeObserver).mockImplementation(callback => ({
+      observe: vi.fn(element => {
         // Simulate portrait dimensions
         Object.defineProperty(element, 'clientWidth', { value: 800, configurable: true })
         Object.defineProperty(element, 'clientHeight', { value: 1200, configurable: true })
@@ -246,8 +249,8 @@ describe('ResponsiveMapContainer', () => {
   })
 
   it('applies responsive styles based on breakpoint', () => {
-    vi.mocked(global.ResizeObserver).mockImplementation((callback) => ({
-      observe: vi.fn((element) => {
+    vi.mocked(global.ResizeObserver).mockImplementation(callback => ({
+      observe: vi.fn(element => {
         // Simulate mobile dimensions
         Object.defineProperty(element, 'clientWidth', { value: 500, configurable: true })
         Object.defineProperty(element, 'clientHeight', { value: 800, configurable: true })

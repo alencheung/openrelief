@@ -1,7 +1,8 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import Image from 'next/image'
+import { motion } from 'framer-motion'
 import {
   WifiOff,
   Database,
@@ -9,8 +10,6 @@ import {
   MapPin,
   Camera,
   Mic,
-  FileText,
-  Send,
   Save,
   Upload,
   RefreshCw,
@@ -18,36 +17,23 @@ import {
   AlertTriangle,
   Info,
   X,
-  ChevronRight,
-  ChevronDown,
-  Plus,
-  Minus,
-  Eye,
-  EyeOff,
-  Battery,
-  Activity,
-  HardDrive,
-  Users,
-  Navigation,
-  Home,
-  Phone,
-  Ambulance,
   Flame,
   HeartPulse,
   Shield,
-  Zap
+  Zap,
+  Video
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useOfflineStore, useOfflineActions } from '@/store'
-import { useEmergencyStore, useEmergencyActions } from '@/store'
+import { useEmergencyStore } from '@/store'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { StatusIndicator } from '@/components/ui/StatusIndicator'
 import { EmergencyIndicator } from '@/components/ui/EmergencyIndicator'
-import { Progress } from '@/components/ui/Progress'
 import { Textarea } from '@/components/ui/Textarea'
 import { Input } from '@/components/ui/Input'
+import { Switch } from '@/components/ui/Switch'
 
 interface OfflineEmergencyReportingProps {
   className?: string
@@ -102,9 +88,13 @@ export function OfflineEmergencyReporting({
   onReportSubmitted,
   initialLocation
 }: OfflineEmergencyReportingProps) {
-  const { pendingActions, addOfflineAction, clearSyncedActions } = useOfflineActions()
+  const {
+    pendingActions: _pendingActions,
+    addOfflineAction,
+    clearSyncedActions: _clearSyncedActions
+  } = useOfflineActions()
   const { userLocation, locationAccuracy } = useEmergencyStore()
-  const { storageQuota, addAction } = useOfflineStore()
+  const { storageQuota: _storageQuota, addAction: _addAction } = useOfflineStore()
 
   const [currentReport, setCurrentReport] = useState<Partial<OfflineReport>>({
     type: 'fire',
@@ -117,13 +107,14 @@ export function OfflineEmergencyReporting({
   const [images, setImages] = useState<string[]>([])
   const [videos, setVideos] = useState<string[]>([])
   const [audioRecording, setAudioRecording] = useState<string | null>(null)
-  const [isRecording, setIsRecording] = useState(false)
+  const [_isRecording, setIsRecording] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
-  const [expandedSection, setExpandedSection] = useState<string | null>(null)
+  const [_expandedSection, _setExpandedSection] = useState<string | null>(null)
   const [queue, setQueue] = useState<OfflineQueue>({
     reports: [],
     totalSize: 0,
-    maxSize: 50 * 1024 * 1024, // 50MB
+    // 50MB
+    maxSize: 50 * 1024 * 1024,
     compressionEnabled: true,
     autoSyncEnabled: true,
     lastSyncTime: 0
@@ -148,7 +139,8 @@ export function OfflineEmergencyReporting({
         name: 'John Doe',
         trustScore: 0.92
       },
-      timestamp: Date.now() - 300000, // 5 minutes ago
+      // 5 minutes ago
+      timestamp: Date.now() - 300000,
       images: ['image1.jpg'],
       audio: 'audio1.mp3',
       metadata: {
@@ -156,11 +148,13 @@ export function OfflineEmergencyReporting({
         batteryLevel: 85,
         networkStatus: 'offline',
         gpsAccuracy: 5,
-        estimatedDataSize: 2.5 * 1024 * 1024 // 2.5MB
+        // 2.5MB
+        estimatedDataSize: 2.5 * 1024 * 1024
       },
       status: 'queued',
       syncAttempts: 3,
-      lastSyncAttempt: Date.now() - 60000 // 1 minute ago
+      // 1 minute ago
+      lastSyncAttempt: Date.now() - 60000
     },
     {
       id: 'offline-2',
@@ -179,7 +173,8 @@ export function OfflineEmergencyReporting({
         name: 'Jane Smith',
         trustScore: 0.78
       },
-      timestamp: Date.now() - 900000, // 15 minutes ago
+      // 15 minutes ago
+      timestamp: Date.now() - 900000,
       images: ['image2.jpg', 'image3.jpg'],
       videos: ['video1.mp4'],
       metadata: {
@@ -187,11 +182,13 @@ export function OfflineEmergencyReporting({
         batteryLevel: 45,
         networkStatus: 'poor',
         gpsAccuracy: 25,
-        estimatedDataSize: 8.7 * 1024 * 1024 // 8.7MB
+        // 8.7MB
+        estimatedDataSize: 8.7 * 1024 * 1024
       },
       status: 'syncing',
       syncAttempts: 1,
-      lastSyncAttempt: Date.now() - 30000 // 30 seconds ago
+      // 30 seconds ago
+      lastSyncAttempt: Date.now() - 30000
     }
   ])
 
@@ -203,10 +200,14 @@ export function OfflineEmergencyReporting({
   useEffect(() => {
     const reports = offlineReports.filter(report => report.status !== 'synced')
     const totalSize = reports.reduce((sum, report) => {
-      const imageSize = (report.images?.length || 0) * 1024 * 1024 // 1MB per image
-      const videoSize = (report.videos?.length || 0) * 5 * 1024 * 1024 // 5MB per video
-      const audioSize = report.audio ? 2 * 1024 * 1024 : 0 // 2MB for audio
-      const reportSize = imageSize + videoSize + audioSize + 1024 // 1KB for text data
+      // 1MB per image
+      const imageSize = (report.images?.length || 0) * 1024 * 1024
+      // 5MB per video
+      const videoSize = (report.videos?.length || 0) * 5 * 1024 * 1024
+      // 2MB for audio
+      const audioSize = report.audio ? 2 * 1024 * 1024 : 0
+      // 1KB for text data
+      const reportSize = imageSize + videoSize + audioSize + 1024
       return sum + reportSize
     }, 0)
 
@@ -248,14 +249,16 @@ export function OfflineEmergencyReporting({
   const handleImageCapture = (files: FileList) => {
     const imageArray = Array.from(files)
     const newImages = [...images, ...imageArray.map(file => URL.createObjectURL(file))]
-    setImages(newImages.slice(0, 5)) // Limit to 5 images
+    // Limit to 5 images
+    setImages(newImages.slice(0, 5))
   }
 
   // Handle video capture
   const handleVideoCapture = (files: FileList) => {
     const videoArray = Array.from(files)
     const newVideos = [...videos, ...videoArray.map(file => URL.createObjectURL(file))]
-    setVideos(newVideos.slice(0, 2)) // Limit to 2 videos
+    // Limit to 2 videos
+    setVideos(newVideos.slice(0, 2))
   }
 
   // Handle audio recording
@@ -283,7 +286,7 @@ export function OfflineEmergencyReporting({
     }
   }
 
-  const stopAudioRecording = () => {
+  const _stopAudioRecording = () => {
     if (audioRef.current) {
       audioRef.current.pause()
       setIsRecording(false)
@@ -293,6 +296,7 @@ export function OfflineEmergencyReporting({
   // Submit offline report
   const submitOfflineReport = () => {
     if (!currentReport.title || !currentReport.description) {
+      // eslint-disable-next-line no-alert
       alert('Please fill in the title and description')
       return
     }
@@ -304,7 +308,8 @@ export function OfflineEmergencyReporting({
       reporter: {
         id: 'current-user',
         name: 'Current User',
-        trustScore: 0.75 // Default for offline reports
+        // Default for offline reports
+        trustScore: 0.75
       },
       timestamp: Date.now(),
       images,
@@ -312,13 +317,14 @@ export function OfflineEmergencyReporting({
       audio: audioRecording,
       metadata: {
         deviceInfo: navigator.userAgent,
-        batteryLevel: 'unknown', // Would need Battery API
+        // Would need Battery API
+        batteryLevel: 'unknown',
         networkStatus: navigator.onLine ? 'online' : 'offline',
         gpsAccuracy: getCurrentLocation().accuracy,
         estimatedDataSize:
-          images.length * 1024 * 1024
-          + videos.length * 5 * 1024 * 1024
-          + (audioRecording ? 2 * 1024 * 1024 : 0)
+          images.length * 1024 * 1024 +
+          videos.length * 5 * 1024 * 1024 +
+          (audioRecording ? 2 * 1024 * 1024 : 0)
       },
       status: 'queued',
       syncAttempts: 0
@@ -358,11 +364,13 @@ export function OfflineEmergencyReporting({
 
   // Sync when online
   useEffect(() => {
-    if (navigator.onLine && queue.autoSyncEnabled && offlineReports.length > 0) {
+    const isOnline = navigator.onLine
+    if (isOnline && queue.autoSyncEnabled && offlineReports.length > 0) {
       const syncInterval = setInterval(() => {
         const reportsToSync = offlineReports.filter(report => report.status === 'queued')
 
         if (reportsToSync.length > 0) {
+          // eslint-disable-next-line no-console
           console.log(`Syncing ${reportsToSync.length} offline reports...`)
 
           // Update status to syncing
@@ -373,6 +381,7 @@ export function OfflineEmergencyReporting({
           )
 
           // Simulate sync process
+          // 3 seconds
           setTimeout(() => {
             setOfflineReports(prev =>
               prev.map(report =>
@@ -381,15 +390,16 @@ export function OfflineEmergencyReporting({
                   : report
               )
             )
-          }, 3000) // 3 seconds
+          }, 3000)
         }
-      }, 30000) // Check every 30 seconds
+        // Check every 30 seconds
+      }, 30000)
 
       return () => clearInterval(syncInterval)
     }
 
     return () => {}
-  }, [navigator.onLine, queue.autoSyncEnabled, offlineReports])
+  }, [queue.autoSyncEnabled, offlineReports])
 
   // Get status color
   const getStatusColor = (status: OfflineReport['status']) => {
@@ -586,8 +596,8 @@ export function OfflineEmergencyReporting({
                   <div>
                     <div className="text-sm font-medium">
                       {currentReport.location
-                        ? currentReport.location.address
-                          || `${currentReport.location.latitude.toFixed(6)}, ${currentReport.location.longitude.toFixed(6)}`
+                        ? currentReport.location.address ||
+                          `${currentReport.location.latitude.toFixed(6)}, ${currentReport.location.longitude.toFixed(6)}`
                         : 'Location will be captured automatically'}
                     </div>
                     {currentReport.location && (
@@ -608,9 +618,11 @@ export function OfflineEmergencyReporting({
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                   {images.map((image, index) => (
                     <div key={index} className="relative">
-                      <img
+                      <Image
                         src={image}
                         alt={`Emergency photo ${index + 1}`}
+                        width={100}
+                        height={96}
                         className="w-full h-24 object-cover rounded-lg border border-gray-200"
                       />
                       <button
@@ -783,16 +795,16 @@ export function OfflineEmergencyReporting({
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <MapPin className="h-4 w-4" />
                         <span>
-                          {report.location.address
-                            || `${report.location.latitude.toFixed(4)}, ${report.location.longitude.toFixed(4)}`}
+                          {report.location.address ||
+                            `${report.location.latitude.toFixed(4)}, ${report.location.longitude.toFixed(4)}`}
                         </span>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2">
                       <div className={cn('w-3 h-3 rounded-full', getStatusColor(report.status))}>
-                        {getStatusIcon(report.status)
-                          && React.createElement(getStatusIcon(report.status), {
+                        {getStatusIcon(report.status) &&
+                          React.createElement(getStatusIcon(report.status), {
                             className: 'h-3 w-3'
                           })}
                       </div>
@@ -826,10 +838,12 @@ export function OfflineEmergencyReporting({
                     <div className="mt-3 pt-3 border-t border-gray-200">
                       <div className="flex gap-2">
                         {report.images?.map((image, imgIndex) => (
-                          <img
+                          <Image
                             key={imgIndex}
                             src={image}
                             alt={`Report image ${imgIndex + 1}`}
+                            width={48}
+                            height={48}
                             className="w-12 h-12 object-cover rounded border border-gray-200"
                           />
                         ))}
@@ -916,6 +930,7 @@ export function OfflineEmergencyReporting({
                 className="w-full"
                 onClick={() => {
                   // Trigger manual sync
+                  // eslint-disable-next-line no-console
                   console.log('Manual sync triggered')
                 }}
               >

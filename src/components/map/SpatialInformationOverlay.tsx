@@ -3,22 +3,8 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
-import {
-  Navigation,
-  Clock,
-  MapPin,
-  Route,
-  Ruler,
-  Compass,
-  Eye,
-  EyeOff,
-  Settings,
-  Info,
-  Target,
-  Zap,
-  Activity
-} from 'lucide-react'
-import { Icon, EnhancedCard, EnhancedButton } from '@/components/ui'
+import { Eye, EyeOff } from 'lucide-react'
+import { Icon, EnhancedButton } from '@/components/ui'
 
 const spatialOverlayVariants = cva(
   'absolute bg-card/90 backdrop-blur-sm rounded-xl shadow-xl border transition-all duration-normal z-10',
@@ -63,8 +49,7 @@ export interface SpatialInfo {
 }
 
 export interface SpatialInformationOverlayProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof spatialOverlayVariants> {
+  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof spatialOverlayVariants> {
   spatialInfo: SpatialInfo
   userLocation?: [number, number]
   targetLocation?: [number, number]
@@ -119,10 +104,7 @@ const DistanceIndicator: React.FC<DistanceIndicatorProps> = ({
       <Icon name="route" size="sm" variant="primary" />
       <div className="flex flex-col">
         <span className="text-xs text-muted-foreground">Distance</span>
-        <span className={cn(
-          'text-sm font-semibold text-foreground',
-          animated && 'animate-pulse'
-        )}>
+        <span className={cn('text-sm font-semibold text-foreground', animated && 'animate-pulse')}>
           {formatDistance(distance)}
         </span>
       </div>
@@ -139,7 +121,7 @@ interface TimeEstimateProps {
 
 const TimeEstimate: React.FC<TimeEstimateProps> = ({
   time,
-  unitSystem,
+  unitSystem: _unitSystem,
   transportMode = 'driving',
   animated = false
 }) => {
@@ -158,10 +140,14 @@ const TimeEstimate: React.FC<TimeEstimateProps> = ({
 
   const getTransportIcon = () => {
     switch (transportMode) {
-      case 'walking': return 'navigation'
-      case 'cycling': return 'activity'
-      case 'driving': return 'zap'
-      default: return 'clock'
+      case 'walking':
+        return 'navigation'
+      case 'cycling':
+        return 'activity'
+      case 'driving':
+        return 'zap'
+      default:
+        return 'clock'
     }
   }
 
@@ -170,10 +156,7 @@ const TimeEstimate: React.FC<TimeEstimateProps> = ({
       <Icon name={getTransportIcon()} size="sm" variant="primary" />
       <div className="flex flex-col">
         <span className="text-xs text-muted-foreground">Est. Time</span>
-        <span className={cn(
-          'text-sm font-semibold text-foreground',
-          animated && 'animate-pulse'
-        )}>
+        <span className={cn('text-sm font-semibold text-foreground', animated && 'animate-pulse')}>
           {formatTime(time)}
         </span>
       </div>
@@ -187,11 +170,7 @@ interface AreaRadiusProps {
   animated?: boolean
 }
 
-const AreaRadius: React.FC<AreaRadiusProps> = ({
-  radius,
-  unitSystem,
-  animated = false
-}) => {
+const AreaRadius: React.FC<AreaRadiusProps> = ({ radius, unitSystem, animated = false }) => {
   if (!radius) {
     return null
   }
@@ -217,10 +196,7 @@ const AreaRadius: React.FC<AreaRadiusProps> = ({
       <Icon name="target" size="sm" variant="primary" />
       <div className="flex flex-col">
         <span className="text-xs text-muted-foreground">Radius</span>
-        <span className={cn(
-          'text-sm font-semibold text-foreground',
-          animated && 'animate-pulse'
-        )}>
+        <span className={cn('text-sm font-semibold text-foreground', animated && 'animate-pulse')}>
           {formatRadius(radius)}
         </span>
       </div>
@@ -233,10 +209,7 @@ interface CoordinatesDisplayProps {
   precision?: number
 }
 
-const CoordinatesDisplay: React.FC<CoordinatesDisplayProps> = ({
-  coordinates,
-  precision = 6
-}) => {
+const CoordinatesDisplay: React.FC<CoordinatesDisplayProps> = ({ coordinates, precision = 6 }) => {
   if (!coordinates) {
     return null
   }
@@ -247,9 +220,7 @@ const CoordinatesDisplay: React.FC<CoordinatesDisplayProps> = ({
     const minutesNotTruncated = (absolute - degrees) * 60
     const minutes = Math.floor(minutesNotTruncated)
     const seconds = ((minutesNotTruncated - minutes) * 60).toFixed(precision)
-    const direction = isLatitude
-      ? (coord >= 0 ? 'N' : 'S')
-      : (coord >= 0 ? 'E' : 'W')
+    const direction = isLatitude ? (coord >= 0 ? 'N' : 'S') : coord >= 0 ? 'E' : 'W'
 
     return `${degrees}°${minutes}'${seconds}"${direction}`
   }
@@ -272,10 +243,7 @@ interface BearingDisplayProps {
   animated?: boolean
 }
 
-const BearingDisplay: React.FC<BearingDisplayProps> = ({
-  bearing,
-  animated = false
-}) => {
+const BearingDisplay: React.FC<BearingDisplayProps> = ({ bearing, animated = false }) => {
   if (!bearing) {
     return null
   }
@@ -291,10 +259,7 @@ const BearingDisplay: React.FC<BearingDisplayProps> = ({
       <Icon name="compass" size="sm" variant="primary" />
       <div className="flex flex-col">
         <span className="text-xs text-muted-foreground">Bearing</span>
-        <span className={cn(
-          'text-sm font-semibold text-foreground',
-          animated && 'animate-pulse'
-        )}>
+        <span className={cn('text-sm font-semibold text-foreground', animated && 'animate-pulse')}>
           {Math.round(bearing)}° {getBearingDirection(bearing)}
         </span>
       </div>
@@ -308,11 +273,7 @@ interface SpeedDisplayProps {
   animated?: boolean
 }
 
-const SpeedDisplay: React.FC<SpeedDisplayProps> = ({
-  speed,
-  unitSystem,
-  animated = false
-}) => {
+const SpeedDisplay: React.FC<SpeedDisplayProps> = ({ speed, unitSystem, animated = false }) => {
   if (!speed) {
     return null
   }
@@ -332,10 +293,7 @@ const SpeedDisplay: React.FC<SpeedDisplayProps> = ({
       <Icon name="activity" size="sm" variant="primary" />
       <div className="flex flex-col">
         <span className="text-xs text-muted-foreground">Speed</span>
-        <span className={cn(
-          'text-sm font-semibold text-foreground',
-          animated && 'animate-pulse'
-        )}>
+        <span className={cn('text-sm font-semibold text-foreground', animated && 'animate-pulse')}>
           {formatSpeed(speed)}
         </span>
       </div>
@@ -348,10 +306,7 @@ interface AccuracyDisplayProps {
   unitSystem: 'metric' | 'imperial'
 }
 
-const AccuracyDisplay: React.FC<AccuracyDisplayProps> = ({
-  accuracy,
-  unitSystem
-}) => {
+const AccuracyDisplay: React.FC<AccuracyDisplayProps> = ({ accuracy, unitSystem }) => {
   if (!accuracy) {
     return null
   }
@@ -371,9 +326,7 @@ const AccuracyDisplay: React.FC<AccuracyDisplayProps> = ({
       <Icon name="target" size="sm" variant="muted" />
       <div className="flex flex-col">
         <span className="text-xs text-muted-foreground">Accuracy</span>
-        <span className="text-sm font-semibold text-foreground">
-          {formatAccuracy(accuracy)}
-        </span>
+        <span className="text-sm font-semibold text-foreground">{formatAccuracy(accuracy)}</span>
       </div>
     </div>
   )
@@ -385,8 +338,8 @@ const SpatialInformationOverlay: React.FC<SpatialInformationOverlayProps> = ({
   size,
   variant,
   spatialInfo,
-  userLocation,
-  targetLocation,
+  userLocation: _userLocation,
+  targetLocation: _targetLocation,
   showDistance = true,
   showTimeEstimate = true,
   showAreaRadius = true,
@@ -471,11 +424,7 @@ const SpatialInformationOverlay: React.FC<SpatialInformationOverlayProps> = ({
                 aria-label={expanded ? 'Collapse details' : 'Expand details'}
                 aria-expanded={expanded}
               >
-                <Icon
-                  name={expanded ? 'chevronUp' : 'chevronDown'}
-                  size="xs"
-                  variant="muted"
-                />
+                <Icon name={expanded ? 'chevronUp' : 'chevronDown'} size="xs" variant="muted" />
               </button>
               <button
                 onClick={handleUnitToggle}
@@ -499,10 +448,7 @@ const SpatialInformationOverlay: React.FC<SpatialInformationOverlayProps> = ({
       </div>
 
       {/* Content */}
-      <div className={cn(
-        'space-y-3',
-        !expanded && 'max-h-32 overflow-hidden'
-      )}>
+      <div className={cn('space-y-3', !expanded && 'max-h-32 overflow-hidden')}>
         {showDistance && (
           <DistanceIndicator
             distance={spatialInfo.distance}
@@ -529,18 +475,9 @@ const SpatialInformationOverlay: React.FC<SpatialInformationOverlayProps> = ({
 
         {expanded && (
           <>
-            {showCoordinates && (
-              <CoordinatesDisplay
-                coordinates={spatialInfo.coordinates}
-              />
-            )}
+            {showCoordinates && <CoordinatesDisplay coordinates={spatialInfo.coordinates} />}
 
-            {showBearing && (
-              <BearingDisplay
-                bearing={spatialInfo.bearing}
-                animated={animated}
-              />
-            )}
+            {showBearing && <BearingDisplay bearing={spatialInfo.bearing} animated={animated} />}
 
             {showSpeed && (
               <SpeedDisplay
@@ -551,10 +488,7 @@ const SpatialInformationOverlay: React.FC<SpatialInformationOverlayProps> = ({
             )}
 
             {showAccuracy && (
-              <AccuracyDisplay
-                accuracy={spatialInfo.accuracy}
-                unitSystem={currentUnitSystem}
-              />
+              <AccuracyDisplay accuracy={spatialInfo.accuracy} unitSystem={currentUnitSystem} />
             )}
           </>
         )}

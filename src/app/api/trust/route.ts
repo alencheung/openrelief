@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { withAPISecurity, API_SECURITY_CONFIGS } from '@/lib/security/api-security'
-import { securityMonitor } from '@/lib/audit/security-monitor'
 import { trustScoreManager } from '@/lib/security/trust-integration'
 import {
   cacheResponse,
@@ -25,7 +24,7 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('user_id') || context.userId
     const includeHistory = searchParams.get('history') === 'true'
-    const historyLimit = Math.min(parseInt(searchParams.get('limit') || '50'), 100)
+    const historyLimit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 100)
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
@@ -119,7 +118,7 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
           }
         }
 
-        const { data: stats, error: statsError } = await supabase
+        const { data: stats, error: _statsError } = await supabase
           .from('event_confirmations')
           .select('confirmation_type')
           .eq('user_id', userId)
@@ -132,7 +131,7 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
           disputeCount = stats.filter(s => s.confirmation_type === 'dispute').length
         }
 
-        const { data: reports, error: reportsError } = await supabase
+        const { data: reports, error: _reportsError } = await supabase
           .from('emergency_events')
           .select('id')
           .eq('reporter_id', userId)
@@ -185,11 +184,11 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
 
 export const POST = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
   request: NextRequest,
-  context
+  _context
 ) => {
   try {
     const body = await request.json()
-    const { action, targetUserId, reason } = body
+    const { action, targetUserId } = body
 
     if (!action || !targetUserId) {
       return NextResponse.json({ error: 'Action and targetUserId are required' }, { status: 400 })

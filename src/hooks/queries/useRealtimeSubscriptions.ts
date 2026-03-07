@@ -293,6 +293,57 @@ export const useRealtimeSubscription = (config: SubscriptionConfig) => {
   }
 }
 
+// Helper function to handle INSERT notifications
+const handleInsertNotification = async (payload: any, createEmergencyNotification: any) => {
+  if (!payload.new || payload.new.severity < 4) {
+    return
+  }
+
+  try {
+    await createEmergencyNotification({
+      eventId: payload.new.id,
+      type: 'emergency',
+      severity: payload.new.severity >= 5 ? 'critical' : 'warning',
+      title: `New ${payload.new.severity >= 5 ? 'Critical' : 'High'} Emergency`,
+      message: payload.new.title,
+      location: payload.new.location
+    })
+  } catch (notificationError) {
+    console.error('[Realtime] Failed to create emergency notification:', notificationError)
+  }
+}
+
+// Helper function to handle UPDATE notifications
+const handleUpdateNotification = async (payload: any, createEmergencyNotification: any) => {
+  if (!payload.new || !payload.old || payload.old.status === payload.new.status) {
+    return
+  }
+
+  try {
+    if (payload.new.status === 'resolved') {
+      await createEmergencyNotification({
+        eventId: payload.new.id,
+        type: 'emergency',
+        severity: 'success',
+        title: 'Emergency Resolved',
+        message: payload.new.title,
+        location: payload.new.location
+      })
+    } else if (payload.new.status === 'active') {
+      await createEmergencyNotification({
+        eventId: payload.new.id,
+        type: 'emergency',
+        severity: 'warning',
+        title: 'Emergency Activated',
+        message: payload.new.title,
+        location: payload.new.location
+      })
+    }
+  } catch (notificationError) {
+    console.error('[Realtime] Failed to create status change notification:', notificationError)
+  }
+}
+
 // Emergency events subscription with enhanced error handling
 export const useEmergencyEventsSubscription = () => {
   const { addEvent, updateEvent, removeEvent, setRealtimeEnabled, updateLastSyncTime } =
@@ -318,62 +369,14 @@ export const useEmergencyEventsSubscription = () => {
           case 'INSERT':
             if (payload.new) {
               addEvent(payload.new)
-
-              // Create notification for new high-priority events
-              if (payload.new.severity >= 4) {
-                try {
-                  await createEmergencyNotification({
-                    eventId: payload.new.id,
-                    type: 'emergency',
-                    severity: payload.new.severity >= 5 ? 'critical' : 'warning',
-                    title: `New ${payload.new.severity >= 5 ? 'Critical' : 'High'} Emergency`,
-                    message: payload.new.title,
-                    location: payload.new.location
-                  })
-                } catch (notificationError) {
-                  console.error(
-                    '[Realtime] Failed to create emergency notification:',
-                    notificationError
-                  )
-                  // Don't let notification failure break subscription
-                }
-              }
+              await handleInsertNotification(payload, createEmergencyNotification)
             }
             break
 
           case 'UPDATE':
             if (payload.new && payload.old) {
               updateEvent(payload.new.id, payload.new)
-
-              // Notification for status changes
-              if (payload.old.status !== payload.new.status) {
-                try {
-                  if (payload.new.status === 'resolved') {
-                    await createEmergencyNotification({
-                      eventId: payload.new.id,
-                      type: 'emergency',
-                      severity: 'success',
-                      title: 'Emergency Resolved',
-                      message: payload.new.title,
-                      location: payload.new.location
-                    })
-                  } else if (payload.new.status === 'active') {
-                    await createEmergencyNotification({
-                      eventId: payload.new.id,
-                      type: 'emergency',
-                      severity: 'warning',
-                      title: 'Emergency Activated',
-                      message: payload.new.title,
-                      location: payload.new.location
-                    })
-                  }
-                } catch (notificationError) {
-                  console.error(
-                    '[Realtime] Failed to create status change notification:',
-                    notificationError
-                  )
-                }
-              }
+              await handleUpdateNotification(payload, createEmergencyNotification)
             }
             break
 

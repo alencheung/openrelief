@@ -21,10 +21,7 @@ export async function GET(request: NextRequest) {
     const session = await getServerSession()
 
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
     // Parse query parameters
@@ -51,8 +48,8 @@ export async function GET(request: NextRequest) {
     requests.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 
     // Apply pagination if provided
-    const limitNum = limit ? parseInt(limit) : undefined
-    const offsetNum = offset ? parseInt(offset) : 0
+    const limitNum = limit ? parseInt(limit, 10) : undefined
+    const offsetNum = offset ? parseInt(offset, 10) : 0
 
     if (limitNum) {
       requests = requests.slice(offsetNum, offsetNum + limitNum)
@@ -76,10 +73,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error retrieving legal requests:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -90,10 +84,7 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession()
 
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
     // Parse request body
@@ -136,10 +127,11 @@ export async function POST(request: NextRequest) {
     const userRequests = legalRequestsDB.get(session.user.id) || []
 
     // Check for duplicate requests
-    const existingRequest = userRequests.find(req =>
-      req.type === type
-      && req.status === 'pending'
-      && req.title.toLowerCase() === title.toLowerCase()
+    const existingRequest = userRequests.find(
+      req =>
+        req.type === type &&
+        req.status === 'pending' &&
+        req.title.toLowerCase() === title.toLowerCase()
     )
 
     if (existingRequest) {
@@ -186,10 +178,7 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error creating legal request:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -200,10 +189,7 @@ export async function PUT(request: NextRequest) {
     const session = await getServerSession()
 
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
     // Parse request body
@@ -212,10 +198,7 @@ export async function PUT(request: NextRequest) {
 
     // Validate required fields
     if (!requestId) {
-      return NextResponse.json(
-        { error: 'Missing required field: requestId' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Missing required field: requestId' }, { status: 400 })
     }
 
     // Get user's legal requests
@@ -225,10 +208,7 @@ export async function PUT(request: NextRequest) {
     const requestIndex = userRequests.findIndex(req => req.id === requestId)
 
     if (requestIndex === -1) {
-      return NextResponse.json(
-        { error: 'Legal request not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Legal request not found' }, { status: 404 })
     }
 
     const existingRequest = userRequests[requestIndex]
@@ -247,7 +227,10 @@ export async function PUT(request: NextRequest) {
       status: status as any,
       updatedAt: new Date(),
       // Update response deadline if status changes to processing
-      responseDeadline: status === 'processing' ? calculateResponseDeadline(existingRequest.type) : existingRequest.responseDeadline
+      responseDeadline:
+        status === 'processing'
+          ? calculateResponseDeadline(existingRequest.type)
+          : existingRequest.responseDeadline
     }
 
     // Add description if provided (for appeals)
@@ -276,10 +259,7 @@ export async function PUT(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error updating legal request:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -290,22 +270,28 @@ function calculateResponseDeadline(type: string): Date {
   // GDPR requires response within 30 days, but we set earlier deadlines for better service
   switch (type) {
     case 'data_access':
-      deadline.setDate(deadline.getDate() + 15) // 15 days for data access
+      // 15 days for data access
+      deadline.setDate(deadline.getDate() + 15)
       break
     case 'deletion':
-      deadline.setDate(deadline.getDate() + 10) // 10 days for deletion
+      // 10 days for deletion
+      deadline.setDate(deadline.getDate() + 10)
       break
     case 'correction':
-      deadline.setDate(deadline.getDate() + 10) // 10 days for correction
+      // 10 days for correction
+      deadline.setDate(deadline.getDate() + 10)
       break
     case 'portability':
-      deadline.setDate(deadline.getDate() + 20) // 20 days for portability
+      // 20 days for portability
+      deadline.setDate(deadline.getDate() + 20)
       break
     case 'objection':
-      deadline.setDate(deadline.getDate() + 14) // 14 days for objection
+      // 14 days for objection
+      deadline.setDate(deadline.getDate() + 14)
       break
     default:
-      deadline.setDate(deadline.getDate() + 30) // 30 days default
+      // 30 days default
+      deadline.setDate(deadline.getDate() + 30)
   }
 
   return deadline
@@ -368,14 +354,17 @@ async function logLegalRequestAccess(
     dataTypes: [dataType],
     privacyImpact: 'high',
     legalBasis: 'user_rights',
-    retentionPeriod: 2555, // 7 years for legal requests
+    retentionPeriod: 2555,
+    // 7 years for legal requests
     automatedDecision: false,
     dataSubjects: 1,
-    ipAddress: 'server', // In real implementation, this would be actual IP
+    // In real implementation, this would be actual IP
+    ipAddress: 'server',
     userAgent: 'api_server',
     metadata
   }
 
+  // eslint-disable-next-line no-console
   console.log('Legal request access logged:', logEntry)
 
   // In a real implementation, save to audit database
@@ -385,6 +374,7 @@ async function logLegalRequestAccess(
 // Notify privacy team of new request
 async function notifyPrivacyTeam(request: LegalRequest, userId: string): Promise<void> {
   // In a real implementation, this would send notifications to the privacy team
+  // eslint-disable-next-line no-console
   console.log('Privacy team notified of new request:', {
     requestId: request.id,
     userId,

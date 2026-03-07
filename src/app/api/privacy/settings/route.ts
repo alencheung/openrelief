@@ -34,16 +34,13 @@ const defaultPrivacySettings: PrivacySettings = {
 }
 
 // GET handler - retrieve privacy settings
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Get user session
     const session = await getServerSession()
 
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
     // Get user's privacy settings from database
@@ -69,10 +66,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error retrieving privacy settings:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -83,10 +77,7 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession()
 
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
     // Parse request body
@@ -95,19 +86,13 @@ export async function POST(request: NextRequest) {
 
     // Validate settings
     if (!settings || typeof settings !== 'object') {
-      return NextResponse.json(
-        { error: 'Invalid settings format' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Invalid settings format' }, { status: 400 })
     }
 
     // Validate individual settings
     const validationError = validatePrivacySettings(settings)
     if (validationError) {
-      return NextResponse.json(
-        { error: validationError },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: validationError }, { status: 400 })
     }
 
     // Get current settings for comparison
@@ -123,16 +108,11 @@ export async function POST(request: NextRequest) {
     privacySettingsDB.set(session.user.id, updatedSettings)
 
     // Log the update for transparency
-    await logPrivacyAccess(
-      session.user.id,
-      'settings_update',
-      'privacy_settings',
-      {
-        previousSettings: currentSettings,
-        updatedSettings: updatedSettings,
-        changedFields: Object.keys(settings)
-      }
-    )
+    await logPrivacyAccess(session.user.id, 'settings_update', 'privacy_settings', {
+      previousSettings: currentSettings,
+      updatedSettings: updatedSettings,
+      changedFields: Object.keys(settings)
+    })
 
     // Trigger privacy impact assessment if significant changes
     if (hasSignificantChanges(currentSettings, updatedSettings)) {
@@ -149,10 +129,7 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error updating privacy settings:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -181,15 +158,19 @@ function validatePrivacySettings(settings: any): string | null {
     return 'locationSharing must be a boolean'
   }
 
-  if (typeof settings.locationPrecision !== 'number'
-      || settings.locationPrecision < 1
-      || settings.locationPrecision > 5) {
+  if (
+    typeof settings.locationPrecision !== 'number' ||
+    settings.locationPrecision < 1 ||
+    settings.locationPrecision > 5
+  ) {
     return 'locationPrecision must be a number between 1 and 5'
   }
 
-  if (typeof settings.dataRetentionDays !== 'number'
-      || settings.dataRetentionDays < 7
-      || settings.dataRetentionDays > 365) {
+  if (
+    typeof settings.dataRetentionDays !== 'number' ||
+    settings.dataRetentionDays < 7 ||
+    settings.dataRetentionDays > 365
+  ) {
     return 'dataRetentionDays must be a number between 7 and 365'
   }
 
@@ -214,44 +195,57 @@ function validatePrivacySettings(settings: any): string | null {
   }
 
   // Validate optional fields if present
-  if (settings.researchParticipation !== undefined
-      && typeof settings.researchParticipation !== 'boolean') {
+  if (
+    settings.researchParticipation !== undefined &&
+    typeof settings.researchParticipation !== 'boolean'
+  ) {
     return 'researchParticipation must be a boolean'
   }
 
-  if (settings.thirdPartyAnalytics !== undefined
-      && typeof settings.thirdPartyAnalytics !== 'boolean') {
+  if (
+    settings.thirdPartyAnalytics !== undefined &&
+    typeof settings.thirdPartyAnalytics !== 'boolean'
+  ) {
     return 'thirdPartyAnalytics must be a boolean'
   }
 
-  if (settings.automatedDataCleanup !== undefined
-      && typeof settings.automatedDataCleanup !== 'boolean') {
+  if (
+    settings.automatedDataCleanup !== undefined &&
+    typeof settings.automatedDataCleanup !== 'boolean'
+  ) {
     return 'automatedDataCleanup must be a boolean'
   }
 
-  if (settings.privacyBudgetAlerts !== undefined
-      && typeof settings.privacyBudgetAlerts !== 'boolean') {
+  if (
+    settings.privacyBudgetAlerts !== undefined &&
+    typeof settings.privacyBudgetAlerts !== 'boolean'
+  ) {
     return 'privacyBudgetAlerts must be a boolean'
   }
 
-  if (settings.legalNotifications !== undefined
-      && typeof settings.legalNotifications !== 'boolean') {
+  if (
+    settings.legalNotifications !== undefined &&
+    typeof settings.legalNotifications !== 'boolean'
+  ) {
     return 'legalNotifications must be a boolean'
   }
 
-  if (settings.consentManagement !== undefined
-      && typeof settings.consentManagement !== 'boolean') {
+  if (settings.consentManagement !== undefined && typeof settings.consentManagement !== 'boolean') {
     return 'consentManagement must be a boolean'
   }
 
-  if (settings.realTimeMonitoring !== undefined
-      && typeof settings.realTimeMonitoring !== 'boolean') {
+  if (
+    settings.realTimeMonitoring !== undefined &&
+    typeof settings.realTimeMonitoring !== 'boolean'
+  ) {
     return 'realTimeMonitoring must be a boolean'
   }
 
-  if (settings.dataProcessingPurposes !== undefined
-      && (!Array.isArray(settings.dataProcessingPurposes)
-       || !settings.dataProcessingPurposes.every((p: any) => typeof p === 'string'))) {
+  if (
+    settings.dataProcessingPurposes !== undefined &&
+    (!Array.isArray(settings.dataProcessingPurposes) ||
+      !settings.dataProcessingPurposes.every((p: any) => typeof p === 'string'))
+  ) {
     return 'dataProcessingPurposes must be an array of strings'
   }
 
@@ -259,10 +253,7 @@ function validatePrivacySettings(settings: any): string | null {
 }
 
 // Check if settings have significant changes that require impact assessment
-function hasSignificantChanges(
-  current: PrivacySettings,
-  updated: PrivacySettings
-): boolean {
+function hasSignificantChanges(current: PrivacySettings, updated: PrivacySettings): boolean {
   const significantFields = [
     'anonymizeData',
     'differentialPrivacy',
@@ -293,11 +284,13 @@ async function logPrivacyAccess(
     retentionPeriod: 365,
     automatedDecision: false,
     dataSubjects: 1,
-    ipAddress: 'server', // In real implementation, this would be the actual IP
+    // In real implementation, this would be the actual IP
+    ipAddress: 'server',
     userAgent: 'api_server',
     metadata
   }
 
+  // eslint-disable-next-line no-console
   console.log('Privacy access logged:', logEntry)
 
   // In a real implementation, save to audit database
@@ -310,6 +303,7 @@ async function triggerPrivacyImpactAssessment(
   settings: PrivacySettings
 ): Promise<void> {
   // In a real implementation, this would trigger an automated assessment
+  // eslint-disable-next-line no-console
   console.log('Privacy impact assessment triggered for user:', userId, settings)
 
   // Calculate privacy score based on settings
@@ -320,11 +314,22 @@ async function triggerPrivacyImpactAssessment(
     settings.endToEndEncryption
   ].filter(Boolean).length
 
-  const privacyLevel
-    = enabledFeatures === 4 ? 'maximum'
-      : enabledFeatures === 3 ? 'high'
-        : enabledFeatures === 2 ? 'medium' : 'basic'
+  const privacyLevel = getPrivacyLevel(enabledFeatures)
 
   // In a real implementation, save assessment results to database
+  // eslint-disable-next-line no-console
   console.log(`Privacy level for user ${userId}: ${privacyLevel}`)
+}
+
+function getPrivacyLevel(enabledFeatures: number): string {
+  if (enabledFeatures === 4) {
+    return 'maximum'
+  }
+  if (enabledFeatures === 3) {
+    return 'high'
+  }
+  if (enabledFeatures === 2) {
+    return 'medium'
+  }
+  return 'basic'
 }

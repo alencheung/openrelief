@@ -8,12 +8,11 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { Database } from '@/types/database'
 import { withAPISecurity, API_SECURITY_CONFIGS } from '@/lib/security/api-security'
 import { inputValidator, VALIDATION_SCHEMAS } from '@/lib/security/input-validation'
 import { sybilPreventionEngine } from '@/lib/security/sybil-prevention'
 import { securityMonitor } from '@/lib/audit/security-monitor'
-import { trustScoreManager, updateTrustScoreFromAction } from '@/lib/security/trust-integration'
+import { updateTrustScoreFromAction } from '@/lib/security/trust-integration'
 import {
   cacheResponse,
   generateCacheKey,
@@ -31,7 +30,7 @@ const supabase = createClient(
 
 export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
   request: NextRequest,
-  context
+  _context
 ) => {
   try {
     const { searchParams } = new URL(request.url)
@@ -111,7 +110,7 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
         }
 
         if (sanitizedData.type_id) {
-          query = query.eq('type_id', parseInt(sanitizedData.type_id))
+          query = query.eq('type_id', parseInt(sanitizedData.type_id, 10))
         }
 
         if (sanitizedData.radius && sanitizedData.center_lat && sanitizedData.center_lng) {
@@ -127,13 +126,13 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
         }
 
         if (sanitizedData.limit) {
-          query = query.limit(parseInt(sanitizedData.limit))
+          query = query.limit(parseInt(sanitizedData.limit, 10))
         }
 
         if (sanitizedData.offset) {
           query = query.range(
-            parseInt(sanitizedData.offset),
-            parseInt(sanitizedData.offset) + parseInt(sanitizedData.limit) - 1
+            parseInt(sanitizedData.offset, 10),
+            parseInt(sanitizedData.offset, 10) + parseInt(sanitizedData.limit, 10) - 1
           )
         }
 
@@ -147,9 +146,10 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
           data,
           pagination: {
             total: count || 0,
-            limit: parseInt(sanitizedData.limit),
-            offset: parseInt(sanitizedData.offset),
-            hasMore: (count || 0) > parseInt(sanitizedData.offset) + parseInt(sanitizedData.limit)
+            limit: parseInt(sanitizedData.limit, 10),
+            offset: parseInt(sanitizedData.offset, 10),
+            hasMore:
+              (count || 0) > parseInt(sanitizedData.offset, 10) + parseInt(sanitizedData.limit, 10)
           }
         }
       },
@@ -261,7 +261,7 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (
     const { data, error } = await supabase
       .from('emergency_events')
       .insert({
-        type_id: parseInt(sanitizedData.type_id),
+        type_id: parseInt(sanitizedData.type_id, 10),
         title: sanitizedData.title.trim(),
         description: sanitizedData.description.trim(),
         location: `POINT(${sanitizedData.location.longitude} ${sanitizedData.location.latitude})`,
@@ -273,7 +273,7 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (
         metadata: sanitizedData.metadata || {},
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
       })
       .select(
         `
@@ -432,7 +432,7 @@ export const PUT = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
 
     // Add expiration for resolved events
     if (sanitizedData.status === 'resolved') {
-      updates.expires_at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days
+      updates.expires_at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
     }
 
     const { data, error } = await supabase

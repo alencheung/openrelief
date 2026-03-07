@@ -32,18 +32,18 @@ export async function GET(request: NextRequest) {
     const session = await getServerSession()
 
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
     // Parse query parameters
     const { searchParams } = new URL(request.url)
     const format = searchParams.get('format') || 'json'
-    const period = searchParams.get('period') || '30' // Default to 30 days
-    const anonymize = searchParams.get('anonymize') !== 'false' // Default to true
-    const includePersonal = searchParams.get('includePersonal') === 'true' // Default to false
+    // Default to 30 days
+    const period = searchParams.get('period') || '30'
+    // Default to true
+    const anonymize = searchParams.get('anonymize') !== 'false'
+    // Default to false
+    const includePersonal = searchParams.get('includePersonal') === 'true'
 
     // Validate format
     if (!['json', 'csv', 'pdf'].includes(format)) {
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Validate period
-    const periodDays = parseInt(period)
+    const periodDays = parseInt(period, 10)
     if (isNaN(periodDays) || periodDays < 1 || periodDays > 365) {
       return NextResponse.json(
         { error: 'Invalid period. Must be between 1 and 365 days' },
@@ -94,13 +94,7 @@ export async function GET(request: NextRequest) {
     )
 
     // Log report generation for transparency
-    await logTransparencyAccess(
-      session.user.id,
-      'report_generation',
-      periodDays,
-      format,
-      anonymize
-    )
+    await logTransparencyAccess(session.user.id, 'report_generation', periodDays, format, anonymize)
 
     // Return appropriate response based on format
     if (format === 'json') {
@@ -122,17 +116,11 @@ export async function GET(request: NextRequest) {
     } else if (format === 'pdf') {
       // In a real implementation, you would generate a PDF
       // For now, return a placeholder
-      return NextResponse.json(
-        { error: 'PDF export not yet implemented' },
-        { status: 501 }
-      )
+      return NextResponse.json({ error: 'PDF export not yet implemented' }, { status: 501 })
     }
   } catch (error) {
     console.error('Error generating transparency report:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -143,29 +131,17 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession()
 
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
     // Parse request body
     const body = await request.json()
-    const {
-      startDate,
-      endDate,
-      dataTypes,
-      includePersonalData,
-      anonymizeSensitiveInfo,
-      format
-    } = body
+    const { startDate, endDate, dataTypes, includePersonalData, anonymizeSensitiveInfo, format } =
+      body
 
     // Validate required fields
     if (!startDate || !endDate) {
-      return NextResponse.json(
-        { error: 'Start date and end date are required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Start date and end date are required' }, { status: 400 })
     }
 
     // Validate dates
@@ -173,17 +149,11 @@ export async function POST(request: NextRequest) {
     const end = new Date(endDate)
 
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      return NextResponse.json(
-        { error: 'Invalid date format' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Invalid date format' }, { status: 400 })
     }
 
     if (start >= end) {
-      return NextResponse.json(
-        { error: 'Start date must be before end date' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Start date must be before end date' }, { status: 400 })
     }
 
     // Validate format
@@ -205,8 +175,7 @@ export async function POST(request: NextRequest) {
     const filteredLogs = auditLogs.filter(log => {
       const logDate = new Date(log.timestamp)
       const inDateRange = logDate >= start && logDate <= end
-      const inDataTypes = !dataTypes || dataTypes.length === 0
-                          || dataTypes.includes(log.dataType)
+      const inDataTypes = !dataTypes || dataTypes.length === 0 || dataTypes.includes(log.dataType)
       return inDateRange && inDataTypes
     })
 
@@ -224,7 +193,7 @@ export async function POST(request: NextRequest) {
         },
         includePersonalData: includePersonalData || false,
         anonymizeSensitiveInfo: anonymizeSensitiveInfo !== false,
-        format: format as 'json' | 'csv' | 'pdf' || 'json',
+        format: (format as 'json' | 'csv' | 'pdf') || 'json',
         language: 'en'
       }
     )
@@ -246,10 +215,7 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error generating custom transparency report:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -328,7 +294,8 @@ async function logTransparencyAccess(
     retentionPeriod: 365,
     automatedDecision: false,
     dataSubjects: 1,
-    ipAddress: 'server', // In real implementation, this would be actual IP
+    // In real implementation, this would be actual IP
+    ipAddress: 'server',
     userAgent: 'api_server',
     metadata: {
       periodDays,
@@ -337,6 +304,7 @@ async function logTransparencyAccess(
     }
   }
 
+  // eslint-disable-next-line no-console
   console.log('Transparency access logged:', logEntry)
 
   // In a real implementation, save to audit database

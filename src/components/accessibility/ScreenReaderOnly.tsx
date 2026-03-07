@@ -4,7 +4,6 @@ import { forwardRef } from 'react'
 import { cn } from '@/lib/utils'
 
 export interface ScreenReaderOnlyProps {
-
   /**
    * Content to be read by screen readers only
    */
@@ -112,7 +111,6 @@ ScreenReaderOnly.displayName = 'ScreenReaderOnly'
  * Component for status announcements to screen readers
  */
 export interface ScreenReaderStatusProps {
-
   /**
    * Status message to announce
    */
@@ -141,11 +139,7 @@ export function ScreenReaderStatus({
   className
 }: ScreenReaderStatusProps) {
   return (
-    <ScreenReaderOnly
-      live={priority}
-      atomic={true}
-      className={className}
-    >
+    <ScreenReaderOnly live={priority} atomic={true} className={className}>
       {clear ? '\u00A0' : message}
     </ScreenReaderOnly>
   )
@@ -155,7 +149,6 @@ export function ScreenReaderStatus({
  * Component for providing context to screen readers
  */
 export interface ScreenReaderContextProps {
-
   /**
    * Contextual information
    */
@@ -186,7 +179,8 @@ export function ScreenReaderContext({
   const getAriaRole = () => {
     switch (context) {
       case 'heading':
-        return undefined // Use actual heading elements
+        // Use actual heading elements
+        return undefined
       case 'list':
         return 'list'
       case 'navigation':
@@ -203,12 +197,7 @@ export function ScreenReaderContext({
   }
 
   return (
-    <ScreenReaderOnly
-      as="div"
-      role={getAriaRole()}
-      aria-label={label}
-      className={className}
-    >
+    <ScreenReaderOnly as="div" role={getAriaRole()} aria-label={label} className={className}>
       {children}
     </ScreenReaderOnly>
   )
@@ -218,7 +207,6 @@ export function ScreenReaderContext({
  * Component for hidden form field descriptions
  */
 export interface ScreenReaderFieldDescriptionProps {
-
   /**
    * Description text
    */
@@ -241,11 +229,7 @@ export function ScreenReaderFieldDescription({
   className
 }: ScreenReaderFieldDescriptionProps) {
   return (
-    <ScreenReaderOnly
-      as="div"
-      id={`${htmlFor}-description`}
-      className={className}
-    >
+    <ScreenReaderOnly as="div" id={`${htmlFor}-description`} className={className}>
       {children}
     </ScreenReaderOnly>
   )
@@ -255,7 +239,6 @@ export function ScreenReaderFieldDescription({
  * Component for hidden form field error messages
  */
 export interface ScreenReaderFieldErrorProps {
-
   /**
    * Error message
    */
@@ -294,7 +277,6 @@ export function ScreenReaderFieldError({
  * Component for hidden form field success messages
  */
 export interface ScreenReaderFieldSuccessProps {
-
   /**
    * Success message
    */
@@ -333,7 +315,6 @@ export function ScreenReaderFieldSuccess({
  * Component for providing table captions to screen readers
  */
 export interface ScreenReaderTableCaptionProps {
-
   /**
    * Caption text
    */
@@ -345,15 +326,9 @@ export interface ScreenReaderTableCaptionProps {
   className?: string
 }
 
-export function ScreenReaderTableCaption({
-  children,
-  className
-}: ScreenReaderTableCaptionProps) {
+export function ScreenReaderTableCaption({ children, className }: ScreenReaderTableCaptionProps) {
   return (
-    <ScreenReaderOnly
-      as="caption"
-      className={className}
-    >
+    <ScreenReaderOnly as="caption" className={className}>
       {children}
     </ScreenReaderOnly>
   )
@@ -363,7 +338,6 @@ export function ScreenReaderTableCaption({
  * Component for providing figure descriptions to screen readers
  */
 export interface ScreenReaderFigureDescriptionProps {
-
   /**
    * Description text
    */
@@ -380,10 +354,7 @@ export function ScreenReaderFigureDescription({
   className
 }: ScreenReaderFigureDescriptionProps) {
   return (
-    <ScreenReaderOnly
-      as="figcaption"
-      className={className}
-    >
+    <ScreenReaderOnly as="figcaption" className={className}>
       {children}
     </ScreenReaderOnly>
   )
@@ -393,10 +364,13 @@ export function ScreenReaderFigureDescription({
  * Hook for creating screen reader announcements programmatically
  */
 export function useScreenReaderAnnouncer() {
-  const announce = (message: string, options: {
-    priority?: 'polite' | 'assertive'
-    clear?: boolean
-  } = {}) => {
+  const announce = (
+    message: string,
+    options: {
+      priority?: 'polite' | 'assertive'
+      clear?: boolean
+    } = {}
+  ) => {
     const { priority = 'polite', clear = false } = options
 
     // Create temporary element for announcement

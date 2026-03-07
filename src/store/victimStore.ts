@@ -1,11 +1,6 @@
 import { create } from 'zustand'
 import { persist, subscribeWithSelector } from 'zustand/middleware'
-import {
-  Victim,
-  VictimCheckIn,
-  VictimFilter,
-  OfflineVictimAction
-} from '@/types/victim'
+import { Victim, VictimCheckIn, VictimFilter, OfflineVictimAction } from '@/types/victim'
 
 interface VictimState {
   victims: Victim[]

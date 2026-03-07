@@ -1,55 +1,27 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   AlertTriangle,
   Shield,
   Bell,
   BellOff,
-  Volume2,
-  VolumeX,
   Eye,
-  EyeOff,
-  Zap,
-  Radio,
-  Activity,
-  Clock,
-  MapPin,
-  Users,
-  TrendingUp,
   Info,
   X,
   CheckCircle,
   AlertCircle,
-  ChevronRight,
-  ChevronDown,
+  Clock,
+  MapPin,
   Settings,
-  Filter,
-  RefreshCw,
-  Play,
-  Pause,
-  SkipForward,
-  RotateCcw,
-  Download,
-  Share2,
-  MessageSquare,
-  Navigation,
-  Home,
   Phone,
-  Ambulance,
-  Flame,
-  HeartPulse,
-  CloudRain,
-  Wrench
+  Share2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useNotificationStore, useNotificationActions } from '@/store'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { Badge } from '@/components/ui/Badge'
 import { StatusIndicator } from '@/components/ui/StatusIndicator'
-import { EmergencyIndicator } from '@/components/ui/EmergencyIndicator'
 import { Switch } from '@/components/ui/Switch'
 
 interface EmergencySeverityAlertsProps {
@@ -147,13 +119,10 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
     vibrationEnabled: true,
     flashEnabled: true,
     autoDismiss: false,
-    autoDismissTime: 30000, // 30 seconds
+    autoDismissTime: 30000,
     maxAlerts: 50
   })
 
-  const { addNotification } = useNotificationActions()
-
-  // Severity thresholds configuration
   const severityThresholds: SeverityThresholds = {
     low: {
       color: 'text-blue-600',
@@ -190,108 +159,111 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
     }
   }
 
-  // Mock alerts for demonstration
-  const mockAlerts: SeverityAlert[] = [
-    {
-      id: 'alert-1',
-      type: 'emergency',
-      severity: 'critical',
-      title: '🚨 CRITICAL EMERGENCY',
-      message: 'Building fire reported in downtown area. Multiple casualties reported.',
-      timestamp: Date.now() - 60000, // 1 minute ago
-      location: {
-        latitude: 37.7749,
-        longitude: -122.4194,
-        radius: 500,
-        address: '123 Market St, San Francisco, CA'
+  const mockAlerts: SeverityAlert[] = useMemo(
+    () => [
+      {
+        id: 'alert-1',
+        type: 'emergency',
+        severity: 'critical',
+        title: '🚨 CRITICAL EMERGENCY',
+        message: 'Building fire reported in downtown area. Multiple casualties reported.',
+        timestamp: Date.now() - 60000,
+        location: {
+          latitude: 37.7749,
+          longitude: -122.4194,
+          radius: 500,
+          address: '123 Market St, San Francisco, CA'
+        },
+        trustWeight: 0.95,
+        requiresAction: true,
+        priority: 'urgent',
+        acknowledged: false,
+        dismissed: false,
+        read: false,
+        actions: [
+          {
+            id: 'navigate',
+            type: 'navigate',
+            label: 'View on Map',
+            description: 'Navigate to emergency location',
+            icon: MapPin,
+            primary: true
+          },
+          {
+            id: 'call',
+            type: 'call',
+            label: 'Call Emergency',
+            description: 'Call emergency services',
+            icon: Phone
+          },
+          {
+            id: 'share',
+            type: 'share',
+            label: 'Share Alert',
+            description: 'Share with nearby users',
+            icon: Share2
+          }
+        ],
+        metadata: {
+          eventId: 'emergency-123',
+          reporterId: 'user-456'
+        }
       },
-      trustWeight: 0.95,
-      requiresAction: true,
-      priority: 'urgent',
-      acknowledged: false,
-      dismissed: false,
-      read: false,
-      actions: [
-        {
-          id: 'navigate',
-          type: 'navigate',
-          label: 'View on Map',
-          description: 'Navigate to emergency location',
-          icon: MapPin,
-          primary: true
-        },
-        {
-          id: 'call',
-          type: 'call',
-          label: 'Call Emergency',
-          description: 'Call emergency services',
-          icon: Phone
-        },
-        {
-          id: 'share',
-          type: 'share',
-          label: 'Share Alert',
-          description: 'Share with nearby users',
-          icon: Share2
+      {
+        id: 'alert-2',
+        type: 'severity_update',
+        severity: 'high',
+        title: 'Emergency Severity Increased',
+        message:
+          'Fire emergency severity upgraded from medium to high due to multiple confirmations.',
+        timestamp: Date.now() - 120000,
+        priority: 'high',
+        acknowledged: true,
+        dismissed: false,
+        read: true,
+        actions: [
+          {
+            id: 'navigate',
+            type: 'navigate',
+            label: 'View Details',
+            description: 'View emergency details',
+            icon: Eye
+          }
+        ],
+        metadata: {
+          eventId: 'emergency-123'
         }
-      ],
-      metadata: {
-        eventId: 'emergency-123',
-        reporterId: 'user-456'
+      },
+      {
+        id: 'alert-3',
+        type: 'system',
+        severity: 'medium',
+        title: 'Network Connectivity Issue',
+        message:
+          'Experiencing high latency in emergency alert dispatch. Some alerts may be delayed.',
+        timestamp: Date.now() - 300000,
+        priority: 'medium',
+        acknowledged: false,
+        dismissed: false,
+        read: false,
+        actions: [
+          {
+            id: 'dismiss',
+            type: 'dismiss',
+            label: 'Dismiss',
+            description: 'Dismiss this alert',
+            icon: X
+          }
+        ]
       }
-    },
-    {
-      id: 'alert-2',
-      type: 'severity_update',
-      severity: 'high',
-      title: 'Emergency Severity Increased',
-      message:
-        'Fire emergency severity upgraded from medium to high due to multiple confirmations.',
-      timestamp: Date.now() - 120000, // 2 minutes ago
-      priority: 'high',
-      acknowledged: true,
-      dismissed: false,
-      read: true,
-      actions: [
-        {
-          id: 'navigate',
-          type: 'navigate',
-          label: 'View Details',
-          description: 'View emergency details',
-          icon: Eye
-        }
-      ],
-      metadata: {
-        eventId: 'emergency-123'
-      }
-    },
-    {
-      id: 'alert-3',
-      type: 'system',
-      severity: 'medium',
-      title: 'Network Connectivity Issue',
-      message: 'Experiencing high latency in emergency alert dispatch. Some alerts may be delayed.',
-      timestamp: Date.now() - 300000, // 5 minutes ago
-      priority: 'medium',
-      acknowledged: false,
-      dismissed: false,
-      read: false,
-      actions: [
-        {
-          id: 'dismiss',
-          type: 'dismiss',
-          label: 'Dismiss',
-          description: 'Dismiss this alert',
-          icon: X
-        }
-      ]
-    }
-  ]
+    ],
+    []
+  )
 
   useEffect(() => {
     setAlerts(mockAlerts)
     setActiveAlerts(mockAlerts.filter(alert => !alert.acknowledged && !alert.dismissed))
-  }, [])
+  }, [mockAlerts])
 
   // Get severity configuration
   const getSeverityConfig = (severity: SeverityAlert['severity']) => {
@@ -308,13 +280,9 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
         break
 
       case 'confirm':
-        // Handle confirmation action
-        console.log('Confirming alert:', alert.id)
         break
 
       case 'dispute':
-        // Handle dispute action
-        console.log('Disputing alert:', alert.id)
         break
 
       case 'call':
@@ -636,8 +604,8 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
                           <div className="flex items-center gap-1">
                             <MapPin className="h-3 w-3" />
                             <span>
-                              {alert.location.address
-                                || `${alert.location.latitude.toFixed(4)}, ${alert.location.longitude.toFixed(4)}`}
+                              {alert.location.address ||
+                                `${alert.location.latitude.toFixed(4)}, ${alert.location.longitude.toFixed(4)}`}
                             </span>
                           </div>
                         )}
@@ -661,7 +629,7 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
                           className="border-t p-4 bg-gray-50"
                         >
                           <div className="space-y-2">
-                            {alert.actions.map((action, actionIndex) => (
+                            {alert.actions.map(action => (
                               <Button
                                 key={action.id}
                                 variant={action.primary ? 'default' : 'outline'}

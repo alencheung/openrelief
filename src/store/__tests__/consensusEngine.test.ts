@@ -1,6 +1,6 @@
 /**
  * Comprehensive tests for Consensus Engine
- * 
+ *
  * These tests verify consensus engine functionality, including
  * trust-weighted voting, Sybil attack prevention, and edge case scenarios.
  */
@@ -8,8 +8,17 @@
 import { renderHook, act } from '@testing-library/react'
 import { useTrustStore } from '../trustStore'
 import { useEmergencyStore } from '../emergencyStore'
-import { ConsensusTestUtils, ConsensusScenario, VoteResult, ConsensusResult } from '@/test-utils/consensus'
-import { createUser, createEmergencyEvent, createTrustScore } from '@/test-utils/fixtures/emergencyScenarios'
+import {
+  ConsensusTestUtils,
+  ConsensusScenario,
+  VoteResult,
+  ConsensusResult
+} from '@/test-utils/consensus'
+import {
+  createUser,
+  createEmergencyEvent,
+  createTrustScore
+} from '@/test-utils/fixtures/emergencyScenarios'
 
 describe('Consensus Engine', () => {
   beforeEach(() => {
@@ -29,7 +38,7 @@ describe('Consensus Engine', () => {
       scenario.participants.forEach(participant => {
         const trustScore = createTrustScore({
           userId: participant.id,
-          overall: participant.trustScore,
+          overall: participant.trustScore
         })
         act(() => {
           trustResult.current.setUserScore(participant.id, trustScore)
@@ -61,7 +70,7 @@ describe('Consensus Engine', () => {
       scenario.participants.forEach(participant => {
         const trustScore = createTrustScore({
           userId: participant.id,
-          overall: participant.trustScore,
+          overall: participant.trustScore
         })
         act(() => {
           trustResult.current.setUserScore(participant.id, trustScore)
@@ -92,7 +101,7 @@ describe('Consensus Engine', () => {
       scenario.participants.forEach(participant => {
         const trustScore = createTrustScore({
           userId: participant.id,
-          overall: participant.trustScore,
+          overall: participant.trustScore
         })
         act(() => {
           trustResult.current.setUserScore(participant.id, trustScore)
@@ -123,10 +132,14 @@ describe('Consensus Engine', () => {
 
       // Set up trust scores
       act(() => {
-        trustResult.current.setUserScore(highTrustUser.id, 
-          createTrustScore({ userId: highTrustUser.id, overall: 0.95 }))
-        trustResult.current.setUserScore(lowTrustUser.id,
-          createTrustScore({ userId: lowTrustUser.id, overall: 0.15 }))
+        trustResult.current.setUserScore(
+          highTrustUser.id,
+          createTrustScore({ userId: highTrustUser.id, overall: 0.95 })
+        )
+        trustResult.current.setUserScore(
+          lowTrustUser.id,
+          createTrustScore({ userId: lowTrustUser.id, overall: 0.15 })
+        )
       })
 
       const votes: VoteResult[] = [
@@ -134,14 +147,14 @@ describe('Consensus Engine', () => {
           userId: highTrustUser.id,
           voteType: 'confirm',
           trustWeight: 0.95,
-          timestamp: new Date().toISOString(),
+          timestamp: new Date().toISOString()
         },
         {
           userId: lowTrustUser.id,
           voteType: 'dispute',
           trustWeight: 0.15,
-          timestamp: new Date().toISOString(),
-        },
+          timestamp: new Date().toISOString()
+        }
       ]
 
       const consensus = ConsensusTestUtils.calculateConsensus(votes, event)
@@ -155,7 +168,7 @@ describe('Consensus Engine', () => {
       const { result: trustResult } = renderHook(() => useTrustStore())
 
       const highTrustUsers = Array.from({ length: 5 }, (_, i) =>
-        createUser({ id: `high-trust-${i}`, trustScore: 0.9 + (i * 0.01) })
+        createUser({ id: `high-trust-${i}`, trustScore: 0.9 + i * 0.01 })
       )
 
       const event = createEmergencyEvent({ id: 'multi-high-trust-event' })
@@ -163,8 +176,10 @@ describe('Consensus Engine', () => {
       // Set up trust scores
       highTrustUsers.forEach(user => {
         act(() => {
-          trustResult.current.setUserScore(user.id,
-            createTrustScore({ userId: user.id, overall: user.trustScore }))
+          trustResult.current.setUserScore(
+            user.id,
+            createTrustScore({ userId: user.id, overall: user.trustScore })
+          )
         })
       })
 
@@ -172,7 +187,7 @@ describe('Consensus Engine', () => {
         userId: user.id,
         voteType: 'confirm',
         trustWeight: user.trustScore,
-        timestamp: new Date().toISOString(),
+        timestamp: new Date().toISOString()
       }))
 
       const consensus = ConsensusTestUtils.calculateConsensus(votes, event)
@@ -189,26 +204,28 @@ describe('Consensus Engine', () => {
 
       const event = createEmergencyEvent({
         id: 'location-weight-event',
-        location: { latitude: 40.7128, longitude: -74.0060 },
+        location: { latitude: 40.7128, longitude: -74.006 }
       })
 
       const nearbyVoter = createUser({
         id: 'nearby-voter',
         trustScore: 0.8,
-        location: { latitude: 40.7130, longitude: -74.0062 }, // Very close
+        location: { latitude: 40.713, longitude: -74.0062 } // Very close
       })
 
       const distantVoter = createUser({
         id: 'distant-voter',
         trustScore: 0.8,
-        location: { latitude: 40.7589, longitude: -73.9851 }, // Far away
+        location: { latitude: 40.7589, longitude: -73.9851 } // Far away
       })
 
       // Set up trust scores
-      [nearbyVoter, distantVoter].forEach(user => {
+      ;[nearbyVoter, distantVoter].forEach(user => {
         act(() => {
-          trustResult.current.setUserScore(user.id,
-            createTrustScore({ userId: user.id, overall: user.trustScore }))
+          trustResult.current.setUserScore(
+            user.id,
+            createTrustScore({ userId: user.id, overall: user.trustScore })
+          )
         })
       })
 
@@ -222,7 +239,7 @@ describe('Consensus Engine', () => {
           distanceFromEvent: ConsensusTestUtils['calculateDistance'](
             nearbyVoter.location,
             event.location
-          ),
+          )
         },
         {
           userId: distantVoter.id,
@@ -233,15 +250,17 @@ describe('Consensus Engine', () => {
           distanceFromEvent: ConsensusTestUtils['calculateDistance'](
             distantVoter.location,
             event.location
-          ),
-        },
+          )
+        }
       ]
 
       const consensus = ConsensusTestUtils.calculateConsensus(votes, event)
 
       // Nearby vote should have more influence due to distance weighting
       expect(consensus.consensus).toBe('confirm')
-      expect(consensus.distanceAdjustedConfirmScore).toBeGreaterThan(consensus.distanceAdjustedDisputeScore)
+      expect(consensus.distanceAdjustedConfirmScore).toBeGreaterThan(
+        consensus.distanceAdjustedDisputeScore
+      )
     })
 
     it('should handle voters without location data', async () => {
@@ -249,18 +268,23 @@ describe('Consensus Engine', () => {
 
       const event = createEmergencyEvent({
         id: 'no-location-event',
-        location: { latitude: 40.7128, longitude: -74.0060 },
+        location: { latitude: 40.7128, longitude: -74.006 }
       })
 
       const voterWithoutLocation = createUser({
         id: 'no-location-voter',
         trustScore: 0.8,
-        location: undefined,
+        location: undefined
       })
 
       act(() => {
-        trustResult.current.setUserScore(voterWithoutLocation.id,
-          createTrustScore({ userId: voterWithoutLocation.id, overall: voterWithoutLocation.trustScore }))
+        trustResult.current.setUserScore(
+          voterWithoutLocation.id,
+          createTrustScore({
+            userId: voterWithoutLocation.id,
+            overall: voterWithoutLocation.trustScore
+          })
+        )
       })
 
       const votes: VoteResult[] = [
@@ -270,17 +294,15 @@ describe('Consensus Engine', () => {
           trustWeight: 0.8,
           timestamp: new Date().toISOString(),
           location: undefined,
-          distanceFromEvent: undefined,
-        },
+          distanceFromEvent: undefined
+        }
       ]
 
       const consensus = ConsensusTestUtils.calculateConsensus(votes, event)
 
       // Should handle gracefully without location
       expect(consensus.consensus).toBe('confirm')
-      expect(consensus.anomalies).not.toContain(
-        expect.stringContaining('location')
-      )
+      expect(consensus.anomalies).not.toContain(expect.stringContaining('location'))
     })
   })
 
@@ -295,7 +317,7 @@ describe('Consensus Engine', () => {
       scenario.participants.forEach(participant => {
         const trustScore = createTrustScore({
           userId: participant.id,
-          overall: participant.trustScore,
+          overall: participant.trustScore
         })
         act(() => {
           trustResult.current.setUserScore(participant.id, trustScore)
@@ -322,7 +344,7 @@ describe('Consensus Engine', () => {
       baseScenario.participants.forEach(participant => {
         const trustScore = createTrustScore({
           userId: participant.id,
-          overall: participant.trustScore,
+          overall: participant.trustScore
         })
         act(() => {
           trustResult.current.setUserScore(participant.id, trustScore)
@@ -332,7 +354,9 @@ describe('Consensus Engine', () => {
       expect(sybilTest.legitimateVotes).toBe(baseScenario.participants.length)
       expect(sybilTest.sybilVotes).toBe(20)
       expect(sybilTest.attackSuccessful).toBe(false)
-      expect(sybilTest.weightedInfluence.legitimate).toBeGreaterThan(sybilTest.weightedInfluence.sybil)
+      expect(sybilTest.weightedInfluence.legitimate).toBeGreaterThan(
+        sybilTest.weightedInfluence.sybil
+      )
     })
 
     it('should detect suspicious voting patterns', async () => {
@@ -342,14 +366,16 @@ describe('Consensus Engine', () => {
 
       // Create suspicious voting pattern - many low-trust users voting together
       const suspiciousVoters = Array.from({ length: 10 }, (_, i) =>
-        createUser({ id: `suspicious-${i}`, trustScore: 0.1 + (i * 0.01) })
+        createUser({ id: `suspicious-${i}`, trustScore: 0.1 + i * 0.01 })
       )
 
       // Set up trust scores
       suspiciousVoters.forEach(voter => {
         act(() => {
-          trustResult.current.setUserScore(voter.id,
-            createTrustScore({ userId: voter.id, overall: voter.trustScore }))
+          trustResult.current.setUserScore(
+            voter.id,
+            createTrustScore({ userId: voter.id, overall: voter.trustScore })
+          )
         })
       })
 
@@ -357,7 +383,7 @@ describe('Consensus Engine', () => {
         userId: voter.id,
         voteType: 'dispute' as const, // All voting the same way
         trustWeight: voter.trustScore,
-        timestamp: new Date(Date.now() + Math.random() * 1000).toISOString(), // Similar timing
+        timestamp: new Date(Date.now() + Math.random() * 1000).toISOString() // Similar timing
       }))
 
       const consensus = ConsensusTestUtils.calculateConsensus(votes, event)
@@ -380,7 +406,7 @@ describe('Consensus Engine', () => {
       scenario.participants.forEach(participant => {
         const trustScore = createTrustScore({
           userId: participant.id,
-          overall: participant.trustScore,
+          overall: participant.trustScore
         })
         act(() => {
           trustResult.current.setUserScore(participant.id, trustScore)
@@ -405,7 +431,7 @@ describe('Consensus Engine', () => {
         createUser({ id: 'colluder-1', trustScore: 0.6 }),
         createUser({ id: 'colluder-2', trustScore: 0.55 }),
         createUser({ id: 'colluder-3', trustScore: 0.5 }),
-        createUser({ id: 'colluder-4', trustScore: 0.45 }),
+        createUser({ id: 'colluder-4', trustScore: 0.45 })
       ]
 
       const independentUser = createUser({ id: 'independent', trustScore: 0.9 })
@@ -414,8 +440,10 @@ describe('Consensus Engine', () => {
       const allUsers = colludingGroup.concat(independentUser)
       allUsers.forEach(user => {
         act(() => {
-          trustResult.current.setUserScore(user.id,
-            createTrustScore({ userId: user.id, overall: user.trustScore }))
+          trustResult.current.setUserScore(
+            user.id,
+            createTrustScore({ userId: user.id, overall: user.trustScore })
+          )
         })
       })
 
@@ -424,14 +452,14 @@ describe('Consensus Engine', () => {
           userId: user.id,
           voteType: 'confirm' as const,
           trustWeight: user.trustScore,
-          timestamp: new Date().toISOString(),
+          timestamp: new Date().toISOString()
         })),
         {
           userId: independentUser.id,
           voteType: 'dispute' as const,
           trustWeight: independentUser.trustScore,
-          timestamp: new Date().toISOString(),
-        },
+          timestamp: new Date().toISOString()
+        }
       ]
 
       const consensus = ConsensusTestUtils.calculateConsensus(votes, event)
@@ -449,14 +477,16 @@ describe('Consensus Engine', () => {
       const event = createEmergencyEvent({ id: 'high-confidence-event' })
 
       const highTrustVoters = Array.from({ length: 5 }, (_, i) =>
-        createUser({ id: `high-trust-${i}`, trustScore: 0.9 + (i * 0.01) })
+        createUser({ id: `high-trust-${i}`, trustScore: 0.9 + i * 0.01 })
       )
 
       // Set up trust scores
       highTrustVoters.forEach(voter => {
         act(() => {
-          trustResult.current.setUserScore(voter.id,
-            createTrustScore({ userId: voter.id, overall: voter.trustScore }))
+          trustResult.current.setUserScore(
+            voter.id,
+            createTrustScore({ userId: voter.id, overall: voter.trustScore })
+          )
         })
       })
 
@@ -464,7 +494,7 @@ describe('Consensus Engine', () => {
         userId: voter.id,
         voteType: 'confirm' as const,
         trustWeight: voter.trustScore,
-        timestamp: new Date().toISOString(),
+        timestamp: new Date().toISOString()
       }))
 
       const consensus = ConsensusTestUtils.calculateConsensus(votes, event)
@@ -485,14 +515,16 @@ describe('Consensus Engine', () => {
         createUser({ id: 'mixed-1', trustScore: 0.8 }),
         createUser({ id: 'mixed-2', trustScore: 0.7 }),
         createUser({ id: 'mixed-3', trustScore: 0.6 }),
-        createUser({ id: 'mixed-4', trustScore: 0.5 }),
+        createUser({ id: 'mixed-4', trustScore: 0.5 })
       ]
 
       // Set up trust scores
       mixedVoters.forEach(voter => {
         act(() => {
-          trustResult.current.setUserScore(voter.id,
-            createTrustScore({ userId: voter.id, overall: voter.trustScore }))
+          trustResult.current.setUserScore(
+            voter.id,
+            createTrustScore({ userId: voter.id, overall: voter.trustScore })
+          )
         })
       })
 
@@ -500,7 +532,7 @@ describe('Consensus Engine', () => {
         userId: voter.id,
         voteType: i % 2 === 0 ? 'confirm' : 'dispute',
         trustWeight: voter.trustScore,
-        timestamp: new Date().toISOString(),
+        timestamp: new Date().toISOString()
       }))
 
       const consensus = ConsensusTestUtils.calculateConsensus(votes, event)
@@ -533,16 +565,20 @@ describe('Consensus Engine', () => {
       const singleVoter = createUser({ id: 'single-voter', trustScore: 0.8 })
 
       act(() => {
-        trustResult.current.setUserScore(singleVoter.id,
-          createTrustScore({ userId: singleVoter.id, overall: singleVoter.trustScore }))
+        trustResult.current.setUserScore(
+          singleVoter.id,
+          createTrustScore({ userId: singleVoter.id, overall: singleVoter.trustScore })
+        )
       })
 
-      const votes: VoteResult[] = [{
-        userId: singleVoter.id,
-        voteType: 'confirm',
-        trustWeight: 0.8,
-        timestamp: new Date().toISOString(),
-      }]
+      const votes: VoteResult[] = [
+        {
+          userId: singleVoter.id,
+          voteType: 'confirm',
+          trustWeight: 0.8,
+          timestamp: new Date().toISOString()
+        }
+      ]
 
       const consensus = ConsensusTestUtils.calculateConsensus(votes, event)
 
@@ -558,14 +594,16 @@ describe('Consensus Engine', () => {
 
       const extremeVoters = [
         createUser({ id: 'extreme-high', trustScore: 0.99 }),
-        createUser({ id: 'extreme-low', trustScore: 0.01 }),
+        createUser({ id: 'extreme-low', trustScore: 0.01 })
       ]
 
       // Set up trust scores
       extremeVoters.forEach(voter => {
         act(() => {
-          trustResult.current.setUserScore(voter.id,
-            createTrustScore({ userId: voter.id, overall: voter.trustScore }))
+          trustResult.current.setUserScore(
+            voter.id,
+            createTrustScore({ userId: voter.id, overall: voter.trustScore })
+          )
         })
       })
 
@@ -574,14 +612,14 @@ describe('Consensus Engine', () => {
           userId: extremeVoters[0].id,
           voteType: 'confirm',
           trustWeight: 0.99,
-          timestamp: new Date().toISOString(),
+          timestamp: new Date().toISOString()
         },
         {
           userId: extremeVoters[1].id,
           voteType: 'dispute',
           trustWeight: 0.01,
-          timestamp: new Date().toISOString(),
-        },
+          timestamp: new Date().toISOString()
+        }
       ]
 
       const consensus = ConsensusTestUtils.calculateConsensus(votes, event)
@@ -597,14 +635,16 @@ describe('Consensus Engine', () => {
       const event = createEmergencyEvent({ id: 'concurrent-voting-event' })
 
       const concurrentVoters = Array.from({ length: 20 }, (_, i) =>
-        createUser({ id: `concurrent-${i}`, trustScore: 0.5 + (Math.random() * 0.5) })
+        createUser({ id: `concurrent-${i}`, trustScore: 0.5 + Math.random() * 0.5 })
       )
 
       // Set up trust scores
       concurrentVoters.forEach(voter => {
         act(() => {
-          trustResult.current.setUserScore(voter.id,
-            createTrustScore({ userId: voter.id, overall: voter.trustScore }))
+          trustResult.current.setUserScore(
+            voter.id,
+            createTrustScore({ userId: voter.id, overall: voter.trustScore })
+          )
         })
       })
 
@@ -613,7 +653,7 @@ describe('Consensus Engine', () => {
         userId: voter.id,
         voteType: Math.random() > 0.5 ? 'confirm' : 'dispute',
         trustWeight: voter.trustScore,
-        timestamp: new Date(Date.now() + Math.random() * 1000).toISOString(),
+        timestamp: new Date(Date.now() + Math.random() * 1000).toISOString()
       }))
 
       const startTime = performance.now()
@@ -633,15 +673,17 @@ describe('Consensus Engine', () => {
       const event = createEmergencyEvent({ id: 'large-scale-event' })
 
       const largeVoterSet = Array.from({ length: 1000 }, (_, i) =>
-        createUser({ id: `large-scale-${i}`, trustScore: 0.3 + (Math.random() * 0.7) })
+        createUser({ id: `large-scale-${i}`, trustScore: 0.3 + Math.random() * 0.7 })
       )
 
       // Set up trust scores for a subset (to test performance)
       const sampleVoters = largeVoterSet.slice(0, 100)
       sampleVoters.forEach(voter => {
         act(() => {
-          trustResult.current.setUserScore(voter.id,
-            createTrustScore({ userId: voter.id, overall: voter.trustScore }))
+          trustResult.current.setUserScore(
+            voter.id,
+            createTrustScore({ userId: voter.id, overall: voter.trustScore })
+          )
         })
       })
 
@@ -649,7 +691,7 @@ describe('Consensus Engine', () => {
         userId: voter.id,
         voteType: Math.random() > 0.4 ? 'confirm' : 'dispute',
         trustWeight: voter.trustScore,
-        timestamp: new Date(Date.now() + Math.random() * 5000).toISOString(),
+        timestamp: new Date(Date.now() + Math.random() * 5000).toISOString()
       }))
 
       const startTime = performance.now()

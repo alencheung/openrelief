@@ -45,7 +45,9 @@ const SHARD_CONFIG = {
 function fnv1aHash(str: string): number {
   let hash = 2166136261 // FNV offset basis
   for (let i = 0; i < str.length; i++) {
+    // eslint-disable-next-line no-bitwise
     hash ^= str.charCodeAt(i)
+    // eslint-disable-next-line no-bitwise
     hash = (hash * 16777619) >>> 0 // FNV prime, keep as 32-bit
   }
   return hash

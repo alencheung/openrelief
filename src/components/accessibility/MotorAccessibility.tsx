@@ -7,32 +7,24 @@
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useAriaAnnouncer } from '@/hooks/accessibility/useAriaAnnouncer'
 import { cn } from '@/lib/utils'
 import {
   Hand,
-  MousePointer,
-  Touchscreen,
-  Accessibility,
-  Settings,
   Volume2,
   VolumeX,
   Zap,
-  ZapOff,
   Mic,
   MicOff,
   Navigation,
   ChevronUp,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   Eye,
   EyeOff
 } from 'lucide-react'
 
 export interface MotorAccessibilityProps {
-
   /**
    * Whether motor accessibility features are enabled
    */
@@ -55,7 +47,6 @@ export interface MotorAccessibilityProps {
 }
 
 export interface MotorAccessibilitySettings {
-
   /**
    * Touch target size multiplier
    */
@@ -134,7 +125,7 @@ export function MotorAccessibility({
   enabled = true,
   className,
   onSettingsChange,
-  simplifiedControls = false
+  simplifiedControls: _simplifiedControls = false
 }: MotorAccessibilityProps) {
   const { announcePolite } = useAriaAnnouncer({
     defaultPriority: 'polite'
@@ -161,15 +152,15 @@ export function MotorAccessibility({
   const [isVoiceActive, setIsVoiceActive] = useState(false)
   const [isScanning, setIsScanning] = useState(false)
 
-  /**
-   * Touch target size configurations
-   */
-  const touchTargetSizes = {
-    small: { size: 32, label: 'Small (32px)', minSize: 32 },
-    medium: { size: 44, label: 'Medium (44px)', minSize: 44 },
-    large: { size: 56, label: 'Large (56px)', minSize: 56 },
-    'extra-large': { size: 72, label: 'Extra Large (72px)', minSize: 72 }
-  }
+  const touchTargetSizes = useMemo(
+    () => ({
+      small: { size: 32, label: 'Small (32px)', minSize: 32 },
+      medium: { size: 44, label: 'Medium (44px)', minSize: 44 },
+      large: { size: 56, label: 'Large (56px)', minSize: 56 },
+      'extra-large': { size: 72, label: 'Extra Large (72px)', minSize: 72 }
+    }),
+    []
+  )
 
   /**
    * Update a specific setting
@@ -186,6 +177,7 @@ export function MotorAccessibility({
       // Announce setting change
       announcePolite(`${key.replace(/([A-Z])/g, ' $1').toLowerCase()} set to ${value}`)
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [settings, announcePolite, onSettingsChange]
   )
 
@@ -198,7 +190,7 @@ export function MotorAccessibility({
 
       switch (key) {
         case 'touchTargetSize':
-          const sizeConfig = touchTargetSizes[value as string]
+          const sizeConfig = touchTargetSizes[value as keyof typeof touchTargetSizes]
           root.style.setProperty('--motor-touch-target-size', `${sizeConfig.size}px`)
           root.style.setProperty('--motor-touch-target-min-size', `${sizeConfig.minSize}px`)
           break
@@ -284,59 +276,9 @@ export function MotorAccessibility({
           break
       }
     },
-    []
+    [touchTargetSizes]
   )
 
-  /**
-   * Handle voice control
-   */
-  const handleVoiceControl = useCallback(() => {
-    if (!settings.voiceControl) {
-      return
-    }
-
-    setIsVoiceActive(!isVoiceActive)
-
-    if (!isVoiceActive) {
-      // Start voice recognition
-      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-        const SpeechRecognition
-          = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-        const recognition = new SpeechRecognition()
-
-        recognition.continuous = true
-        recognition.interimResults = true
-        recognition.lang = 'en-US'
-
-        recognition.onresult = (event: any) => {
-          const last = event.results.length - 1
-          const transcript = event.results[last][0].transcript.toLowerCase()
-
-          // Process voice commands
-          processVoiceCommand(transcript)
-        }
-
-        recognition.onerror = (event: any) => {
-          console.error('Voice recognition error:', event.error)
-          setIsVoiceActive(false)
-          announcePolite('Voice control failed')
-        }
-
-        recognition.onend = () => {
-          setIsVoiceActive(false)
-        }
-
-        recognition.start()
-        announcePolite('Voice control activated')
-      }
-    } else {
-      setIsVoiceActive(false)
-    }
-  }, [settings.voiceControl, isVoiceActive, announcePolite])
-
-  /**
-   * Process voice command
-   */
   const processVoiceCommand = useCallback(
     (command: string) => {
       const emergencyCommands: Record<string, () => void> = {
@@ -368,6 +310,48 @@ export function MotorAccessibility({
     [announcePolite]
   )
 
+  const handleVoiceControl = useCallback(() => {
+    if (!settings.voiceControl) {
+      return
+    }
+
+    setIsVoiceActive(!isVoiceActive)
+
+    if (!isVoiceActive) {
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition =
+          (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+        const recognition = new SpeechRecognition()
+
+        recognition.continuous = true
+        recognition.interimResults = true
+        recognition.lang = 'en-US'
+
+        recognition.onresult = (event: any) => {
+          const last = event.results.length - 1
+          const transcript = event.results[last][0].transcript.toLowerCase()
+
+          processVoiceCommand(transcript)
+        }
+
+        recognition.onerror = (event: any) => {
+          console.error('Voice recognition error:', event.error)
+          setIsVoiceActive(false)
+          announcePolite('Voice control failed')
+        }
+
+        recognition.onend = () => {
+          setIsVoiceActive(false)
+        }
+
+        recognition.start()
+        announcePolite('Voice control activated')
+      }
+    } else {
+      setIsVoiceActive(false)
+    }
+  }, [settings.voiceControl, isVoiceActive, announcePolite, processVoiceCommand])
+
   /**
    * Handle scanning mode
    */
@@ -381,6 +365,7 @@ export function MotorAccessibility({
       // Start scanning process
       startScanning()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isScanning, announcePolite])
 
   /**
@@ -420,10 +405,7 @@ export function MotorAccessibility({
     }, settings.scanSpeed * focusableElements.length)
   }, [settings.scanSpeed, announcePolite])
 
-  /**
-   * Handle dwell clicking
-   */
-  const handleDwellClick = useCallback(
+  const _handleDwellClick = useCallback(
     (element: HTMLElement) => {
       if (!settings.dwellClicking) {
         return
@@ -463,9 +445,9 @@ export function MotorAccessibility({
       return
     }
 
-    // Vibration pattern for feedback
+    // Confirmation pattern
     if ('vibrate' in navigator) {
-      navigator.vibrate([50, 30, 50, 30, 50]) // Confirmation pattern
+      navigator.vibrate([50, 30, 50, 30, 50])
     }
 
     // Visual feedback
@@ -475,10 +457,7 @@ export function MotorAccessibility({
     }, 200)
   }, [settings.hapticFeedback])
 
-  /**
-   * Trigger audio cue
-   */
-  const triggerAudioCue = useCallback(
+  const _triggerAudioCue = useCallback(
     (type: 'success' | 'error' | 'warning' | 'navigation') => {
       if (!settings.audioCues) {
         return
@@ -520,17 +499,12 @@ export function MotorAccessibility({
 
       // Motor accessibility keyboard shortcuts
       const motorShortcuts: Record<string, () => void> = {
-        'Alt+T': () =>
-          updateSetting(
-            'touchTargetSize',
-            settings.touchTargetSize === 'small'
-              ? 'medium'
-              : settings.touchTargetSize === 'medium'
-                ? 'large'
-                : settings.touchTargetSize === 'large'
-                  ? 'extra-large'
-                  : 'small'
-          ),
+        'Alt+T': () => {
+          const sizeOrder = ['small', 'medium', 'large', 'extra-large'] as const
+          const currentIndex = sizeOrder.indexOf(settings.touchTargetSize)
+          const nextIndex = (currentIndex + 1) % sizeOrder.length
+          updateSetting('touchTargetSize', sizeOrder[nextIndex] as (typeof sizeOrder)[number])
+        },
         'Alt+V': () => updateSetting('voiceControl', !settings.voiceControl),
         'Alt+S': () => updateSetting('switchControl', !settings.switchControl),
         'Alt+E': () => updateSetting('eyeTracking', !settings.eyeTracking),
@@ -801,19 +775,19 @@ export function MotorAccessibility({
             <div className="mt-4 p-3 bg-muted rounded">
               <h4 className="font-semibold text-sm mb-2">Voice Commands:</h4>
               <div className="text-xs space-y-1">
-                <div>"emergency" - Report emergency</div>
-                <div>"help" - Request help</div>
-                <div>"fire" - Fire emergency</div>
-                <div>"medical" - Medical emergency</div>
-                <div>"police" - Call police</div>
-                <div>"ambulance" - Call ambulance</div>
-                <div>"navigate" - Navigate interface</div>
-                <div>"scan" - Start scanning</div>
-                <div>"select" - Select element</div>
-                <div>"confirm" - Confirm action</div>
-                <div>"back" - Go back</div>
-                <div>"stop" - Stop voice control</div>
-                <div>"cancel" - Cancel action</div>
+                <div>&quot;emergency&quot; - Report emergency</div>
+                <div>&quot;help&quot; - Request help</div>
+                <div>&quot;fire&quot; - Fire emergency</div>
+                <div>&quot;medical&quot; - Medical emergency</div>
+                <div>&quot;police&quot; - Call police</div>
+                <div>&quot;ambulance&quot; - Call ambulance</div>
+                <div>&quot;navigate&quot; - Navigate interface</div>
+                <div>&quot;scan&quot; - Start scanning</div>
+                <div>&quot;select&quot; - Select element</div>
+                <div>&quot;confirm&quot; - Confirm action</div>
+                <div>&quot;back&quot; - Go back</div>
+                <div>&quot;stop&quot; - Stop voice control</div>
+                <div>&quot;cancel&quot; - Cancel action</div>
               </div>
             </div>
           )}
@@ -854,7 +828,7 @@ export function MotorAccessibility({
 /**
  * Hook for motor accessibility
  */
-export function useMotorAccessibility(options: MotorAccessibilityProps = {}) {
+export function useMotorAccessibility(_options: MotorAccessibilityProps = {}) {
   const [settings, setSettings] = useState<MotorAccessibilitySettings>({
     touchTargetSize: 'medium',
     voiceControl: false,

@@ -1,9 +1,9 @@
 import React from 'react'
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
 import EmergencyReportInterface from '../EmergencyReportInterface'
-import { createTestUtils, createMockEmergencyEvent, createMockLocation } from '@/test-utils'
+import { createTestUtils, createMockLocation } from '@/test-utils'
 
 // Mock store hooks
 vi.mock('@/store', () => ({
@@ -89,7 +89,7 @@ vi.mock('@/components/ui/forms', () => ({
       {errorText && <span data-testid="textarea-error">{errorText}</span>}
     </div>
   ),
-  EnhancedRadioGroup: ({ label, options, value, onChange, ...props }: any) => (
+  EnhancedRadioGroup: ({ label, options, value, onChange }: any) => (
     <div>
       <label>{label}</label>
       <div data-testid="enhanced-radio-group">
@@ -107,19 +107,18 @@ vi.mock('@/components/ui/forms', () => ({
       </div>
     </div>
   ),
-  EnhancedRangeSlider: ({ label, value, onChange, ...props }: any) => (
+  EnhancedRangeSlider: ({ label, value, onChange }: any) => (
     <div>
       <label>{label}</label>
       <input
         type="range"
         value={value}
-        onChange={e => onChange(parseInt(e.target.value))}
+        onChange={e => onChange(parseInt(e.target.value, 10))}
         data-testid="enhanced-range-slider"
-        {...props}
       />
     </div>
   ),
-  EnhancedFileUpload: ({ label, onFilesChange, ...props }: any) => (
+  EnhancedFileUpload: ({ label, onFilesChange }: any) => (
     <div>
       <label>{label}</label>
       <input
@@ -130,7 +129,7 @@ vi.mock('@/components/ui/forms', () => ({
       />
     </div>
   ),
-  AudioRecorder: ({ label, onRecordingStop, ...props }: any) => (
+  AudioRecorder: ({ label, onRecordingStop }: any) => (
     <div>
       <label>{label}</label>
       <button
@@ -143,23 +142,24 @@ vi.mock('@/components/ui/forms', () => ({
   ),
   ImagePreview: ({ src, onRemove }: any) => (
     <div data-testid="image-preview">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={src} alt="Preview" />
       <button onClick={onRemove}>Remove</button>
     </div>
   ),
-  EmergencyFormLayout: ({ children, ...props }: any) => (
+  EmergencyFormLayout: ({ children }: any) => (
     <div data-testid="emergency-form-layout">{children}</div>
   ),
-  EmergencyFormSection: ({ children, title, ...props }: any) => (
+  EmergencyFormSection: ({ children, title }: any) => (
     <div data-testid="emergency-form-section">
       <h3>{title}</h3>
       {children}
     </div>
   ),
-  EmergencyFormActions: ({ children, ...props }: any) => (
+  EmergencyFormActions: ({ children }: any) => (
     <div data-testid="emergency-form-actions">{children}</div>
   ),
-  FormProgress: ({ steps, currentStep, onStepClick, ...props }: any) => (
+  FormProgress: ({ steps, onStepClick }: any) => (
     <div data-testid="form-progress">
       {steps.map((step: any, index: number) => (
         <button
@@ -172,7 +172,7 @@ vi.mock('@/components/ui/forms', () => ({
       ))}
     </div>
   ),
-  FormProgressSummary: ({ currentStep, totalSteps, ...props }: any) => (
+  FormProgressSummary: ({ currentStep, totalSteps }: any) => (
     <div data-testid="form-progress-summary">
       Step {currentStep + 1} of {totalSteps}
     </div>
@@ -614,7 +614,7 @@ describe('EmergencyReportInterface', () => {
       expect.objectContaining({
         title: 'Test Emergency Title',
         description: 'This is a test emergency description that is long enough',
-        type_id: 1 // Fire emergency type
+        type_id: 1
       })
     )
   })

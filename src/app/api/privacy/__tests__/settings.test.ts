@@ -98,9 +98,8 @@ describe('/api/privacy/settings Endpoint', () => {
       await GET(request)
 
       // Verify that logging was called
-      expect(console.log).toHaveBeenCalledWith(
-        expect.stringContaining('Privacy access logged')
-      )
+      // eslint-disable-next-line no-console
+      expect(console.log).toHaveBeenCalledWith(expect.stringContaining('Privacy access logged'))
     })
   })
 
@@ -140,11 +139,11 @@ describe('/api/privacy/settings Endpoint', () => {
         user: { id: 'test-user-id' }
       })
 
+      // Missing other required fields
       const request = {
         json: async () => ({
           settings: {
             locationSharing: true
-            // Missing other required fields
           }
         })
       } as NextRequest
@@ -165,7 +164,8 @@ describe('/api/privacy/settings Endpoint', () => {
         json: async () => ({
           settings: {
             locationSharing: true,
-            locationPrecision: 10, // Invalid: > 5
+            // Invalid: > 5
+            locationPrecision: 10,
             dataRetentionDays: 30,
             anonymizeData: true,
             differentialPrivacy: true,
@@ -288,9 +288,8 @@ describe('/api/privacy/settings Endpoint', () => {
       await POST(request)
 
       // Verify that logging was called
-      expect(console.log).toHaveBeenCalledWith(
-        expect.stringContaining('Privacy access logged')
-      )
+      // eslint-disable-next-line no-console
+      expect(console.log).toHaveBeenCalledWith(expect.stringContaining('Privacy access logged'))
     })
 
     it('should trigger privacy impact assessment for significant changes', async () => {
@@ -334,6 +333,7 @@ describe('/api/privacy/settings Endpoint', () => {
       await POST(request)
 
       // Verify that impact assessment was triggered
+      // eslint-disable-next-line no-console
       expect(console.log).toHaveBeenCalledWith(
         expect.stringContaining('Privacy impact assessment triggered')
       )
@@ -392,7 +392,8 @@ describe('/api/privacy/settings Endpoint', () => {
       const request = {
         json: async () => ({
           settings: {
-            locationSharing: 'not-a-boolean', // Invalid
+            // Invalid
+            locationSharing: 'not-a-boolean',
             locationPrecision: 3,
             dataRetentionDays: 30,
             anonymizeData: true,
@@ -420,7 +421,8 @@ describe('/api/privacy/settings Endpoint', () => {
         json: async () => ({
           settings: {
             locationSharing: true,
-            locationPrecision: 'not-a-number', // Invalid
+            // Invalid
+            locationPrecision: 'not-a-number',
             dataRetentionDays: 30,
             anonymizeData: true,
             differentialPrivacy: true,
@@ -454,7 +456,8 @@ describe('/api/privacy/settings Endpoint', () => {
             kAnonymity: true,
             endToEndEncryption: true,
             emergencyDataSharing: true,
-            dataProcessingPurposes: 'not-an-array' // Invalid
+            // Invalid
+            dataProcessingPurposes: 'not-an-array'
           }
         })
       } as NextRequest

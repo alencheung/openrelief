@@ -11,26 +11,25 @@ import {
   EnhancedCardTitle,
   EnhancedCardDescription,
   EnhancedCardContent,
-  FormFeedback
+  FormFeedback,
+  EnhancedButton
 } from '@/components/ui'
 import {
   EnhancedInput,
   PasswordStrengthIndicator,
   EnhancedCheckbox,
-  FormLayout,
   FormActions
 } from '@/components/ui/forms'
 
 export default function SignupForm() {
   const router = useRouter()
-  const { isMobile, isTablet } = useMobileDetection()
+  const { isMobile } = useMobileDetection()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [emailNewsletter, setEmailNewsletter] = useState(false)
   const { signUp } = useAuthActions()
@@ -118,47 +117,31 @@ export default function SignupForm() {
   }
 
   return (
-    <div className={cn(
-      'min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5',
-      isMobile ? 'p-4 safe-area-inset-all' : 'p-4'
-    )}>
-      <div className={cn(
-        'w-full',
-        isMobile ? 'max-w-sm' : 'max-w-md'
-      )}>
-        <EnhancedCard className={cn(
-          'shadow-xl',
-          isMobile && 'rounded-none border-0'
-        )}>
-          <EnhancedCardHeader className={cn(
-            'text-center',
-            isMobile ? 'pb-6 pt-6' : 'pb-8 pt-8'
-          )}>
-            <EnhancedCardTitle className={cn(
-              isMobile ? 'text-xl' : 'text-2xl'
-            )}>
+    <div
+      className={cn(
+        'min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5',
+        isMobile ? 'p-4 safe-area-inset-all' : 'p-4'
+      )}
+    >
+      <div className={cn('w-full', isMobile ? 'max-w-sm' : 'max-w-md')}>
+        <EnhancedCard className={cn('shadow-xl', isMobile && 'rounded-none border-0')}>
+          <EnhancedCardHeader className={cn('text-center', isMobile ? 'pb-6 pt-6' : 'pb-8 pt-8')}>
+            <EnhancedCardTitle className={cn(isMobile ? 'text-xl' : 'text-2xl')}>
               Create Account
             </EnhancedCardTitle>
-            <EnhancedCardDescription className={cn(
-              isMobile ? 'text-sm' : 'text-base'
-            )}>
+            <EnhancedCardDescription className={cn(isMobile ? 'text-sm' : 'text-base')}>
               Join OpenRelief to report and track emergencies in your area
             </EnhancedCardDescription>
           </EnhancedCardHeader>
 
-          <EnhancedCardContent className={cn(
-            isMobile ? 'px-4 pb-4' : ''
-          )}>
-            <form onSubmit={handleSubmit} className={cn(
-              'space-y-6',
-              isMobile && 'space-y-4'
-            )}>
+          <EnhancedCardContent className={cn(isMobile ? 'px-4 pb-4' : '')}>
+            <form onSubmit={handleSubmit} className={cn('space-y-6', isMobile && 'space-y-4')}>
               {/* Email Field */}
               <EnhancedInput
                 type="email"
                 label="Email Address"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={e => setEmail(e.target.value)}
                 placeholder="Enter your email"
                 autoComplete="email"
                 required
@@ -169,8 +152,18 @@ export default function SignupForm() {
                 size={isMobile ? 'default' : 'default'}
                 leftIcon={
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 4 4 0 00-8zm0 0a4 4 0 10-8 4 4 0 00-8z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 12v9" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M16 12a4 4 0 10-8 4 4 0 00-8zm0 0a4 4 0 10-8 4 4 0 00-8z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 12v9"
+                    />
                   </svg>
                 }
               />
@@ -180,7 +173,7 @@ export default function SignupForm() {
                 type="password"
                 label="Password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={e => setPassword(e.target.value)}
                 placeholder="Create a strong password"
                 autoComplete="new-password"
                 required
@@ -193,7 +186,12 @@ export default function SignupForm() {
                 leftIcon={
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11V7a5 5 0 0110 0v4" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 11V7a5 5 0 0110 0v4"
+                    />
                   </svg>
                 }
               />
@@ -214,7 +212,7 @@ export default function SignupForm() {
                 type="password"
                 label="Confirm Password"
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={e => setConfirmPassword(e.target.value)}
                 placeholder="Confirm your password"
                 autoComplete="new-password"
                 required
@@ -227,7 +225,12 @@ export default function SignupForm() {
                 leftIcon={
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11V7a5 5 0 0110 0v4" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 11V7a5 5 0 0110 0v4"
+                    />
                   </svg>
                 }
               />
@@ -237,7 +240,7 @@ export default function SignupForm() {
                 <EnhancedCheckbox
                   label="I agree to the Terms of Service and Privacy Policy"
                   checked={agreedToTerms}
-                  onChange={(checked) => setAgreedToTerms(checked)}
+                  onChange={checked => setAgreedToTerms(checked)}
                   required
                   errorText={errors.terms}
                 />
@@ -245,18 +248,14 @@ export default function SignupForm() {
                 <EnhancedCheckbox
                   label="Send me emergency alerts and updates"
                   checked={emailNewsletter}
-                  onChange={(checked) => setEmailNewsletter(checked)}
+                  onChange={checked => setEmailNewsletter(checked)}
                   helperText="We'll only send you critical updates and emergency information"
                 />
               </div>
 
               {/* Form Error */}
               {errors.submit && (
-                <FormFeedback
-                  type="error"
-                  message={errors.submit}
-                  className="text-center"
-                />
+                <FormFeedback type="error" message={errors.submit} className="text-center" />
               )}
 
               {/* Submit Button */}
@@ -267,10 +266,7 @@ export default function SignupForm() {
                   disabled={isLoading}
                   fullWidth
                   size={isMobile ? 'lg' : 'lg'}
-                  className={cn(
-                    'touch-target',
-                    isMobile && 'min-h-[52px]'
-                  )}
+                  className={cn('touch-target', isMobile && 'min-h-[52px]')}
                 >
                   {isLoading ? 'Creating Account...' : 'Sign Up'}
                 </EnhancedButton>
@@ -279,14 +275,10 @@ export default function SignupForm() {
           </EnhancedCardContent>
 
           {/* Footer */}
-          <div className={cn(
-            'px-6 py-4 bg-muted/30 border-t text-center',
-            isMobile && 'px-4 py-3'
-          )}>
-            <p className={cn(
-              'text-muted-foreground',
-              isMobile ? 'text-xs' : 'text-sm'
-            )}>
+          <div
+            className={cn('px-6 py-4 bg-muted/30 border-t text-center', isMobile && 'px-4 py-3')}
+          >
+            <p className={cn('text-muted-foreground', isMobile ? 'text-xs' : 'text-sm')}>
               Already have an account?{' '}
               <a
                 href="/login"

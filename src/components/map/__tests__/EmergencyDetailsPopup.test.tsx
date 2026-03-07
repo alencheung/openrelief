@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { EmergencyDetailsPopup, EmergencyDetails } from '../EmergencyDetailsPopup'
@@ -14,22 +14,48 @@ Object.defineProperty(navigator, 'share', {
 // Mock UI components
 vi.mock('@/components/ui', () => ({
   EmergencyIndicator: ({ type, size, variant, showSeverity, severity, label }: any) => (
-    <div data-testid="emergency-indicator" data-type={type} data-size={size} data-variant={variant} data-show-severity={showSeverity} data-severity={severity}>
+    <div
+      data-testid="emergency-indicator"
+      data-type={type}
+      data-size={size}
+      data-variant={variant}
+      data-show-severity={showSeverity}
+      data-severity={severity}
+    >
       {label}
     </div>
   ),
   TrustBadge: ({ level, score, size, showPercentage, label }: any) => (
-    <div data-testid="trust-badge" data-level={level} data-score={score} data-size={size} data-show-percentage={showPercentage}>
+    <div
+      data-testid="trust-badge"
+      data-level={level}
+      data-score={score}
+      data-size={size}
+      data-show-percentage={showPercentage}
+    >
       {label}
     </div>
   ),
   StatusIndicator: ({ status, size, variant, pulse, showIcon, label }: any) => (
-    <div data-testid="status-indicator" data-status={status} data-size={size} data-variant={variant} data-pulse={pulse} data-show-icon={showIcon}>
+    <div
+      data-testid="status-indicator"
+      data-status={status}
+      data-size={size}
+      data-variant={variant}
+      data-pulse={pulse}
+      data-show-icon={showIcon}
+    >
       {label}
     </div>
   ),
   Icon: ({ name, size, variant, className }: any) => (
-    <div data-testid="icon" data-name={name} data-size={size} data-variant={variant} className={className}>
+    <div
+      data-testid="icon"
+      data-name={name}
+      data-size={size}
+      data-variant={variant}
+      className={className}
+    >
       {name}
     </div>
   ),
@@ -39,7 +65,13 @@ vi.mock('@/components/ui', () => ({
     </div>
   ),
   EnhancedButton: ({ children, onClick, variant, size, leftIcon, className, ...props }: any) => (
-    <button onClick={onClick} data-variant={variant} data-size={size} className={className} {...props}>
+    <button
+      onClick={onClick}
+      data-variant={variant}
+      data-size={size}
+      className={className}
+      {...props}
+    >
       {leftIcon}
       {children}
     </button>
@@ -52,14 +84,15 @@ describe('EmergencyDetailsPopup', () => {
   const mockEmergency: EmergencyDetails = {
     id: 'emergency-1',
     title: 'Building Fire',
-    description: 'A fire has been reported in a downtown building. Emergency services are on the scene.',
+    description:
+      'A fire has been reported in a downtown building. Emergency services are on the scene.',
     emergencyType: 'fire',
     severity: 4,
     status: 'active',
     trustScore: 0.85,
     location: {
       address: '123 Main St, Downtown',
-      coordinates: [40.7128, -74.0060],
+      coordinates: [40.7128, -74.006],
       distance: 500
     },
     timestamp: '2023-12-06T10:00:00Z',
@@ -167,7 +200,9 @@ describe('EmergencyDetailsPopup', () => {
     renderWithProviders(<EmergencyDetailsPopup {...defaultProps} />)
 
     // Should show verified indicator
-    const verifiedIcon = screen.getByTestId('icon').find(el => el.getAttribute('data-name') === 'shield')
+    const verifiedIcon = screen
+      .getByTestId('icon')
+      .find(el => el.getAttribute('data-name') === 'shield')
     expect(verifiedIcon).toBeInTheDocument()
   })
 
@@ -293,7 +328,9 @@ describe('EmergencyDetailsPopup', () => {
       ]
     }
 
-    renderWithProviders(<EmergencyDetailsPopup {...defaultProps} emergency={emergencyWithCustomAction} />)
+    renderWithProviders(
+      <EmergencyDetailsPopup {...defaultProps} emergency={emergencyWithCustomAction} />
+    )
 
     const customActionButton = screen.getByText(/custom action/i)
     await user.click(customActionButton)
@@ -304,7 +341,9 @@ describe('EmergencyDetailsPopup', () => {
   it('auto-closes when enabled', () => {
     vi.useFakeTimers()
 
-    renderWithProviders(<EmergencyDetailsPopup {...defaultProps} autoClose={true} autoCloseDelay={1000} />)
+    renderWithProviders(
+      <EmergencyDetailsPopup {...defaultProps} autoClose={true} autoCloseDelay={1000} />
+    )
 
     // Should be visible initially
     expect(screen.getByRole('dialog')).toBeInTheDocument()
@@ -377,11 +416,13 @@ describe('EmergencyDetailsPopup', () => {
       ...mockEmergency,
       location: {
         ...mockEmergency.location,
-        distance: 1500 // 1.5km
+        distance: 1500
       }
     }
 
-    renderWithProviders(<EmergencyDetailsPopup {...defaultProps} emergency={emergencyWithKmDistance} />)
+    renderWithProviders(
+      <EmergencyDetailsPopup {...defaultProps} emergency={emergencyWithKmDistance} />
+    )
 
     expect(screen.getByText(/\(1.5km away\)/i)).toBeInTheDocument()
   })
@@ -389,7 +430,7 @@ describe('EmergencyDetailsPopup', () => {
   it('formats time correctly', () => {
     const recentEmergency = {
       ...mockEmergency,
-      timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString() // 5 minutes ago
+      timestamp: new Date((Date.now() - 5) * 60 * 1000).toISOString()
     }
 
     renderWithProviders(<EmergencyDetailsPopup {...defaultProps} emergency={recentEmergency} />)
@@ -421,13 +462,13 @@ describe('EmergencyDetailsPopup', () => {
     await user.click(resourcesTab)
 
     // Should show resource status
-    const deployedStatus = screen.getByTestId('status-indicator').find(el =>
-      el.getAttribute('data-status') === 'pending' // deployed maps to pending
+    const deployedStatus = screen.getByTestId('status-indicator').find(
+      el => el.getAttribute('data-status') === 'pending' // deployed maps to pending
     )
     expect(deployedStatus).toBeInTheDocument()
 
-    const availableStatus = screen.getByTestId('status-indicator').find(el =>
-      el.getAttribute('data-status') === 'active' // available maps to active
+    const availableStatus = screen.getByTestId('status-indicator').find(
+      el => el.getAttribute('data-status') === 'active' // available maps to active
     )
     expect(availableStatus).toBeInTheDocument()
   })
@@ -438,7 +479,9 @@ describe('EmergencyDetailsPopup', () => {
       reporter: undefined
     }
 
-    renderWithProviders(<EmergencyDetailsPopup {...defaultProps} emergency={emergencyWithoutReporter} />)
+    renderWithProviders(
+      <EmergencyDetailsPopup {...defaultProps} emergency={emergencyWithoutReporter} />
+    )
 
     expect(screen.queryByText(/john doe/i)).not.toBeInTheDocument()
   })
@@ -449,7 +492,9 @@ describe('EmergencyDetailsPopup', () => {
       updates: undefined
     }
 
-    renderWithProviders(<EmergencyDetailsPopup {...defaultProps} emergency={emergencyWithoutUpdates} />)
+    renderWithProviders(
+      <EmergencyDetailsPopup {...defaultProps} emergency={emergencyWithoutUpdates} />
+    )
 
     expect(screen.queryByText(/updates \(/i)).not.toBeInTheDocument()
   })
@@ -460,7 +505,9 @@ describe('EmergencyDetailsPopup', () => {
       resources: undefined
     }
 
-    renderWithProviders(<EmergencyDetailsPopup {...defaultProps} emergency={emergencyWithoutResources} />)
+    renderWithProviders(
+      <EmergencyDetailsPopup {...defaultProps} emergency={emergencyWithoutResources} />
+    )
 
     expect(screen.queryByText(/resources \(/i)).not.toBeInTheDocument()
   })
@@ -471,7 +518,9 @@ describe('EmergencyDetailsPopup', () => {
       contactInfo: undefined
     }
 
-    renderWithProviders(<EmergencyDetailsPopup {...defaultProps} emergency={emergencyWithoutContact} />)
+    renderWithProviders(
+      <EmergencyDetailsPopup {...defaultProps} emergency={emergencyWithoutContact} />
+    )
 
     expect(screen.queryByText(/contact information/i)).not.toBeInTheDocument()
   })
@@ -482,7 +531,9 @@ describe('EmergencyDetailsPopup', () => {
       actions: undefined
     }
 
-    renderWithProviders(<EmergencyDetailsPopup {...defaultProps} emergency={emergencyWithoutActions} />)
+    renderWithProviders(
+      <EmergencyDetailsPopup {...defaultProps} emergency={emergencyWithoutActions} />
+    )
 
     expect(screen.queryByText(/navigate/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/contact/i)).not.toBeInTheDocument()
@@ -590,7 +641,9 @@ describe('EmergencyDetailsPopup', () => {
       trustScore: 0.25
     }
 
-    renderWithProviders(<EmergencyDetailsPopup {...defaultProps} emergency={emergencyWithLowTrust} />)
+    renderWithProviders(
+      <EmergencyDetailsPopup {...defaultProps} emergency={emergencyWithLowTrust} />
+    )
 
     const trustBadge = screen.getByTestId('trust-badge')
     expect(trustBadge).toHaveAttribute('data-level', 'low')
@@ -603,7 +656,9 @@ describe('EmergencyDetailsPopup', () => {
       status: 'resolved'
     }
 
-    renderWithProviders(<EmergencyDetailsPopup {...defaultProps} emergency={emergencyWithResolvedStatus} />)
+    renderWithProviders(
+      <EmergencyDetailsPopup {...defaultProps} emergency={emergencyWithResolvedStatus} />
+    )
 
     const statusIndicator = screen.getByTestId('status-indicator')
     expect(statusIndicator).toHaveAttribute('data-status', 'resolved')
@@ -643,7 +698,9 @@ describe('EmergencyDetailsPopup', () => {
       }
     }
 
-    renderWithProviders(<EmergencyDetailsPopup {...defaultProps} emergency={emergencyWithoutDistance} />)
+    renderWithProviders(
+      <EmergencyDetailsPopup {...defaultProps} emergency={emergencyWithoutDistance} />
+    )
 
     expect(screen.queryByText(/\(.* away\)/i)).not.toBeInTheDocument()
   })
@@ -654,7 +711,9 @@ describe('EmergencyDetailsPopup', () => {
       estimatedResolution: undefined
     }
 
-    renderWithProviders(<EmergencyDetailsPopup {...defaultProps} emergency={emergencyWithoutResolution} />)
+    renderWithProviders(
+      <EmergencyDetailsPopup {...defaultProps} emergency={emergencyWithoutResolution} />
+    )
 
     expect(screen.queryByText(/estimated resolution/i)).not.toBeInTheDocument()
   })
@@ -665,7 +724,9 @@ describe('EmergencyDetailsPopup', () => {
       affectedArea: undefined
     }
 
-    renderWithProviders(<EmergencyDetailsPopup {...defaultProps} emergency={emergencyWithoutArea} />)
+    renderWithProviders(
+      <EmergencyDetailsPopup {...defaultProps} emergency={emergencyWithoutArea} />
+    )
 
     expect(screen.queryByText(/affected area/i)).not.toBeInTheDocument()
   })
@@ -676,7 +737,9 @@ describe('EmergencyDetailsPopup', () => {
       requiredAssistance: undefined
     }
 
-    renderWithProviders(<EmergencyDetailsPopup {...defaultProps} emergency={emergencyWithoutAssistance} />)
+    renderWithProviders(
+      <EmergencyDetailsPopup {...defaultProps} emergency={emergencyWithoutAssistance} />
+    )
 
     expect(screen.queryByText(/required assistance/i)).not.toBeInTheDocument()
   })

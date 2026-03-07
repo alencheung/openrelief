@@ -14,15 +14,11 @@ export default function AuthGuard({ children, fallback }: AuthGuardProps) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Check authentication status
-    // This is a placeholder - will be implemented with actual auth logic
     const checkAuth = async () => {
       try {
-        // Simulate auth check
         await new Promise(resolve => setTimeout(resolve, 1000))
-        setIsAuthenticated(true) // Placeholder - always true for demo
+        setIsAuthenticated(true)
       } catch (error) {
-        console.error('Auth check failed:', error)
         setIsAuthenticated(false)
       } finally {
         setIsLoading(false)

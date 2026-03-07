@@ -19,13 +19,11 @@ import {
   FileText,
   Lock,
   Bell,
-  Activity,
   BookOpen,
   MapPin,
   UserCheck,
   AlertTriangle,
-  CheckCircle,
-  Info
+  CheckCircle
 } from 'lucide-react'
 import {
   PrivacyDashboard,
@@ -35,7 +33,6 @@ import {
   RightsManagement,
   PrivacyEducation
 } from '@/components/privacy'
-import { useToast } from '@/hooks/use-toast'
 import { usePrivacy } from '@/hooks/usePrivacy'
 
 type TabId =
@@ -50,7 +47,6 @@ type TabId =
   | 'zones'
 
 const PrivacyPage: React.FC = () => {
-  const { toast } = useToast()
   const { privacyContext, privacyAlerts, clearPrivacyAlert } = usePrivacy()
   const [activeTab, setActiveTab] = useState<TabId>('dashboard')
 
@@ -150,6 +146,54 @@ const PrivacyPage: React.FC = () => {
     return colorMap[color as keyof typeof colorMap] || 'bg-gray-100 text-gray-600'
   }
 
+  const getPrivacyLevelClass = (level: string) => {
+    switch (level) {
+      case 'maximum':
+        return 'bg-green-100 text-green-800'
+      case 'high':
+        return 'bg-blue-100 text-blue-800'
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getActionButtonText = (actionId: string) => {
+    switch (actionId) {
+      case 'export':
+        return 'Export Data'
+      case 'delete':
+        return 'Manage Deletion'
+      case 'report':
+        return 'View Report'
+      default:
+        return 'Manage Settings'
+    }
+  }
+
+  const getAlertSeverityClass = (severity: string) => {
+    switch (severity) {
+      case 'critical':
+        return 'bg-red-100'
+      case 'warning':
+        return 'bg-yellow-100'
+      default:
+        return 'bg-blue-100'
+    }
+  }
+
+  const getAlertSeverityTextClass = (severity: string) => {
+    switch (severity) {
+      case 'critical':
+        return 'text-red-600'
+      case 'warning':
+        return 'text-yellow-600'
+      default:
+        return 'text-blue-600'
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -160,7 +204,9 @@ const PrivacyPage: React.FC = () => {
               <Shield className="h-8 w-8 text-blue-600" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Privacy Center</h1>
-                <p className="text-sm text-gray-600">Comprehensive control over your data and privacy</p>
+                <p className="text-sm text-gray-600">
+                  Comprehensive control over your data and privacy
+                </p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -169,12 +215,11 @@ const PrivacyPage: React.FC = () => {
                 <span>Your data, your control</span>
               </div>
               <div className="flex items-center space-x-2 text-sm">
-                <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  privacyContext.privacyLevel === 'maximum' ? 'bg-green-100 text-green-800'
-                    : privacyContext.privacyLevel === 'high' ? 'bg-blue-100 text-blue-800'
-                      : privacyContext.privacyLevel === 'medium' ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-gray-100 text-gray-800'
-                }`}>
+                <div
+                  className={`px-2 py-1 rounded-full text-xs font-medium ${getPrivacyLevelClass(
+                    privacyContext.privacyLevel
+                  )}`}
+                >
                   {privacyContext.privacyLevel.toUpperCase()} PRIVACY
                 </div>
               </div>
@@ -194,11 +239,7 @@ const PrivacyPage: React.FC = () => {
                   You have {privacyAlerts.length} privacy alert{privacyAlerts.length > 1 ? 's' : ''}
                 </span>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setActiveTab('notifications')}
-              >
+              <Button variant="ghost" size="sm" onClick={() => setActiveTab('notifications')}>
                 View All
               </Button>
             </div>
@@ -210,7 +251,7 @@ const PrivacyPage: React.FC = () => {
       <div className="bg-white border-b sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex space-x-1 overflow-x-auto">
-            {tabs.map((tab) => (
+            {tabs.map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
@@ -233,8 +274,12 @@ const PrivacyPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {quickActions.map((action) => (
-            <Card key={action.id} className="p-6 hover:shadow-md transition-shadow cursor-pointer" onClick={action.action}>
+          {quickActions.map(action => (
+            <Card
+              key={action.id}
+              className="p-6 hover:shadow-md transition-shadow cursor-pointer"
+              onClick={action.action}
+            >
               <div className="flex items-center space-x-3 mb-4">
                 <div className={`p-2 rounded-lg ${getColorClasses(action.color)}`}>
                   <action.icon className="h-6 w-6" />
@@ -245,10 +290,7 @@ const PrivacyPage: React.FC = () => {
                 </div>
               </div>
               <Button variant="outline" size="sm" className="w-full">
-                {action.id === 'export' ? 'Export Data'
-                  : action.id === 'delete' ? 'Manage Deletion'
-                    : action.id === 'report' ? 'View Report'
-                      : 'Manage Settings'}
+                {getActionButtonText(action.id)}
               </Button>
             </Card>
           ))}
@@ -266,7 +308,9 @@ const PrivacyPage: React.FC = () => {
               <h2 className="text-xl font-semibold mb-6">Privacy Zones</h2>
               <div className="text-center py-12">
                 <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Privacy Zones Coming Soon</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Privacy Zones Coming Soon
+                </h3>
                 <p className="text-gray-600 max-w-md mx-auto">
                   Configure location-based privacy settings to automatically adjust your privacy
                   preferences based on your physical location.
@@ -283,22 +327,20 @@ const PrivacyPage: React.FC = () => {
                     <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">No Privacy Alerts</h3>
                     <p className="text-gray-600">
-                      You're all set! We'll notify you if any privacy-related events occur.
+                      You&apos;re all set! We&apos;ll notify you if any privacy-related events
+                      occur.
                     </p>
                   </div>
                 ) : (
-                  privacyAlerts.map((alert) => (
-                    <div key={alert.id} className="flex items-start space-x-3 p-4 border rounded-lg">
-                      <div className={`p-2 rounded-full ${
-                        alert.severity === 'critical' ? 'bg-red-100'
-                          : alert.severity === 'warning' ? 'bg-yellow-100'
-                            : 'bg-blue-100'
-                      }`}>
-                        <AlertTriangle className={`h-4 w-4 ${
-                          alert.severity === 'critical' ? 'text-red-600'
-                            : alert.severity === 'warning' ? 'text-yellow-600'
-                              : 'text-blue-600'
-                        }`} />
+                  privacyAlerts.map(alert => (
+                    <div
+                      key={alert.id}
+                      className="flex items-start space-x-3 p-4 border rounded-lg"
+                    >
+                      <div className={`p-2 rounded-full ${getAlertSeverityClass(alert.severity)}`}>
+                        <AlertTriangle
+                          className={`h-4 w-4 ${getAlertSeverityTextClass(alert.severity)}`}
+                        />
                       </div>
                       <div className="flex-1">
                         <h4 className="font-medium text-gray-900">{alert.title}</h4>
@@ -307,11 +349,7 @@ const PrivacyPage: React.FC = () => {
                           {new Date(alert.timestamp).toLocaleString()}
                         </p>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => clearPrivacyAlert(alert.id)}
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => clearPrivacyAlert(alert.id)}>
                         Dismiss
                       </Button>
                     </div>

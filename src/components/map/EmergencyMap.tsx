@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import './map-styles.css'
-import maplibregl, { Map, LngLat, LngLatBounds, GeoJSONFeature } from 'maplibre-gl'
-import { MapPin, AlertTriangle, Navigation, Layers, ZoomIn, ZoomOut, Crosshair, Phone, Share2 } from 'lucide-react'
+import maplibregl, { Map, LngLatBounds } from 'maplibre-gl'
+import { Navigation, Layers, ZoomIn, ZoomOut, Crosshair, Phone, Share2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { mapConfiguration } from '@/lib/map-config'
 import { useKeyboardNavigation, useAriaAnnouncer, useReducedMotion } from '@/hooks/accessibility'
@@ -20,13 +20,11 @@ import {
 import { useEmergencyStore } from '@/store/emergencyStore'
 import { useLocationStore } from '@/store/locationStore'
 import { EmergencyEvent } from '@/store/emergencyStore'
-import { Geofence } from '@/store/locationStore'
-import { EmergencyIndicator, TrustBadge, StatusIndicator, Icon } from '@/components/ui'
 import { MapLegend } from './MapLegend'
 import { ProximityAlertsDisplay, ProximityAlert } from './ProximityAlertsDisplay'
 import { EmergencyDetailsPopup, EmergencyDetails } from './EmergencyDetailsPopup'
 import { SpatialInformationOverlay } from './SpatialInformationOverlay'
-import { ResponsiveMapContainer, useResponsive, responsiveUtils } from './ResponsiveMapContainer'
+import { ResponsiveMapContainer, useResponsive } from './ResponsiveMapContainer'
 import { AccessibilityMapFeatures, AccessibilitySettings } from './AccessibilityMapFeatures'
 import { useMobileDetection } from '@/hooks/useMobileDetection'
 import { useTouchGestures } from '@/hooks/useTouchGestures'
@@ -94,18 +92,18 @@ export default function EmergencyMap({
     enabled: true,
     enableHelp: true
   })
-  const { announcePolite, announceAssertive } = useAriaAnnouncer()
+  const { announcePolite, announceAssertive: _announceAssertive } = useAriaAnnouncer()
   const { prefersReducedMotion } = useReducedMotion()
 
   const [isMapLoaded, setIsMapLoaded] = useState(false)
   const [selectedEmergency, setSelectedEmergency] = useState<EmergencyEvent | null>(null)
-  const [mapStyle, setMapStyle] = useState(mapConfiguration.style)
+  const [mapStyle, _setMapStyle] = useState(mapConfiguration.style)
 
   // Enhanced state management
   const [legendCollapsed, setLegendCollapsed] = useState(false)
   const [spatialInfoVisible, setSpatialInfoVisible] = useState(true)
   const [currentUnitSystem, setCurrentUnitSystem] = useState<'metric' | 'imperial'>(unitSystem)
-  const [visibleLayers, setVisibleLayers] = useState<Record<string, boolean>>({
+  const [_visibleLayers, setVisibleLayers] = useState<Record<string, boolean>>({
     emergencies: true,
     severity: true,
     trust: true,
@@ -130,20 +128,15 @@ export default function EmergencyMap({
   const [selectedMapControl, setSelectedMapControl] = useState<string | null>(null)
 
   // Store subscriptions
-  const {
-    events,
-    filteredEvents,
-    mapState,
-    setMapState,
-    setSelectedEventOnMap
-  } = useEmergencyStore()
+  const { events, filteredEvents, mapState, setMapState, setSelectedEventOnMap } =
+    useEmergencyStore()
   const {
     currentLocation,
     isTracking,
     geofences,
     proximityAlerts,
-    startTracking,
-    stopTracking
+    startTracking: _startTracking,
+    stopTracking: _stopTracking
   } = useLocationStore()
 
   // Initialize MapLibre GL JS map
@@ -171,13 +164,15 @@ export default function EmergencyMap({
     }
 
     // Add scale control
-    map.addControl(new maplibregl.ScaleControl({
-      maxWidth: 100,
-      unit: 'metric'
-    }), 'bottom-left')
+    map.addControl(
+      new maplibregl.ScaleControl({
+        maxWidth: 100,
+        unit: 'metric'
+      }),
+      'bottom-left'
+    )
 
     // Setup performance monitoring
-    console.log('[EmergencyMap] Creating MapPerformanceManager, map loaded:', !!map)
     performanceManagerRef.current = new MapPerformanceManager(map)
 
     // Setup accessibility features
@@ -192,7 +187,6 @@ export default function EmergencyMap({
     }
 
     map.on('load', () => {
-      console.log('[EmergencyMap] Map load event fired')
       setIsMapLoaded(true)
       onMapLoad?.(map)
 
@@ -213,7 +207,6 @@ export default function EmergencyMap({
     mapInstanceRef.current = map
 
     return () => {
-      console.log('[EmergencyMap] Cleaning up map and performance manager')
       performanceManagerRef.current?.destroy()
       map.remove()
       mapInstanceRef.current = null
@@ -222,90 +215,96 @@ export default function EmergencyMap({
   }, [])
 
   // Initialize emergency layers
-  const initializeEmergencyLayers = useCallback((map: Map) => {
-    // Add sources
-    map.addSource('emergency-events', {
-      type: 'geojson',
-      data: {
-        type: 'FeatureCollection',
-        features: []
-      },
-      cluster: enableClustering,
-      clusterMaxZoom: mapConfiguration.performance.clusteringMaxZoom,
-      clusterRadius: mapConfiguration.performance.clusteringRadius
-    })
+  const initializeEmergencyLayers = useCallback(
+    (map: Map) => {
+      // Add sources
+      map.addSource('emergency-events', {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: []
+        },
+        cluster: enableClustering,
+        clusterMaxZoom: mapConfiguration.performance.clusteringMaxZoom,
+        clusterRadius: mapConfiguration.performance.clusteringRadius
+      })
 
-    map.addSource('user-location', {
-      type: 'geojson',
-      data: {
-        type: 'FeatureCollection',
-        features: []
-      }
-    })
-
-    if (enableGeofences) {
-      map.addSource('geofences', {
+      map.addSource('user-location', {
         type: 'geojson',
         data: {
           type: 'FeatureCollection',
           features: []
         }
       })
-    }
 
-    if (enableHeatmap) {
-      map.addSource('emergency-heatmap', {
-        type: 'geojson',
-        data: {
-          type: 'FeatureCollection',
-          features: []
-        }
-      })
-    }
-
-    // Add layers from configuration
-    mapConfiguration.layers.forEach(layer => {
-      if (map.getLayer(layer.id)) {
-        return
+      if (enableGeofences) {
+        map.addSource('geofences', {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features: []
+          }
+        })
       }
-      map.addLayer(layer as any)
-    })
-  }, [enableClustering, enableGeofences, enableHeatmap])
+
+      if (enableHeatmap) {
+        map.addSource('emergency-heatmap', {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features: []
+          }
+        })
+      }
+
+      // Add layers from configuration
+      mapConfiguration.layers.forEach(layer => {
+        if (map.getLayer(layer.id)) {
+          return
+        }
+        map.addLayer(layer as any)
+      })
+    },
+    [enableClustering, enableGeofences, enableHeatmap]
+  )
 
   // Handle map click
-  const handleMapClick = useCallback((e: any) => {
-    const features = e.target.queryRenderedFeatures(e.point, {
-      layers: ['emergency-events', 'emergency-clusters']
-    })
+  const handleMapClick = useCallback(
+    (e: any) => {
+      const features = e.target.queryRenderedFeatures(e.point, {
+        layers: ['emergency-events', 'emergency-clusters']
+      })
 
-    if (features.length > 0) {
-      const feature = features[0]
-      if (feature.properties.cluster) {
-        // Handle cluster click - zoom to cluster bounds
-        const clusterId = feature.properties.cluster_id
-        const source = e.target.getSource('emergency-events') as any
-        const clusterLeaves = source.getClusterLeaves(clusterId, Infinity, 0)
+      if (features.length > 0) {
+        const feature = features[0]
+        if (feature.properties.cluster) {
+          // Handle cluster click - zoom to cluster bounds
+          const clusterId = feature.properties.cluster_id
+          const source = e.target.getSource('emergency-events') as any
+          const clusterLeaves = source.getClusterLeaves(clusterId, Infinity, 0)
 
-        if (clusterLeaves.length > 0) {
-          const bounds = new LngLatBounds()
-          clusterLeaves.forEach((leaf: any) => {
-            const coords = leaf.geometry.coordinates
-            bounds.extend([coords[0], coords[1]])
-          })
-          e.target.fitBounds(bounds, { padding: 50 })
-        }
-      } else {
-        // Handle individual emergency click
-        const emergencyId = feature.properties.id
-        const emergency = events.find(e => e.id === emergencyId)
-        if (emergency) {
-          setSelectedEmergency(emergency)
-          setSelectedEventOnMap(emergencyId)
-          onEmergencyClick?.(emergency)
+          if (clusterLeaves.length > 0) {
+            const bounds = new LngLatBounds()
+            clusterLeaves.forEach((leaf: any) => {
+              const coords = leaf.geometry.coordinates
+              bounds.extend([coords[0], coords[1]])
+            })
+            e.target.fitBounds(bounds, { padding: 50 })
+          }
+        } else {
+          // Handle individual emergency click
+          const emergencyId = feature.properties.id
+          const emergency = events.find(e => e.id === emergencyId)
+          if (emergency) {
+            setSelectedEmergency(emergency)
+            setSelectedEventOnMap(emergencyId)
+            onEmergencyClick?.(emergency)
+          }
         }
       }
-    }
-  }, [events, onEmergencyClick, setSelectedEventOnMap])
+    },
+    [events, onEmergencyClick, setSelectedEventOnMap]
+  )
 
   // Handle map movement
   const handleMapMove = useCallback(() => {
@@ -335,36 +334,39 @@ export default function EmergencyMap({
   }, [setMapState])
 
   // Initialize location tracking
-  const initializeLocationTracking = useCallback((map: Map) => {
-    if (!currentLocation) {
-      return
-    }
-
-    // Add user location marker
-    const userLocationFeature: any = {
-      type: 'Feature' as const,
-      properties: {
-        accuracy: currentLocation.accuracy || 50
-      },
-      geometry: {
-        type: 'Point' as const,
-        coordinates: [currentLocation.lng, currentLocation.lat]
+  const initializeLocationTracking = useCallback(
+    (map: Map) => {
+      if (!currentLocation) {
+        return
       }
-    };
 
-    (map.getSource('user-location') as any)?.setData({
-      type: 'FeatureCollection',
-      features: [userLocationFeature]
-    })
+      // Add user location marker
+      const userLocationFeature: any = {
+        type: 'Feature' as const,
+        properties: {
+          accuracy: currentLocation.accuracy || 50
+        },
+        geometry: {
+          type: 'Point' as const,
+          coordinates: [currentLocation.lng, currentLocation.lat]
+        }
+      }
 
-    // Center map on user location if first time
-    if (mapState.center.lat === 0 && mapState.center.lng === 0) {
-      map.flyTo({
-        center: [currentLocation.lng, currentLocation.lat],
-        zoom: 14
+      ;(map.getSource('user-location') as any)?.setData({
+        type: 'FeatureCollection',
+        features: [userLocationFeature]
       })
-    }
-  }, [currentLocation, mapState.center])
+
+      // Center map on user location if first time
+      if (mapState.center.lat === 0 && mapState.center.lng === 0) {
+        map.flyTo({
+          center: [currentLocation.lng, currentLocation.lat],
+          zoom: 14
+        })
+      }
+    },
+    [currentLocation, mapState.center]
+  )
 
   // Update emergency events on map
   useEffect(() => {
@@ -501,57 +503,54 @@ export default function EmergencyMap({
 
     const heatmapLayer = mapInstanceRef.current.getLayer('emergency-heatmap')
     if (heatmapLayer) {
-      const visibility = mapInstanceRef.current.getLayoutProperty(
-        'emergency-heatmap',
-        'visibility'
-      )
+      const visibility = mapInstanceRef.current.getLayoutProperty('emergency-heatmap', 'visibility')
       const newVisibility = visibility === 'visible' ? 'none' : 'visible'
-      mapInstanceRef.current.setLayoutProperty(
-        'emergency-heatmap',
-        'visibility',
-        newVisibility
-      )
+      mapInstanceRef.current.setLayoutProperty('emergency-heatmap', 'visibility', newVisibility)
       announcePolite(`Heatmap ${newVisibility === 'visible' ? 'enabled' : 'disabled'}`)
     }
   }, [announcePolite])
 
   // Keyboard navigation for map
-  const panMap = useCallback((direction: 'up' | 'down' | 'left' | 'right') => {
-    if (!mapInstanceRef.current) {
-      return
-    }
+  const panMap = useCallback(
+    (direction: 'up' | 'down' | 'left' | 'right') => {
+      if (!mapInstanceRef.current) {
+        return
+      }
 
-    const map = mapInstanceRef.current
-    const currentCenter = map.getCenter()
-    const currentZoom = map.getZoom()
-    const panDistance = 100 / Math.pow(2, currentZoom) // Adjust pan distance based on zoom level
+      const map = mapInstanceRef.current
+      const currentCenter = map.getCenter()
+      const currentZoom = map.getZoom()
+      // Adjust pan distance based on zoom level
+      const panDistance = 100 / Math.pow(2, currentZoom)
 
-    let newCenter = { ...currentCenter }
+      let newCenter = { ...currentCenter }
 
-    switch (direction) {
-      case 'up':
-        newCenter.lat += panDistance
-        break
-      case 'down':
-        newCenter.lat -= panDistance
-        break
-      case 'left':
-        newCenter.lng -= panDistance
-        break
-      case 'right':
-        newCenter.lng += panDistance
-        break
-    }
+      switch (direction) {
+        case 'up':
+          newCenter.lat += panDistance
+          break
+        case 'down':
+          newCenter.lat -= panDistance
+          break
+        case 'left':
+          newCenter.lng -= panDistance
+          break
+        case 'right':
+          newCenter.lng += panDistance
+          break
+      }
 
-    map.easeTo({
-      center: [newCenter.lng, newCenter.lat],
-      duration: prefersReducedMotion ? 0 : 300
-    })
+      map.easeTo({
+        center: [newCenter.lng, newCenter.lat],
+        duration: prefersReducedMotion ? 0 : 300
+      })
 
-    announcePolite(`Panned map ${direction}`)
-  }, [announcePolite, prefersReducedMotion])
+      announcePolite(`Panned map ${direction}`)
+    },
+    [announcePolite, prefersReducedMotion]
+  )
 
-  const getEmergencyIcon = (type: string, severity: number) => {
+  const _getEmergencyIcon = (_type: string, _severity: number) => {
     const iconColors: Record<string, string> = {
       fire: 'emergency-fire',
       medical: 'emergency-medical',
@@ -560,15 +559,15 @@ export default function EmergencyMap({
       infrastructure: 'emergency-infrastructure'
     }
 
-    return iconColors[type] || 'emergency-fire'
+    return iconColors[_type] || 'emergency-fire'
   }
 
-  const getSeveritySize = (severity: number) => {
+  const _getSeveritySize = (severity: number) => {
     const sizes = ['w-6 h-6', 'w-8 h-8', 'w-10 h-10', 'w-12 h-12', 'w-14 h-14']
     return sizes[Math.min(severity - 1, 4)] || sizes[0]
   }
 
-  const getTrustLevel = (trustWeight: number) => {
+  const _getTrustLevel = (trustWeight: number) => {
     if (trustWeight >= 0.9) {
       return 'excellent'
     }
@@ -584,7 +583,7 @@ export default function EmergencyMap({
     return 'critical'
   }
 
-  const getStatusFromEventStatus = (status: string) => {
+  const _getStatusFromEventStatus = (status: string) => {
     switch (status.toLowerCase()) {
       case 'active':
       case 'reported':
@@ -604,33 +603,36 @@ export default function EmergencyMap({
   }
 
   // Enhanced event handlers
-  const handleEmergencyClick = useCallback((emergency: EmergencyEvent) => {
-    setSelectedEmergency(emergency)
-    setSelectedEventOnMap(emergency.id)
-    announcePolite(`Selected emergency: ${emergency.title}`)
-    onEmergencyClick?.(emergency)
-  }, [onEmergencyClick, setSelectedEventOnMap, announcePolite])
+  const handleEmergencyClick = useCallback(
+    (emergency: EmergencyEvent) => {
+      setSelectedEmergency(emergency)
+      setSelectedEventOnMap(emergency.id)
+      announcePolite(`Selected emergency: ${emergency.title}`)
+      onEmergencyClick?.(emergency)
+    },
+    [onEmergencyClick, setSelectedEventOnMap, announcePolite]
+  )
 
-  const handleAlertClick = useCallback((alert: ProximityAlert) => {
-    const emergency = events.find(e => e.id === alert.emergencyId)
-    if (emergency) {
-      handleEmergencyClick(emergency)
-    }
-  }, [events, handleEmergencyClick])
+  const handleAlertClick = useCallback(
+    (alert: ProximityAlert) => {
+      const emergency = events.find(e => e.id === alert.emergencyId)
+      if (emergency) {
+        handleEmergencyClick(emergency)
+      }
+    },
+    [events, handleEmergencyClick]
+  )
 
-  const handleAlertDismiss = useCallback((alertId: string) => {
+  const handleAlertDismiss = useCallback((_alertId: string) => {
     // Implementation would depend on how alerts are managed
-    console.log('Dismiss alert:', alertId)
   }, [])
 
   const handleDismissAllAlerts = useCallback(() => {
     // Implementation would depend on how alerts are managed
-    console.log('Dismiss all alerts')
   }, [])
 
   const handleMarkAllAlertsRead = useCallback(() => {
     // Implementation would depend on how alerts are managed
-    console.log('Mark all alerts as read')
   }, [])
 
   const handleShareEmergency = useCallback(() => {
@@ -661,7 +663,6 @@ export default function EmergencyMap({
 
   const handleContactEmergency = useCallback(() => {
     // Implementation would depend on contact system
-    console.log('Contact emergency services for:', selectedEmergency?.id)
   }, [selectedEmergency])
 
   const handleUnitChange = useCallback((unit: 'metric' | 'imperial') => {
@@ -672,16 +673,19 @@ export default function EmergencyMap({
     setLegendCollapsed(collapsed)
   }, [])
 
-  const handleLayerToggle = useCallback((layer: string) => {
+  const _handleLayerToggle = useCallback((layer: string) => {
     setVisibleLayers(prev => ({
       ...prev,
       [layer]: !prev[layer]
     }))
   }, [])
 
-  const handleAccessibilitySettingsChange = useCallback((newSettings: Partial<AccessibilitySettings>) => {
-    setAccessibilitySettings(prev => ({ ...prev, ...newSettings }))
-  }, [])
+  const handleAccessibilitySettingsChange = useCallback(
+    (newSettings: Partial<AccessibilitySettings>) => {
+      setAccessibilitySettings(prev => ({ ...prev, ...newSettings }))
+    },
+    []
+  )
 
   // Convert proximity alerts to enhanced format
   const enhancedProximityAlerts: ProximityAlert[] = useMemo(() => {
@@ -776,38 +780,42 @@ export default function EmergencyMap({
     const emergencyLng = parseFloat(emergencyCoords[1] || '0')
 
     // Calculate distance (simplified)
-    const distance = Math.sqrt(
-      Math.pow(currentLocation.lat - emergencyLat, 2)
-      + Math.pow(currentLocation.lng - emergencyLng, 2)
-    ) * 111000 // Rough conversion to meters
+    // Rough conversion to meters
+    const distance =
+      Math.sqrt(
+        Math.pow(currentLocation.lat - emergencyLat, 2) +
+          Math.pow(currentLocation.lng - emergencyLng, 2)
+      ) * 111000
 
     return {
       distance,
-      estimatedTime: distance / 50, // Assuming 50 km/h average speed
+      // Assuming 50 km/h average speed
+      estimatedTime: distance / 50,
       coordinates: [currentLocation.lat, currentLocation.lng],
       accuracy: currentLocation.accuracy
     }
   }, [currentLocation, selectedEmergency])
 
-  const { breakpoint, orientation } = useResponsive()
+  const _console = console
+  const { breakpoint: _breakpoint, orientation } = useResponsive()
   const { isMobile, isTouch } = useMobileDetection()
-  const isPortrait = orientation === 'portrait'
+  const _isPortrait = orientation === 'portrait'
 
   // Mobile-specific state
-  const [mobileControlsExpanded, setMobileControlsExpanded] = useState(false)
+  const [_mobileControlsExpanded, _setMobileControlsExpanded] = useState(false)
 
   // Touch gesture handling for map interactions
-  const mapGestureRef = useTouchGestures({
-    onDoubleTap: (point) => {
+  const _mapGestureRef = useTouchGestures({
+    onDoubleTap: _point => {
       if (isMobile && mapInstanceRef.current) {
         // Zoom in on double tap
         mapInstanceRef.current.zoomIn()
       }
     },
-    onLongPress: (point) => {
+    onLongPress: _point => {
       if (isMobile && mapInstanceRef.current) {
         // Could trigger context menu or special action
-        console.log('Long press on map at:', point)
+        _console.log('Long press on map at:', _point)
       }
     }
   })
@@ -912,21 +920,23 @@ export default function EmergencyMap({
   return (
     <ResponsiveMapContainer
       className={cn('map-container relative', className)}
-      onBreakpointChange={(bp) => console.log('Breakpoint changed:', bp)}
-      onOrientationChange={(ori) => console.log('Orientation changed:', ori)}
+      onBreakpointChange={bp => _console.log('Breakpoint changed:', bp)}
+      onOrientationChange={ori => _console.log('Orientation changed:', ori)}
     >
       {/* MapLibre GL JS container */}
       <div
         ref={mapRef}
         className={cn(
           'absolute inset-0',
-          isTouch && 'touch-pan-y touch-pan-x', // Enable touch gestures
-          mapKeyboardFocus && 'ring-2 ring-ring ring-offset-2' // Show focus when keyboard navigation is active
+          // Enable touch gestures
+          isTouch && 'touch-pan-y touch-pan-x',
+          // Show focus when keyboard navigation is active
+          mapKeyboardFocus && 'ring-2 ring-ring ring-offset-2'
         )}
         tabIndex={mapKeyboardFocus ? 0 : -1}
         role="application"
         aria-label="Emergency map"
-        onKeyDown={(e) => {
+        onKeyDown={e => {
           if (e.key === 'Tab') {
             setMapKeyboardFocus(true)
           }
@@ -940,15 +950,14 @@ export default function EmergencyMap({
       {!isMapLoaded && (
         <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
           <div className="text-center">
-            <div className={cn(
-              'animate-spin rounded-full mx-auto mb-2',
-              isMobile ? 'h-6 w-6 border-b-2' : 'h-8 w-8 border-b-2',
-              'border-blue-500'
-            )}></div>
-            <p className={cn(
-              'text-gray-600',
-              isMobile ? 'text-xs' : 'text-sm'
-            )}>
+            <div
+              className={cn(
+                'animate-spin rounded-full mx-auto mb-2',
+                isMobile ? 'h-6 w-6 border-b-2' : 'h-8 w-8 border-b-2',
+                'border-blue-500'
+              )}
+            ></div>
+            <p className={cn('text-gray-600', isMobile ? 'text-xs' : 'text-sm')}>
               Loading emergency map...
             </p>
           </div>
@@ -1061,11 +1070,31 @@ export default function EmergencyMap({
           size={responsiveLegendSize as any}
           variant={isMobile ? 'compact' : 'default'}
           emergencyTypes={[
-            { type: 'fire', name: 'Fire Emergency', count: events.filter(e => e.emergency_types?.slug === 'fire').length },
-            { type: 'medical', name: 'Medical Emergency', count: events.filter(e => e.emergency_types?.slug === 'medical').length },
-            { type: 'security', name: 'Security Threat', count: events.filter(e => e.emergency_types?.slug === 'security').length },
-            { type: 'natural', name: 'Natural Disaster', count: events.filter(e => e.emergency_types?.slug === 'natural').length },
-            { type: 'infrastructure', name: 'Infrastructure Failure', count: events.filter(e => e.emergency_types?.slug === 'infrastructure').length }
+            {
+              type: 'fire',
+              name: 'Fire Emergency',
+              count: events.filter(e => e.emergency_types?.slug === 'fire').length
+            },
+            {
+              type: 'medical',
+              name: 'Medical Emergency',
+              count: events.filter(e => e.emergency_types?.slug === 'medical').length
+            },
+            {
+              type: 'security',
+              name: 'Security Threat',
+              count: events.filter(e => e.emergency_types?.slug === 'security').length
+            },
+            {
+              type: 'natural',
+              name: 'Natural Disaster',
+              count: events.filter(e => e.emergency_types?.slug === 'natural').length
+            },
+            {
+              type: 'infrastructure',
+              name: 'Infrastructure Failure',
+              count: events.filter(e => e.emergency_types?.slug === 'infrastructure').length
+            }
           ]}
           showLayerControls={!isMobile}
           showSeverityIndicators={!isMobile}
@@ -1113,7 +1142,7 @@ export default function EmergencyMap({
           showControls={true}
           unitSystem={currentUnitSystem}
           onUnitChange={handleUnitChange}
-          onToggleOverlay={(visible) => setSpatialInfoVisible(visible)}
+          onToggleOverlay={visible => setSpatialInfoVisible(visible)}
           interactive={true}
           animated={true}
         />

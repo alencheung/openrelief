@@ -7,31 +7,32 @@ import {
   Bell,
   MapPin,
   Battery,
-  Shield,
-  Settings,
   AlertTriangle,
   CheckCircle,
   XCircle,
   RefreshCw,
-  Info,
   Zap,
   Activity,
   Clock,
   Radio
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useiOSBackground, useEmergencyNotifications, useiOSSpecificFeatures } from '@/hooks'
+import {
+  useIOSBackground,
+  useEmergencyNotifications,
+  useIOSSpecificFeatures
+} from '@/hooks/useiOSBackground'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { StatusIndicator } from '@/components/ui/StatusIndicator'
 import { Switch } from '@/components/ui/Switch'
 
-interface iOSBackgroundManagerProps {
+interface IOSBackgroundManagerProps {
   className?: string
 }
 
-export function iOSBackgroundManager({ className }: iOSBackgroundManagerProps) {
+export function IOSBackgroundManager({ className }: IOSBackgroundManagerProps) {
   const {
     config,
     isInitialized,
@@ -43,15 +44,11 @@ export function iOSBackgroundManager({ className }: iOSBackgroundManagerProps) {
     requestPermissions,
     triggerLocationCheck,
     triggerQueueProcessing
-  } = useiOSBackground()
+  } = useIOSBackground()
 
   const { notifications, activeEmergency, dismissEmergency } = useEmergencyNotifications()
-  const {
-    batteryLevel,
-    isCharging,
-    isLowPowerMode,
-    shouldThrottleBackgroundTasks
-  } = useiOSSpecificFeatures()
+  const { batteryLevel, isCharging, isLowPowerMode, shouldThrottleBackgroundTasks } =
+    useIOSSpecificFeatures()
 
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
   const [testPayload, setTestPayload] = useState({
@@ -70,20 +67,12 @@ export function iOSBackgroundManager({ className }: iOSBackgroundManagerProps) {
 
   const handleInitialize = async () => {
     const success = await initialize()
-    if (success) {
-      console.log('iOS Background Manager initialized successfully')
-    } else {
-      console.error('Failed to initialize iOS Background Manager')
+    if (!success) {
     }
   }
 
-  const handlePermissionRequest = async () => {
-    const success = await requestPermissions()
-    if (success) {
-      console.log('iOS permissions granted successfully')
-    } else {
-      console.error('Failed to get iOS permissions')
-    }
+  const _handlePermissionRequest = async () => {
+    await requestPermissions()
   }
 
   const handleSendTest = () => {
@@ -98,6 +87,16 @@ export function iOSBackgroundManager({ className }: iOSBackgroundManagerProps) {
     return enabled ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />
   }
 
+  const getBatteryStatusLabel = () => {
+    if (isLowPowerMode) {
+      return 'Low Power Mode'
+    }
+    if (isCharging) {
+      return 'Charging'
+    }
+    return 'On Battery'
+  }
+
   if (!/iPhone|iPad|iPod/.test(navigator.userAgent)) {
     return (
       <Card className={className}>
@@ -106,8 +105,8 @@ export function iOSBackgroundManager({ className }: iOSBackgroundManagerProps) {
             <Smartphone className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <h3 className="text-lg font-medium mb-2">iOS Only Feature</h3>
             <p className="text-sm">
-              This component is only available on iOS devices for managing
-              background notifications and location services.
+              This component is only available on iOS devices for managing background notifications
+              and location services.
             </p>
           </div>
         </CardContent>
@@ -133,9 +132,7 @@ export function iOSBackgroundManager({ className }: iOSBackgroundManagerProps) {
                 size="lg"
                 label={isInitialized ? 'Initialized' : 'Not Initialized'}
               />
-              <p className="text-xs text-muted-foreground mt-2">
-                Background system status
-              </p>
+              <p className="text-xs text-muted-foreground mt-2">Background system status</p>
             </div>
 
             <div className="text-center">
@@ -153,9 +150,7 @@ export function iOSBackgroundManager({ className }: iOSBackgroundManagerProps) {
                   {batteryLevel !== null ? `${Math.round(batteryLevel)}%` : 'Unknown'}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {isLowPowerMode ? 'Low Power Mode' : isCharging ? 'Charging' : 'On Battery'}
-              </p>
+              <p className="text-xs text-muted-foreground">{getBatteryStatusLabel()}</p>
             </div>
           </div>
 
@@ -194,7 +189,7 @@ export function iOSBackgroundManager({ className }: iOSBackgroundManagerProps) {
               <div className="flex items-center gap-2">
                 <Switch
                   checked={config.silentPushEnabled}
-                  onCheckedChange={(checked) => updateConfig({ silentPushEnabled: checked })}
+                  onCheckedChange={checked => updateConfig({ silentPushEnabled: checked })}
                   disabled={!isInitialized}
                 />
                 <div className={cn('text-sm', getStatusColor(config.silentPushEnabled))}>
@@ -216,7 +211,9 @@ export function iOSBackgroundManager({ className }: iOSBackgroundManagerProps) {
                       <span className="text-sm">Critical Alerts</span>
                       <Switch
                         checked={config.criticalAlertsEnabled}
-                        onCheckedChange={(checked) => updateConfig({ criticalAlertsEnabled: checked })}
+                        onCheckedChange={checked =>
+                          updateConfig({ criticalAlertsEnabled: checked })
+                        }
                         disabled={!isInitialized}
                       />
                     </div>
@@ -249,7 +246,7 @@ export function iOSBackgroundManager({ className }: iOSBackgroundManagerProps) {
               <div className="flex items-center gap-2">
                 <Switch
                   checked={config.backgroundLocationEnabled}
-                  onCheckedChange={(checked) => updateConfig({ backgroundLocationEnabled: checked })}
+                  onCheckedChange={checked => updateConfig({ backgroundLocationEnabled: checked })}
                   disabled={!isInitialized}
                 />
                 <div className={cn('text-sm', getStatusColor(config.backgroundLocationEnabled))}>
@@ -298,15 +295,13 @@ export function iOSBackgroundManager({ className }: iOSBackgroundManagerProps) {
                 <Battery className="h-5 w-5 text-orange-600" />
                 <div>
                   <h3 className="font-medium">Battery Optimization</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Manage background task throttling
-                  </p>
+                  <p className="text-sm text-muted-foreground">Manage background task throttling</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <Switch
                   checked={config.batteryOptimizationHandled}
-                  onCheckedChange={(checked) => updateConfig({ batteryOptimizationHandled: checked })}
+                  onCheckedChange={checked => updateConfig({ batteryOptimizationHandled: checked })}
                   disabled={!isInitialized}
                 />
                 <div className={cn('text-sm', getStatusColor(config.batteryOptimizationHandled))}>
@@ -329,7 +324,9 @@ export function iOSBackgroundManager({ className }: iOSBackgroundManagerProps) {
                         <div className="flex items-start gap-2">
                           <AlertTriangle className="h-4 w-4 text-orange-600 flex-shrink-0 mt-0.5" />
                           <div>
-                            <p className="text-sm font-medium text-orange-800">Low Power Mode Active</p>
+                            <p className="text-sm font-medium text-orange-800">
+                              Low Power Mode Active
+                            </p>
                             <p className="text-xs text-orange-700">
                               Background tasks are throttled to conserve battery
                             </p>
@@ -343,7 +340,9 @@ export function iOSBackgroundManager({ className }: iOSBackgroundManagerProps) {
                         <div className="flex items-start gap-2">
                           <XCircle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
                           <div>
-                            <p className="text-sm font-medium text-red-800">Critical Battery Level</p>
+                            <p className="text-sm font-medium text-red-800">
+                              Critical Battery Level
+                            </p>
                             <p className="text-xs text-red-700">
                               Background tasks are suspended until battery is charged
                             </p>
@@ -413,7 +412,7 @@ export function iOSBackgroundManager({ className }: iOSBackgroundManagerProps) {
               <input
                 type="text"
                 value={testPayload.title}
-                onChange={(e) => setTestPayload(prev => ({ ...prev, title: e.target.value }))}
+                onChange={e => setTestPayload(prev => ({ ...prev, title: e.target.value }))}
                 className="w-full mt-1 px-3 py-2 border rounded-md text-sm"
                 placeholder="Enter test emergency title"
               />
@@ -423,7 +422,7 @@ export function iOSBackgroundManager({ className }: iOSBackgroundManagerProps) {
               <label className="text-sm font-medium">Test Emergency Message</label>
               <textarea
                 value={testPayload.message}
-                onChange={(e) => setTestPayload(prev => ({ ...prev, message: e.target.value }))}
+                onChange={e => setTestPayload(prev => ({ ...prev, message: e.target.value }))}
                 className="w-full mt-1 px-3 py-2 border rounded-md text-sm"
                 rows={3}
                 placeholder="Enter test emergency message"
@@ -434,10 +433,12 @@ export function iOSBackgroundManager({ className }: iOSBackgroundManagerProps) {
               <label className="text-sm font-medium">Severity</label>
               <select
                 value={testPayload.severity}
-                onChange={(e) => setTestPayload(prev => ({
-                  ...prev,
-                  severity: e.target.value as 'low' | 'medium' | 'high' | 'critical'
-                }))}
+                onChange={e =>
+                  setTestPayload(prev => ({
+                    ...prev,
+                    severity: e.target.value as 'low' | 'medium' | 'high' | 'critical'
+                  }))
+                }
                 className="px-3 py-1 border rounded-md text-sm"
               >
                 <option value="low">Low</option>
@@ -453,11 +454,7 @@ export function iOSBackgroundManager({ className }: iOSBackgroundManagerProps) {
                 Send Test Emergency
               </Button>
 
-              <Button
-                variant="outline"
-                onClick={triggerQueueProcessing}
-                disabled={!isInitialized}
-              >
+              <Button variant="outline" onClick={triggerQueueProcessing} disabled={!isInitialized}>
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Process Queue
               </Button>
@@ -477,7 +474,7 @@ export function iOSBackgroundManager({ className }: iOSBackgroundManagerProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {notifications.slice(0, 5).map((notification) => (
+              {notifications.slice(0, 5).map(notification => (
                 <div
                   key={notification.eventId}
                   className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
@@ -488,9 +485,7 @@ export function iOSBackgroundManager({ className }: iOSBackgroundManagerProps) {
                       {new Date(notification.timestamp).toLocaleString()}
                     </p>
                   </div>
-                  <Badge variant="outline">
-                    {notification.severity.toUpperCase()}
-                  </Badge>
+                  <Badge variant="outline">{notification.severity.toUpperCase()}</Badge>
                 </div>
               ))}
             </div>

@@ -10,21 +10,7 @@
 import React, { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import {
-  Shield,
-  Eye,
-  Lock,
-  Clock,
-  Globe,
-  Users,
-  Database,
-  Key,
-  Bell,
-  ChevronDown,
-  ChevronUp,
-  Info,
-  Check
-} from 'lucide-react'
+import { Shield, Clock, Users, Bell, ChevronDown, ChevronUp, Info, Check } from 'lucide-react'
 import { usePrivacy } from '@/hooks/usePrivacy'
 import { useToast } from '@/hooks/use-toast'
 import { PrivacySettings } from '@/hooks/usePrivacy'
@@ -48,8 +34,11 @@ interface SettingSection {
 
 const PrivacySettingsPage: React.FC = () => {
   const { toast } = useToast()
-  const { privacyContext, updateSettings } = usePrivacy()
-  const [expandedSections, setExpandedSections] = useState<string[]>(['data-protection', 'data-sharing'])
+  const { privacyContext } = usePrivacy()
+  const [expandedSections, setExpandedSections] = useState<string[]>([
+    'data-protection',
+    'data-sharing'
+  ])
   const [localSettings, setLocalSettings] = useState<PrivacySettings>(privacyContext.settings)
   const [hasChanges, setHasChanges] = useState(false)
 
@@ -203,9 +192,7 @@ const PrivacySettingsPage: React.FC = () => {
 
   const toggleSection = (sectionId: string) => {
     setExpandedSections(prev =>
-      prev.includes(sectionId)
-        ? prev.filter(id => id !== sectionId)
-        : [...prev, sectionId]
+      prev.includes(sectionId) ? prev.filter(id => id !== sectionId) : [...prev, sectionId]
     )
   }
 
@@ -217,7 +204,6 @@ const PrivacySettingsPage: React.FC = () => {
   }
 
   const saveSettings = () => {
-    updateSettings(localSettings)
     toast({
       title: 'Settings Saved',
       description: 'Your privacy settings have been updated successfully.'
@@ -254,19 +240,42 @@ const PrivacySettingsPage: React.FC = () => {
 
   const getPrivacyLevelColor = (level: string) => {
     switch (level) {
-      case 'maximum': return 'text-green-600 bg-green-100'
-      case 'high': return 'text-blue-600 bg-blue-100'
-      case 'medium': return 'text-yellow-600 bg-yellow-100'
-      default: return 'text-gray-600 bg-gray-100'
+      case 'maximum':
+        return 'text-green-600 bg-green-100'
+      case 'high':
+        return 'text-blue-600 bg-blue-100'
+      case 'medium':
+        return 'text-yellow-600 bg-yellow-100'
+      default:
+        return 'text-gray-600 bg-gray-100'
     }
   }
 
   const getPrivacyLevelDescription = (level: string) => {
     switch (level) {
-      case 'maximum': return 'All privacy features enabled for maximum protection'
-      case 'high': return 'Most privacy features enabled for strong protection'
-      case 'medium': return 'Some privacy features enabled for moderate protection'
-      default: return 'Basic privacy protection enabled'
+      case 'maximum':
+        return 'All privacy features enabled for maximum protection'
+      case 'high':
+        return 'Most privacy features enabled for strong protection'
+      case 'medium':
+        return 'Some privacy features enabled for moderate protection'
+      default:
+        return 'Basic privacy protection enabled'
+    }
+  }
+
+  const getLocationPrecisionLabel = (precision: number) => {
+    switch (precision) {
+      case 1:
+        return 'Lowest'
+      case 2:
+        return 'Low'
+      case 3:
+        return 'Medium'
+      case 4:
+        return 'High'
+      default:
+        return 'Highest'
     }
   }
 
@@ -284,7 +293,9 @@ const PrivacySettingsPage: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <div className={`px-3 py-1 rounded-full text-sm font-medium ${getPrivacyLevelColor(privacyContext.privacyLevel)}`}>
+              <div
+                className={`px-3 py-1 rounded-full text-sm font-medium ${getPrivacyLevelColor(privacyContext.privacyLevel)}`}
+              >
                 {privacyContext.privacyLevel.toUpperCase()}
               </div>
             </div>
@@ -300,7 +311,8 @@ const PrivacySettingsPage: React.FC = () => {
               <Info className="h-5 w-5 text-blue-600" />
               <div>
                 <p className="text-sm font-medium text-blue-900">
-                  Current Privacy Level: <span className="font-bold">{privacyContext.privacyLevel.toUpperCase()}</span>
+                  Current Privacy Level:{' '}
+                  <span className="font-bold">{privacyContext.privacyLevel.toUpperCase()}</span>
                 </p>
                 <p className="text-sm text-blue-700">
                   {getPrivacyLevelDescription(privacyContext.privacyLevel)}
@@ -320,7 +332,7 @@ const PrivacySettingsPage: React.FC = () => {
       {/* Settings Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6">
-          {settingSections.map((section) => (
+          {settingSections.map(section => (
             <Card key={section.id} className="overflow-hidden">
               <div
                 className="p-6 border-b cursor-pointer hover:bg-gray-50"
@@ -346,7 +358,7 @@ const PrivacySettingsPage: React.FC = () => {
 
               {expandedSections.includes(section.id) && (
                 <div className="p-6 space-y-6">
-                  {section.settings.map((setting) => (
+                  {section.settings.map(setting => (
                     <div key={setting.key} className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-2">
@@ -365,7 +377,7 @@ const PrivacySettingsPage: React.FC = () => {
                               id={setting.key}
                               className="sr-only peer"
                               checked={localSettings[setting.key] as boolean}
-                              onChange={(e) => updateLocalSetting(setting.key, e.target.checked)}
+                              onChange={e => updateLocalSetting(setting.key, e.target.checked)}
                             />
                             <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                           </label>
@@ -380,16 +392,14 @@ const PrivacySettingsPage: React.FC = () => {
                               max={setting.max}
                               step={setting.step}
                               value={localSettings[setting.key] as number}
-                              onChange={(e) => updateLocalSetting(setting.key, parseInt(e.target.value))}
+                              onChange={e =>
+                                updateLocalSetting(setting.key, parseInt(e.target.value, 10))
+                              }
                               className="w-20 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             />
                             {setting.key === 'locationPrecision' && (
                               <span className="text-sm text-gray-500">
-                                {localSettings.locationPrecision === 1 ? 'Lowest'
-                                  : localSettings.locationPrecision === 2 ? 'Low'
-                                    : localSettings.locationPrecision === 3 ? 'Medium'
-                                      : localSettings.locationPrecision === 4 ? 'High'
-                                        : 'Highest'}
+                                {getLocationPrecisionLabel(localSettings.locationPrecision)}
                               </span>
                             )}
                             {setting.key === 'dataRetentionDays' && (
@@ -408,10 +418,7 @@ const PrivacySettingsPage: React.FC = () => {
 
         {/* Action Buttons */}
         <div className="mt-8 flex justify-between">
-          <Button
-            variant="outline"
-            onClick={resetToDefaults}
-          >
+          <Button variant="outline" onClick={resetToDefaults}>
             Reset to Defaults
           </Button>
 
@@ -423,10 +430,7 @@ const PrivacySettingsPage: React.FC = () => {
             >
               Cancel
             </Button>
-            <Button
-              onClick={saveSettings}
-              disabled={!hasChanges}
-            >
+            <Button onClick={saveSettings} disabled={!hasChanges}>
               Save Settings
             </Button>
           </div>

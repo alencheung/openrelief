@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { cn } from '@/lib/utils'
 import { useMobileDetection } from '@/hooks/useMobileDetection'
 import { useMobilePerformance } from '@/hooks/useMobilePerformance'
@@ -50,16 +50,16 @@ export function ResponsiveImage({
   const [isLoaded, setIsLoaded] = useState(false)
   const [hasError, setHasError] = useState(false)
   const [isZoomed, setIsZoomed] = useState(false)
-  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 })
+  const [_imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 })
 
-  const { isMobile, isTablet, pixelRatio } = useMobileDetection()
+  const { isMobile, isTablet: _isTablet, pixelRatio } = useMobileDetection()
   const { getOptimizedSettings } = useMobilePerformance()
   const performanceSettings = getOptimizedSettings()
 
   const imgRef = useRef<HTMLImageElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const { loadDelay, rootMargin, shouldUseIntersection } = usePerformanceAwareLazyLoad()
+  const { loadDelay: _loadDelay, rootMargin, shouldUseIntersection } = usePerformanceAwareLazyLoad()
   const [shouldLoad, setShouldLoad] = useState(priority || !lazy)
 
   // Calculate responsive dimensions
@@ -86,7 +86,7 @@ export function ResponsiveImage({
 
   // Generate responsive srcset
   const generateSrcSet = () => {
-    const dimensions = getResponsiveDimensions()
+    const _dimensions = getResponsiveDimensions()
     const baseSrc = src
 
     // Generate different sizes for responsive images
@@ -152,7 +152,7 @@ export function ResponsiveImage({
   }
 
   // Handle pinch-to-zoom
-  const handlePinchZoom = (scale: number) => {
+  const _handlePinchZoom = (scale: number) => {
     if (!enableZoom || !containerRef.current) {
       return
     }
@@ -174,8 +174,8 @@ export function ResponsiveImage({
     }
 
     const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
+      entries => {
+        entries.forEach(entry => {
           if (entry.isIntersecting) {
             setShouldLoad(true)
             observer.disconnect()
@@ -194,7 +194,8 @@ export function ResponsiveImage({
 
   const dimensions = getResponsiveDimensions()
   const srcSet = generateSrcSet()
-  const calculatedSizes = sizes || (isMobile ? '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw' : undefined)
+  const calculatedSizes =
+    sizes || (isMobile ? '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw' : undefined)
 
   if (hasError && fallback) {
     return <div className={className}>{fallback}</div>
@@ -223,6 +224,7 @@ export function ResponsiveImage({
       )}
 
       {/* Main Image */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         ref={imgRef}
         src={shouldLoad ? src : undefined}
@@ -304,51 +306,60 @@ export function useResponsiveImage() {
   const { isMobile, pixelRatio } = useMobileDetection()
   const { getOptimizedSettings } = useMobilePerformance()
 
-  const getOptimizedSrc = useCallback((src: string, options?: {
-    width?: number
-    height?: number
-    quality?: number
-    format?: 'webp' | 'avif' | 'jpeg' | 'png'
-  }) => {
-    const { width, height, quality, format } = options || {}
-    const performanceSettings = getOptimizedSettings()
+  const getOptimizedSrc = useCallback(
+    (
+      src: string,
+      options?: {
+        width?: number
+        height?: number
+        quality?: number
+        format?: 'webp' | 'avif' | 'jpeg' | 'png'
+      }
+    ) => {
+      const { width, height, quality, format } = options || {}
+      const performanceSettings = getOptimizedSettings()
 
-    // Apply performance-based quality reduction
-    const optimizedQuality = quality || performanceSettings.imageQuality || 0.8
+      // Apply performance-based quality reduction
+      const optimizedQuality = quality || performanceSettings.imageQuality || 0.8
 
-    // Apply device pixel ratio scaling
-    const scaleFactor = pixelRatio > 1 ? 1 / pixelRatio : 1
-    const scaledWidth = width ? Math.round(width * scaleFactor) : undefined
-    const scaledHeight = height ? Math.round(height * scaleFactor) : undefined
+      // Apply device pixel ratio scaling
+      const scaleFactor = pixelRatio > 1 ? 1 / pixelRatio : 1
+      const scaledWidth = width ? Math.round(width * scaleFactor) : undefined
+      const scaledHeight = height ? Math.round(height * scaleFactor) : undefined
 
-    // Build URL with parameters
-    const url = new URL(src, window.location.origin)
-    if (scaledWidth) {
-      url.searchParams.set('w', scaledWidth.toString())
-    }
-    if (scaledHeight) {
-      url.searchParams.set('h', scaledHeight.toString())
-    }
-    url.searchParams.set('q', optimizedQuality.toString())
-    if (format) {
-      url.searchParams.set('f', format)
-    }
+      // Build URL with parameters
+      const url = new URL(src, window.location.origin)
+      if (scaledWidth) {
+        url.searchParams.set('w', scaledWidth.toString())
+      }
+      if (scaledHeight) {
+        url.searchParams.set('h', scaledHeight.toString())
+      }
+      url.searchParams.set('q', optimizedQuality.toString())
+      if (format) {
+        url.searchParams.set('f', format)
+      }
 
-    return url.toString()
-  }, [isMobile, pixelRatio, getOptimizedSettings])
+      return url.toString()
+    },
+    [isMobile, pixelRatio, getOptimizedSettings]
+  )
 
-  const getResponsiveSrcSet = useCallback((src: string, baseWidth: number, baseHeight: number) => {
-    const sizes = isMobile ? [320, 640, 768] : [768, 1024, 1280, 1536]
+  const getResponsiveSrcSet = useCallback(
+    (src: string, baseWidth: number, baseHeight: number) => {
+      const sizes = isMobile ? [320, 640, 768] : [768, 1024, 1280, 1536]
 
-    return sizes
-      .map(size => {
-        const aspectRatio = baseHeight / baseWidth
-        const width = size
-        const height = Math.round(width * aspectRatio)
-        return `${getOptimizedSrc(src, { width, height })} ${width}w`
-      })
-      .join(', ')
-  }, [isMobile, getOptimizedSrc])
+      return sizes
+        .map(size => {
+          const aspectRatio = baseHeight / baseWidth
+          const width = size
+          const height = Math.round(width * aspectRatio)
+          return `${getOptimizedSrc(src, { width, height })} ${width}w`
+        })
+        .join(', ')
+    },
+    [isMobile, getOptimizedSrc]
+  )
 
   return {
     getOptimizedSrc,

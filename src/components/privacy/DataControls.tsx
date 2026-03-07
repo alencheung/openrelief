@@ -7,7 +7,7 @@
 
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { StatusIndicator } from '@/components/ui/StatusIndicator'
@@ -15,29 +15,19 @@ import { useToast } from '@/hooks/use-toast'
 import {
   Shield,
   MapPin,
-  Settings,
   Eye,
-  EyeOff,
-  Lock,
-  Unlock,
   AlertTriangle,
   Info,
-  User,
   Database,
   Clock,
-  CheckCircle,
-  X,
   Plus,
   Edit,
   Trash2,
-  Bell,
-  Activity,
   TrendingUp,
   BarChart3,
   Globe,
   Smartphone,
   Mail,
-  Calendar,
   FileText,
   Users,
   Heart,
@@ -76,8 +66,8 @@ interface LocationPrivacyZone {
     familyMembers: boolean
   }
   activeHours: {
-    start: string // HH:MM format
-    end: string // HH:MM format
+    start: string
+    end: string
   }
   createdAt: Date
 }
@@ -105,7 +95,7 @@ interface TrustScoreSettings {
   }
   appealProcess: {
     enabled: boolean
-    timeframe: number // days
+    timeframe: number
     contactMethod: 'email' | 'phone' | 'in_app' | 'mail'
   }
 }
@@ -169,7 +159,7 @@ const DataControls: React.FC = () => {
         lawEnforcement: false
       },
       encryptionLevel: 'maximum',
-      lastModified: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+      lastModified: new Date(Date.now() - 5 * (24 * 60 * 60 * 1000))
     },
     {
       id: 'communication_logs',
@@ -186,7 +176,7 @@ const DataControls: React.FC = () => {
         lawEnforcement: true
       },
       encryptionLevel: 'standard',
-      lastModified: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
+      lastModified: new Date(Date.now() - 1 * (24 * 60 * 60 * 1000))
     },
     {
       id: 'usage_analytics',
@@ -203,7 +193,7 @@ const DataControls: React.FC = () => {
         lawEnforcement: false
       },
       encryptionLevel: 'basic',
-      lastModified: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+      lastModified: new Date(Date.now() - 3 * (24 * 60 * 60 * 1000))
     }
   ])
 
@@ -224,7 +214,7 @@ const DataControls: React.FC = () => {
         start: '18:00',
         end: '08:00'
       },
-      createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000)
+      createdAt: new Date(Date.now() - 10 * (24 * 60 * 60 * 1000))
     },
     {
       id: 'work_zone',
@@ -242,7 +232,7 @@ const DataControls: React.FC = () => {
         start: '09:00',
         end: '17:00'
       },
-      createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000)
+      createdAt: new Date(Date.now() - 15 * (24 * 60 * 60 * 1000))
     },
     {
       id: 'school_zone',
@@ -260,7 +250,7 @@ const DataControls: React.FC = () => {
         start: '08:00',
         end: '15:00'
       },
-      createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000)
+      createdAt: new Date(Date.now() - 20 * (24 * 60 * 60 * 1000))
     }
   ])
 
@@ -304,7 +294,7 @@ const DataControls: React.FC = () => {
     }
   })
 
-  const [dataProcessingPurposes, setDataProcessingPurposes] = useState<DataProcessingPurpose[]>([
+  const [dataProcessingPurposes, _setDataProcessingPurposes] = useState<DataProcessingPurpose[]>([
     {
       id: 'emergency_response',
       name: 'Emergency Response Coordination',
@@ -315,7 +305,7 @@ const DataControls: React.FC = () => {
       retentionDays: 30,
       processingLocation: 'regional',
       userConsent: 'explicit',
-      lastReviewed: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+      lastReviewed: new Date(Date.now() - 5 * (24 * 60 * 60 * 1000))
     },
     {
       id: 'service_improvement',
@@ -327,7 +317,7 @@ const DataControls: React.FC = () => {
       retentionDays: 180,
       processingLocation: 'national',
       userConsent: 'opt_out',
-      lastReviewed: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000)
+      lastReviewed: new Date(Date.now() - 15 * (24 * 60 * 60 * 1000))
     }
   ])
 
@@ -349,12 +339,12 @@ const DataControls: React.FC = () => {
       prev.map(permission =>
         permission.id === id
           ? {
-            ...permission,
-            sharingSettings: {
-              ...permission.sharingSettings,
-              [sharingType]: !permission.sharingSettings[sharingType]
+              ...permission,
+              sharingSettings: {
+                ...permission.sharingSettings,
+                [sharingType]: !permission.sharingSettings[sharingType]
+              }
             }
-          }
           : permission
       )
     )
@@ -479,15 +469,10 @@ const DataControls: React.FC = () => {
                 : 'text-gray-600 hover:text-gray-800'
             }`}
           >
-            {tab === 'permissions'
-              ? 'Data Permissions'
-              : tab === 'zones'
-                ? 'Privacy Zones'
-                : tab === 'emergency'
-                  ? 'Emergency Settings'
-                  : tab === 'trust'
-                    ? 'Trust Score Settings'
-                    : tab}
+            {tab === 'permissions' && 'Data Permissions'}
+            {tab === 'zones' && 'Privacy Zones'}
+            {tab === 'emergency' && 'Emergency Settings'}
+            {tab === 'trust' && 'Trust Score Settings'}
           </button>
         ))}
       </div>
@@ -617,7 +602,7 @@ const DataControls: React.FC = () => {
                         onChange={e => {
                           const updated = dataPermissions.map(p =>
                             p.id === permission.id
-                              ? { ...p, retentionDays: parseInt(e.target.value) }
+                              ? { ...p, retentionDays: parseInt(e.target.value, 10) }
                               : p
                           )
                           setDataPermissions(updated)
@@ -1032,7 +1017,7 @@ const DataControls: React.FC = () => {
                           ...prev,
                           appealProcess: {
                             ...prev.appealProcess,
-                            timeframe: parseInt(e.target.value)
+                            timeframe: parseInt(e.target.value, 10)
                           }
                         }))
                       }

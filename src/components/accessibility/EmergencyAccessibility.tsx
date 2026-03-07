@@ -22,12 +22,10 @@ import {
   Phone,
   Mic,
   MicOff,
-  Accessibility,
-  Settings
+  Accessibility
 } from 'lucide-react'
 
 export interface EmergencyAccessibilityProps {
-
   /**
    * Whether emergency mode is active
    */
@@ -55,7 +53,6 @@ export interface EmergencyAccessibilityProps {
 }
 
 export interface EmergencyAccessibilitySettings {
-
   /**
    * Whether high contrast mode is enabled
    */
@@ -139,130 +136,144 @@ export function EmergencyAccessibility({
   /**
    * Update a specific setting
    */
-  const updateSetting = useCallback(<K extends keyof EmergencyAccessibilitySettings>(
-    key: K,
-    value: EmergencyAccessibilitySettings[K]
-  ) => {
-    const newSettings = { ...settings, [key]: value }
-    setSettings(newSettings)
-    onSettingsChange?.(newSettings)
+  const updateSetting = useCallback(
+    <K extends keyof EmergencyAccessibilitySettings>(
+      key: K,
+      value: EmergencyAccessibilitySettings[K]
+    ) => {
+      const newSettings = { ...settings, [key]: value }
+      setSettings(newSettings)
+      onSettingsChange?.(newSettings)
 
-    // Apply setting to document
-    applySettingToDocument(key, value)
+      // Apply setting to document
+      applySettingToDocument(key, value)
 
-    // Announce setting change
-    announcePolite(`${key.replace(/([A-Z])/g, ' $1').toLowerCase()} set to ${value}`)
-  }, [settings, announcePolite, onSettingsChange])
+      // Announce setting change
+      announcePolite(`${key.replace(/([A-Z])/g, ' $1').toLowerCase()} set to ${value}`)
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [settings, announcePolite, onSettingsChange]
+  )
 
   /**
    * Apply setting to document
    */
-  const applySettingToDocument = useCallback(<K extends keyof EmergencyAccessibilitySettings>(
-    key: K,
-    value: EmergencyAccessibilitySettings[K]
-  ) => {
-    const root = document.documentElement
+  const applySettingToDocument = useCallback(
+    <K extends keyof EmergencyAccessibilitySettings>(
+      key: K,
+      value: EmergencyAccessibilitySettings[K]
+    ) => {
+      const root = document.documentElement
 
-    switch (key) {
-      case 'highContrast':
-        if (value) {
-          root.classList.add('emergency-high-contrast')
-        } else {
-          root.classList.remove('emergency-high-contrast')
-        }
-        break
+      switch (key) {
+        case 'highContrast':
+          if (value) {
+            root.classList.add('emergency-high-contrast')
+          } else {
+            root.classList.remove('emergency-high-contrast')
+          }
+          break
 
-      case 'largeText':
-        if (value) {
-          root.classList.add('emergency-large-text')
-        } else {
-          root.classList.remove('emergency-large-text')
-        }
-        break
+        case 'largeText':
+          if (value) {
+            root.classList.add('emergency-large-text')
+          } else {
+            root.classList.remove('emergency-large-text')
+          }
+          break
 
-      case 'reducedMotion':
-        if (value) {
-          root.classList.add('emergency-reduced-motion')
-          toggleReducedMotion(true)
-        } else {
-          root.classList.remove('emergency-reduced-motion')
-          toggleReducedMotion(false)
-        }
-        break
+        case 'reducedMotion':
+          if (value) {
+            root.classList.add('emergency-reduced-motion')
+            toggleReducedMotion()
+          } else {
+            root.classList.remove('emergency-reduced-motion')
+            toggleReducedMotion()
+          }
+          break
 
-      case 'simplifiedInterface':
-        if (value) {
-          root.classList.add('emergency-simplified')
-        } else {
-          root.classList.remove('emergency-simplified')
-        }
-        break
-    }
-  }, [toggleReducedMotion])
+        case 'simplifiedInterface':
+          if (value) {
+            root.classList.add('emergency-simplified')
+          } else {
+            root.classList.remove('emergency-simplified')
+          }
+          break
+      }
+    },
+    [toggleReducedMotion]
+  )
 
   /**
    * Announce emergency alert
    */
-  const announceEmergency = useCallback((message: string, priority: 'critical' | 'warning' | 'info' = 'critical') => {
-    if (!settings.audioAnnouncements) {
-      return
-    }
+  const announceEmergency = useCallback(
+    (message: string, priority: 'critical' | 'warning' | 'info' = 'critical') => {
+      if (!settings.audioAnnouncements) {
+        return
+      }
 
-    const announcement = priority === 'critical'
-      ? `EMERGENCY: ${message}`
-      : `${priority.toUpperCase()}: ${message}`
+      const announcement =
+        priority === 'critical' ? `EMERGENCY: ${message}` : `${priority.toUpperCase()}: ${message}`
 
-    announceAssertive(announcement)
+      announceAssertive(announcement)
 
-    // Trigger vibration if enabled
-    if (settings.vibrationAlerts && 'vibrate' in navigator) {
-      navigator.vibrate(priority === 'critical' ? [200, 100, 200] : [100])
-    }
-  }, [settings.audioAnnouncements, announceAssertive])
+      // Trigger vibration if enabled
+      if (settings.vibrationAlerts && 'vibrate' in navigator) {
+        navigator.vibrate(priority === 'critical' ? [200, 100, 200] : [100])
+      }
+    },
+    [settings.audioAnnouncements, settings.vibrationAlerts, announceAssertive]
+  )
 
   /**
    * Start voice recording
    */
-  const startVoiceRecording = useCallback(() => {
-    if (!settings.voiceControl) {
-      return
-    }
+  const startVoiceRecording = useCallback(
+    () => {
+      if (!settings.voiceControl) {
+        return
+      }
 
-    setIsRecording(true)
-    announcePolite('Voice recording started')
+      setIsRecording(true)
+      announcePolite('Voice recording started')
 
-    // Start speech recognition
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-      const recognition = new SpeechRecognition()
+      // Start speech recognition
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition =
+          (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+        const recognition = new SpeechRecognition()
 
-      recognition.continuous = true
-      recognition.interimResults = true
-      recognition.lang = 'en-US'
+        recognition.continuous = true
+        recognition.interimResults = true
+        recognition.lang = 'en-US'
 
-      recognition.onresult = (event: any) => {
-        const last = event.results.length - 1
-        const transcript = event.results[last][0].transcript
+        recognition.onresult = (event: any) => {
+          const last = event.results.length - 1
+          const transcript = event.results[last][0].transcript
 
-        if (event.results[last].isFinal) {
-          // Process voice command
-          processVoiceCommand(transcript.toLowerCase())
+          if (event.results[last].isFinal) {
+            // Process voice command
+            processVoiceCommand(transcript.toLowerCase())
+          }
         }
-      }
 
-      recognition.onerror = (event: any) => {
-        console.error('Speech recognition error:', event.error)
-        setIsRecording(false)
-        announcePolite('Voice recording failed')
-      }
+        recognition.onerror = (event: any) => {
+          console.error('Speech recognition error:', event.error)
+          setIsRecording(false)
+          announcePolite('Voice recording failed')
+        }
 
-      recognition.onend = () => {
-        setIsRecording(false)
-      }
+        recognition.onend = () => {
+          setIsRecording(false)
+        }
 
-      recognition.start()
-    }
-  }, [settings.voiceControl, announcePolite])
+        recognition.start()
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [settings.voiceControl, announcePolite]
+  )
 
   /**
    * Stop voice recording
@@ -275,26 +286,29 @@ export function EmergencyAccessibility({
   /**
    * Process voice command
    */
-  const processVoiceCommand = useCallback((command: string) => {
-    // Emergency voice commands
-    const emergencyCommands: Record<string, () => void> = {
-      emergency: () => announceEmergency('Emergency reported', 'critical'),
-      help: () => announceEmergency('Help is on the way', 'info'),
-      fire: () => announceEmergency('Fire emergency reported', 'critical'),
-      medical: () => announceEmergency('Medical emergency reported', 'critical'),
-      police: () => announceEmergency('Police called', 'critical'),
-      ambulance: () => announceEmergency('Ambulance called', 'critical'),
-      stop: () => stopVoiceRecording(),
-      cancel: () => stopVoiceRecording()
-    }
+  const processVoiceCommand = useCallback(
+    (command: string) => {
+      // Emergency voice commands
+      const emergencyCommands: Record<string, () => void> = {
+        emergency: () => announceEmergency('Emergency reported', 'critical'),
+        help: () => announceEmergency('Help is on the way', 'info'),
+        fire: () => announceEmergency('Fire emergency reported', 'critical'),
+        medical: () => announceEmergency('Medical emergency reported', 'critical'),
+        police: () => announceEmergency('Police called', 'critical'),
+        ambulance: () => announceEmergency('Ambulance called', 'critical'),
+        stop: () => stopVoiceRecording(),
+        cancel: () => stopVoiceRecording()
+      }
 
-    const commandFunction = emergencyCommands[command]
-    if (commandFunction) {
-      commandFunction()
-    } else {
-      announcePolite(`Unknown command: ${command}`)
-    }
-  }, [announceEmergency, stopVoiceRecording, announcePolite])
+      const commandFunction = emergencyCommands[command]
+      if (commandFunction) {
+        commandFunction()
+      } else {
+        announcePolite(`Unknown command: ${command}`)
+      }
+    },
+    [announceEmergency, stopVoiceRecording, announcePolite]
+  )
 
   /**
    * Trigger emergency alert
@@ -332,37 +346,48 @@ export function EmergencyAccessibility({
   /**
    * Handle keyboard shortcuts
    */
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (!isEmergencyMode) {
-      return
-    }
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (!isEmergencyMode) {
+        return
+      }
 
-    // Emergency keyboard shortcuts
-    const emergencyShortcuts: Record<string, () => void> = {
-      'Ctrl+Shift+E': () => triggerEmergencyAlert(),
-      'Ctrl+Shift+H': () => announceEmergency('Help requested', 'warning'),
-      'Ctrl+Shift+F': () => announceEmergency('Fire emergency', 'critical'),
-      'Ctrl+Shift+M': () => announceEmergency('Medical emergency', 'critical'),
-      'Ctrl+Shift+P': () => announceEmergency('Police emergency', 'critical'),
-      'Ctrl+Shift+A': () => announceEmergency('Ambulance requested', 'critical'),
-      'Ctrl+Shift+V': () => isRecording ? stopVoiceRecording() : startVoiceRecording(),
-      'Ctrl+Shift+S': () => updateSetting('simplifiedInterface', !settings.simplifiedInterface),
-      'Ctrl+Shift+C': () => updateSetting('highContrast', !settings.highContrast),
-      'Ctrl+Shift+L': () => updateSetting('largeText', !settings.largeText),
-      'Ctrl+Shift+R': () => updateSetting('reducedMotion', !settings.reducedMotion),
-      'Ctrl+Shift+A': () => updateSetting('audioAnnouncements', !settings.audioAnnouncements),
-      'Ctrl+Shift+I': () => updateSetting('vibrationAlerts', !settings.vibrationAlerts)
-    }
+      // Emergency keyboard shortcuts
+      const emergencyShortcuts: Record<string, () => void> = {
+        'Ctrl+Shift+E': () => triggerEmergencyAlert(),
+        'Ctrl+Shift+H': () => announceEmergency('Help requested', 'warning'),
+        'Ctrl+Shift+F': () => announceEmergency('Fire emergency', 'critical'),
+        'Ctrl+Shift+M': () => announceEmergency('Medical emergency', 'critical'),
+        'Ctrl+Shift+P': () => announceEmergency('Police emergency', 'critical'),
+        'Ctrl+Shift+V': () => (isRecording ? stopVoiceRecording() : startVoiceRecording()),
+        'Ctrl+Shift+S': () => updateSetting('simplifiedInterface', !settings.simplifiedInterface),
+        'Ctrl+Shift+C': () => updateSetting('highContrast', !settings.highContrast),
+        'Ctrl+Shift+L': () => updateSetting('largeText', !settings.largeText),
+        'Ctrl+Shift+R': () => updateSetting('reducedMotion', !settings.reducedMotion),
+        'Ctrl+Shift+B': () => updateSetting('audioAnnouncements', !settings.audioAnnouncements),
+        'Ctrl+Shift+I': () => updateSetting('vibrationAlerts', !settings.vibrationAlerts)
+      }
 
-    const key = `${event.ctrlKey ? 'Ctrl+' : ''}${event.shiftKey ? 'Shift+' : ''}${event.key}`
-    const shortcutFunction = emergencyShortcuts[key]
+      const key = `${event.ctrlKey ? 'Ctrl+' : ''}${event.shiftKey ? 'Shift+' : ''}${event.key}`
+      const shortcutFunction = emergencyShortcuts[key]
 
-    if (shortcutFunction) {
-      event.preventDefault()
-      event.stopPropagation()
-      shortcutFunction()
-    }
-  }, [isEmergencyMode, triggerEmergencyAlert, announceEmergency, isRecording, stopVoiceRecording, startVoiceRecording, updateSetting, settings])
+      if (shortcutFunction) {
+        event.preventDefault()
+        event.stopPropagation()
+        shortcutFunction()
+      }
+    },
+    [
+      isEmergencyMode,
+      triggerEmergencyAlert,
+      announceEmergency,
+      isRecording,
+      stopVoiceRecording,
+      startVoiceRecording,
+      updateSetting,
+      settings
+    ]
+  )
 
   /**
    * Set up keyboard event listeners
@@ -389,6 +414,7 @@ export function EmergencyAccessibility({
     } else {
       announcePolite('Emergency mode deactivated')
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEmergencyMode, announceAssertive, announcePolite])
 
   if (!isEmergencyMode) {
@@ -405,10 +431,12 @@ export function EmergencyAccessibility({
       aria-label="Emergency accessibility controls"
     >
       {/* Header */}
-      <div className={cn(
-        'flex items-center justify-between p-4 border-b border-border',
-        getEmergencyTypeColor()
-      )}>
+      <div
+        className={cn(
+          'flex items-center justify-between p-4 border-b border-border',
+          getEmergencyTypeColor()
+        )}
+      >
         <div className="flex items-center gap-2">
           <AlertTriangle className="w-5 h-5" />
           <span className="font-semibold">Emergency Mode</span>
@@ -537,7 +565,11 @@ export function EmergencyAccessibility({
               aria-pressed={settings.reducedMotion}
             >
               <span className="flex items-center gap-2">
-                {settings.reducedMotion ? <ZapOff className="w-4 h-4" /> : <Zap className="w-4 h-4" />}
+                {settings.reducedMotion ? (
+                  <ZapOff className="w-4 h-4" />
+                ) : (
+                  <Zap className="w-4 h-4" />
+                )}
                 Reduced Motion
               </span>
               {settings.reducedMotion ? '✓' : ''}
@@ -555,7 +587,11 @@ export function EmergencyAccessibility({
               aria-pressed={settings.audioAnnouncements}
             >
               <span className="flex items-center gap-2">
-                {settings.audioAnnouncements ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+                {settings.audioAnnouncements ? (
+                  <Volume2 className="w-4 h-4" />
+                ) : (
+                  <VolumeX className="w-4 h-4" />
+                )}
                 Audio Announcements
               </span>
               {settings.audioAnnouncements ? '✓' : ''}
@@ -584,14 +620,14 @@ export function EmergencyAccessibility({
           <div className="mt-4 p-3 bg-gray-100 rounded">
             <h4 className="font-semibold text-sm mb-2">Voice Commands:</h4>
             <div className="text-xs space-y-1">
-              <div>"emergency" - Trigger emergency alert</div>
-              <div>"help" - Request help</div>
-              <div>"fire" - Report fire emergency</div>
-              <div>"medical" - Report medical emergency</div>
-              <div>"police" - Call police</div>
-              <div>"ambulance" - Call ambulance</div>
-              <div>"stop" - Stop recording</div>
-              <div>"cancel" - Cancel recording</div>
+              <div>&quot;emergency&quot; - Trigger emergency alert</div>
+              <div>&quot;help&quot; - Request help</div>
+              <div>&quot;fire&quot; - Report fire emergency</div>
+              <div>&quot;medical&quot; - Report medical emergency</div>
+              <div>&quot;police&quot; - Call police</div>
+              <div>&quot;ambulance&quot; - Call ambulance</div>
+              <div>&quot;stop&quot; - Stop recording</div>
+              <div>&quot;cancel&quot; - Cancel recording</div>
             </div>
           </div>
 
@@ -626,7 +662,7 @@ export function EmergencyAccessibility({
 /**
  * Hook for emergency accessibility
  */
-export function useEmergencyAccessibility(options: EmergencyAccessibilityProps = {}) {
+export function useEmergencyAccessibility(_options: EmergencyAccessibilityProps = {}) {
   const [isEmergencyMode, setIsEmergencyMode] = useState(false)
   const [emergencyType, setEmergencyType] = useState<EmergencyAccessibilityProps['emergencyType']>()
   const [settings, setSettings] = useState<EmergencyAccessibilitySettings>({
@@ -644,10 +680,13 @@ export function useEmergencyAccessibility(options: EmergencyAccessibilityProps =
   /**
    * Activate emergency mode
    */
-  const activateEmergencyMode = useCallback((type?: EmergencyAccessibilityProps['emergencyType']) => {
-    setIsEmergencyMode(true)
-    setEmergencyType(type)
-  }, [])
+  const activateEmergencyMode = useCallback(
+    (type?: EmergencyAccessibilityProps['emergencyType']) => {
+      setIsEmergencyMode(true)
+      setEmergencyType(type)
+    },
+    []
+  )
 
   /**
    * Deactivate emergency mode
@@ -660,9 +699,12 @@ export function useEmergencyAccessibility(options: EmergencyAccessibilityProps =
   /**
    * Update emergency settings
    */
-  const updateEmergencySettings = useCallback((newSettings: Partial<EmergencyAccessibilitySettings>) => {
-    setSettings(prev => ({ ...prev, ...newSettings }))
-  }, [])
+  const updateEmergencySettings = useCallback(
+    (newSettings: Partial<EmergencyAccessibilitySettings>) => {
+      setSettings(prev => ({ ...prev, ...newSettings }))
+    },
+    []
+  )
 
   return {
     isEmergencyMode,

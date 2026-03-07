@@ -3,20 +3,8 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
-import {
-  Bell,
-  BellRing,
-  Navigation,
-  AlertTriangle,
-  Clock,
-  X,
-  ChevronDown,
-  ChevronUp,
-  Route,
-  Eye,
-  EyeOff
-} from 'lucide-react'
-import { StatusIndicator, TrustBadge, Icon, EnhancedCard, EnhancedButton } from '@/components/ui'
+import { Bell, BellRing, Navigation, Clock, X } from 'lucide-react'
+import { StatusIndicator, TrustBadge, Icon, EnhancedButton } from '@/components/ui'
 
 const proximityAlertsVariants = cva(
   'absolute bg-card rounded-xl shadow-xl border transition-all duration-normal z-10',
@@ -69,8 +57,7 @@ export interface ProximityAlert {
 }
 
 export interface ProximityAlertsDisplayProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof proximityAlertsVariants> {
+  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof proximityAlertsVariants> {
   alerts: ProximityAlert[]
   maxVisible?: number
   showDismissAll?: boolean
@@ -101,18 +88,23 @@ const AlertItem: React.FC<AlertItemProps> = ({
   onToggleExpand,
   onClick,
   onDismiss,
-  onMarkRead,
+  onMarkRead: _onMarkRead,
   showActions = true
 }) => {
   const [isAnimating, setIsAnimating] = useState(false)
 
   const getSeverityStatus = (severity: string) => {
     switch (severity) {
-      case 'critical': return 'critical'
-      case 'high': return 'critical'
-      case 'moderate': return 'pending'
-      case 'low': return 'active'
-      default: return 'pending'
+      case 'critical':
+        return 'critical'
+      case 'high':
+        return 'critical'
+      case 'moderate':
+        return 'pending'
+      case 'low':
+        return 'active'
+      default:
+        return 'pending'
     }
   }
 
@@ -134,12 +126,18 @@ const AlertItem: React.FC<AlertItemProps> = ({
 
   const getEmergencyIcon = (type: string) => {
     switch (type) {
-      case 'fire': return 'flame'
-      case 'medical': return 'heartPulse'
-      case 'security': return 'shield'
-      case 'natural': return 'cloudRain'
-      case 'infrastructure': return 'wrench'
-      default: return 'alertTriangle'
+      case 'fire':
+        return 'flame'
+      case 'medical':
+        return 'heartPulse'
+      case 'security':
+        return 'shield'
+      case 'natural':
+        return 'cloudRain'
+      case 'infrastructure':
+        return 'wrench'
+      default:
+        return 'alertTriangle'
     }
   }
 
@@ -161,7 +159,7 @@ const AlertItem: React.FC<AlertItemProps> = ({
       onClick={onClick}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => {
+      onKeyDown={e => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault()
           onClick()
@@ -192,9 +190,7 @@ const AlertItem: React.FC<AlertItemProps> = ({
                 size="sm"
                 variant={alert.severity === 'critical' ? 'error' : 'default'}
               />
-              <h5 className="font-semibold text-sm text-foreground truncate">
-                {alert.title}
-              </h5>
+              <h5 className="font-semibold text-sm text-foreground truncate">{alert.title}</h5>
               {!alert.isRead && (
                 <div className="w-2 h-2 bg-primary rounded-full animate-pulse" aria-hidden="true" />
               )}
@@ -210,9 +206,7 @@ const AlertItem: React.FC<AlertItemProps> = ({
             </div>
           </div>
 
-          <p className="text-xs text-muted-foreground leading-relaxed mb-2">
-            {alert.message}
-          </p>
+          <p className="text-xs text-muted-foreground leading-relaxed mb-2">{alert.message}</p>
 
           {/* Alert Metadata */}
           <div className="flex items-center justify-between mb-2">
@@ -233,7 +227,7 @@ const AlertItem: React.FC<AlertItemProps> = ({
               </div>
             </div>
             <button
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation()
                 onToggleExpand()
               }}
@@ -241,11 +235,7 @@ const AlertItem: React.FC<AlertItemProps> = ({
               aria-label={isExpanded ? 'Collapse details' : 'Expand details'}
               aria-expanded={isExpanded}
             >
-              <Icon
-                name={isExpanded ? 'chevronUp' : 'chevronDown'}
-                size="xs"
-                variant="muted"
-              />
+              <Icon name={isExpanded ? 'chevronUp' : 'chevronDown'} size="xs" variant="muted" />
             </button>
           </div>
 
@@ -257,10 +247,21 @@ const AlertItem: React.FC<AlertItemProps> = ({
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">Trust Score:</span>
                   <TrustBadge
-                    level={alert.trustScore >= 0.8 ? 'excellent'
-                      : alert.trustScore >= 0.6 ? 'good'
-                        : alert.trustScore >= 0.4 ? 'moderate'
-                          : alert.trustScore >= 0.2 ? 'low' : 'critical'}
+                    level={(() => {
+                      if (alert.trustScore >= 0.8) {
+                        return 'excellent'
+                      }
+                      if (alert.trustScore >= 0.6) {
+                        return 'good'
+                      }
+                      if (alert.trustScore >= 0.4) {
+                        return 'moderate'
+                      }
+                      if (alert.trustScore >= 0.2) {
+                        return 'low'
+                      }
+                      return 'critical'
+                    })()}
                     score={Math.round(alert.trustScore * 100)}
                     size="sm"
                     showPercentage
@@ -271,12 +272,12 @@ const AlertItem: React.FC<AlertItemProps> = ({
               {/* Action Buttons */}
               {showActions && alert.actions && alert.actions.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-3">
-                  {alert.actions.map((action) => (
+                  {alert.actions.map(action => (
                     <EnhancedButton
                       key={action.id}
                       size="sm"
                       variant={action.variant || 'outline'}
-                      onClick={(e) => {
+                      onClick={e => {
                         e.stopPropagation()
                         action.action()
                       }}
@@ -333,10 +334,12 @@ const ProximityAlertsDisplay: React.FC<ProximityAlertsDisplayProps> = ({
 
     const interval = setInterval(() => {
       const now = Date.now()
-      setVisibleAlerts(prev => prev.filter(alert => {
-        const alertTime = new Date(alert.timestamp).getTime()
-        return now - alertTime < autoDismissDelay
-      }))
+      setVisibleAlerts(prev =>
+        prev.filter(alert => {
+          const alertTime = new Date(alert.timestamp).getTime()
+          return now - alertTime < autoDismissDelay
+        })
+      )
     }, 5000)
 
     return () => clearInterval(interval)
@@ -430,11 +433,7 @@ const ProximityAlertsDisplay: React.FC<ProximityAlertsDisplayProps> = ({
           aria-label={isCollapsed ? 'Expand alerts' : 'Collapse alerts'}
           aria-expanded={!isCollapsed}
         >
-          <Icon
-            name={isCollapsed ? 'chevronDown' : 'chevronUp'}
-            size="sm"
-            variant="muted"
-          />
+          <Icon name={isCollapsed ? 'chevronDown' : 'chevronUp'} size="sm" variant="muted" />
         </button>
       </div>
 
@@ -482,7 +481,7 @@ const ProximityAlertsDisplay: React.FC<ProximityAlertsDisplayProps> = ({
 
           {/* Alert List */}
           <div className="space-y-2 max-h-96 overflow-y-auto">
-            {filteredAlerts.slice(0, maxVisible).map((alert) => (
+            {filteredAlerts.slice(0, maxVisible).map(alert => (
               <AlertItem
                 key={alert.id}
                 alert={alert}
@@ -492,7 +491,7 @@ const ProximityAlertsDisplay: React.FC<ProximityAlertsDisplayProps> = ({
                 onDismiss={() => handleAlertDismiss(alert.id)}
                 onMarkRead={() => {
                   setVisibleAlerts(prev =>
-                    prev.map(a => a.id === alert.id ? { ...a, isRead: true } : a)
+                    prev.map(a => (a.id === alert.id ? { ...a, isRead: true } : a))
                   )
                 }}
               />

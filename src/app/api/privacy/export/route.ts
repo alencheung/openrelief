@@ -16,7 +16,7 @@ const exportRequestSchema = z.object({
 })
 
 // GET: Retrieve export requests
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const supabase = createClient()
     const {
@@ -25,10 +25,7 @@ export async function GET(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Fetch user's export requests
@@ -45,10 +42,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data)
   } catch (error) {
     console.error('Error fetching export requests:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -62,10 +56,7 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const body = await request.json()
@@ -75,21 +66,19 @@ export async function POST(request: NextRequest) {
     const requestId = randomUUID()
 
     // Log export request
-    await supabase
-      .from('privacy_audit_log')
-      .insert({
-        user_id: user.id,
-        action: 'export_request',
-        data_type: validatedData.dataTypes.join(','),
-        privacy_budget_used: 0,
-        metadata: {
-          requestId,
-          format: validatedData.format,
-          dataTypes: validatedData.dataTypes
-        },
-        ip_address: request.ip || 'unknown',
-        user_agent: request.headers.get('user-agent') || 'unknown'
-      })
+    await supabase.from('privacy_audit_log').insert({
+      user_id: user.id,
+      action: 'export_request',
+      data_type: validatedData.dataTypes.join(','),
+      privacy_budget_used: 0,
+      metadata: {
+        requestId,
+        format: validatedData.format,
+        dataTypes: validatedData.dataTypes
+      },
+      ip_address: request.ip || 'unknown',
+      user_agent: request.headers.get('user-agent') || 'unknown'
+    })
 
     // Create export request
     const { data, error } = await supabase
@@ -110,7 +99,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Process export asynchronously (in a real implementation, this would be a background job)
-    processExportRequest(supabase, requestId, user.id, validatedData.dataTypes, validatedData.format)
+    processExportRequest(
+      supabase,
+      requestId,
+      user.id,
+      validatedData.dataTypes,
+      validatedData.format
+    )
 
     return NextResponse.json({
       success: true,
@@ -128,10 +123,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -194,29 +186,28 @@ async function processExportRequest(
     }
 
     // Format data based on requested format
-    let formattedData: string
+    let _formattedData: string
     let fileName: string
-    let mimeType: string
+    let _mimeType: string
 
     switch (format) {
       case 'json':
-        formattedData = JSON.stringify(exportData, null, 2)
+        _formattedData = JSON.stringify(exportData, null, 2)
         fileName = `openrelief-export-${Date.now()}.json`
-        mimeType = 'application/json'
+        _mimeType = 'application/json'
         break
 
       case 'csv':
-        // Simplified CSV conversion (in a real implementation, use a proper CSV library)
-        formattedData = convertToCSV(exportData)
+        _formattedData = convertToCSV(exportData)
         fileName = `openrelief-export-${Date.now()}.csv`
-        mimeType = 'text/csv'
+        _mimeType = 'text/csv'
         break
 
       case 'pdf':
         // In a real implementation, use a PDF library
-        formattedData = JSON.stringify(exportData, null, 2)
+        _formattedData = JSON.stringify(exportData, null, 2)
         fileName = `openrelief-export-${Date.now()}.pdf`
-        mimeType = 'application/pdf'
+        _mimeType = 'application/pdf'
         break
 
       default:
@@ -239,20 +230,18 @@ async function processExportRequest(
       .eq('id', requestId)
 
     // Log completion
-    await supabase
-      .from('privacy_audit_log')
-      .insert({
-        user_id: userId,
-        action: 'export_completed',
-        data_type: dataTypes.join(','),
-        privacy_budget_used: 0,
-        metadata: {
-          requestId,
-          format,
-          fileName,
-          filePath
-        }
-      })
+    await supabase.from('privacy_audit_log').insert({
+      user_id: userId,
+      action: 'export_completed',
+      data_type: dataTypes.join(','),
+      privacy_budget_used: 0,
+      metadata: {
+        requestId,
+        format,
+        fileName,
+        filePath
+      }
+    })
   } catch (error) {
     console.error('Error processing export request:', error)
 
@@ -266,18 +255,16 @@ async function processExportRequest(
       .eq('id', requestId)
 
     // Log error
-    await supabase
-      .from('privacy_audit_log')
-      .insert({
-        user_id: userId,
-        action: 'export_failed',
-        data_type: dataTypes.join(','),
-        privacy_budget_used: 0,
-        metadata: {
-          requestId,
-          error: error.message
-        }
-      })
+    await supabase.from('privacy_audit_log').insert({
+      user_id: userId,
+      action: 'export_failed',
+      data_type: dataTypes.join(','),
+      privacy_budget_used: 0,
+      metadata: {
+        requestId,
+        error: error.message
+      }
+    })
   }
 }
 

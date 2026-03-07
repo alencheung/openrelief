@@ -11,25 +11,16 @@ import {
   ExternalLink,
   Phone,
   MessageSquare,
-  Route,
-  Eye,
   Heart,
-  AlertTriangle,
-  Info,
   MapPin,
-  Calendar,
   User,
-  Shield,
-  TrendingUp,
-  ChevronDown,
-  ChevronUp
+  Shield
 } from 'lucide-react'
 import {
   EmergencyIndicator,
   TrustBadge,
   StatusIndicator,
   Icon,
-  EnhancedCard,
   EnhancedButton
 } from '@/components/ui'
 
@@ -112,8 +103,7 @@ export interface EmergencyDetails {
 }
 
 export interface EmergencyDetailsPopupProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof emergencyDetailsVariants> {
+  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof emergencyDetailsVariants> {
   emergency: EmergencyDetails
   onClose: () => void
   onShare?: () => void
@@ -154,7 +144,7 @@ const DetailSection: React.FC<DetailSectionProps> = ({
         onClick={() => collapsible && setIsCollapsed(!isCollapsed)}
         role={collapsible ? 'button' : undefined}
         tabIndex={collapsible ? 0 : undefined}
-        onKeyDown={(e) => {
+        onKeyDown={e => {
           if (collapsible && (e.key === 'Enter' || e.key === ' ')) {
             e.preventDefault()
             setIsCollapsed(!isCollapsed)
@@ -206,7 +196,7 @@ const EmergencyDetailsPopup: React.FC<EmergencyDetailsPopupProps> = ({
   autoCloseDelay = 30000,
   ...props
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [_isExpanded, _setIsExpanded] = useState(false)
   const [activeTab, setActiveTab] = useState<'details' | 'updates' | 'resources'>('details')
   const popupRef = useRef<HTMLDivElement>(null)
 
@@ -305,27 +295,35 @@ const EmergencyDetailsPopup: React.FC<EmergencyDetailsPopupProps> = ({
     return date.toLocaleDateString()
   }
 
-  const getEmergencyIcon = (type: string) => {
+  const _getEmergencyIcon = (type: string) => {
     switch (type) {
-      case 'fire': return 'flame'
-      case 'medical': return 'heartPulse'
-      case 'security': return 'shield'
-      case 'natural': return 'cloudRain'
-      case 'infrastructure': return 'wrench'
-      default: return 'alertTriangle'
+      case 'fire':
+        return 'flame'
+      case 'medical':
+        return 'heartPulse'
+      case 'security':
+        return 'shield'
+      case 'natural':
+        return 'cloudRain'
+      case 'infrastructure':
+        return 'wrench'
+      default:
+        return 'alertTriangle'
     }
   }
 
   const handleShare = () => {
     if (navigator.share) {
-      navigator.share({
-        title: emergency.title,
-        text: emergency.description,
-        url: window.location.href
-      }).catch(() => {
-        // Fallback if share API fails
-        onShare?.()
-      })
+      navigator
+        .share({
+          title: emergency.title,
+          text: emergency.description,
+          url: window.location.href
+        })
+        .catch(() => {
+          // Fallback if share API fails
+          onShare?.()
+        })
     } else {
       onShare?.()
     }
@@ -414,9 +412,7 @@ const EmergencyDetailsPopup: React.FC<EmergencyDetailsPopupProps> = ({
           <div className="flex items-center gap-1">
             <User className="w-3 h-3" />
             <span>{emergency.reporter.name}</span>
-            {emergency.reporter.verified && (
-              <Shield className="w-3 h-3 text-success" />
-            )}
+            {emergency.reporter.verified && <Shield className="w-3 h-3 text-success" />}
           </div>
         )}
       </div>
@@ -474,11 +470,9 @@ const EmergencyDetailsPopup: React.FC<EmergencyDetailsPopupProps> = ({
                 title="Estimated Resolution"
                 icon={<Clock className="w-4 h-4" />}
                 collapsible
-                initiallyCollapsed={true}
+                initiallyCollapsed
               >
-                <p className="text-sm text-muted-foreground">
-                  {emergency.estimatedResolution}
-                </p>
+                <p className="text-sm text-muted-foreground">{emergency.estimatedResolution}</p>
               </DetailSection>
             )}
 
@@ -487,7 +481,7 @@ const EmergencyDetailsPopup: React.FC<EmergencyDetailsPopupProps> = ({
                 title="Affected Area"
                 icon={<MapPin className="w-4 h-4" />}
                 collapsible
-                initiallyCollapsed={true}
+                initiallyCollapsed
               >
                 <p className="text-sm text-muted-foreground">
                   Approximately {emergency.affectedArea} square meters
@@ -500,7 +494,7 @@ const EmergencyDetailsPopup: React.FC<EmergencyDetailsPopupProps> = ({
                 title="Required Assistance"
                 icon={<Heart className="w-4 h-4" />}
                 collapsible
-                initiallyCollapsed={true}
+                initiallyCollapsed
               >
                 <ul className="text-sm text-muted-foreground space-y-1">
                   {emergency.requiredAssistance.map((assistance, index) => (
@@ -518,7 +512,7 @@ const EmergencyDetailsPopup: React.FC<EmergencyDetailsPopupProps> = ({
                 title="Contact Information"
                 icon={<Phone className="w-4 h-4" />}
                 collapsible
-                initiallyCollapsed={true}
+                initiallyCollapsed
               >
                 <div className="space-y-2">
                   {emergency.contactInfo.phone && (
@@ -564,7 +558,7 @@ const EmergencyDetailsPopup: React.FC<EmergencyDetailsPopupProps> = ({
 
         {activeTab === 'updates' && emergency.updates && (
           <div className="space-y-3">
-            {emergency.updates.map((update) => (
+            {emergency.updates.map(update => (
               <div key={update.id} className="border-l-2 border-border pl-3 py-2">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-medium text-foreground">{update.author}</span>
@@ -581,17 +575,27 @@ const EmergencyDetailsPopup: React.FC<EmergencyDetailsPopupProps> = ({
         {activeTab === 'resources' && emergency.resources && (
           <div className="space-y-2">
             {emergency.resources.map((resource, index) => (
-              <div key={index} className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
+              <div
+                key={index}
+                className="flex items-center justify-between p-2 rounded-lg bg-muted/30"
+              >
                 <div className="flex items-center gap-2">
-                  <Icon name="package" size="sm" variant="muted" />
+                  <Icon name="database" size="sm" variant="muted" />
                   <div>
                     <span className="text-sm font-medium text-foreground">{resource.type}</span>
-                    <span className="text-xs text-muted-foreground ml-2">Qty: {resource.quantity}</span>
+                    <span className="text-xs text-muted-foreground ml-2">
+                      Qty: {resource.quantity}
+                    </span>
                   </div>
                 </div>
                 <StatusIndicator
-                  status={resource.status === 'available' ? 'active'
-                    : resource.status === 'deployed' ? 'pending' : 'inactive'}
+                  status={
+                    resource.status === 'available'
+                      ? 'active'
+                      : resource.status === 'deployed'
+                        ? 'pending'
+                        : 'inactive'
+                  }
                   size="sm"
                   variant="subtle"
                   label={resource.status}
@@ -625,7 +629,7 @@ const EmergencyDetailsPopup: React.FC<EmergencyDetailsPopupProps> = ({
               Contact
             </EnhancedButton>
           )}
-          {emergency.actions.map((action) => (
+          {emergency.actions.map(action => (
             <EnhancedButton
               key={action.id}
               size="sm"

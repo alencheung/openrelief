@@ -6,19 +6,7 @@ import { cn } from '@/lib/utils'
 import { useMobileDetection } from '@/hooks/useMobileDetection'
 import { useTouchGestures } from '@/hooks/useTouchGestures'
 import { useAriaAnnouncer, useFocusManagement } from '@/hooks/accessibility'
-import {
-  Home,
-  Map,
-  AlertTriangle,
-  Settings,
-  Menu,
-  X,
-  Bell,
-  User,
-  Shield,
-  Info
-} from 'lucide-react'
-import { Button } from '@/components/ui/Button'
+import { Home, Map, AlertTriangle, Settings, Menu, X, Bell, User, Shield, Info } from 'lucide-react'
 
 export interface NavItem {
   id: string
@@ -49,13 +37,13 @@ export function MobileNavigation({
 }: MobileNavigationProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [activeItem, setActiveItem] = useState<string>('')
-  const { isMobile, isTouch } = useMobileDetection()
+  const { isMobile, isTouch: _isTouch } = useMobileDetection()
   const router = useRouter()
   const pathname = usePathname()
 
   // Accessibility hooks
   const { announcePolite } = useAriaAnnouncer()
-  const { containerRef: menuRef } = useFocusManagement({
+  const { containerRef: _menuRef } = useFocusManagement({
     trapFocus: true,
     autoFocus: false,
     restoreFocus: true
@@ -64,8 +52,8 @@ export function MobileNavigation({
   // Update active item based on current path
   useEffect(() => {
     const currentPath = pathname || ''
-    const activeNav = items.find(item =>
-      item.href === currentPath || currentPath.startsWith(item.href)
+    const activeNav = items.find(
+      item => item.href === currentPath || currentPath.startsWith(item.href)
     )
     setActiveItem(activeNav?.id || '')
   }, [pathname, items])
@@ -109,7 +97,7 @@ export function MobileNavigation({
 
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
-  }, [isMenuOpen, onMenuToggle])
+  }, [isMenuOpen, onMenuToggle, announcePolite])
 
   // Close menu on route change
   useEffect(() => {
@@ -121,7 +109,7 @@ export function MobileNavigation({
 
   // Handle swipe gestures for menu
   const menuSwipeRef = useTouchGestures({
-    onSwipe: (direction) => {
+    onSwipe: direction => {
       if (direction === 'right' && !isMenuOpen) {
         setIsMenuOpen(true)
         onMenuToggle?.(true)
@@ -141,14 +129,11 @@ export function MobileNavigation({
     <>
       {/* Mobile Bottom Navigation */}
       <nav
-        className={cn(
-          'mobile-nav safe-area-inset-bottom',
-          className
-        )}
+        className={cn('mobile-nav safe-area-inset-bottom', className)}
         role="navigation"
         aria-label="Main navigation"
       >
-        {items.map((item) => (
+        {items.map(item => (
           <button
             key={item.id}
             className={cn(
@@ -163,18 +148,14 @@ export function MobileNavigation({
             aria-disabled={item.disabled}
           >
             <div className="relative">
-              <div className="mobile-nav-icon">
-                {item.icon}
-              </div>
+              <div className="mobile-nav-icon">{item.icon}</div>
               {showBadge && item.badge && item.badge > 0 && (
                 <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
                   {item.badge > 99 ? '99+' : item.badge}
                 </span>
               )}
             </div>
-            <span className="mobile-nav-label">
-              {item.label}
-            </span>
+            <span className="mobile-nav-label">{item.label}</span>
           </button>
         ))}
       </nav>
@@ -199,10 +180,7 @@ export function MobileNavigation({
       {menuItems.length > 0 && (
         <div
           ref={menuSwipeRef.ref}
-          className={cn(
-            'mobile-menu-overlay',
-            isMenuOpen && 'open'
-          )}
+          className={cn('mobile-menu-overlay', isMenuOpen && 'open')}
           onClick={() => {
             setIsMenuOpen(false)
             onMenuToggle?.(false)
@@ -210,15 +188,14 @@ export function MobileNavigation({
         >
           {/* Menu Panel */}
           <div
-            className={cn(
-              'mobile-menu-panel',
-              isMenuOpen && 'open'
-            )}
-            onClick={(e) => e.stopPropagation()}
+            className={cn('mobile-menu-panel', isMenuOpen && 'open')}
+            onClick={e => e.stopPropagation()}
           >
             {/* Menu Header */}
             <div className="mobile-menu-header">
-              <h2 id="mobile-menu-title" className="text-lg font-semibold">Menu</h2>
+              <h2 id="mobile-menu-title" className="text-lg font-semibold">
+                Menu
+              </h2>
               <button
                 className="touch-target"
                 onClick={() => {
@@ -234,7 +211,7 @@ export function MobileNavigation({
             {/* Menu Content */}
             <div className="mobile-menu-content">
               <div className="space-y-1" role="menu">
-                {menuItems.map((item) => (
+                {menuItems.map(item => (
                   <button
                     key={item.id}
                     className={cn(
@@ -248,12 +225,8 @@ export function MobileNavigation({
                     role="menuitem"
                     aria-disabled={item.disabled}
                   >
-                    <div className="w-5 h-5 flex-shrink-0">
-                      {item.icon}
-                    </div>
-                    <span className="flex-1 font-medium">
-                      {item.label}
-                    </span>
+                    <div className="w-5 h-5 flex-shrink-0">{item.icon}</div>
+                    <span className="flex-1 font-medium">{item.label}</span>
                     {showBadge && item.badge && item.badge > 0 && (
                       <span className="bg-destructive text-destructive-foreground text-xs font-bold rounded-full px-2 py-1">
                         {item.badge > 99 ? '99+' : item.badge}
@@ -308,7 +281,8 @@ export const defaultNavItems: NavItem[] = [
     label: 'Alerts',
     icon: <Bell className="w-5 h-5" />,
     href: '/alerts',
-    badge: 0 // This would be updated dynamically
+    // This would be updated dynamically
+    badge: 0
   },
   {
     id: 'profile',
@@ -342,11 +316,5 @@ export const defaultMenuItems: NavItem[] = [
 
 // Convenience component with default items
 export function DefaultMobileNavigation(props: Omit<MobileNavigationProps, 'items' | 'menuItems'>) {
-  return (
-    <MobileNavigation
-      items={defaultNavItems}
-      menuItems={defaultMenuItems}
-      {...props}
-    />
-  )
+  return <MobileNavigation items={defaultNavItems} menuItems={defaultMenuItems} {...props} />
 }

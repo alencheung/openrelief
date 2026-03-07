@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 
 export interface SkipLink {
-
   /**
    * Unique identifier for the link
    */
@@ -27,7 +26,6 @@ export interface SkipLink {
 }
 
 export interface SkipLinksProps {
-
   /**
    * Array of skip links to display
    */
@@ -201,7 +199,7 @@ export function SkipLinks({
       role="navigation"
       aria-label="Skip navigation links"
     >
-      {links.map((link) => (
+      {links.map(link => (
         <button
           key={link.id}
           className={cn(
@@ -218,7 +216,7 @@ export function SkipLinks({
             'transition-colors duration-150'
           )}
           onClick={() => handleSkip(link)}
-          onKeyDown={(e) => handleKeyDown(e, link)}
+          onKeyDown={e => handleKeyDown(e, link)}
           aria-label={`Skip to ${link.label}`}
         >
           {link.label}
@@ -278,6 +276,7 @@ export function useSkipLinks() {
     if (container) {
       // This would typically be handled by state management
       // For now, we'll just log it
+      // eslint-disable-next-line no-console
       console.log('SkipLinks: Adding link', link)
     }
   }
@@ -290,6 +289,7 @@ export function useSkipLinks() {
     if (container) {
       // This would typically be handled by state management
       // For now, we'll just log it
+      // eslint-disable-next-line no-console
       console.log('SkipLinks: Removing link', linkId)
     }
   }

@@ -51,7 +51,7 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
 
     const sub = subscription as PushSubscriptionData
 
-    const { data: existingSub, error: checkError } = await supabase
+    const { data: existingSub, error: _checkError } = await supabase
       .from('user_push_subscriptions')
       .select('id')
       .eq('endpoint', sub.endpoint)

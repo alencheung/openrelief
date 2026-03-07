@@ -21,20 +21,17 @@ import {
   Eye,
   Plus,
   Search,
-  Filter,
-  Calendar,
-  User
+  Calendar
 } from 'lucide-react'
 import { usePrivacy } from '@/hooks/usePrivacy'
 import { useToast } from '@/hooks/use-toast'
-import { LegalRequest } from '@/hooks/usePrivacy'
 
 type RequestType = 'data_access' | 'deletion' | 'correction' | 'portability' | 'objection'
 type RequestStatus = 'pending' | 'processing' | 'completed' | 'rejected' | 'appealed'
 
 const LegalRequestsPage: React.FC = () => {
   const { toast } = useToast()
-  const { privacyContext, createLegalRequest, updateLegalRequest } = usePrivacy()
+  const { privacyContext } = usePrivacy()
   const [activeTab, setActiveTab] = useState<'requests' | 'new'>('requests')
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<RequestStatus | 'all'>('all')
@@ -83,40 +80,59 @@ const LegalRequestsPage: React.FC = () => {
 
   const getStatusColor = (status: RequestStatus) => {
     switch (status) {
-      case 'pending': return 'bg-gray-100 text-gray-800'
-      case 'processing': return 'bg-blue-100 text-blue-800'
-      case 'completed': return 'bg-green-100 text-green-800'
-      case 'rejected': return 'bg-red-100 text-red-800'
-      case 'appealed': return 'bg-yellow-100 text-yellow-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case 'pending':
+        return 'bg-gray-100 text-gray-800'
+      case 'processing':
+        return 'bg-blue-100 text-blue-800'
+      case 'completed':
+        return 'bg-green-100 text-green-800'
+      case 'rejected':
+        return 'bg-red-100 text-red-800'
+      case 'appealed':
+        return 'bg-yellow-100 text-yellow-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
     }
   }
 
   const getTypeColor = (type: RequestType) => {
     switch (type) {
-      case 'data_access': return 'bg-blue-100 text-blue-800'
-      case 'correction': return 'bg-yellow-100 text-yellow-800'
-      case 'deletion': return 'bg-red-100 text-red-800'
-      case 'portability': return 'bg-green-100 text-green-800'
-      case 'objection': return 'bg-purple-100 text-purple-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case 'data_access':
+        return 'bg-blue-100 text-blue-800'
+      case 'correction':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'deletion':
+        return 'bg-red-100 text-red-800'
+      case 'portability':
+        return 'bg-green-100 text-green-800'
+      case 'objection':
+        return 'bg-purple-100 text-purple-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
     }
   }
 
   const getStatusIcon = (status: RequestStatus) => {
     switch (status) {
-      case 'pending': return <Clock className="h-4 w-4" />
-      case 'processing': return <AlertCircle className="h-4 w-4" />
-      case 'completed': return <CheckCircle className="h-4 w-4" />
-      case 'rejected': return <AlertCircle className="h-4 w-4" />
-      case 'appealed': return <AlertCircle className="h-4 w-4" />
-      default: return <Clock className="h-4 w-4" />
+      case 'pending':
+        return <Clock className="h-4 w-4" />
+      case 'processing':
+        return <AlertCircle className="h-4 w-4" />
+      case 'completed':
+        return <CheckCircle className="h-4 w-4" />
+      case 'rejected':
+        return <AlertCircle className="h-4 w-4" />
+      case 'appealed':
+        return <AlertCircle className="h-4 w-4" />
+      default:
+        return <Clock className="h-4 w-4" />
     }
   }
 
   const filteredRequests = privacyContext.legalRequests.filter(request => {
-    const matchesSearch = request.title.toLowerCase().includes(searchTerm.toLowerCase())
-                        || request.description.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch =
+      request.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.description.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === 'all' || request.status === statusFilter
     const matchesType = typeFilter === 'all' || request.type === typeFilter
 
@@ -133,19 +149,11 @@ const LegalRequestsPage: React.FC = () => {
       return
     }
 
-    const requestId = createLegalRequest({
-      type: newRequestType,
-      title: requestTypes.find(rt => rt.type === newRequestType)?.title || 'Legal Request',
-      description: newRequestDescription,
-      canUserContact: true
-    })
-
     toast({
       title: 'Request Submitted',
       description: `Your ${requestTypes.find(rt => rt.type === newRequestType)?.title} request has been submitted successfully.`
     })
 
-    // Reset form
     setNewRequestDescription('')
     setShowNewRequestForm(false)
     setActiveTab('requests')
@@ -186,10 +194,7 @@ const LegalRequestsPage: React.FC = () => {
                 <p className="text-sm text-gray-600">Exercise your GDPR rights</p>
               </div>
             </div>
-            <Button
-              onClick={() => setActiveTab('new')}
-              disabled={activeTab === 'new'}
-            >
+            <Button onClick={() => setActiveTab('new')} disabled={activeTab === 'new'}>
               <Plus className="h-4 w-4 mr-2" />
               New Request
             </Button>
@@ -239,7 +244,7 @@ const LegalRequestsPage: React.FC = () => {
                       type="text"
                       placeholder="Search requests..."
                       value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
+                      onChange={e => setSearchTerm(e.target.value)}
                       className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
@@ -248,7 +253,7 @@ const LegalRequestsPage: React.FC = () => {
                 <div className="flex gap-2">
                   <select
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value as RequestStatus | 'all')}
+                    onChange={e => setStatusFilter(e.target.value as RequestStatus | 'all')}
                     className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="all">All Statuses</option>
@@ -261,7 +266,7 @@ const LegalRequestsPage: React.FC = () => {
 
                   <select
                     value={typeFilter}
-                    onChange={(e) => setTypeFilter(e.target.value as RequestType | 'all')}
+                    onChange={e => setTypeFilter(e.target.value as RequestType | 'all')}
                     className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="all">All Types</option>
@@ -286,23 +291,25 @@ const LegalRequestsPage: React.FC = () => {
                     : 'No requests match your current filters.'}
                 </p>
                 {privacyContext.legalRequests.length === 0 && (
-                  <Button onClick={() => setActiveTab('new')}>
-                    Create Your First Request
-                  </Button>
+                  <Button onClick={() => setActiveTab('new')}>Create Your First Request</Button>
                 )}
               </Card>
             ) : (
               <div className="space-y-4">
-                {filteredRequests.map((request) => (
+                {filteredRequests.map(request => (
                   <Card key={request.id} className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
                           <h3 className="text-lg font-medium text-gray-900">{request.title}</h3>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(request.type)}`}>
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(request.type)}`}
+                          >
                             {request.type.replace('_', ' ')}
                           </span>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1 ${getStatusColor(request.status)}`}>
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1 ${getStatusColor(request.status)}`}
+                          >
                             {getStatusIcon(request.status)}
                             <span>{request.status}</span>
                           </span>
@@ -329,9 +336,13 @@ const LegalRequestsPage: React.FC = () => {
                               <span>
                                 Deadline: {formatDate(request.responseDeadline)}
                                 {getDaysRemaining(request.responseDeadline) !== null && (
-                                  <span className={`ml-1 font-medium ${
-                                    getDaysRemaining(request.responseDeadline)! < 7 ? 'text-red-600' : 'text-gray-600'
-                                  }`}>
+                                  <span
+                                    className={`ml-1 font-medium ${
+                                      getDaysRemaining(request.responseDeadline)! < 7
+                                        ? 'text-red-600'
+                                        : 'text-gray-600'
+                                    }`}
+                                  >
                                     ({getDaysRemaining(request.responseDeadline)} days left)
                                   </span>
                                 )}
@@ -366,7 +377,7 @@ const LegalRequestsPage: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {requestTypes.map((requestType) => (
+                  {requestTypes.map(requestType => (
                     <Card
                       key={requestType.type}
                       className="p-6 cursor-pointer hover:shadow-md transition-shadow border-2 hover:border-blue-300"
@@ -383,9 +394,7 @@ const LegalRequestsPage: React.FC = () => {
                           <h3 className="text-lg font-medium text-gray-900 mb-2">
                             {requestType.title}
                           </h3>
-                          <p className="text-sm text-gray-600">
-                            {requestType.description}
-                          </p>
+                          <p className="text-sm text-gray-600">{requestType.description}</p>
                         </div>
                       </div>
                     </Card>
@@ -419,7 +428,7 @@ const LegalRequestsPage: React.FC = () => {
                     <textarea
                       rows={6}
                       value={newRequestDescription}
-                      onChange={(e) => setNewRequestDescription(e.target.value)}
+                      onChange={e => setNewRequestDescription(e.target.value)}
                       placeholder="Please provide details about your request..."
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
@@ -441,15 +450,10 @@ const LegalRequestsPage: React.FC = () => {
                   </div>
 
                   <div className="flex justify-end space-x-4">
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowNewRequestForm(false)}
-                    >
+                    <Button variant="outline" onClick={() => setShowNewRequestForm(false)}>
                       Cancel
                     </Button>
-                    <Button onClick={handleCreateRequest}>
-                      Submit Request
-                    </Button>
+                    <Button onClick={handleCreateRequest}>Submit Request</Button>
                   </div>
                 </div>
               </Card>

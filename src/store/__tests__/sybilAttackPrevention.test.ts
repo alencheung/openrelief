@@ -762,7 +762,9 @@ function calculateDistance(
 
 // Helper function to calculate trend in an array
 function calculateTrend(values: number[]): number {
-  if (values.length < 2) return 0
+  if (values.length < 2) {
+    return 0
+  }
 
   const n = values.length
   const sumX = (n * (n - 1)) / 2

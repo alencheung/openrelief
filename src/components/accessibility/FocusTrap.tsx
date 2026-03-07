@@ -1,10 +1,9 @@
 'use client'
 
-import { useEffect, useRef, forwardRef } from 'react'
+import { useEffect, useRef, forwardRef, useCallback } from 'react'
 import { useFocusManagement } from '@/hooks/accessibility'
 
 export interface FocusTrapProps {
-
   /**
    * Whether the focus trap is active
    */
@@ -81,12 +80,12 @@ export const FocusTrap = forwardRef<HTMLDivElement, FocusTrapProps>(
   ) => {
     const {
       containerRef,
-      getFocusableElements,
-      getFirstFocusableElement,
-      getLastFocusableElement,
+      getFocusableElements: _getFocusableElements,
+      getFirstFocusableElement: _getFirstFocusableElement,
+      getLastFocusableElement: _getLastFocusableElement,
       startFocusTrap,
       endFocusTrap,
-      isTrapped
+      isTrapped: _isTrapped
     } = useFocusManagement({
       trapFocus: trapFocus && active,
       restoreFocus,
@@ -180,15 +179,15 @@ export function useFocusTrapElement(
     onTrapEnd: onDeactivate
   })
 
-  /**
-   * Handle escape key press
-   */
-  const handleKeyDown = (event: KeyboardEvent) => {
-    if (event.key === 'Escape' && element?.contains(event.target as Node)) {
-      event.preventDefault()
-      onEscape?.()
-    }
-  }
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && element?.contains(event.target as Node)) {
+        event.preventDefault()
+        onEscape?.()
+      }
+    },
+    [element, onEscape]
+  )
 
   /**
    * Set up focus trap on element
@@ -235,7 +234,7 @@ export function useFocusTrapElement(
         element.removeAttribute('tabIndex')
       }
     }
-  }, [element, active, trapFocus, startFocusTrap, endFocusTrap, handleKeyDown])
+  }, [element, active, trapFocus, startFocusTrap, endFocusTrap, handleKeyDown, onEscape])
 
   return {
     getFocusableElements,
@@ -248,11 +247,23 @@ export function useFocusTrapElement(
 /**
  * Higher-order component for adding focus trap to existing components
  */
-export function withFocusTrap<P extends object>(
-  Component: React.ComponentType<P>
-) {
+export function withFocusTrap<P extends object>(Component: React.ComponentType<P>) {
   const WrappedComponent = React.forwardRef<any, P & FocusTrapProps>(
-    ({ active, className, autoFocus, restoreFocus, excludeSelector, onActivate, onDeactivate, onEscape, trapFocus, ...props }, ref) => {
+    (
+      {
+        active,
+        className,
+        autoFocus,
+        restoreFocus,
+        excludeSelector,
+        onActivate,
+        onDeactivate,
+        onEscape,
+        trapFocus,
+        ...props
+      },
+      ref
+    ) => {
       return (
         <FocusTrap
           active={active}
@@ -278,6 +289,8 @@ export function withFocusTrap<P extends object>(
 
 /**
  * Utility function to create a temporary focus trap
+ * Note: This is an imperative function that does not use React hooks.
+ * For React components, use the FocusTrap component or useFocusManagement hook instead.
  */
 export function createTemporaryFocusTrap(
   element: HTMLElement,
@@ -293,35 +306,104 @@ export function createTemporaryFocusTrap(
     trapFocus = true
   } = options
 
-  const {
-    getFocusableElements,
-    getFirstFocusableElement,
-    startFocusTrap,
-    endFocusTrap
-  } = useFocusManagement({
-    trapFocus,
-    restoreFocus,
-    autoFocus,
-    excludeSelector,
-    onTrapStart: onActivate,
-    onTrapEnd: onDeactivate
-  })
+  // Store the previously focused element
+  const previousFocus = document.activeElement as HTMLElement | null
 
   /**
-   * Handle escape key press
+   * Get all focusable elements within the container
+   */
+  const getFocusableElements = (): HTMLElement[] => {
+    const selector = [
+      'button:not([disabled])',
+      'input:not([disabled])',
+      'select:not([disabled])',
+      'textarea:not([disabled])',
+      'a[href]',
+      'area[href]',
+      '[tabindex]:not([tabindex="-1"])',
+      '[contenteditable="true"]',
+      'details',
+      'summary',
+      'iframe',
+      'object',
+      'embed',
+      'audio[controls]',
+      'video[controls]'
+    ].join(', ')
+
+    const elements = Array.from(element.querySelectorAll(selector)) as HTMLElement[]
+
+    return elements.filter(el => {
+      if (excludeSelector && el.matches(excludeSelector)) {
+        return false
+      }
+      const style = window.getComputedStyle(el)
+      if (style.display === 'none' || style.visibility === 'hidden') {
+        return false
+      }
+      const rect = el.getBoundingClientRect()
+      if (rect.width === 0 && rect.height === 0) {
+        return false
+      }
+      return true
+    })
+  }
+
+  /**
+   * Handle focus trap (Tab key navigation)
    */
   const handleKeyDown = (event: KeyboardEvent) => {
     if (event.key === 'Escape' && element.contains(event.target as Node)) {
       event.preventDefault()
       onEscape?.()
       cleanup()
+      return
+    }
+
+    if (event.key !== 'Tab' || !trapFocus) {
+      return
+    }
+
+    const focusableElements = getFocusableElements()
+    const firstElement = focusableElements[0]
+    const lastElement = focusableElements[focusableElements.length - 1]
+
+    if (event.shiftKey) {
+      // Shift + Tab
+      if (document.activeElement === firstElement) {
+        event.preventDefault()
+        lastElement?.focus()
+      }
+    } else if (document.activeElement === lastElement) {
+      event.preventDefault()
+      firstElement?.focus()
     }
   }
 
-  // Activate focus trap
-  startFocusTrap()
+  /**
+   * Cleanup function
+   */
+  const cleanup = () => {
+    element.removeEventListener('keydown', handleKeyDown)
 
-  // Add escape key listener
+    if (trapFocus) {
+      element.removeAttribute('role')
+      element.removeAttribute('aria-modal')
+      element.removeAttribute('tabIndex')
+    }
+
+    // Restore focus
+    if (restoreFocus && previousFocus && typeof previousFocus.focus === 'function') {
+      previousFocus.focus()
+    }
+
+    onDeactivate?.()
+  }
+
+  // Activate focus trap
+  onActivate?.()
+
+  // Add event listener
   element.addEventListener('keydown', handleKeyDown)
 
   // Set ARIA attributes
@@ -331,20 +413,13 @@ export function createTemporaryFocusTrap(
     element.tabIndex = -1
   }
 
-  /**
-   * Cleanup function
-   */
-  const cleanup = () => {
-    endFocusTrap()
-
-    // Remove escape key listener
-    element.removeEventListener('keydown', handleKeyDown)
-
-    // Remove ARIA attributes
-    if (trapFocus) {
-      element.removeAttribute('role')
-      element.removeAttribute('aria-modal')
-      element.removeAttribute('tabIndex')
+  // Auto-focus first element
+  if (autoFocus) {
+    const focusableElements = getFocusableElements()
+    if (focusableElements.length > 0) {
+      focusableElements[0].focus()
+    } else {
+      element.focus()
     }
   }
 
@@ -355,11 +430,13 @@ export function createTemporaryFocusTrap(
  * Hook for managing multiple focus traps (stacked modals, nested dropdowns, etc.)
  */
 export function useFocusTrapStack() {
-  const stackRef = useRef<Array<{
-    element: HTMLElement
-    cleanup:() => void
-    id: string
-      }>>([])
+  const stackRef = useRef<
+    Array<{
+      element: HTMLElement
+      cleanup(): void
+      id: string
+    }>
+  >([])
 
   /**
    * Add a focus trap to the stack

@@ -292,7 +292,9 @@ class DatabaseQueryOptimizer {
         const results = await Promise.allSettled(
           sortedQueries.map((alertQuery, index) => {
             const conn = connections[index]
-            if (!conn) return Promise.reject(new Error('No connection available'))
+            if (!conn) {
+              return Promise.reject(new Error('No connection available'))
+            }
             return this.executeWithTimeout(
               conn,
               alertQuery.query,
@@ -507,7 +509,9 @@ class DatabaseQueryOptimizer {
     const cacheKey = this.generateCacheKey(query, params)
     const entry = this.queryCache.get(cacheKey)
 
-    if (!entry) return null
+    if (!entry) {
+      return null
+    }
 
     if (Date.now() - entry.timestamp > entry.ttl) {
       this.queryCache.delete(cacheKey)
@@ -556,10 +560,18 @@ class DatabaseQueryOptimizer {
   private getQueryType(query: string): 'select' | 'insert' | 'update' | 'delete' | 'rpc' {
     const trimmedQuery = query.trim().toLowerCase()
 
-    if (trimmedQuery.startsWith('select')) return 'select'
-    if (trimmedQuery.startsWith('insert')) return 'insert'
-    if (trimmedQuery.startsWith('update')) return 'update'
-    if (trimmedQuery.startsWith('delete')) return 'delete'
+    if (trimmedQuery.startsWith('select')) {
+      return 'select'
+    }
+    if (trimmedQuery.startsWith('insert')) {
+      return 'insert'
+    }
+    if (trimmedQuery.startsWith('update')) {
+      return 'update'
+    }
+    if (trimmedQuery.startsWith('delete')) {
+      return 'delete'
+    }
     return 'rpc'
   }
 

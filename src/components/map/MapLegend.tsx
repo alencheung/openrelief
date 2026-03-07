@@ -3,16 +3,8 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
-import {
-  ChevronDown,
-  ChevronUp,
-  Layers,
-  Eye,
-  EyeOff,
-  Info,
-  Accessibility
-} from 'lucide-react'
-import { EmergencyIndicator, TrustBadge, StatusIndicator, Icon, EnhancedCard } from '@/components/ui'
+import { Layers, Eye, EyeOff, Accessibility } from 'lucide-react'
+import { EmergencyIndicator, TrustBadge, Icon } from '@/components/ui'
 
 const mapLegendVariants = cva(
   'absolute bg-card rounded-xl shadow-xl border transition-all duration-normal z-10',
@@ -45,8 +37,7 @@ const mapLegendVariants = cva(
 )
 
 export interface MapLegendProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof mapLegendVariants> {
+  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof mapLegendVariants> {
   emergencyTypes?: Array<{
     type: string
     name: string
@@ -98,7 +89,7 @@ const LegendSection: React.FC<LegendSectionProps> = ({
         onClick={() => collapsible && setIsCollapsed(!isCollapsed)}
         role={collapsible ? 'button' : undefined}
         tabIndex={collapsible ? 0 : undefined}
-        onKeyDown={(e) => {
+        onKeyDown={e => {
           if (collapsible && (e.key === 'Enter' || e.key === ' ')) {
             e.preventDefault()
             setIsCollapsed(!isCollapsed)
@@ -140,13 +131,7 @@ interface LayerToggleProps {
   count?: number
 }
 
-const LayerToggle: React.FC<LayerToggleProps> = ({
-  label,
-  isVisible,
-  onToggle,
-  color,
-  count
-}) => {
+const LayerToggle: React.FC<LayerToggleProps> = ({ label, isVisible, onToggle, color, count }) => {
   return (
     <div className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors">
       <div className="flex items-center gap-2">
@@ -177,6 +162,22 @@ const LayerToggle: React.FC<LayerToggleProps> = ({
       )}
     </div>
   )
+}
+
+const getTrustScore = (level: string): number => {
+  if (level === 'excellent') {
+    return 95
+  }
+  if (level === 'good') {
+    return 80
+  }
+  if (level === 'moderate') {
+    return 60
+  }
+  if (level === 'low') {
+    return 40
+  }
+  return 20
 }
 
 const MapLegend: React.FC<MapLegendProps> = ({
@@ -292,14 +293,9 @@ const MapLegend: React.FC<MapLegendProps> = ({
             initiallyCollapsed={false}
           >
             <div className="space-y-2">
-              {emergencyTypes.map((type) => (
+              {emergencyTypes.map(type => (
                 <div key={type.type} className="flex items-center gap-2">
-                  <EmergencyIndicator
-                    type={type.type as any}
-                    size="sm"
-                    variant="subtle"
-                    label=""
-                  />
+                  <EmergencyIndicator type={type.type as any} size="sm" variant="subtle" label="" />
                   <span className="text-xs text-foreground flex-1">{type.name}</span>
                   {type.count !== undefined && (
                     <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
@@ -320,7 +316,7 @@ const MapLegend: React.FC<MapLegendProps> = ({
               initiallyCollapsed={true}
             >
               <div className="space-y-2">
-                {severityLevels.map((severity) => (
+                {severityLevels.map(severity => (
                   <div key={severity.level} className="flex items-center gap-2">
                     <div
                       className="w-3 h-3 rounded-full border border-border"
@@ -345,14 +341,11 @@ const MapLegend: React.FC<MapLegendProps> = ({
               initiallyCollapsed={true}
             >
               <div className="space-y-2">
-                {trustLevels.map((trust) => (
+                {trustLevels.map(trust => (
                   <div key={trust.level} className="flex items-center gap-2">
                     <TrustBadge
                       level={trust.level as any}
-                      score={trust.level === 'excellent' ? 95
-                        : trust.level === 'good' ? 80
-                          : trust.level === 'moderate' ? 60
-                            : trust.level === 'low' ? 40 : 20}
+                      score={getTrustScore(trust.level)}
                       size="sm"
                       showPercentage={false}
                       label=""
@@ -375,27 +368,27 @@ const MapLegend: React.FC<MapLegendProps> = ({
               <div className="space-y-1">
                 <LayerToggle
                   label="Emergency Events"
-                  isVisible={visibleLayers.emergencies}
+                  isVisible={visibleLayers.emergencies ?? true}
                   onToggle={() => toggleLayer('emergencies')}
                 />
                 <LayerToggle
                   label="Severity Indicators"
-                  isVisible={visibleLayers.severity}
+                  isVisible={visibleLayers.severity ?? true}
                   onToggle={() => toggleLayer('severity')}
                 />
                 <LayerToggle
                   label="Trust Indicators"
-                  isVisible={visibleLayers.trust}
+                  isVisible={visibleLayers.trust ?? true}
                   onToggle={() => toggleLayer('trust')}
                 />
                 <LayerToggle
                   label="Emergency Heatmap"
-                  isVisible={visibleLayers.heatmap}
+                  isVisible={visibleLayers.heatmap ?? false}
                   onToggle={() => toggleLayer('heatmap')}
                 />
                 <LayerToggle
                   label="Geofences"
-                  isVisible={visibleLayers.geofences}
+                  isVisible={visibleLayers.geofences ?? true}
                   onToggle={() => toggleLayer('geofences')}
                 />
               </div>

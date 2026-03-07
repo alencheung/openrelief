@@ -119,7 +119,9 @@ export class RedisSessionStore {
 
   async updateLastActivity(token: string): Promise<void> {
     const session = await this.getSession(token)
-    if (!session) return
+    if (!session) {
+      return
+    }
 
     session.lastActivity = new Date()
     await this.setSession(token, session)

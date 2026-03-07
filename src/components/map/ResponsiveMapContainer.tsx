@@ -46,10 +46,13 @@ const ResponsiveMapContainer: React.FC<ResponsiveMapContainerProps> = ({
   const containerRef = useRef<HTMLDivElement>(null)
 
   // Breakpoint definitions
+  // < 768px
+  // 768px - 1024px
+  // >= 1024px
   const breakpoints = {
-    mobile: 768, // < 768px
-    tablet: 1024, // 768px - 1024px
-    desktop: 1024 // >= 1024px
+    mobile: 768,
+    tablet: 1024,
+    desktop: 1024
   }
 
   // Determine current breakpoint
@@ -107,7 +110,8 @@ const ResponsiveMapContainer: React.FC<ResponsiveMapContainerProps> = ({
   // Handle orientation change
   useEffect(() => {
     const handleOrientationChange = () => {
-      setTimeout(handleResize, 100) // Small delay to get accurate dimensions
+      // Small delay to get accurate dimensions
+      setTimeout(handleResize, 100)
     }
 
     window.addEventListener('orientationchange', handleOrientationChange)
@@ -173,7 +177,7 @@ export const responsiveUtils = {
   isLandscape: (orientation: Orientation) => orientation === 'landscape',
 
   // Get responsive value based on breakpoint
-  getResponsiveValue: <T, >(
+  getResponsiveValue: <T,>(
     breakpoint: Breakpoint,
     values: {
       mobile?: T

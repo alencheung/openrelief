@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
 import SpatialInformationOverlay from '../SpatialInformationOverlay'
@@ -171,7 +171,7 @@ describe('SpatialInformationOverlay', () => {
   it('formats distance over 1 mile in imperial', () => {
     const spatialInfo = {
       ...defaultSpatialInfo,
-      distance: 2000 // ~6561ft
+      distance: 2000
     }
 
     renderWithProviders(
@@ -199,7 +199,7 @@ describe('SpatialInformationOverlay', () => {
   it('formats time in hours and minutes', () => {
     const spatialInfo = {
       ...defaultSpatialInfo,
-      estimatedTime: 90 // 1.5 hours
+      estimatedTime: 90
     }
 
     renderWithProviders(<SpatialInformationOverlay {...defaultProps} spatialInfo={spatialInfo} />)
@@ -235,7 +235,7 @@ describe('SpatialInformationOverlay', () => {
   it('formats area radius over 1 mile in imperial', () => {
     const spatialInfo = {
       ...defaultSpatialInfo,
-      areaRadius: 3000 // ~9842ft
+      areaRadius: 3000
     }
 
     renderWithProviders(
@@ -604,20 +604,20 @@ describe('SpatialInformationOverlay', () => {
 
     expect(screen.getByText('0m')).toBeInTheDocument()
     expect(screen.getByText('0min')).toBeInTheDocument()
-    expect(screen.getByText('0m')).toBeInTheDocument() // radius
-    expect(screen.getByText('0° N')).toBeInTheDocument() // bearing
+    expect(screen.getByText('0m')).toBeInTheDocument()
+    expect(screen.getByText('0° N')).toBeInTheDocument()
     expect(screen.getByText('0 km/h')).toBeInTheDocument()
     expect(screen.getByText('±0m')).toBeInTheDocument()
   })
 
   it('handles very large values', () => {
     const largeSpatialInfo = {
-      distance: 50000, // 50km
-      estimatedTime: 300, // 5 hours
-      areaRadius: 10000, // 10km
+      distance: 50000,
+      estimatedTime: 300,
+      areaRadius: 10000,
       bearing: 359,
-      speed: 200, // 200 km/h
-      accuracy: 1000 // 1km accuracy
+      speed: 200,
+      accuracy: 1000
     }
 
     renderWithProviders(

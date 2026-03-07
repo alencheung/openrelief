@@ -13,8 +13,10 @@ export const useEmergencyEvents = (filters?: {
   return useQuery({
     queryKey: ['emergency-events', filters],
     queryFn: () => supabaseHelpers.getEmergencyEvents(filters),
-    staleTime: 30 * 1000, // 30 seconds
-    refetchInterval: 60 * 1000 // 1 minute
+    // 30 seconds
+    staleTime: 30 * 1000,
+    // 1 minute
+    refetchInterval: 60 * 1000
   })
 }
 
@@ -24,14 +26,16 @@ export const useEmergencyEvent = (id: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('emergency_events')
-        .select(`
+        .select(
+          `
           *,
           emergency_types (*),
           reporter: user_profiles (
             user_id,
             trust_score
           )
-        `)
+        `
+        )
         .eq('id', id)
         .single()
 
@@ -41,7 +45,8 @@ export const useEmergencyEvent = (id: string) => {
       return data
     },
     enabled: !!id,
-    staleTime: 10 * 1000 // 10 seconds
+    // 10 seconds
+    staleTime: 10 * 1000
   })
 }
 
@@ -56,7 +61,7 @@ export const useCreateEmergencyEvent = () => {
       queryClient.invalidateQueries({ queryKey: ['emergency-events'] })
       queryClient.setQueryData(['emergency-event', newEvent.id], newEvent)
     },
-    onError: (error) => {
+    onError: error => {
       console.error('Failed to create emergency event:', error)
     }
   })
@@ -73,7 +78,7 @@ export const useUpdateEmergencyEvent = () => {
       queryClient.invalidateQueries({ queryKey: ['emergency-events'] })
       queryClient.setQueryData(['emergency-event', updatedEvent.id], updatedEvent)
     },
-    onError: (error) => {
+    onError: error => {
       console.error('Failed to update emergency event:', error)
     }
   })
@@ -100,7 +105,7 @@ export const useConfirmEvent = () => {
       queryClient.invalidateQueries({ queryKey: ['emergency-event', variables.eventId] })
       queryClient.invalidateQueries({ queryKey: ['event-confirmations', variables.eventId] })
     },
-    onError: (error) => {
+    onError: error => {
       console.error('Failed to confirm event:', error)
     }
   })
@@ -111,7 +116,8 @@ export const useEventConfirmations = (eventId: string) => {
     queryKey: ['event-confirmations', eventId],
     queryFn: () => supabaseHelpers.getEventConfirmations(eventId),
     enabled: !!eventId,
-    staleTime: 15 * 1000 // 15 seconds
+    // 15 seconds
+    staleTime: 15 * 1000
   })
 }
 
@@ -119,7 +125,8 @@ export const useEmergencyTypes = () => {
   return useQuery({
     queryKey: ['emergency-types'],
     queryFn: () => supabaseHelpers.getEmergencyTypes(),
-    staleTime: 5 * 60 * 1000 // 5 minutes
+    // 5 minutes
+    staleTime: 5 * 60 * 1000
   })
 }
 
@@ -135,7 +142,8 @@ export const useEmergencyEventsSubscription = (callback: (payload: any) => void)
         unsubscribe: () => subscription.unsubscribe()
       }
     },
-    staleTime: Infinity // Never refetch
+    // Never refetch
+    staleTime: Infinity
   })
 }
 

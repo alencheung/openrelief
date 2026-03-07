@@ -224,7 +224,9 @@ export class PoolManager {
 
   release(client: SupabaseClient): void {
     const entry = this.findConnectionEntry(client)
-    if (!entry) return
+    if (!entry) {
+      return
+    }
 
     entry.inUse = false
     entry.lastUsed = Date.now()
@@ -259,14 +261,18 @@ export class PoolManager {
       const isHealthy = await this.checkConnectionHealth(entry)
       entry.isHealthy = isHealthy
       entry.lastHealthCheck = Date.now()
-      if (isHealthy) primaryHealthy++
+      if (isHealthy) {
+        primaryHealthy++
+      }
     }
 
     for (const entry of this.replicaPool) {
       const isHealthy = await this.checkConnectionHealth(entry)
       entry.isHealthy = isHealthy
       entry.lastHealthCheck = Date.now()
-      if (isHealthy) replicaHealthy++
+      if (isHealthy) {
+        replicaHealthy++
+      }
     }
 
     if (primaryHealthy === 0) {
@@ -338,7 +344,9 @@ export class PoolManager {
 
     for (let i = pool.length - 1; i >= 0; i--) {
       const entry = pool[i]
-      if (!entry) continue
+      if (!entry) {
+        continue
+      }
 
       if (!entry.inUse && now - entry.lastUsed > this.config.idleTimeout) {
         if (pool.length > minSize) {
@@ -409,7 +417,9 @@ export class PoolManager {
   }
 
   getReplicaClient(): SupabaseClient | null {
-    if (!this.replicaConfig?.enabled) return null
+    if (!this.replicaConfig?.enabled) {
+      return null
+    }
     const entry = this.replicaPool[0]
     return entry?.client ?? null
   }

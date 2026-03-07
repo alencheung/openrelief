@@ -67,7 +67,9 @@ export const useVictimTracking = (victimId?: string): UseVictimTrackingReturn =>
   } = useVictimStore()
 
   const victim = useMemo(() => {
-    if (!victimId) return null
+    if (!victimId) {
+      return null
+    }
     return victims.find(v => v.id === victimId) ?? null
   }, [victimId, victims])
 

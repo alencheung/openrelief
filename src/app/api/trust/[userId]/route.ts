@@ -23,7 +23,7 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
 
     const { searchParams } = new URL(request.url)
     const includeHistory = searchParams.get('history') === 'true'
-    const historyLimit = Math.min(parseInt(searchParams.get('limit') || '50'), 100)
+    const historyLimit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 100)
 
     if (userId !== context.userId) {
       const { data: currentUser, error: permError } = await supabase
@@ -100,7 +100,7 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
       }
     }
 
-    const { data: stats, error: statsError } = await supabase
+    const { data: stats, error: _statsError } = await supabase
       .from('event_confirmations')
       .select('confirmation_type')
       .eq('user_id', userId)
@@ -113,7 +113,7 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
       disputeCount = stats.filter(s => s.confirmation_type === 'dispute').length
     }
 
-    const { data: reports, error: reportsError } = await supabase
+    const { data: reports, error: _reportsError } = await supabase
       .from('emergency_events')
       .select('id')
       .eq('reporter_id', userId)

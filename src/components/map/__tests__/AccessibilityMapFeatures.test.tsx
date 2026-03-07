@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
 import AccessibilityMapFeatures from '../AccessibilityMapFeatures'
@@ -32,7 +32,13 @@ vi.mock('@/lib/map-config', () => ({
 // Mock UI components
 vi.mock('@/components/ui', () => ({
   Icon: ({ name, size, variant, className }: any) => (
-    <div data-testid="icon" data-name={name} data-size={size} data-variant={variant} className={className}>
+    <div
+      data-testid="icon"
+      data-name={name}
+      data-size={size}
+      data-variant={variant}
+      className={className}
+    >
       {name}
     </div>
   ),
@@ -42,7 +48,13 @@ vi.mock('@/components/ui', () => ({
     </div>
   ),
   EnhancedButton: ({ children, onClick, variant, size, leftIcon, className, ...props }: any) => (
-    <button onClick={onClick} data-variant={variant} data-size={size} className={className} {...props}>
+    <button
+      onClick={onClick}
+      data-variant={variant}
+      data-size={size}
+      className={className}
+      {...props}
+    >
       {leftIcon}
       {children}
     </button>
@@ -86,7 +98,9 @@ describe('AccessibilityMapFeatures', () => {
   it('renders nothing when showControls is false', () => {
     renderWithProviders(<AccessibilityMapFeatures {...defaultProps} showControls={false} />)
 
-    expect(screen.queryByRole('region', { name: /accessibility controls/i })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('region', { name: /accessibility controls/i })
+    ).not.toBeInTheDocument()
   })
 
   it('renders compact mode when compactMode is true', () => {
@@ -269,7 +283,9 @@ describe('AccessibilityMapFeatures', () => {
   })
 
   it('passes props to underlying div', () => {
-    renderWithProviders(<AccessibilityMapFeatures {...defaultProps} data-testid="custom-controls" />)
+    renderWithProviders(
+      <AccessibilityMapFeatures {...defaultProps} data-testid="custom-controls" />
+    )
 
     expect(screen.getByTestId('custom-controls')).toBeInTheDocument()
   })
@@ -394,7 +410,11 @@ describe('AccessibilityMapFeatures', () => {
     }
 
     renderWithProviders(
-      <AccessibilityMapFeatures {...defaultProps} settings={settings} mapInstance={mockMapInstance} />
+      <AccessibilityMapFeatures
+        {...defaultProps}
+        settings={settings}
+        mapInstance={mockMapInstance}
+      />
     )
 
     expect(mockMapInstance.setStyle).toHaveBeenCalledWith(
@@ -427,7 +447,11 @@ describe('AccessibilityMapFeatures', () => {
     }
 
     renderWithProviders(
-      <AccessibilityMapFeatures {...defaultProps} settings={settings} mapInstance={mockMapInstance} />
+      <AccessibilityMapFeatures
+        {...defaultProps}
+        settings={settings}
+        mapInstance={mockMapInstance}
+      />
     )
 
     const canvas = mockMapInstance.getCanvas()
@@ -442,7 +466,7 @@ describe('AccessibilityMapFeatures', () => {
       setStyle: vi.fn(),
       on: vi.fn(),
       off: vi.fn(),
-      getCenter: vi.fn(() => ({ lat: 40.7128, lng: -74.0060 })),
+      getCenter: vi.fn(() => ({ lat: 40.7128, lng: -74.006 })),
       getZoom: vi.fn(() => 10)
     }
 
@@ -452,7 +476,11 @@ describe('AccessibilityMapFeatures', () => {
     }
 
     renderWithProviders(
-      <AccessibilityMapFeatures {...defaultProps} settings={settings} mapInstance={mockMapInstance} />
+      <AccessibilityMapFeatures
+        {...defaultProps}
+        settings={settings}
+        mapInstance={mockMapInstance}
+      />
     )
 
     expect(mockMapInstance.on).toHaveBeenCalledWith('moveend', expect.any(Function))
@@ -465,7 +493,7 @@ describe('AccessibilityMapFeatures', () => {
       setStyle: vi.fn(),
       on: vi.fn(),
       off: vi.fn(),
-      getCenter: vi.fn(() => ({ lat: 40.7128, lng: -74.0060 })),
+      getCenter: vi.fn(() => ({ lat: 40.7128, lng: -74.006 })),
       getZoom: vi.fn(() => 10)
     }
 
@@ -475,7 +503,11 @@ describe('AccessibilityMapFeatures', () => {
     }
 
     const { unmount } = renderWithProviders(
-      <AccessibilityMapFeatures {...defaultProps} settings={settings} mapInstance={mockMapInstance} />
+      <AccessibilityMapFeatures
+        {...defaultProps}
+        settings={settings}
+        mapInstance={mockMapInstance}
+      />
     )
 
     unmount()
@@ -574,7 +606,7 @@ describe('AccessibilityMapFeatures', () => {
   })
 
   it('prevents default behavior for handled keyboard shortcuts', async () => {
-    const user = userEvent.setup()
+    const _user = userEvent.setup()
     const preventDefaultSpy = vi.fn()
 
     // Mock event with preventDefault
@@ -603,15 +635,15 @@ describe('AccessibilityMapFeatures', () => {
     renderWithProviders(<AccessibilityMapFeatures {...defaultProps} settings={settings} />)
 
     // Should show volume2 icon for enabled screen reader
-    const screenReaderIcons = screen.getAllByTestId('icon').filter(icon =>
-      icon.getAttribute('data-name') === 'volume2'
-    )
+    const screenReaderIcons = screen
+      .getAllByTestId('icon')
+      .filter(icon => icon.getAttribute('data-name') === 'volume2')
     expect(screenReaderIcons.length).toBeGreaterThan(0)
 
     // Should show volumeX icon for disabled high contrast
-    const highContrastIcons = screen.getAllByTestId('icon').filter(icon =>
-      icon.getAttribute('data-name') === 'volumeX'
-    )
+    const highContrastIcons = screen
+      .getAllByTestId('icon')
+      .filter(icon => icon.getAttribute('data-name') === 'volumeX')
     expect(highContrastIcons.length).toBeGreaterThan(0)
   })
 })

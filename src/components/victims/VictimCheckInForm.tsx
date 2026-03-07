@@ -50,6 +50,7 @@ export const VictimCheckInForm = React.forwardRef<HTMLDivElement, VictimCheckInF
 
     const handleGetLocation = () => {
       if (!navigator.geolocation) {
+        // eslint-disable-next-line no-alert
         alert('Geolocation is not supported by your browser')
         return
       }
@@ -65,6 +66,7 @@ export const VictimCheckInForm = React.forwardRef<HTMLDivElement, VictimCheckInF
         },
         error => {
           console.error('Error getting location:', error)
+          // eslint-disable-next-line no-alert
           alert('Unable to retrieve your location')
           setIsGettingLocation(false)
         },
@@ -190,7 +192,7 @@ export const VictimCheckInForm = React.forwardRef<HTMLDivElement, VictimCheckInF
                       Notify Emergency Contact
                     </label>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Send a notification to the victim's emergency contact about this check-in
+                      Send a notification to the victim&apos;s emergency contact about this check-in
                     </p>
                   </div>
                 </div>

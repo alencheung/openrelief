@@ -101,7 +101,9 @@ const ShelterCheckInForm = React.forwardRef<HTMLDivElement, ShelterCheckInFormPr
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault()
 
-      if (!validate()) return
+      if (!validate()) {
+        return
+      }
 
       const checkIn: ShelterCheckIn = {
         shelterId,

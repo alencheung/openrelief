@@ -60,7 +60,7 @@ const createQueryClient = () => {
           const errorInfo = classifyError(error)
           return errorInfo.retryable && failureCount < (errorInfo.maxRetries || 3)
         },
-        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+        retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
         networkMode: 'online'
       }
     }
@@ -97,7 +97,7 @@ export const StateManagementProvider: React.FC<StateManagementProviderProps> = (
         console.log('[StateManagement] Store health:', health)
 
         // Set up error boundary
-        const unsubscribe = globalErrorBoundary.subscribe((state) => {
+        const unsubscribe = globalErrorBoundary.subscribe(state => {
           if (state.hasError && state.error) {
             console.error('[StateManagement] Error boundary triggered:', state.error)
             setError(state.error)
@@ -128,98 +128,72 @@ export const StateManagementProvider: React.FC<StateManagementProviderProps> = (
   const [subscriptionsInitialized, setSubscriptionsInitialized] = useState(false)
   const [subscriptionErrors, setSubscriptionErrors] = useState<string[]>([])
 
+  // Call subscription hooks at the top level
+  const emergencySub = useEmergencyEventsSubscription()
+  const confirmationSub = useEventConfirmationsSubscription()
+  const profileSub = useUserProfilesSubscription()
+  const trustSub = useTrustHistorySubscription()
+  const realtimeConnection = useRealtimeConnection()
+
   // Initialize subscriptions in priority order with error handling
   useEffect(() => {
     if (!isOnline || !isInitialized) {
       return
     }
 
-    console.log('[StateManagement] Initializing real-time subscriptions...')
+    console.log('[StateManagement] Checking subscription status...')
 
-    const initializeSubscriptions = async () => {
-      const errors: string[] = []
+    const errors: string[] = []
 
-      try {
-        // 1. Critical: Emergency events (highest priority)
-        console.log('[StateManagement] Initializing emergency events subscription...')
-        const emergencySub = useEmergencyEventsSubscription()
+    // Check subscription status
+    if (emergencySub.status === 'error') {
+      errors.push(`Emergency events subscription failed: ${emergencySub.error}`)
+    }
 
-        // Wait for emergency subscription to connect before proceeding
-        if (emergencySub.status === 'error') {
-          errors.push(`Emergency events subscription failed: ${emergencySub.error}`)
-        }
-      } catch (error) {
-        errors.push(`Emergency events subscription error: ${error instanceof Error ? error.message : 'Unknown error'}`)
-      }
+    if (confirmationSub.status === 'error') {
+      errors.push(`Event confirmations subscription failed: ${confirmationSub.error}`)
+    }
 
-      try {
-        // 2. High: Event confirmations
-        console.log('[StateManagement] Initializing event confirmations subscription...')
-        const confirmationSub = useEventConfirmationsSubscription()
+    if (profileSub.status === 'error') {
+      errors.push(`User profiles subscription failed: ${profileSub.error}`)
+    }
 
-        if (confirmationSub.status === 'error') {
-          errors.push(`Event confirmations subscription failed: ${confirmationSub.error}`)
-        }
-      } catch (error) {
-        errors.push(`Event confirmations subscription error: ${error instanceof Error ? error.message : 'Unknown error'}`)
-      }
+    if (trustSub.status === 'error') {
+      errors.push(`Trust history subscription failed: ${trustSub.error}`)
+    }
 
-      try {
-        // 3. Medium: User profiles (location-dependent)
-        console.log('[StateManagement] Initializing user profiles subscription...')
-        const profileSub = useUserProfilesSubscription()
+    if (realtimeConnection.status === 'error') {
+      errors.push(`Connection monitoring error: ${realtimeConnection.error}`)
+    }
 
-        if (profileSub.status === 'error') {
-          errors.push(`User profiles subscription failed: ${profileSub.error}`)
-        }
-      } catch (error) {
-        errors.push(`User profiles subscription error: ${error instanceof Error ? error.message : 'Unknown error'}`)
-      }
+    setSubscriptionErrors(errors)
 
-      try {
-        // 4. Low: Trust history (non-critical)
-        console.log('[StateManagement] Initializing trust history subscription...')
-        const trustSub = useTrustHistorySubscription()
+    if (errors.length === 0) {
+      console.log('[StateManagement] All subscriptions initialized successfully')
+      setSubscriptionsInitialized(true)
+    } else {
+      console.error('[StateManagement] Subscription initialization errors:', errors)
 
-        if (trustSub.status === 'error') {
-          errors.push(`Trust history subscription failed: ${trustSub.error}`)
-        }
-      } catch (error) {
-        errors.push(`Trust history subscription error: ${error instanceof Error ? error.message : 'Unknown error'}`)
-      }
-
-      try {
-        // 5. System: Connection monitoring (always active)
-        console.log('[StateManagement] Initializing connection monitoring...')
-        useRealtimeConnection()
-      } catch (error) {
-        errors.push(`Connection monitoring error: ${error instanceof Error ? error.message : 'Unknown error'}`)
-      }
-
-      setSubscriptionErrors(errors)
-
-      if (errors.length === 0) {
-        console.log('[StateManagement] All subscriptions initialized successfully')
-        setSubscriptionsInitialized(true)
-      } else {
-        console.error('[StateManagement] Subscription initialization errors:', errors)
-
-        // Report errors for debugging
-        errors.forEach((error, index) => {
-          reportError(classifyError(new Error(error), {
+      // Report errors for debugging
+      errors.forEach((error, index) => {
+        reportError(
+          classifyError(new Error(error), {
             action: 'subscription_initialization',
             errorIndex: index,
             totalErrors: errors.length
-          }))
-        })
-      }
+          })
+        )
+      })
     }
-
-    // Add delay to prevent overwhelming the connection
-    const timeoutId = setTimeout(initializeSubscriptions, 1000)
-
-    return () => clearTimeout(timeoutId)
-  }, [isOnline, isInitialized])
+  }, [
+    isOnline,
+    isInitialized,
+    emergencySub,
+    confirmationSub,
+    profileSub,
+    trustSub,
+    realtimeConnection
+  ])
 
   // Update emergency store with subscription status
   useEffect(() => {
@@ -299,12 +273,15 @@ export const StateManagementProvider: React.FC<StateManagementProviderProps> = (
   }, [])
 
   // Context value
-  const contextValue = useMemo(() => ({
-    isInitialized,
-    storeHealth: checkStoreHealth(),
-    error,
-    retry
-  }), [isInitialized, error, retry])
+  const contextValue = useMemo(
+    () => ({
+      isInitialized,
+      storeHealth: checkStoreHealth(),
+      error,
+      retry
+    }),
+    [isInitialized, error, retry]
+  )
 
   if (!isInitialized) {
     return (
@@ -350,10 +327,7 @@ export const StateManagementProvider: React.FC<StateManagementProviderProps> = (
       <QueryClientProvider client={queryClient}>
         {children}
         {enableDevtools && (
-          <ReactQueryDevtools
-            initialIsOpen={false}
-            buttonPosition="bottom-left"
-          />
+          <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
         )}
       </QueryClientProvider>
     </StateManagementContext.Provider>
@@ -391,7 +365,9 @@ export const useStateManagementPerformance = () => {
         activeQueries: queries.filter((q: any) => q.state.fetchStatus === 'fetching').length,
         staleQueries: queries.filter((q: any) => q.isStale()).length,
         errorQueries: queries.filter((q: any) => q.state.status === 'error').length,
-        averageQueryTime: queries.reduce((acc: number, q: any) => acc + (q.state.dataFetchTime || 0), 0) / queries.length
+        averageQueryTime:
+          queries.reduce((acc: number, q: any) => acc + (q.state.dataFetchTime || 0), 0) /
+          queries.length
       }
 
       // Log performance metrics
@@ -402,7 +378,8 @@ export const useStateManagementPerformance = () => {
         console.warn('[Performance] High error rate detected')
       }
 
-      if (performance.averageQueryTime > 5000) { // 5 seconds
+      if (performance.averageQueryTime > 5000) {
+        // 5 seconds
         console.warn('[Performance] Slow queries detected')
       }
     }

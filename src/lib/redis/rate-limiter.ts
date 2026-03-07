@@ -203,7 +203,9 @@ export class RateLimiter {
   }
 
   private async getPenalty(identifier: string): Promise<number> {
-    if (!this.redis) return 0
+    if (!this.redis) {
+      return 0
+    }
 
     try {
       const penaltyKey = `openrelief:penalty:${identifier}`
@@ -215,7 +217,9 @@ export class RateLimiter {
   }
 
   private async incrementPenalty(identifier: string): Promise<number> {
-    if (!this.redis) return 0
+    if (!this.redis) {
+      return 0
+    }
 
     try {
       const penaltyKey = `openrelief:penalty:${identifier}`

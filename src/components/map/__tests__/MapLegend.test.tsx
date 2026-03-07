@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
 import MapLegend from '../MapLegend'
@@ -13,17 +13,36 @@ vi.mock('@/components/ui', () => ({
     </div>
   ),
   TrustBadge: ({ level, score, size, showPercentage, label }: any) => (
-    <div data-testid="trust-badge" data-level={level} data-score={score} data-size={size} data-show-percentage={showPercentage}>
+    <div
+      data-testid="trust-badge"
+      data-level={level}
+      data-score={score}
+      data-size={size}
+      data-show-percentage={showPercentage}
+    >
       {label}
     </div>
   ),
   StatusIndicator: ({ status, size, variant, pulse, showIcon, label }: any) => (
-    <div data-testid="status-indicator" data-status={status} data-size={size} data-variant={variant} data-pulse={pulse} data-show-icon={showIcon}>
+    <div
+      data-testid="status-indicator"
+      data-status={status}
+      data-size={size}
+      data-variant={variant}
+      data-pulse={pulse}
+      data-show-icon={showIcon}
+    >
       {label}
     </div>
   ),
   Icon: ({ name, size, variant, className }: any) => (
-    <div data-testid="icon" data-name={name} data-size={size} data-variant={variant} className={className}>
+    <div
+      data-testid="icon"
+      data-name={name}
+      data-size={size}
+      data-variant={variant}
+      className={className}
+    >
       {name}
     </div>
   ),
@@ -154,7 +173,9 @@ describe('MapLegend', () => {
     const user = userEvent.setup()
     const onToggleCollapse = vi.fn()
 
-    renderWithProviders(<MapLegend {...defaultProps} collapsible={true} onToggleCollapse={onToggleCollapse} />)
+    renderWithProviders(
+      <MapLegend {...defaultProps} collapsible={true} onToggleCollapse={onToggleCollapse} />
+    )
 
     const collapseButton = screen.getByRole('button', { name: /collapse legend/i })
     await user.click(collapseButton)
@@ -224,7 +245,9 @@ describe('MapLegend', () => {
   })
 
   it('starts collapsed when initiallyCollapsed is true', () => {
-    renderWithProviders(<MapLegend {...defaultProps} collapsible={true} initiallyCollapsed={true} />)
+    renderWithProviders(
+      <MapLegend {...defaultProps} collapsible={true} initiallyCollapsed={true} />
+    )
 
     expect(screen.queryByText(/emergency types/i)).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: /expand legend/i })).toBeInTheDocument()
@@ -334,9 +357,7 @@ describe('MapLegend', () => {
   })
 
   it('handles emergency types with color', () => {
-    const emergencyTypes = [
-      { type: 'fire', name: 'Fire Emergency', color: '#ff0000' }
-    ]
+    const emergencyTypes = [{ type: 'fire', name: 'Fire Emergency', color: '#ff0000' }]
 
     renderWithProviders(<MapLegend {...defaultProps} emergencyTypes={emergencyTypes} />)
 

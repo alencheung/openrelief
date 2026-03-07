@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
 import LocationTracker from '../LocationTracker'
@@ -8,7 +8,7 @@ import { createTestUtils, createMockLocation, createMockEmergencyEvent } from '@
 // Mock store hooks
 vi.mock('@/store', () => ({
   useLocationStore: vi.fn(() => ({
-    currentLocation: createMockLocation({ lat: 40.7128, lng: -74.0060 }),
+    currentLocation: createMockLocation({ lat: 40.7128, lng: -74.006 }),
     setCurrentLocation: vi.fn(),
     startTracking: vi.fn(),
     stopTracking: vi.fn(),
@@ -94,7 +94,7 @@ describe('LocationTracker', () => {
   })
 
   it('displays current location when available', () => {
-    const mockLocation = createMockLocation({ lat: 40.7128, lng: -74.0060 })
+    const mockLocation = createMockLocation({ lat: 40.7128, lng: -74.006 })
 
     vi.mocked(require('@/store').useLocationStore).mockReturnValue({
       currentLocation: mockLocation,
@@ -119,7 +119,7 @@ describe('LocationTracker', () => {
 
   it('shows tracking status when active', () => {
     vi.mocked(require('@/store').useLocationStore).mockReturnValue({
-      currentLocation: createMockLocation({ lat: 40.7128, lng: -74.0060 }),
+      currentLocation: createMockLocation({ lat: 40.7128, lng: -74.006 }),
       setCurrentLocation: vi.fn(),
       startTracking: vi.fn(),
       stopTracking: vi.fn(),
@@ -143,7 +143,9 @@ describe('LocationTracker', () => {
     renderWithProviders(<LocationTracker {...defaultProps} />)
 
     // Should show permission indicator
-    const shieldIcon = document.querySelector('[data-testid="shield-icon"]') || screen.getByRole('button').querySelector('svg')
+    const shieldIcon =
+      document.querySelector('[data-testid="shield-icon"]') ||
+      screen.getByRole('button').querySelector('svg')
     expect(shieldIcon).toBeInTheDocument()
   })
 
@@ -153,7 +155,7 @@ describe('LocationTracker', () => {
     const requestLocationPermission = vi.fn(() => Promise.resolve({ granted: true }))
 
     vi.mocked(require('@/store').useLocationStore).mockReturnValue({
-      currentLocation: createMockLocation({ lat: 40.7128, lng: -74.0060 }),
+      currentLocation: createMockLocation({ lat: 40.7128, lng: -74.006 }),
       setCurrentLocation: vi.fn(),
       startTracking,
       stopTracking: vi.fn(),
@@ -168,16 +170,16 @@ describe('LocationTracker', () => {
     })
 
     // Mock successful geolocation
-    mockGeolocation.watchPosition.mockImplementation((success) => {
+    mockGeolocation.watchPosition.mockImplementation(success => {
       success({
         coords: {
           latitude: 40.7128,
-          longitude: -74.0060,
+          longitude: -74.006,
           accuracy: 10
         },
         timestamp: Date.now()
       })
-      return 1 // Return watch ID
+      return 1
     })
 
     renderWithProviders(<LocationTracker {...defaultProps} />)
@@ -194,7 +196,7 @@ describe('LocationTracker', () => {
     const stopTracking = vi.fn()
 
     vi.mocked(require('@/store').useLocationStore).mockReturnValue({
-      currentLocation: createMockLocation({ lat: 40.7128, lng: -74.0060 }),
+      currentLocation: createMockLocation({ lat: 40.7128, lng: -74.006 }),
       setCurrentLocation: vi.fn(),
       startTracking: vi.fn(),
       stopTracking,
@@ -220,11 +222,11 @@ describe('LocationTracker', () => {
     const user = userEvent.setup()
 
     // Mock successful getCurrentPosition
-    mockGeolocation.getCurrentPosition.mockImplementation((success) => {
+    mockGeolocation.getCurrentPosition.mockImplementation(success => {
       success({
         coords: {
           latitude: 40.7128,
-          longitude: -74.0060,
+          longitude: -74.006,
           accuracy: 10
         },
         timestamp: Date.now()
@@ -240,7 +242,7 @@ describe('LocationTracker', () => {
   })
 
   it('displays accuracy information', () => {
-    const mockLocation = createMockLocation({ lat: 40.7128, lng: -74.0060, accuracy: 15 })
+    const mockLocation = createMockLocation({ lat: 40.7128, lng: -74.006, accuracy: 15 })
 
     vi.mocked(require('@/store').useLocationStore).mockReturnValue({
       currentLocation: mockLocation,
@@ -265,7 +267,7 @@ describe('LocationTracker', () => {
   })
 
   it('displays speed when available', () => {
-    const mockLocation = createMockLocation({ lat: 40.7128, lng: -74.0060, speed: 5 }) // 5 m/s
+    const mockLocation = createMockLocation({ lat: 40.7128, lng: -74.006, speed: 5 })
 
     vi.mocked(require('@/store').useLocationStore).mockReturnValue({
       currentLocation: mockLocation,
@@ -285,11 +287,11 @@ describe('LocationTracker', () => {
     renderWithProviders(<LocationTracker {...defaultProps} />)
 
     expect(screen.getByText(/speed:/i)).toBeInTheDocument()
-    expect(screen.getByText(/18 km\/h/i)).toBeInTheDocument() // 5 m/s * 3.6 = 18 km/h
+    expect(screen.getByText(/18 km\/h/i)).toBeInTheDocument()
   })
 
   it('displays heading when available', () => {
-    const mockLocation = createMockLocation({ lat: 40.7128, lng: -74.0060, heading: 45 })
+    const mockLocation = createMockLocation({ lat: 40.7128, lng: -74.006, heading: 45 })
 
     vi.mocked(require('@/store').useLocationStore).mockReturnValue({
       currentLocation: mockLocation,
@@ -356,7 +358,7 @@ describe('LocationTracker', () => {
     ]
 
     vi.mocked(require('@/store').useLocationStore).mockReturnValue({
-      currentLocation: createMockLocation({ lat: 40.7128, lng: -74.0060 }),
+      currentLocation: createMockLocation({ lat: 40.7128, lng: -74.006 }),
       setCurrentLocation: vi.fn(),
       startTracking: vi.fn(),
       stopTracking: vi.fn(),
@@ -394,7 +396,7 @@ describe('LocationTracker', () => {
     ]
 
     vi.mocked(require('@/store').useLocationStore).mockReturnValue({
-      currentLocation: createMockLocation({ lat: 40.7128, lng: -74.0060 }),
+      currentLocation: createMockLocation({ lat: 40.7128, lng: -74.006 }),
       setCurrentLocation: vi.fn(),
       startTracking: vi.fn(),
       stopTracking: vi.fn(),
@@ -525,7 +527,7 @@ describe('LocationTracker', () => {
     renderWithProviders(<LocationTracker {...defaultProps} onLocationUpdate={onLocationUpdate} />)
 
     // Simulate location update
-    const mockLocation = createMockLocation({ lat: 40.7128, lng: -74.0060 })
+    const mockLocation = createMockLocation({ lat: 40.7128, lng: -74.006 })
 
     vi.mocked(require('@/store').useLocationStore).mockReturnValue({
       currentLocation: mockLocation,
@@ -543,22 +545,24 @@ describe('LocationTracker', () => {
     })
 
     // Trigger location update
-    const { setCurrentLocation } = vi.mocked(require('@/store').useLocationStore()).mockReturnValue({
-      currentLocation: mockLocation,
-      setCurrentLocation: vi.fn((location) => {
-        onLocationUpdate(location)
-      }),
-      startTracking: vi.fn(),
-      stopTracking: vi.fn(),
-      requestLocationPermission: vi.fn(() => Promise.resolve({ granted: true })),
-      locationPermission: { granted: true },
-      isTracking: false,
-      geofences: [],
-      proximityAlerts: [],
-      addGeofence: vi.fn(),
-      checkGeofences: vi.fn(),
-      addProximityAlert: vi.fn()
-    })
+    const { setCurrentLocation: _setCurrentLocation } = vi
+      .mocked(require('@/store').useLocationStore())
+      .mockReturnValue({
+        currentLocation: mockLocation,
+        setCurrentLocation: vi.fn(location => {
+          onLocationUpdate(location)
+        }),
+        startTracking: vi.fn(),
+        stopTracking: vi.fn(),
+        requestLocationPermission: vi.fn(() => Promise.resolve({ granted: true })),
+        locationPermission: { granted: true },
+        isTracking: false,
+        geofences: [],
+        proximityAlerts: [],
+        addGeofence: vi.fn(),
+        checkGeofences: vi.fn(),
+        addProximityAlert: vi.fn()
+      })
 
     renderWithProviders(<LocationTracker {...defaultProps} onLocationUpdate={onLocationUpdate} />)
 
@@ -577,7 +581,7 @@ describe('LocationTracker', () => {
     const requestLocationPermission = vi.fn(() => Promise.resolve({ granted: true }))
 
     vi.mocked(require('@/store').useLocationStore).mockReturnValue({
-      currentLocation: createMockLocation({ lat: 40.7128, lng: -74.0060 }),
+      currentLocation: createMockLocation({ lat: 40.7128, lng: -74.006 }),
       setCurrentLocation: vi.fn(),
       startTracking: vi.fn(),
       stopTracking: vi.fn(),
@@ -634,7 +638,8 @@ describe('LocationTracker', () => {
     const addProximityAlert = vi.fn()
 
     vi.mocked(require('@/store').useLocationStore).mockReturnValue({
-      currentLocation: createMockLocation({ lat: 40.7129, lng: -74.0061 }), // Very close to emergency
+      // Very close to emergency
+      currentLocation: createMockLocation({ lat: 40.7129, lng: -74.0061 }),
       setCurrentLocation: vi.fn(),
       startTracking: vi.fn(),
       stopTracking: vi.fn(),
@@ -673,7 +678,8 @@ describe('LocationTracker', () => {
     const { unmount } = renderWithProviders(<LocationTracker {...defaultProps} />)
 
     // Start tracking to set up watch
-    mockGeolocation.watchPosition.mockReturnValue(123) // Watch ID
+    // Watch ID
+    mockGeolocation.watchPosition.mockReturnValue(123)
 
     unmount()
 

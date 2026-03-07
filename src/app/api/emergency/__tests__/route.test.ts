@@ -5,11 +5,10 @@
  * including CRUD operations, validation, and error handling.
  */
 
-import { createMocks } from 'node-mocks-http'
 import { NextRequest } from 'next/server'
 import { GET, POST, PUT, DELETE } from '../route'
 import { createMockSupabaseClient } from '@/test-utils/mocks/supabase'
-import { createEmergencyEvent, createUser } from '@/test-utils/fixtures/emergencyScenarios'
+import { createEmergencyEvent } from '@/test-utils/fixtures/emergencyScenarios'
 
 // Mock Supabase
 jest.mock('@/lib/supabase', () => ({
@@ -19,7 +18,7 @@ jest.mock('@/lib/supabase', () => ({
 // Mock Next.js headers
 jest.mock('next/headers', () => ({
   headers: () => ({
-    get: jest.fn((name) => {
+    get: jest.fn(name => {
       if (name === 'authorization') {
         return 'Bearer test-token'
       }
@@ -70,10 +69,11 @@ describe('Emergency API Routes', () => {
     })
 
     it('should fetch emergency events with filters', async () => {
+      // Fire
       const mockFilteredEvents = [
         createEmergencyEvent({
           id: 'event-3',
-          emergency_type_id: 1, // Fire
+          emergency_type_id: 1,
           severity: 'high'
         })
       ]
@@ -109,10 +109,11 @@ describe('Emergency API Routes', () => {
     })
 
     it('should fetch emergency events with spatial filtering', async () => {
+      // NYC
       const mockNearbyEvents = [
         createEmergencyEvent({
           id: 'event-4',
-          location: 'POINT(-74.0060 40.7128)' // NYC
+          location: 'POINT(-74.0060 40.7128)'
         })
       ]
 
@@ -131,7 +132,7 @@ describe('Emergency API Routes', () => {
       expect(data.events).toHaveLength(1)
       expect(mockSupabase.rpc).toHaveBeenCalledWith('get_nearby_emergency_events', {
         center_lat: 40.7128,
-        center_lng: -74.0060,
+        center_lng: -74.006,
         radius_km: 10
       })
     })
@@ -146,9 +147,10 @@ describe('Emergency API Routes', () => {
           eq: jest.fn().mockReturnValue({
             order: jest.fn().mockReturnValue({
               range: jest.fn().mockResolvedValue({
+                // Total 25 events
                 data: mockPaginatedEvents,
                 error: null,
-                count: 25 // Total 25 events
+                count: 25
               })
             })
           })
@@ -246,9 +248,9 @@ describe('Emergency API Routes', () => {
     })
 
     it('should validate required fields', async () => {
+      // Missing required fields
       const incompleteEventData = {
         title: 'Test Emergency'
-        // Missing required fields
       }
 
       const request = new NextRequest('http://localhost:3000/api/emergency', {
@@ -267,10 +269,11 @@ describe('Emergency API Routes', () => {
     })
 
     it('should validate emergency type', async () => {
+      // Non-existent type
       const invalidEventData = {
         title: 'Test Emergency',
         description: 'Invalid emergency type',
-        emergency_type_id: 999, // Non-existent type
+        emergency_type_id: 999,
         severity: 'high',
         location: 'POINT(-74.0060 40.7128)'
       }
@@ -279,7 +282,8 @@ describe('Emergency API Routes', () => {
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
-              data: null, // No emergency type found
+              // No emergency type found
+              data: null,
               error: null
             })
           })
@@ -302,11 +306,12 @@ describe('Emergency API Routes', () => {
     })
 
     it('should validate severity levels', async () => {
+      // Invalid severity
       const invalidEventData = {
         title: 'Test Emergency',
         description: 'Invalid severity',
         emergency_type_id: 1,
-        severity: 'critical', // Invalid severity
+        severity: 'critical',
         location: 'POINT(-74.0060 40.7128)'
       }
 
@@ -778,9 +783,10 @@ describe('Emergency API Routes', () => {
     })
 
     it('should handle large payloads', async () => {
+      // Very large description
       const largePayload = {
         title: 'Test Emergency',
-        description: 'A'.repeat(100000), // Very large description
+        description: 'A'.repeat(100000),
         emergency_type_id: 1,
         severity: 'high',
         location: 'POINT(-74.0060 40.7128)'
@@ -824,21 +830,24 @@ describe('Emergency API Routes', () => {
       })
 
       // Create multiple concurrent requests
-      const requests = Array.from({ length: 10 }, () =>
-        new NextRequest('http://localhost:3000/api/emergency', {
-          method: 'POST',
-          body: JSON.stringify(eventData),
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        })
+      const requests = Array.from(
+        { length: 10 },
+        () =>
+          new NextRequest('http://localhost:3000/api/emergency', {
+            method: 'POST',
+            body: JSON.stringify(eventData),
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          })
       )
 
       const responses = await Promise.all(requests.map(req => POST(req)))
 
       // All requests should succeed (or fail gracefully)
+      // Created, Conflict, or Server Error
       responses.forEach(response => {
-        expect([201, 409, 500]).toContain(response.status) // Created, Conflict, or Server Error
+        expect([201, 409, 500]).toContain(response.status)
       })
     })
   })
@@ -855,8 +864,10 @@ describe('Emergency API Routes', () => {
 
       const sanitizedEvent = createEmergencyEvent({
         ...maliciousData,
-        title: 'Emergency', // Script removed
-        description: 'Malicious content' // HTML removed
+        // Script removed
+        title: 'Emergency',
+        // HTML removed
+        description: 'Malicious content'
       })
 
       mockSupabase.from.mockReturnValue({
@@ -889,12 +900,13 @@ describe('Emergency API Routes', () => {
     })
 
     it('should validate coordinate ranges', async () => {
+      // Invalid coordinates
       const invalidCoordinates = {
         title: 'Invalid Coordinates',
         description: 'Test with invalid coordinates',
         emergency_type_id: 1,
         severity: 'high',
-        location: 'POINT(200 100)' // Invalid coordinates
+        location: 'POINT(200 100)'
       }
 
       const request = new NextRequest('http://localhost:3000/api/emergency', {
@@ -913,8 +925,9 @@ describe('Emergency API Routes', () => {
     })
 
     it('should validate string lengths', async () => {
+      // Exceeds title length limit
       const longTitle = {
-        title: 'A'.repeat(300), // Exceeds title length limit
+        title: 'A'.repeat(300),
         description: 'Valid description',
         emergency_type_id: 1,
         severity: 'high',

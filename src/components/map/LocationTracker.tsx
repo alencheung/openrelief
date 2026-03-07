@@ -20,11 +20,28 @@ interface LocationTrackerProps {
   maxTrailPoints?: number
 }
 
+const calculateDistanceHaversine = (point1: LocationPoint, point2: LocationPoint): number => {
+  // Earth's radius in meters
+  const R = 6371e3
+  const φ1 = (point1.lat * Math.PI) / 180
+  const φ2 = (point2.lat * Math.PI) / 180
+  const Δφ = ((point2.lat - point1.lat) * Math.PI) / 180
+  const Δλ = ((point2.lng - point1.lng) * Math.PI) / 180
+
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+
+  // Distance in meters
+  return R * c
+}
+
 export default function LocationTracker({
   className,
   onLocationUpdate,
-  onGeofenceEnter,
-  onGeofenceExit,
+  onGeofenceEnter: _onGeofenceEnter,
+  onGeofenceExit: _onGeofenceExit,
   onProximityAlert,
   enableHighAccuracy = true,
   updateInterval = 5000,
@@ -43,9 +60,9 @@ export default function LocationTracker({
   })
   const [showPreciseLocation, setShowPreciseLocation] = useState(true)
   const [privacyInfo, setPrivacyInfo] = useState<{
-    isAnonymized: boolean;
-    hasDifferentialPrivacy: boolean;
-    privacyBudgetUsed: number;
+    isAnonymized: boolean
+    hasDifferentialPrivacy: boolean
+    privacyBudgetUsed: number
   }>({
     isAnonymized: false,
     hasDifferentialPrivacy: false,
@@ -66,20 +83,16 @@ export default function LocationTracker({
     isTracking: isLocationTracking,
     geofences,
     proximityAlerts,
-    addGeofence,
     checkGeofences,
     addProximityAlert
   } = useLocationStore()
 
-  const { events, filteredEvents } = useEmergencyStore()
+  const { filteredEvents } = useEmergencyStore()
 
   // Privacy hook for location protection
-  const {
-    protectLocationData,
-    privacyContext,
-    assessPrivacyImpact
-  } = usePrivacy({
-    userId: 'current-user', // Would come from auth context
+  // Would come from auth context
+  const { protectLocationData, privacyContext } = usePrivacy({
+    userId: 'current-user',
     enableLogging: true
   })
 
@@ -90,162 +103,151 @@ export default function LocationTracker({
       speed: location.speed || 0,
       heading: location.heading || 0,
       altitude: location.altitude || 0,
-      satelliteCount: 0 // This would need GPS hardware access
+      // This would need GPS hardware access
+      satelliteCount: 0
     }
 
     // Calculate speed if not provided
-    if (!location.speed && lastLocationRef.current && location.timestamp > lastLocationRef.current.timestamp) {
-      const timeDiff = (location.timestamp - lastLocationRef.current.timestamp) / 1000 // seconds
-      const distance = calculateDistance(lastLocationRef.current, location) // meters
-      stats.speed = distance / timeDiff // m/s
+    if (
+      !location.speed &&
+      lastLocationRef.current &&
+      location.timestamp > lastLocationRef.current.timestamp
+    ) {
+      // seconds
+      const timeDiff = (location.timestamp - lastLocationRef.current.timestamp) / 1000
+      // meters
+      const distance = calculateDistanceHaversine(lastLocationRef.current, location)
+      // m/s
+      stats.speed = distance / timeDiff
     }
 
     setTrackingStats(stats)
     return stats
   }, [])
 
-  // Calculate distance between two points
-  const calculateDistance = useCallback((point1: LocationPoint, point2: LocationPoint): number => {
-    const R = 6371e3 // Earth's radius in meters
-    const φ1 = (point1.lat * Math.PI) / 180
-    const φ2 = (point2.lat * Math.PI) / 180
-    const Δφ = ((point2.lat - point1.lat) * Math.PI) / 180
-    const Δλ = ((point2.lng - point1.lng) * Math.PI) / 180
-
-    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2)
-      + Math.cos(φ1) * Math.cos(φ2)
-      * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-
-    return R * c // Distance in meters
-  }, [])
-
   // Check proximity to emergency events
-  const checkEmergencyProximity = useCallback((location: LocationPoint) => {
-    const proximityThreshold = 1000 // 1km
+  const checkEmergencyProximity = useCallback(
+    (location: LocationPoint) => {
+      // 1km
+      const proximityThreshold = 1000
 
-    filteredEvents.forEach(event => {
-      // Log to validate coordinate parsing order
-      console.log('Debug: Raw event location:', event.location)
-      const locationParts = (event.location || '0 0').split(' ')
-      console.log('Debug: Location parts:', locationParts)
+      filteredEvents.forEach(event => {
+        const locationParts = (event.location || '0 0').split(' ')
 
-      // FIXED: Verify correct coordinate order - typically format is "lng lat" in many systems
-      // but we're assuming "lat lng". Adding validation to detect issues.
-      let lat = parseFloat(locationParts[0] || '0')
-      let lng = parseFloat(locationParts[1] || '0')
+        let lat = parseFloat(locationParts[0] || '0')
+        let lng = parseFloat(locationParts[1] || '0')
 
-      // Validate coordinate ranges to detect potential order issues
-      if (Math.abs(lat) > 90 || Math.abs(lng) > 180) {
-        console.warn('Debug: Invalid coordinate ranges detected - possible order issue:', { lat, lng, rawLocation: event.location })
-        // Try swapping as fallback
-        const tempLat = lat
-        lat = parseFloat(locationParts[1] || '0')
-        lng = parseFloat(locationParts[0] || '0')
-        console.log('Debug: Using swapped coordinates:', { lat, lng })
-      } else {
-        console.log('Debug: Using parsed coordinates:', { lat, lng })
-      }
+        // Validate coordinate ranges to detect potential order issues
+        if (Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+          // Try swapping as fallback
+          const _tempLat = lat
+          lat = parseFloat(locationParts[1] || '0')
+          lng = parseFloat(locationParts[0] || '0')
+        }
 
-      const eventLocation = {
-        lat,
-        lng
-      }
+        const distance = calculateDistanceHaversine(location, {
+          lat,
+          lng,
+          timestamp: Date.now()
+        })
 
-      const distance = calculateDistance(location, {
-        lat: eventLocation.lat,
-        lng: eventLocation.lng,
-        timestamp: Date.now()
+        if (distance <= proximityThreshold) {
+          addProximityAlert({
+            type: 'event_proximity',
+            targetId: event.id,
+            targetType: 'event',
+            distance,
+            threshold: proximityThreshold,
+            message: `Near emergency: ${event.title} (${Math.round(distance)}m away)`,
+            severity: event.severity >= 4 ? 'critical' : event.severity >= 3 ? 'warning' : 'info'
+          })
+
+          onProximityAlert?.({
+            event,
+            distance,
+            severity: event.severity
+          })
+        }
       })
-
-      if (distance <= proximityThreshold) {
-        addProximityAlert({
-          type: 'event_proximity',
-          targetId: event.id,
-          targetType: 'event',
-          distance,
-          threshold: proximityThreshold,
-          message: `Near emergency: ${event.title} (${Math.round(distance)}m away)`,
-          severity: event.severity >= 4 ? 'critical'
-            : event.severity >= 3 ? 'warning' : 'info'
-        })
-
-        onProximityAlert?.({
-          event,
-          distance,
-          severity: event.severity
-        })
-      }
-    })
-  }, [filteredEvents, calculateDistance, addProximityAlert, onProximityAlert])
+    },
+    [filteredEvents, addProximityAlert, onProximityAlert]
+  )
 
   // Handle location update with privacy protection
-  const handleLocationUpdate = useCallback((position: GeolocationPosition) => {
-    const rawLocation: LocationPoint = {
-      lat: position.coords.latitude,
-      lng: position.coords.longitude,
-      accuracy: position.coords.accuracy,
-      timestamp: position.timestamp,
-      ...(position.coords.altitude ? { altitude: position.coords.altitude } : {}),
-      ...(position.coords.altitudeAccuracy ? { altitudeAccuracy: position.coords.altitudeAccuracy } : {}),
-      ...(position.coords.heading ? { heading: position.coords.heading } : {}),
-      ...(position.coords.speed ? { speed: position.coords.speed } : {})
-    }
-
-    // Apply privacy protection to location data
-    const protectedLocation = protectLocationData(rawLocation, {
-      applyDifferentialPrivacy: privacyContext.settings.differentialPrivacy,
-      applyAnonymization: privacyContext.settings.anonymizeData,
-      precisionLevel: privacyContext.settings.locationPrecision
-    })
-
-    // Update privacy info for UI display
-    setPrivacyInfo({
-      isAnonymized: protectedLocation.isAnonymized,
-      hasDifferentialPrivacy: protectedLocation.hasDifferentialPrivacy,
-      privacyBudgetUsed: protectedLocation.privacyBudgetUsed
-    })
-
-    // Use protected location for further processing
-    const location = showPreciseLocation ? rawLocation : protectedLocation.data
-
-    // Update trail if enabled
-    if (showTrail) {
-      trailPointsRef.current.push(location)
-      if (trailPointsRef.current.length > maxTrailPoints) {
-        trailPointsRef.current.shift()
+  const handleLocationUpdate = useCallback(
+    (position: GeolocationPosition) => {
+      const rawLocation: LocationPoint = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+        accuracy: position.coords.accuracy,
+        timestamp: position.timestamp,
+        ...(position.coords.altitude ? { altitude: position.coords.altitude } : {}),
+        ...(position.coords.altitudeAccuracy
+          ? { altitudeAccuracy: position.coords.altitudeAccuracy }
+          : {}),
+        ...(position.coords.heading ? { heading: position.coords.heading } : {}),
+        ...(position.coords.speed ? { speed: position.coords.speed } : {})
       }
-    }
 
-    // Calculate statistics
-    calculateStats(location)
+      // Apply privacy protection to location data
+      const protectedLocation = protectLocationData(rawLocation as any, {
+        applyDifferentialPrivacy: privacyContext.settings.differentialPrivacy,
+        applyAnonymization: privacyContext.settings.anonymizeData,
+        precisionLevel: privacyContext.settings.locationPrecision
+      })
 
-    // Update store
-    setCurrentLocation(location)
+      // Update privacy info for UI display
+      setPrivacyInfo({
+        isAnonymized: protectedLocation.isAnonymized,
+        hasDifferentialPrivacy: protectedLocation.hasDifferentialPrivacy,
+        privacyBudgetUsed: protectedLocation.privacyBudgetUsed
+      })
 
-    // Check geofences
-    checkGeofences(location)
+      // Use protected location for further processing
+      const location = (showPreciseLocation ? rawLocation : protectedLocation.data) as LocationPoint
 
-    // Check emergency proximity
-    checkEmergencyProximity(location)
+      // Update trail if enabled
+      if (showTrail) {
+        trailPointsRef.current.push(location)
+        if (trailPointsRef.current.length > maxTrailPoints) {
+          trailPointsRef.current.shift()
+        }
+      }
 
-    // Callback
-    onLocationUpdate?.(location)
+      // Calculate statistics
+      calculateStats(location)
 
-    // Update last location
-    lastLocationRef.current = location
+      // Update store
+      setCurrentLocation(location)
 
-    // Clear any previous errors
-    setLocationError(null)
-  }, [
-    setCurrentLocation,
-    checkGeofences,
-    checkEmergencyProximity,
-    calculateStats,
-    onLocationUpdate,
-    showTrail,
-    maxTrailPoints
-  ])
+      // Check geofences
+      checkGeofences(location)
+
+      // Check emergency proximity
+      checkEmergencyProximity(location)
+
+      // Callback
+      onLocationUpdate?.(location)
+
+      // Update last location
+      lastLocationRef.current = location
+
+      // Clear any previous errors
+      setLocationError(null)
+    },
+    [
+      protectLocationData,
+      privacyContext,
+      showPreciseLocation,
+      showTrail,
+      maxTrailPoints,
+      setCurrentLocation,
+      checkGeofences,
+      checkEmergencyProximity,
+      calculateStats,
+      onLocationUpdate
+    ]
+  )
 
   // Handle location error
   const handleLocationError = useCallback((error: GeolocationPositionError) => {
@@ -272,40 +274,31 @@ export default function LocationTracker({
   // Start tracking
   const startLocationTracking = useCallback(async () => {
     try {
-      console.log('Debug: Starting location tracking with high accuracy:', enableHighAccuracy)
-
       // FIXED: Enhanced iOS permission handling
       // First check if we're on iOS and need special handling
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
-      console.log('Debug: Device detected as iOS:', isIOS)
 
       // Request permission first with iOS-specific handling
       let permission
       if (isIOS) {
-        console.log('Debug: Using iOS-specific permission request')
         // iOS requires explicit user gesture for high accuracy
         try {
           // First try with low accuracy to get basic permission
           const basicPermission = await requestLocationPermission(false)
-          console.log('Debug: iOS basic permission result:', basicPermission)
 
           if (basicPermission.granted) {
             // Then request high accuracy if needed
             permission = await requestLocationPermission(enableHighAccuracy)
-            console.log('Debug: iOS high accuracy permission result:', permission)
           } else {
             permission = basicPermission
           }
-        } catch (iosError) {
-          console.error('Debug: iOS permission error:', iosError)
+        } catch (_iosError) {
           // Fallback to standard permission request
           permission = await requestLocationPermission(enableHighAccuracy)
         }
       } else {
         permission = await requestLocationPermission(enableHighAccuracy)
       }
-
-      console.log('Debug: Final permission result:', permission)
 
       if (!permission.granted) {
         setLocationError('Location permission not granted')
@@ -314,7 +307,6 @@ export default function LocationTracker({
 
       // Start watching position
       if ('geolocation' in navigator) {
-        console.log('Debug: Starting geolocation watch')
         watchIdRef.current = navigator.geolocation.watchPosition(
           handleLocationUpdate,
           handleLocationError,
@@ -330,11 +322,9 @@ export default function LocationTracker({
           highAccuracy: enableHighAccuracy,
           updateInterval
         })
-        console.log('Debug: Location tracking started successfully')
       }
     } catch (error) {
       setLocationError(`Failed to start tracking: ${error}`)
-      console.error('Failed to start location tracking:', error)
     }
   }, [
     enableHighAccuracy,
@@ -360,15 +350,12 @@ export default function LocationTracker({
   // Get current position once
   const getCurrentPosition = useCallback(() => {
     if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        handleLocationUpdate,
-        handleLocationError,
-        {
-          enableHighAccuracy,
-          timeout: 10000,
-          maximumAge: 60000 // 1 minute
-        }
-      )
+      navigator.geolocation.getCurrentPosition(handleLocationUpdate, handleLocationError, {
+        enableHighAccuracy,
+        timeout: 10000,
+        // 1 minute
+        maximumAge: 60000
+      })
     }
   }, [enableHighAccuracy, handleLocationUpdate, handleLocationError])
 
@@ -426,9 +413,7 @@ export default function LocationTracker({
                 <span className="text-sm text-green-600">Active</span>
               </div>
             )}
-            {locationPermission.granted && (
-              <Shield className="h-4 w-4 text-blue-500" />
-            )}
+            {locationPermission.granted && <Shield className="h-4 w-4 text-blue-500" />}
             {/* Privacy indicators */}
             {privacyInfo.isAnonymized && (
               <div className="flex items-center space-x-1">
@@ -501,7 +486,9 @@ export default function LocationTracker({
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Accuracy:</span>
                 <div className="flex items-center space-x-2">
-                  <span className={cn('text-sm font-medium', getAccuracyColor(trackingStats.accuracy))}>
+                  <span
+                    className={cn('text-sm font-medium', getAccuracyColor(trackingStats.accuracy))}
+                  >
                     {getAccuracyText(trackingStats.accuracy)}
                   </span>
                   <span className="text-xs text-gray-500">
@@ -551,7 +538,9 @@ export default function LocationTracker({
             >
               <Navigation className="h-4 w-4" />
               <span>
-                {privacyContext.settings.locationSharing ? 'Start Tracking' : 'Location Sharing Disabled'}
+                {privacyContext.settings.locationSharing
+                  ? 'Start Tracking'
+                  : 'Location Sharing Disabled'}
               </span>
             </button>
           ) : (
@@ -588,16 +577,20 @@ export default function LocationTracker({
           <div className="mt-4 pt-4 border-t">
             <div className="text-sm font-medium text-gray-900 mb-2">Proximity Alerts</div>
             <div className="space-y-1">
-              {proximityAlerts.slice(0, 3).map((alert) => (
-                <div key={alert.id} className="flex items-center space-x-2 text-xs">
-                  <div className={cn(
-                    'w-2 h-2 rounded-full',
-                    alert.severity === 'critical' ? 'bg-red-500'
-                      : alert.severity === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
-                  )} />
-                  <span className="text-gray-600">{alert.message}</span>
-                </div>
-              ))}
+              {proximityAlerts.slice(0, 3).map(alert => {
+                let severityClass = 'bg-blue-500'
+                if (alert.severity === 'critical') {
+                  severityClass = 'bg-red-500'
+                } else if (alert.severity === 'warning') {
+                  severityClass = 'bg-yellow-500'
+                }
+                return (
+                  <div key={alert.id} className="flex items-center space-x-2 text-xs">
+                    <div className={cn('w-2 h-2 rounded-full', severityClass)} />
+                    <span className="text-gray-600">{alert.message}</span>
+                  </div>
+                )
+              })}
               {proximityAlerts.length > 3 && (
                 <div className="text-xs text-gray-500">
                   +{proximityAlerts.length - 3} more alerts
@@ -612,17 +605,25 @@ export default function LocationTracker({
           <div className="mt-4 pt-4 border-t">
             <div className="text-sm font-medium text-gray-900 mb-2">Active Geofences</div>
             <div className="space-y-1">
-              {geofences.filter(g => g.isActive).slice(0, 3).map((geofence) => (
-                <div key={geofence.id} className="flex items-center space-x-2 text-xs">
-                  <div className={cn(
-                    'w-2 h-2 rounded-full',
-                    geofence.type === 'emergency' ? 'bg-red-500'
-                      : geofence.type === 'safe_zone' ? 'bg-green-500'
-                        : geofence.type === 'restricted' ? 'bg-orange-500' : 'bg-gray-500'
-                  )} />
-                  <span className="text-gray-600">{geofence.name}</span>
-                </div>
-              ))}
+              {geofences
+                .filter(g => g.isActive)
+                .slice(0, 3)
+                .map(geofence => {
+                  let typeClass = 'bg-gray-500'
+                  if (geofence.type === 'emergency') {
+                    typeClass = 'bg-red-500'
+                  } else if (geofence.type === 'safe_zone') {
+                    typeClass = 'bg-green-500'
+                  } else if (geofence.type === 'restricted') {
+                    typeClass = 'bg-orange-500'
+                  }
+                  return (
+                    <div key={geofence.id} className="flex items-center space-x-2 text-xs">
+                      <div className={cn('w-2 h-2 rounded-full', typeClass)} />
+                      <span className="text-gray-600">{geofence.name}</span>
+                    </div>
+                  )
+                })}
             </div>
           </div>
         )}

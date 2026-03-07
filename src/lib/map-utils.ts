@@ -3,11 +3,23 @@
  * Includes clustering, geofencing, routing, and performance optimizations
  */
 
-import maplibregl, { Map, LngLat, LngLatBounds, Feature, GeoJSONFeature } from 'maplibre-gl'
+import maplibregl, {
+  Map,
+  LngLat,
+  LngLatBounds,
+  Feature as _Feature,
+  GeoJSONFeature
+} from 'maplibre-gl'
 import Supercluster from 'supercluster'
-import { distance, buffer, bbox, point, centerOfMass } from '@turf/turf'
+import {
+  distance as _distance,
+  buffer as _buffer,
+  bbox as _bbox,
+  point,
+  centerOfMass as _centerOfMass
+} from '@turf/turf'
 import { EmergencyEvent } from '@/store/emergencyStore'
-import { Geofence, LocationPoint } from '@/store/locationStore'
+import { Geofence, LocationPoint as _LocationPoint } from '@/store/locationStore'
 
 // Clustering configuration
 export interface ClusterOptions {
@@ -71,17 +83,17 @@ export function clusterEmergencyEvents(
   cluster.load(features as any)
 
   // Get clusters within bounds
-  const bboxArray = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()] as [number, number, number, number]
+  const bboxArray = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()] as [
+    number,
+    number,
+    number,
+    number
+  ]
   return cluster.getClusters(bboxArray, zoom) as GeoJSON.Feature[]
 }
 
 // Calculate distance between two points in meters
-export function calculateDistance(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number
-): number {
+export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   if (lat1 === undefined || lon1 === undefined || lat2 === undefined || lon2 === undefined) {
     return 0
   }
@@ -92,9 +104,9 @@ export function calculateDistance(
   const Δφ = ((lat2 - lat1) * Math.PI) / 180
   const Δλ = ((lon2 - lon1) * Math.PI) / 180
 
-  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2)
-    + Math.cos(φ1) * Math.cos(φ2)
-    * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 
   return R * c // Distance in meters
@@ -105,12 +117,7 @@ export function isPointInGeofence(
   point: { lat: number; lng: number },
   geofence: { center: { lat: number; lng: number }; radius: number }
 ): boolean {
-  const distance = calculateDistance(
-    point.lat,
-    point.lng,
-    geofence.center.lat,
-    geofence.center.lng
-  )
+  const distance = calculateDistance(point.lat, point.lng, geofence.center.lat, geofence.center.lng)
   return distance <= geofence.radius
 }
 
@@ -167,7 +174,9 @@ export class MapPerformanceManager {
     } else {
       console.log('[MapPerformanceManager] Waiting for map to load...')
       this.map.on('load', () => {
-        console.log('[MapPerformanceManager] Map load event received, starting performance monitoring')
+        console.log(
+          '[MapPerformanceManager] Map load event received, starting performance monitoring'
+        )
         this.setupPerformanceMonitoring()
       })
     }
@@ -180,11 +189,12 @@ export class MapPerformanceManager {
     const deviceMemory = navigator.deviceMemory || 4
     const connection = (navigator as any).connection
 
-    this.isLowEndDevice
-      = hardwareConcurrency <= 2
-      || deviceMemory <= 2
-      || (connection && connection.effectiveType
-        && ['slow-2g', '2g', '3g'].includes(connection.effectiveType))
+    this.isLowEndDevice =
+      hardwareConcurrency <= 2 ||
+      deviceMemory <= 2 ||
+      (connection &&
+        connection.effectiveType &&
+        ['slow-2g', '2g', '3g'].includes(connection.effectiveType))
   }
 
   private setupPerformanceMonitoring() {
@@ -329,8 +339,13 @@ export class OfflineTileCache {
   }
 
   private lngLatToTile(lat: number, lng: number, zoom: number) {
-    const x = Math.floor((lng + 180) / 360 * Math.pow(2, zoom))
-    const y = Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom))
+    const x = Math.floor(((lng + 180) / 360) * Math.pow(2, zoom))
+    const y = Math.floor(
+      ((1 -
+        Math.log(Math.tan((lat * Math.PI) / 180) + 1 / Math.cos((lat * Math.PI) / 180)) / Math.PI) /
+        2) *
+        Math.pow(2, zoom)
+    )
     return { x, y }
   }
 
@@ -381,18 +396,16 @@ export class EmergencyRouter {
       const route = {
         type: 'Feature' as const,
         properties: {
-          distance: calculateDistance(
-            start.lat,
-            start.lng,
-            end.lat,
-            end.lng
-          ),
+          distance: calculateDistance(start.lat, start.lng, end.lat, end.lng),
           duration: 0, // Would be calculated by routing service
           emergency: preferences.emergencyVehicle || false
         },
         geometry: {
           type: 'LineString' as const,
-          coordinates: [[start.lng, start.lat], [end.lng, end.lat]]
+          coordinates: [
+            [start.lng, start.lat],
+            [end.lng, end.lat]
+          ]
         }
       }
 
@@ -472,7 +485,7 @@ export class MapAccessibilityManager {
   }
 
   private setupKeyboardNavigation() {
-    document.addEventListener('keydown', (e) => {
+    document.addEventListener('keydown', e => {
       const step = 0.001 // ~100m
       const center = this.map.getCenter()
 

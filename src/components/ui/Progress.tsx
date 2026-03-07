@@ -38,9 +38,15 @@ const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
     }
 
     const getVariant = () => {
-      if (variant !== 'default') return variantClasses[variant]
-      if (percentage >= 90) return variantClasses.danger
-      if (percentage >= 70) return variantClasses.warning
+      if (variant !== 'default') {
+        return variantClasses[variant]
+      }
+      if (percentage >= 90) {
+        return variantClasses.danger
+      }
+      if (percentage >= 70) {
+        return variantClasses.warning
+      }
       return variantClasses.default
     }
 

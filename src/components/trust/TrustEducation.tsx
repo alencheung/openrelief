@@ -66,7 +66,7 @@ export function TrustEducation({ compact = false, className }: TrustEducationPro
             <h4 className="font-medium mb-2">Why It Matters</h4>
             <ul className="text-sm text-muted-foreground space-y-1">
               <li>• Higher trust scores give your reports more weight</li>
-              <li>• Required to confirm or dispute other users' reports</li>
+              <li>• Required to confirm or dispute other users&apos; reports</li>
               <li>• Helps maintain system reliability</li>
               <li>• Builds community confidence</li>
             </ul>
@@ -125,7 +125,7 @@ export function TrustEducation({ compact = false, className }: TrustEducationPro
                 <div>
                   <h5 className="font-medium text-sm">Confirmation Accuracy</h5>
                   <p className="text-xs text-muted-foreground">
-                    Accuracy when confirming others' reports
+                    Accuracy when confirming others&apos; reports
                   </p>
                 </div>
               </div>
@@ -227,7 +227,7 @@ export function TrustEducation({ compact = false, className }: TrustEducationPro
                   <Badge variant="outline">{(thresholds.confirming * 100).toFixed(0)}%</Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Required to confirm or validate other users' reports
+                  Required to confirm or validate other users&apos; reports
                 </p>
               </CardContent>
             </Card>

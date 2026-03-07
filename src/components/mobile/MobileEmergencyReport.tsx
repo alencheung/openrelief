@@ -19,8 +19,6 @@ import {
   Check,
   AlertCircle
 } from 'lucide-react'
-import { Button } from '@/components/ui/Button'
-import { EnhancedCard } from '@/components/ui/EnhancedCard'
 import { EmergencyIndicator } from '@/components/ui/EmergencyIndicator'
 import { FormFeedback } from '@/components/ui/FormFeedback'
 
@@ -52,7 +50,7 @@ export interface EmergencyReportData {
   metadata?: Record<string, any>
 }
 
-const emergencyTypes: EmergencyType[] = [
+const _emergencyTypes: EmergencyType[] = [
   {
     id: 'fire',
     name: 'Fire',
@@ -103,8 +101,8 @@ export function MobileEmergencyReport({
   onClose,
   onSubmit,
   initialLocation,
-  emergencyTypes = emergencyTypes,
-  className
+  emergencyTypes = _emergencyTypes,
+  className: _className
 }: MobileEmergencyReportProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const [selectedType, setSelectedType] = useState<EmergencyType | null>(null)
@@ -119,9 +117,9 @@ export function MobileEmergencyReport({
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isOnline, setIsOnline] = useState(true)
 
-  const { isMobile, isTouch } = useMobileDetection()
+  const { isMobile: _isMobile, isTouch: _isTouch } = useMobileDetection()
   const { getOptimizedSettings } = useMobilePerformance()
-  const performanceSettings = getOptimizedSettings()
+  const _performanceSettings = getOptimizedSettings()
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const audioRecorderRef = useRef<MediaRecorder | null>(null)
@@ -153,13 +151,13 @@ export function MobileEmergencyReport({
   useEffect(() => {
     if (!initialLocation && !location && 'geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
+        position => {
           setLocation({
             lat: position.coords.latitude,
             lng: position.coords.longitude
           })
         },
-        (error) => {
+        error => {
           console.error('Error getting location:', error)
         },
         {
@@ -173,7 +171,7 @@ export function MobileEmergencyReport({
 
   // Handle swipe gestures for navigation
   const swipeRef = useTouchGestures({
-    onSwipe: (direction) => {
+    onSwipe: direction => {
       if (direction === 'right' && currentStep > 0) {
         setCurrentStep(currentStep - 1)
       } else if (direction === 'left' && currentStep < steps.length - 1) {
@@ -224,8 +222,9 @@ export function MobileEmergencyReport({
 
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || [])
-    const validImages = files.filter(file =>
-      file.type.startsWith('image/') && file.size <= 5 * 1024 * 1024 // 5MB limit
+    // 5MB limit
+    const validImages = files.filter(
+      file => file.type.startsWith('image/') && file.size <= 5 * 1024 * 1024
     )
 
     if (validImages.length !== files.length) {
@@ -235,7 +234,8 @@ export function MobileEmergencyReport({
       }))
     }
 
-    setImages(prev => [...prev, ...validImages].slice(0, 5)) // Max 5 images
+    // Max 5 images
+    setImages(prev => [...prev, ...validImages].slice(0, 5))
   }
 
   // Handle audio recording
@@ -245,7 +245,7 @@ export function MobileEmergencyReport({
       const recorder = new MediaRecorder(stream)
       audioChunksRef.current = []
 
-      recorder.ondataavailable = (event) => {
+      recorder.ondataavailable = event => {
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data)
         }
@@ -343,12 +343,10 @@ export function MobileEmergencyReport({
         >
           <X className="w-5 h-5" />
         </button>
-
         <div className="flex items-center gap-2">
           <EmergencyIndicator type="critical" size="sm" />
           <h1 className="text-lg font-semibold">Report Emergency</h1>
         </div>
-
         <div className="w-9" /> {/* Spacer for centering */}
       </div>
 
@@ -381,17 +379,14 @@ export function MobileEmergencyReport({
       </div>
 
       {/* Content */}
-      <div
-        ref={swipeRef.ref}
-        className="flex-1 overflow-y-auto safe-area-inset-bottom"
-      >
+      <div ref={swipeRef.ref} className="flex-1 overflow-y-auto safe-area-inset-bottom">
         {/* Step 1: Emergency Type */}
         {currentStep === 0 && (
           <div className="p-4 space-y-4">
             <h2 className="text-xl font-semibold text-center">What type of emergency?</h2>
 
             <div className="grid grid-cols-2 gap-3">
-              {emergencyTypes.map((type) => (
+              {emergencyTypes.map(type => (
                 <button
                   key={type.id}
                   className={cn(
@@ -414,9 +409,7 @@ export function MobileEmergencyReport({
               ))}
             </div>
 
-            {errors.type && (
-              <FormFeedback type="error" message={errors.type} />
-            )}
+            {errors.type && <FormFeedback type="error" message={errors.type} />}
           </div>
         )}
 
@@ -432,13 +425,11 @@ export function MobileEmergencyReport({
                   type="text"
                   className="mobile-input"
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={e => setTitle(e.target.value)}
                   placeholder="Brief description of emergency"
                   maxLength={100}
                 />
-                {errors.title && (
-                  <FormFeedback type="error" message={errors.title} />
-                )}
+                {errors.title && <FormFeedback type="error" message={errors.title} />}
               </div>
 
               <div>
@@ -446,19 +437,17 @@ export function MobileEmergencyReport({
                 <textarea
                   className="mobile-input min-h-[100px] resize-none"
                   value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  onChange={e => setDescription(e.target.value)}
                   placeholder="Detailed description of what's happening"
                   maxLength={500}
                 />
-                {errors.description && (
-                  <FormFeedback type="error" message={errors.description} />
-                )}
+                {errors.description && <FormFeedback type="error" message={errors.description} />}
               </div>
 
               <div>
                 <label className="mobile-label">Severity</label>
                 <div className="space-y-2">
-                  {severityLevels.map((level) => (
+                  {severityLevels.map(level => (
                     <button
                       key={level.value}
                       className={cn(
@@ -497,17 +486,13 @@ export function MobileEmergencyReport({
                       </div>
                     </div>
                   ) : (
-                    <div className="text-sm text-muted-foreground">
-                      Getting location...
-                    </div>
+                    <div className="text-sm text-muted-foreground">Getting location...</div>
                   )}
                 </div>
               </div>
             </div>
 
-            {errors.location && (
-              <FormFeedback type="error" message={errors.location} />
-            )}
+            {errors.location && <FormFeedback type="error" message={errors.location} />}
           </div>
         )}
 
@@ -522,6 +507,7 @@ export function MobileEmergencyReport({
               <div className="grid grid-cols-3 gap-2">
                 {images.map((image, index) => (
                   <div key={index} className="relative aspect-square">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={URL.createObjectURL(image)}
                       alt={`Emergency photo ${index + 1}`}
@@ -591,12 +577,8 @@ export function MobileEmergencyReport({
               </div>
             </div>
 
-            {errors.images && (
-              <FormFeedback type="error" message={errors.images} />
-            )}
-            {errors.audio && (
-              <FormFeedback type="error" message={errors.audio} />
-            )}
+            {errors.images && <FormFeedback type="error" message={errors.images} />}
+            {errors.audio && <FormFeedback type="error" message={errors.audio} />}
           </div>
         )}
 
@@ -667,8 +649,7 @@ export function MobileEmergencyReport({
               <span className="text-sm text-muted-foreground">
                 {isOnline
                   ? 'Your report will be submitted immediately.'
-                  : 'Your report will be saved locally and submitted when you\'re back online.'
-                }
+                  : "Your report will be saved locally and submitted when you're back online."}
               </span>
             </div>
           </div>

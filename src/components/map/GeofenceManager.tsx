@@ -1,14 +1,15 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { MapPin, Shield, AlertTriangle, Plus, Trash2, Edit, Save, X, Radio } from 'lucide-react'
+import { MapPin, Shield, Plus, Trash2, Edit, Save, X, Radio } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useLocationStore, useEmergencyStore } from '@/store'
-import { Geofence, LocationPoint } from '@/types'
+import { useLocationStore } from '@/store'
+import { Geofence } from '@/types'
 
 interface GeofenceManagerProps {
   className?: string
-  mapInstance?: any // MapLibre GL map instance
+  // MapLibre GL map instance
+  mapInstance?: any
   onGeofenceCreate?: (geofence: Geofence) => void
   onGeofenceUpdate?: (geofenceId: string, updates: Partial<Geofence>) => void
   onGeofenceDelete?: (geofenceId: string) => void
@@ -72,7 +73,7 @@ export default function GeofenceManager({
     removeGeofence,
     updateGeofence,
     toggleGeofence,
-    checkGeofences,
+    _checkGeofences,
     geofenceHistory
   } = useLocationStore()
 
@@ -93,7 +94,6 @@ export default function GeofenceManager({
     return () => {
       // Clean up any remaining map event listeners when component unmounts
       if (mapClickHandlerRef.current && mapInstance) {
-        console.log('Debug: Cleaning up map click listener on component unmount')
         mapInstance.off('click', mapClickHandlerRef.current)
         mapClickHandlerRef.current = null
         mapInstance.getCanvas().style.cursor = ''
@@ -107,12 +107,10 @@ export default function GeofenceManager({
       return
     }
 
-    console.log('Debug: Starting location selection on map')
     setIsSelectingLocation(true)
     mapInstance.getCanvas().style.cursor = 'crosshair'
 
     const handleMapClick = (e: any) => {
-      console.log('Debug: Map clicked for location selection:', e.lngLat)
       const coords = e.lngLat
       setFormData(prev => ({
         ...prev,
@@ -125,13 +123,11 @@ export default function GeofenceManager({
         mapClickHandlerRef.current = null
       }
       setIsSelectingLocation(false)
-      console.log('Debug: Location selection completed:', { lat: coords.lat, lng: coords.lng })
     }
 
     // FIXED: Store handler reference for proper cleanup
     mapClickHandlerRef.current = handleMapClick
     mapInstance.on('click', handleMapClick)
-    console.log('Debug: Map click listener added')
   }
 
   // Start creating new geofence
@@ -170,7 +166,7 @@ export default function GeofenceManager({
   // Save geofence
   const saveGeofence = () => {
     if (!formData.name.trim()) {
-      alert('Please enter a geofence name')
+      // TODO: Replace with toast notification
       return
     }
 
@@ -186,16 +182,15 @@ export default function GeofenceManager({
         ...(formData.description && { description: formData.description }),
         // FIXED: Ensure severity is not undefined
         severity: formData.severity || 'medium',
-        createdBy: 'current-user' // Would come from auth
+        // Would come from auth
+        createdBy: 'current-user'
       },
       ...(formData.expiresAt && { expiresAt: new Date(formData.expiresAt) })
     }
 
     if (isCreating) {
-      console.log('Debug: Creating new geofence with data:', geofenceData)
       // FIXED: Proper ID generation - the store should generate the ID
       const id = addGeofence(geofenceData)
-      console.log('Debug: Geofence created with ID:', id)
 
       // Create complete geofence object for callback
       const newGeofence: Geofence = {
@@ -205,7 +200,6 @@ export default function GeofenceManager({
       }
       onGeofenceCreate?.(newGeofence)
     } else if (editingId) {
-      console.log('Debug: Updating existing geofence:', editingId, geofenceData)
       updateGeofence(editingId, geofenceData)
       onGeofenceUpdate?.(editingId, geofenceData)
     }
@@ -215,10 +209,9 @@ export default function GeofenceManager({
 
   // Delete geofence
   const deleteGeofence = (geofenceId: string) => {
-    if (confirm('Are you sure you want to delete this geofence?')) {
-      removeGeofence(geofenceId)
-      onGeofenceDelete?.(geofenceId)
-    }
+    // TODO: Replace with confirmation dialog
+    removeGeofence(geofenceId)
+    onGeofenceDelete?.(geofenceId)
   }
 
   // Reset form
@@ -229,7 +222,6 @@ export default function GeofenceManager({
 
     // FIXED: Clean up map event listener when resetting form
     if (mapClickHandlerRef.current && mapInstance) {
-      console.log('Debug: Cleaning up map click listener on form reset')
       mapInstance.off('click', mapClickHandlerRef.current)
       mapClickHandlerRef.current = null
       mapInstance.getCanvas().style.cursor = ''
@@ -303,7 +295,7 @@ export default function GeofenceManager({
               </p>
             </div>
           ) : (
-            geofences.map((geofence) => {
+            geofences.map(geofence => {
               const typeInfo = getGeofenceTypeInfo(geofence.type)
               const isActive = activeGeofences.includes(geofence.id)
 
@@ -314,9 +306,7 @@ export default function GeofenceManager({
                       <div className="flex items-center space-x-2">
                         <span className="text-lg">{typeInfo?.icon}</span>
                         <h4 className="font-medium text-gray-900">{geofence.name}</h4>
-                        {geofence.isActive && (
-                          <div className="w-2 h-2 bg-green-500 rounded-full" />
-                        )}
+                        {geofence.isActive && <div className="w-2 h-2 bg-green-500 rounded-full" />}
                       </div>
 
                       {geofence.metadata?.description && (
@@ -326,26 +316,30 @@ export default function GeofenceManager({
                       )}
 
                       <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                        <span className={cn('font-medium', (typeInfo?.color || '#000000').replace('#', 'text-'))}>
+                        <span
+                          className={cn(
+                            'font-medium',
+                            (typeInfo?.color || '#000000').replace('#', 'text-')
+                          )}
+                        >
                           {typeInfo?.label || 'Unknown'}
                         </span>
                         <span>Radius: {formatRadius(geofence.radius)}</span>
-                        {geofence.metadata?.severity && (() => {
-                          const severity = geofence.metadata.severity || 'medium'
-                          const info = getSeverityInfo(severity) || { color: '#000000', label: 'Unknown' }
-                          return (
-                            <span className={cn(
-                              'font-medium',
-                              info.color.replace('#', 'text-')
-                            )}>
-                              {severity}
-                            </span>
-                          )
-                        })()}
+                        {geofence.metadata?.severity &&
+                          (() => {
+                            const severity = geofence.metadata.severity || 'medium'
+                            const info = getSeverityInfo(severity) || {
+                              color: '#000000',
+                              label: 'Unknown'
+                            }
+                            return (
+                              <span className={cn('font-medium', info.color.replace('#', 'text-'))}>
+                                {severity}
+                              </span>
+                            )
+                          })()}
                         {geofence.expiresAt && (
-                          <span>
-                            Expires: {new Date(geofence.expiresAt).toLocaleDateString()}
-                          </span>
+                          <span>Expires: {new Date(geofence.expiresAt).toLocaleDateString()}</span>
                         )}
                       </div>
 
@@ -398,10 +392,7 @@ export default function GeofenceManager({
               <h3 className="font-semibold text-gray-900">
                 {isCreating ? 'Create Geofence' : 'Edit Geofence'}
               </h3>
-              <button
-                onClick={resetForm}
-                className="text-gray-400 hover:text-gray-600"
-              >
+              <button onClick={resetForm} className="text-gray-400 hover:text-gray-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -415,7 +406,7 @@ export default function GeofenceManager({
                 <input
                   type="text"
                   value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Enter geofence name"
                 />
@@ -427,10 +418,12 @@ export default function GeofenceManager({
                   Type <span className="text-red-500">*</span>
                 </label>
                 <div className="grid grid-cols-2 gap-2">
-                  {geofenceTypes.map((type) => (
+                  {geofenceTypes.map(type => (
                     <button
                       key={type.value}
-                      onClick={() => setFormData(prev => ({ ...prev, type: type.value as Geofence['type'] }))}
+                      onClick={() =>
+                        setFormData(prev => ({ ...prev, type: type.value as Geofence['type'] }))
+                      }
                       className={cn(
                         'p-2 rounded-lg border-2 transition-all text-left',
                         formData.type === type.value
@@ -487,7 +480,7 @@ export default function GeofenceManager({
                   max="5000"
                   step="50"
                   value={formData.radius}
-                  onChange={(e) => setFormData(prev => ({ ...prev, radius: Number(e.target.value) }))}
+                  onChange={e => setFormData(prev => ({ ...prev, radius: Number(e.target.value) }))}
                   className="w-full"
                 />
               </div>
@@ -498,10 +491,12 @@ export default function GeofenceManager({
                   Severity Level
                 </label>
                 <div className="grid grid-cols-4 gap-2">
-                  {severityLevels.map((severity) => (
+                  {severityLevels.map(severity => (
                     <button
                       key={severity.value}
-                      onClick={() => setFormData(prev => ({ ...prev, severity: severity.value as any }))}
+                      onClick={() =>
+                        setFormData(prev => ({ ...prev, severity: severity.value as any }))
+                      }
                       className={cn(
                         'p-2 rounded-lg border-2 transition-all text-xs font-medium',
                         formData.severity === severity.value
@@ -517,12 +512,10 @@ export default function GeofenceManager({
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                 <textarea
                   value={formData.description || ''}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   rows={3}
                   placeholder="Optional description of this geofence"
@@ -535,7 +528,7 @@ export default function GeofenceManager({
                   type="checkbox"
                   id="isActive"
                   checked={formData.isActive}
-                  onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
+                  onChange={e => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
                 <label htmlFor="isActive" className="ml-2 text-sm text-gray-700">
@@ -587,12 +580,14 @@ export default function GeofenceManager({
                     <span className="font-medium text-gray-900">
                       {geofence?.name || 'Unknown Geofence'}
                     </span>
-                    <span className={cn(
-                      'px-2 py-1 rounded text-xs font-medium',
-                      entry.action === 'enter'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-red-100 text-red-700'
-                    )}>
+                    <span
+                      className={cn(
+                        'px-2 py-1 rounded text-xs font-medium',
+                        entry.action === 'enter'
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-red-100 text-red-700'
+                      )}
+                    >
                       {entry.action === 'enter' ? 'Entered' : 'Exited'}
                     </span>
                   </div>

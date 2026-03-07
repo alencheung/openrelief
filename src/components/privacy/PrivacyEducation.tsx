@@ -7,7 +7,7 @@
 
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { StatusIndicator } from '@/components/ui/StatusIndicator'
@@ -17,37 +17,16 @@ import {
   Shield,
   AlertTriangle,
   CheckCircle,
-  Info,
   Play,
-  FileText,
   Settings,
   Eye,
-  EyeOff,
-  Lock,
-  Unlock,
   Zap,
   Brain,
-  Heart,
-  Users,
-  Database,
-  BarChart3,
-  TrendingUp,
   Award,
-  Target,
   Lightbulb,
-  ChevronRight,
-  Download,
   ExternalLink,
-  Video,
-  MessageSquare,
-  CheckSquare,
-  Clock,
-  Calendar,
-  HelpCircle,
   Star,
   ThumbsUp,
-  ThumbsDown,
-  Share2,
   Filter,
   Search
 } from 'lucide-react'
@@ -57,11 +36,11 @@ interface Tutorial {
   id: string
   title: string
   description: string
-  duration: number // in minutes
+  duration: number
   category: 'basics' | 'advanced' | 'emergency' | 'legal'
   difficulty: 'beginner' | 'intermediate' | 'advanced'
   completed: boolean
-  progress: number // 0-100
+  progress: number
   topics: string[]
   interactiveElements: boolean
   lastAccessed?: Date
@@ -74,9 +53,9 @@ interface Recommendation {
   description: string
   impact: 'low' | 'medium' | 'high'
   effort: 'easy' | 'moderate' | 'difficult'
-  priority: number // 1-10
+  priority: number
   implemented: boolean
-  savings: string // Time, data, or cost savings
+  savings: string
 }
 
 interface RiskAssessment {
@@ -96,7 +75,7 @@ interface RiskAssessment {
     weight: number
     description: string
   }[]
-  score: number // 0-100
+  score: number
   recommendations: string[]
   lastAssessed: Date
 }
@@ -134,13 +113,13 @@ const PrivacyEducation: React.FC = () => {
   const [activeTab, setActiveTab] = useState<
     'tutorials' | 'recommendations' | 'assessment' | 'practices' | 'settings'
   >('tutorials')
-  const [selectedTutorial, setSelectedTutorial] = useState<string | null>(null)
+  const [selectedTutorial, _setSelectedTutorial] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterCategory, setFilterCategory] = useState<string>('all')
   const [isLoading, setIsLoading] = useState(false)
 
   // Mock data for demonstration
-  const [tutorials, setTutorials] = useState<Tutorial[]>([
+  const [tutorials, _setTutorials] = useState<Tutorial[]>([
     {
       id: 'tut-001',
       title: 'Privacy Basics: Understanding Your Rights',
@@ -153,7 +132,7 @@ const PrivacyEducation: React.FC = () => {
       progress: 100,
       topics: ['GDPR Rights', 'Data Protection', 'Emergency Response Privacy'],
       interactiveElements: true,
-      lastAccessed: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
+      lastAccessed: new Date(Date.now() - 2 * (24 * 60 * 60 * 1000))
     },
     {
       id: 'tut-002',
@@ -248,7 +227,7 @@ const PrivacyEducation: React.FC = () => {
     }
   ])
 
-  const [riskAssessments, setRiskAssessments] = useState<RiskAssessment[]>([
+  const [riskAssessments, _setRiskAssessments] = useState<RiskAssessment[]>([
     {
       id: 'risk-001',
       category: 'location_privacy',
@@ -333,7 +312,7 @@ const PrivacyEducation: React.FC = () => {
     }
   ])
 
-  const [bestPractices, setBestPractices] = useState<BestPractice[]>([
+  const [bestPractices, _setBestPractices] = useState<BestPractice[]>([
     {
       id: 'prac-001',
       category: 'data_protection',
@@ -433,7 +412,7 @@ const PrivacyEducation: React.FC = () => {
     }
   ])
 
-  const [privacySettings, setPrivacySettings] = useState<PrivacySetting[]>([
+  const [privacySettings, _setPrivacySettings] = useState<PrivacySetting[]>([
     {
       id: 'set-001',
       name: 'Location Precision Control',
