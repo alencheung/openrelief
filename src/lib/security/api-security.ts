@@ -14,7 +14,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { authSecurityManager } from './auth-security'
 import { inputValidator, validateApiInput, ValidationResult } from './input-validation'
 import { sybilPreventionEngine } from './sybil-prevention'
-import { securityMonitor } from '@/lib/audit/security-monitor'
+import {
+  securityMonitor,
+  SecurityIncidentType,
+  IncidentSeverity
+} from '@/lib/audit/security-monitor'
 import { supabaseAdmin } from '@/lib/supabase'
 
 // API Security configuration
@@ -179,9 +183,9 @@ export class APISecurityManager {
 
     // Check trust score requirement
     if (
-      config.minTrustScore
-      && securityContext.trustScore
-      && securityContext.trustScore < config.minTrustScore
+      config.minTrustScore &&
+      securityContext.trustScore &&
+      securityContext.trustScore < config.minTrustScore
     ) {
       return {
         allowed: false,
@@ -257,9 +261,9 @@ export class APISecurityManager {
     securityContext?: SecurityContext
   }> {
     // Get session token from headers or cookies
-    const sessionToken
-      = request.headers.get('authorization')?.replace('Bearer ', '')
-      || request.cookies.get('session-token')?.value
+    const sessionToken =
+      request.headers.get('authorization')?.replace('Bearer ', '') ||
+      request.cookies.get('session-token')?.value
 
     if (!sessionToken) {
       return {
@@ -380,8 +384,8 @@ export class APISecurityManager {
       // Block high-risk users
       if (userRisk.riskLevel === 'critical') {
         await securityMonitor.createAlert(
-          'malicious_activity' as any,
-          'critical' as any,
+          SecurityIncidentType.MALICIOUS_ACTIVITY,
+          IncidentSeverity.CRITICAL,
           `Critical risk user ${userId} attempted API access`,
           `Risk score: ${userRisk.riskScore}, Flags: ${userRisk.flags.length}`,
           'api_security'
@@ -433,8 +437,8 @@ export class APISecurityManager {
       switch (flag.type) {
         case 'ip_change':
           await securityMonitor.createAlert(
-            'suspicious_login' as any,
-            'medium' as any,
+            SecurityIncidentType.SUSPICIOUS_LOGIN,
+            IncidentSeverity.MEDIUM,
             `IP address changed for user ${securityContext.userId}`,
             `Previous: ${session.ipAddress}, Current: ${securityContext.ipAddress}`,
             'api_security'
@@ -443,8 +447,8 @@ export class APISecurityManager {
 
         case 'device_change':
           await securityMonitor.createAlert(
-            'suspicious_login' as any,
-            'high' as any,
+            SecurityIncidentType.SUSPICIOUS_LOGIN,
+            IncidentSeverity.HIGH,
             `Device changed for user ${securityContext.userId}`,
             `Session: ${securityContext.sessionId}`,
             'api_security'
@@ -453,8 +457,8 @@ export class APISecurityManager {
 
         case 'concurrent_sessions':
           await securityMonitor.createAlert(
-            'suspicious_activity' as any,
-            'medium' as any,
+            SecurityIncidentType.SUSPICIOUS_ACTIVITY,
+            IncidentSeverity.MEDIUM,
             `Concurrent sessions detected for user ${securityContext.userId}`,
             `Session: ${securityContext.sessionId}`,
             'api_security'
@@ -472,8 +476,8 @@ export class APISecurityManager {
     validationResult: ValidationResult
   ): Promise<void> {
     await securityMonitor.createAlert(
-      'malicious_activity' as any,
-      'medium' as any,
+      SecurityIncidentType.MALICIOUS_ACTIVITY,
+      IncidentSeverity.MEDIUM,
       'Input validation failed',
       `Security flags: ${validationResult.securityFlags.map(f => f.type).join(', ')}`,
       'api_security',
@@ -508,8 +512,8 @@ export class APISecurityManager {
     }
 
     await securityMonitor.createAlert(
-      'api_access' as any,
-      config.auditLevel || ('medium' as any),
+      SecurityIncidentType.API_ACCESS,
+      (config.auditLevel as IncidentSeverity) || IncidentSeverity.MEDIUM,
       'API access logged',
       `${request.method} ${request.url}`,
       'api_security',
@@ -536,8 +540,8 @@ export class APISecurityManager {
     if (config.enableCORS && request) {
       const requestOrigin = request.headers.get('origin')
       const allowedOrigins = config.allowedOrigins || []
-      const originAllowed
-        = allowedOrigins.includes(requestOrigin || '') || allowedOrigins.includes('*')
+      const originAllowed =
+        allowedOrigins.includes(requestOrigin || '') || allowedOrigins.includes('*')
 
       if (originAllowed && requestOrigin) {
         response.headers.set('Access-Control-Allow-Origin', requestOrigin)

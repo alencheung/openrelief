@@ -10,36 +10,37 @@ const shouldUseMockClient = process.env.NODE_ENV === 'test'
 export const supabase = shouldUseMockClient
   ? createMockSupabaseClient()
   : createClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: true
-    },
-    realtime: {
-      params: {
-        eventsPerSecond: 10
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true
+      },
+      realtime: {
+        params: {
+          eventsPerSecond: 10
+        }
       }
-    }
-  })
+    })
 
 // Service role client for server-side operations
 export const supabaseAdmin = shouldUseMockClient
   ? createMockSupabaseClient()
   : createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  })
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
 
-// Mock Supabase client for development
+// Mock Supabase client for test environment only
 function createMockSupabaseClient() {
-  console.log('🔧 DEBUG: Creating mock Supabase client')
+  if (process.env.NODE_ENV !== 'test') {
+    console.warn('Warning: Mock Supabase client is intended for test environment only')
+  }
 
   return {
     auth: {
       signInWithPassword: async ({ email, password }: { email: string; password: string }) => {
-        console.log('🔧 DEBUG: Mock signInWithPassword', { email })
         await new Promise(resolve => setTimeout(resolve, 1000))
 
         if (email === 'test@example.com' && password === 'password') {
@@ -67,7 +68,6 @@ function createMockSupabaseClient() {
       },
 
       signUp: async ({ email, password }: { email: string; password: string }) => {
-        console.log('🔧 DEBUG: Mock signUp', { email })
         await new Promise(resolve => setTimeout(resolve, 1000))
 
         return {
@@ -88,7 +88,6 @@ function createMockSupabaseClient() {
       },
 
       signOut: async () => {
-        console.log('🔧 DEBUG: Mock signOut')
         await new Promise(resolve => setTimeout(resolve, 500))
         return { error: null }
       }
@@ -102,11 +101,11 @@ function createMockSupabaseClient() {
               data:
                 table === 'user_profiles'
                   ? {
-                    user_id: 'mock-user-id',
-                    trust_score: 0.5,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                  }
+                      user_id: 'mock-user-id',
+                      trust_score: 0.5,
+                      created_at: new Date().toISOString(),
+                      updated_at: new Date().toISOString()
+                    }
                   : null,
               error: null
             }),
@@ -148,7 +147,6 @@ function createMockSupabaseClient() {
     }),
 
     rpc: (fnName: string, params: any) => {
-      console.log('🔧 DEBUG: Mock RPC call', { fnName, params })
       return Promise.resolve({ data: null, error: null })
     },
 

@@ -56,6 +56,34 @@ interface InMemoryEntry {
 const inMemoryStore = new Map<string, InMemoryEntry>()
 const rateLimiters = new Map<string, Ratelimit>()
 
+// Configuration for in-memory store cleanup
+const IN_MEMORY_CONFIG = {
+  maxSize: 50000, // Maximum entries to prevent memory exhaustion
+  cleanupInterval: 5 * 60 * 1000 // Cleanup every 5 minutes
+}
+
+// Periodic cleanup of expired entries
+if (typeof setInterval !== 'undefined') {
+  setInterval(() => {
+    const now = Date.now()
+    for (const [key, entry] of inMemoryStore.entries()) {
+      if (now > entry.resetTime) {
+        inMemoryStore.delete(key)
+      }
+    }
+    // If still too large, remove oldest entries
+    if (inMemoryStore.size > IN_MEMORY_CONFIG.maxSize) {
+      const entries = Array.from(inMemoryStore.entries()).sort(
+        (a, b) => a[1].resetTime - b[1].resetTime
+      )
+      const toRemove = entries.slice(0, inMemoryStore.size - IN_MEMORY_CONFIG.maxSize)
+      for (const [key] of toRemove) {
+        inMemoryStore.delete(key)
+      }
+    }
+  }, IN_MEMORY_CONFIG.cleanupInterval)
+}
+
 export class RateLimiter {
   private redis: Redis | null = null
   private redisChecked = false

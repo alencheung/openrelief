@@ -19,7 +19,15 @@ export enum SecurityIncidentType {
   INSIDER_THREAT = 'insider_threat',
   PHISHING_ATTEMPT = 'phishing_attempt',
   SUSPICIOUS_LOGIN = 'suspicious_login',
-  ANOMALOUS_BEHAVIOR = 'anomalous_behavior'
+  ANOMALOUS_BEHAVIOR = 'anomalous_behavior',
+  // Additional alert types used throughout the application
+  API_ACCESS = 'api_access',
+  DATABASE_ERROR = 'database_error',
+  SYSTEM_ERROR = 'system_error',
+  SUCCESSFUL_LOGIN = 'successful_login',
+  FAILED_LOGIN = 'failed_login',
+  SESSION_INVALIDATED = 'session_invalidated',
+  SUSPICIOUS_ACTIVITY = 'suspicious_activity'
 }
 
 // Security incident severity levels
@@ -50,126 +58,126 @@ export enum IncidentImpact {
 
 // Security incident interface
 export interface SecurityIncident {
-  id: string;
-  type: SecurityIncidentType;
-  severity: IncidentSeverity;
-  status: IncidentStatus;
-  impact: IncidentImpact;
+  id: string
+  type: SecurityIncidentType
+  severity: IncidentSeverity
+  status: IncidentStatus
+  impact: IncidentImpact
 
   // Basic information
-  title: string;
-  description: string;
-  detectedAt: Date;
-  reportedBy?: string;
+  title: string
+  description: string
+  detectedAt: Date
+  reportedBy?: string
 
   // Technical details
-  sourceIpAddress?: string;
-  targetSystem?: string;
-  affectedUsers?: string[];
-  affectedData?: string[];
-  attackVector?: string;
-  indicators?: string[];
+  sourceIpAddress?: string
+  targetSystem?: string
+  affectedUsers?: string[]
+  affectedData?: string[]
+  attackVector?: string
+  indicators?: string[]
 
   // Investigation details
-  assignedTo?: string;
-  investigatedBy?: string;
-  investigationNotes?: string[];
-  evidence?: SecurityEvidence[];
+  assignedTo?: string
+  investigatedBy?: string
+  investigationNotes?: string[]
+  evidence?: SecurityEvidence[]
 
   // Resolution details
-  resolvedAt?: Date;
-  resolvedBy?: string;
-  resolution?: string;
-  lessonsLearned?: string;
+  resolvedAt?: Date
+  resolvedBy?: string
+  resolution?: string
+  lessonsLearned?: string
 
   // Impact assessment
-  dataBreach?: boolean;
-  recordsAffected?: number;
-  financialImpact?: number;
-  reputationalImpact?: 'none' | 'low' | 'medium' | 'high';
+  dataBreach?: boolean
+  recordsAffected?: number
+  financialImpact?: number
+  reputationalImpact?: 'none' | 'low' | 'medium' | 'high'
 
   // Notifications
-  notificationsSent: boolean;
-  stakeholdersNotified: boolean[];
+  notificationsSent: boolean
+  stakeholdersNotified: boolean[]
 
   // Metadata
-  tags?: string[];
-  relatedIncidents?: string[];
-  metadata?: Record<string, any>;
+  tags?: string[]
+  relatedIncidents?: string[]
+  metadata?: Record<string, any>
 
   // Timestamps
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: Date
+  updatedAt: Date
 }
 
 // Security evidence interface
 export interface SecurityEvidence {
-  id: string;
-  incidentId: string;
-  type: 'log' | 'screenshot' | 'network_capture' | 'file' | 'memory_dump' | 'system_state';
-  description: string;
-  filePath?: string;
-  url?: string;
-  hash?: string;
-  timestamp: Date;
-  collectedBy: string;
-  preserved: boolean;
+  id: string
+  incidentId: string
+  type: 'log' | 'screenshot' | 'network_capture' | 'file' | 'memory_dump' | 'system_state'
+  description: string
+  filePath?: string
+  url?: string
+  hash?: string
+  timestamp: Date
+  collectedBy: string
+  preserved: boolean
 }
 
 // Security alert interface
 export interface SecurityAlert {
-  id: string;
-  type: SecurityIncidentType;
-  severity: IncidentSeverity;
-  title: string;
-  description: string;
-  source: string;
-  timestamp: Date;
-  userId?: string;
-  ipAddress?: string;
-  userAgent?: string;
-  metadata?: Record<string, any>;
-  acknowledged: boolean;
-  acknowledgedBy?: string;
-  acknowledgedAt?: Date;
-  falsePositive: boolean;
-  resolved: boolean;
-  resolvedAt?: Date;
+  id: string
+  type: SecurityIncidentType
+  severity: IncidentSeverity
+  title: string
+  description: string
+  source: string
+  timestamp: Date
+  userId?: string
+  ipAddress?: string
+  userAgent?: string
+  metadata?: Record<string, any>
+  acknowledged: boolean
+  acknowledgedBy?: string
+  acknowledgedAt?: Date
+  falsePositive: boolean
+  resolved: boolean
+  resolvedAt?: Date
 }
 
 // Threat intelligence interface
 export interface ThreatIntelligence {
-  id: string;
-  indicatorType: 'ip' | 'domain' | 'hash' | 'url' | 'email';
-  indicator: string;
-  threatType: string;
-  severity: IncidentSeverity;
-  confidence: number; // 0-100
-  source: string;
-  description: string;
-  firstSeen: Date;
-  lastSeen: Date;
-  tags: string[];
-  active: boolean;
+  id: string
+  indicatorType: 'ip' | 'domain' | 'hash' | 'url' | 'email'
+  indicator: string
+  threatType: string
+  severity: IncidentSeverity
+  confidence: number // 0-100
+  source: string
+  description: string
+  firstSeen: Date
+  lastSeen: Date
+  tags: string[]
+  active: boolean
 }
 
 // Security metrics interface
 export interface SecurityMetrics {
   timeRange: {
-    start: Date;
-    end: Date;
-  };
-  totalIncidents: number;
-  incidentsByType: Record<SecurityIncidentType, number>;
-  incidentsBySeverity: Record<IncidentSeverity, number>;
-  averageResolutionTime: number; // hours
-  unresolvedIncidents: number;
-  criticalIncidents: number;
-  dataBreaches: number;
-  usersAffected: number;
-  systemsAffected: number;
-  threatsBlocked: number;
-  falsePositiveRate: number;
+    start: Date
+    end: Date
+  }
+  totalIncidents: number
+  incidentsByType: Record<SecurityIncidentType, number>
+  incidentsBySeverity: Record<IncidentSeverity, number>
+  averageResolutionTime: number // hours
+  unresolvedIncidents: number
+  criticalIncidents: number
+  dataBreaches: number
+  usersAffected: number
+  systemsAffected: number
+  threatsBlocked: number
+  falsePositiveRate: number
 }
 
 class SecurityMonitor {
@@ -415,14 +423,14 @@ class SecurityMonitor {
    * Perform impact assessment
    */
   async performImpactAssessment(incidentId: string): Promise<{
-    impact: IncidentImpact;
-    dataBreach: boolean;
-    recordsAffected: number;
-    usersAffected: number;
-    systemsAffected: number;
-    financialImpact: number;
-    reputationalImpact: 'none' | 'low' | 'medium' | 'high';
-    recommendations: string[];
+    impact: IncidentImpact
+    dataBreach: boolean
+    recordsAffected: number
+    usersAffected: number
+    systemsAffected: number
+    financialImpact: number
+    reputationalImpact: 'none' | 'low' | 'medium' | 'high'
+    recommendations: string[]
   }> {
     try {
       const incident = this.activeIncidents.get(incidentId)
@@ -458,7 +466,10 @@ class SecurityMonitor {
       const query = supabaseAdmin
         .from('security_incidents')
         .select('*')
-        .gte('detected_at', (startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)).toISOString())
+        .gte(
+          'detected_at',
+          (startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)).toISOString()
+        )
         .lte('detected_at', (endDate || new Date()).toISOString())
 
       const { data: incidents, error } = await query
@@ -493,7 +504,8 @@ class SecurityMonitor {
         metrics.incidentsByType[incident.type] = (metrics.incidentsByType[incident.type] || 0) + 1
 
         // Count by severity
-        metrics.incidentsBySeverity[incident.severity] = (metrics.incidentsBySeverity[incident.severity] || 0) + 1
+        metrics.incidentsBySeverity[incident.severity] =
+          (metrics.incidentsBySeverity[incident.severity] || 0) + 1
 
         // Count critical incidents
         if (incident.severity === IncidentSeverity.CRITICAL) {
@@ -501,7 +513,10 @@ class SecurityMonitor {
         }
 
         // Count unresolved
-        if (incident.status !== IncidentStatus.RESOLVED && incident.status !== IncidentStatus.FALSE_POSITIVE) {
+        if (
+          incident.status !== IncidentStatus.RESOLVED &&
+          incident.status !== IncidentStatus.FALSE_POSITIVE
+        ) {
           metrics.unresolvedIncidents++
         }
 
@@ -516,7 +531,9 @@ class SecurityMonitor {
 
         // Calculate resolution time
         if (incident.resolved_at) {
-          const resolutionTime = (new Date(incident.resolved_at).getTime() - new Date(incident.detected_at).getTime()) / (1000 * 60 * 60)
+          const resolutionTime =
+            (new Date(incident.resolved_at).getTime() - new Date(incident.detected_at).getTime()) /
+            (1000 * 60 * 60)
           totalResolutionTime += resolutionTime
           resolvedCount++
         }
@@ -584,9 +601,7 @@ class SecurityMonitor {
         ...intelligence
       }
 
-      await supabaseAdmin
-        .from('threat_intelligence')
-        .insert(threatIntelligence)
+      await supabaseAdmin.from('threat_intelligence').insert(threatIntelligence)
 
       this.threatIntelligence.set(id, threatIntelligence)
 
@@ -617,7 +632,10 @@ class SecurityMonitor {
     return `threat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   }
 
-  private assessInitialImpact(type: SecurityIncidentType, severity: IncidentSeverity): IncidentImpact {
+  private assessInitialImpact(
+    type: SecurityIncidentType,
+    severity: IncidentSeverity
+  ): IncidentImpact {
     if (severity === IncidentSeverity.CRITICAL) {
       return IncidentImpact.SEVERE
     }
@@ -692,9 +710,8 @@ class SecurityMonitor {
     }
 
     // Check for multiple similar alerts
-    const recentAlerts = Array.from(this.securityAlerts.values()).filter(a =>
-      a.type === alert.type
-      && a.timestamp > new Date(Date.now() - 60 * 60 * 1000) // Last hour
+    const recentAlerts = Array.from(this.securityAlerts.values()).filter(
+      a => a.type === alert.type && a.timestamp > new Date(Date.now() - 60 * 60 * 1000) // Last hour
     )
 
     return recentAlerts.length >= 3
@@ -719,14 +736,14 @@ class SecurityMonitor {
   }
 
   private async analyzeIncidentImpact(incident: SecurityIncident): Promise<{
-    impact: IncidentImpact;
-    dataBreach: boolean;
-    recordsAffected: number;
-    usersAffected: number;
-    systemsAffected: number;
-    financialImpact: number;
-    reputationalImpact: 'none' | 'low' | 'medium' | 'high';
-    recommendations: string[];
+    impact: IncidentImpact
+    dataBreach: boolean
+    recordsAffected: number
+    usersAffected: number
+    systemsAffected: number
+    financialImpact: number
+    reputationalImpact: 'none' | 'low' | 'medium' | 'high'
+    recommendations: string[]
   }> {
     // This is a simplified impact assessment
     // In a real implementation, this would be much more sophisticated
@@ -781,7 +798,11 @@ class SecurityMonitor {
       const { data, error } = await supabaseAdmin
         .from('security_incidents')
         .select('*')
-        .in('status', [IncidentStatus.DETECTED, IncidentStatus.INVESTIGATING, IncidentStatus.CONTAINED])
+        .in('status', [
+          IncidentStatus.DETECTED,
+          IncidentStatus.INVESTIGATING,
+          IncidentStatus.CONTAINED
+        ])
 
       if (error) {
         throw error
@@ -816,9 +837,12 @@ class SecurityMonitor {
 
   private startRealTimeMonitoring(): void {
     // Monitor for suspicious patterns
-    setInterval(async () => {
-      await this.checkSuspiciousPatterns()
-    }, 5 * 60 * 1000) // Every 5 minutes
+    setInterval(
+      async () => {
+        await this.checkSuspiciousPatterns()
+      },
+      5 * 60 * 1000
+    ) // Every 5 minutes
   }
 
   private async checkSuspiciousPatterns(): Promise<void> {
@@ -866,7 +890,8 @@ class SecurityMonitor {
         }
 
         for (const [userId, count] of accessByUser.entries()) {
-          if (count >= 100) { // Unusually high access
+          if (count >= 100) {
+            // Unusually high access
             await this.createAlert(
               SecurityIncidentType.ANOMALOUS_BEHAVIOR,
               IncidentSeverity.MEDIUM,
@@ -885,43 +910,41 @@ class SecurityMonitor {
 
   private async saveIncident(incident: SecurityIncident): Promise<void> {
     try {
-      await supabaseAdmin
-        .from('security_incidents')
-        .upsert({
-          id: incident.id,
-          type: incident.type,
-          severity: incident.severity,
-          status: incident.status,
-          impact: incident.impact,
-          title: incident.title,
-          description: incident.description,
-          detected_at: incident.detectedAt.toISOString(),
-          reported_by: incident.reportedBy,
-          source_ip_address: incident.sourceIpAddress,
-          target_system: incident.targetSystem,
-          affected_users: incident.affectedUsers,
-          affected_data: incident.affectedData,
-          attack_vector: incident.attackVector,
-          indicators: incident.indicators,
-          assigned_to: incident.assignedTo,
-          investigated_by: incident.investigatedBy,
-          investigation_notes: incident.investigationNotes,
-          resolved_at: incident.resolvedAt?.toISOString(),
-          resolved_by: incident.resolvedBy,
-          resolution: incident.resolution,
-          lessons_learned: incident.lessonsLearned,
-          data_breach: incident.dataBreach,
-          records_affected: incident.recordsAffected,
-          financial_impact: incident.financialImpact,
-          reputational_impact: incident.reputationalImpact,
-          notifications_sent: incident.notificationsSent,
-          stakeholders_notified: incident.stakeholdersNotified,
-          tags: incident.tags,
-          related_incidents: incident.relatedIncidents,
-          metadata: incident.metadata,
-          created_at: incident.createdAt.toISOString(),
-          updated_at: incident.updatedAt.toISOString()
-        })
+      await supabaseAdmin.from('security_incidents').upsert({
+        id: incident.id,
+        type: incident.type,
+        severity: incident.severity,
+        status: incident.status,
+        impact: incident.impact,
+        title: incident.title,
+        description: incident.description,
+        detected_at: incident.detectedAt.toISOString(),
+        reported_by: incident.reportedBy,
+        source_ip_address: incident.sourceIpAddress,
+        target_system: incident.targetSystem,
+        affected_users: incident.affectedUsers,
+        affected_data: incident.affectedData,
+        attack_vector: incident.attackVector,
+        indicators: incident.indicators,
+        assigned_to: incident.assignedTo,
+        investigated_by: incident.investigatedBy,
+        investigation_notes: incident.investigationNotes,
+        resolved_at: incident.resolvedAt?.toISOString(),
+        resolved_by: incident.resolvedBy,
+        resolution: incident.resolution,
+        lessons_learned: incident.lessonsLearned,
+        data_breach: incident.dataBreach,
+        records_affected: incident.recordsAffected,
+        financial_impact: incident.financialImpact,
+        reputational_impact: incident.reputationalImpact,
+        notifications_sent: incident.notificationsSent,
+        stakeholders_notified: incident.stakeholdersNotified,
+        tags: incident.tags,
+        related_incidents: incident.relatedIncidents,
+        metadata: incident.metadata,
+        created_at: incident.createdAt.toISOString(),
+        updated_at: incident.updatedAt.toISOString()
+      })
     } catch (error) {
       console.error('Error saving incident:', error)
     }
@@ -929,27 +952,25 @@ class SecurityMonitor {
 
   private async saveAlert(alert: SecurityAlert): Promise<void> {
     try {
-      await supabaseAdmin
-        .from('security_alerts')
-        .upsert({
-          id: alert.id,
-          type: alert.type,
-          severity: alert.severity,
-          title: alert.title,
-          description: alert.description,
-          source: alert.source,
-          timestamp: alert.timestamp.toISOString(),
-          user_id: alert.userId,
-          ip_address: alert.ipAddress,
-          user_agent: alert.userAgent,
-          metadata: alert.metadata,
-          acknowledged: alert.acknowledged,
-          acknowledged_by: alert.acknowledgedBy,
-          acknowledged_at: alert.acknowledgedAt?.toISOString(),
-          false_positive: alert.falsePositive,
-          resolved: alert.resolved,
-          resolved_at: alert.resolvedAt?.toISOString()
-        })
+      await supabaseAdmin.from('security_alerts').upsert({
+        id: alert.id,
+        type: alert.type,
+        severity: alert.severity,
+        title: alert.title,
+        description: alert.description,
+        source: alert.source,
+        timestamp: alert.timestamp.toISOString(),
+        user_id: alert.userId,
+        ip_address: alert.ipAddress,
+        user_agent: alert.userAgent,
+        metadata: alert.metadata,
+        acknowledged: alert.acknowledged,
+        acknowledged_by: alert.acknowledgedBy,
+        acknowledged_at: alert.acknowledgedAt?.toISOString(),
+        false_positive: alert.falsePositive,
+        resolved: alert.resolved,
+        resolved_at: alert.resolvedAt?.toISOString()
+      })
     } catch (error) {
       console.error('Error saving alert:', error)
     }
@@ -957,20 +978,18 @@ class SecurityMonitor {
 
   private async saveEvidence(evidence: SecurityEvidence): Promise<void> {
     try {
-      await supabaseAdmin
-        .from('security_evidence')
-        .insert({
-          id: evidence.id,
-          incident_id: evidence.incidentId,
-          type: evidence.type,
-          description: evidence.description,
-          file_path: evidence.filePath,
-          url: evidence.url,
-          hash: evidence.hash,
-          timestamp: evidence.timestamp.toISOString(),
-          collected_by: evidence.collectedBy,
-          preserved: evidence.preserved
-        })
+      await supabaseAdmin.from('security_evidence').insert({
+        id: evidence.id,
+        incident_id: evidence.incidentId,
+        type: evidence.type,
+        description: evidence.description,
+        file_path: evidence.filePath,
+        url: evidence.url,
+        hash: evidence.hash,
+        timestamp: evidence.timestamp.toISOString(),
+        collected_by: evidence.collectedBy,
+        preserved: evidence.preserved
+      })
     } catch (error) {
       console.error('Error saving evidence:', error)
     }

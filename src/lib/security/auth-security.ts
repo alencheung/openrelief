@@ -12,7 +12,11 @@
 
 import { createHash, randomBytes, scrypt, timingSafeEqual } from 'crypto'
 import { sign, verify } from 'jsonwebtoken'
-import { securityMonitor } from '@/lib/audit/security-monitor'
+import {
+  securityMonitor,
+  SecurityIncidentType,
+  IncidentSeverity
+} from '@/lib/audit/security-monitor'
 import { supabaseAdmin } from '@/lib/supabase'
 import { redisSessionStore } from '@/lib/redis/session-store'
 import { redisLoginAttemptsStore } from '@/lib/redis/login-attempts-store'
@@ -351,8 +355,8 @@ export class AuthSecurityManager {
 
       if (!isValid) {
         await securityMonitor.createAlert(
-          'unauthorized_access' as any,
-          'medium' as any,
+          SecurityIncidentType.UNAUTHORIZED_ACCESS,
+          IncidentSeverity.MEDIUM,
           `MFA verification failed for user ${session.userId}`,
           `Method: ${method}, Session: ${sessionId}`,
           'auth_security'
@@ -433,8 +437,8 @@ export class AuthSecurityManager {
       // Log security flags
       if (securityFlags.length > 0) {
         await securityMonitor.createAlert(
-          'suspicious_login' as any,
-          'medium' as any,
+          SecurityIncidentType.SUSPICIOUS_LOGIN,
+          IncidentSeverity.MEDIUM,
           `Security flags detected for session ${sessionId}`,
           `Flags: ${securityFlags.map(f => f.type).join(', ')}`,
           'auth_security'
@@ -499,13 +503,15 @@ export class AuthSecurityManager {
    * Generate device fingerprint
    */
   generateDeviceFingerprint(userAgent: string): string {
-    // This is a simplified fingerprint - in production, use more sophisticated methods
+    // This is a simplified fingerprint for server-side use
+    // Client-side fingerprinting should be done separately and passed to the server
     const fingerprintData = {
       userAgent,
       acceptLanguage: 'en-US,en;q=0.9',
-      platform: navigator?.platform || 'unknown',
-      cookieEnabled: navigator?.cookieEnabled || false,
-      doNotTrack: navigator?.doNotTrack || 'unknown'
+      // navigator is not available server-side, use defaults
+      platform: 'server',
+      cookieEnabled: false,
+      doNotTrack: 'unknown'
     }
 
     return createHash('sha256')
@@ -605,8 +611,8 @@ export class AuthSecurityManager {
 
     // Log to audit system
     await securityMonitor.createAlert(
-      attempt.success ? 'successful_login' : ('failed_login' as any),
-      attempt.success ? 'low' : ('medium' as any),
+      attempt.success ? SecurityIncidentType.SUCCESSFUL_LOGIN : SecurityIncidentType.FAILED_LOGIN,
+      attempt.success ? IncidentSeverity.LOW : IncidentSeverity.MEDIUM,
       `Login attempt for ${attempt.email}`,
       `Success: ${attempt.success}, IP: ${attempt.ipAddress}, Reason: ${attempt.failureReason || 'N/A'}`,
       'auth_security'
@@ -739,8 +745,8 @@ export class AuthSecurityManager {
 
     // Log to audit
     await securityMonitor.createAlert(
-      'session_invalidated' as any,
-      'low' as any,
+      SecurityIncidentType.SESSION_INVALIDATED,
+      IncidentSeverity.LOW,
       `Session ${sessionId} invalidated`,
       `Reason: ${reason}, User: ${session.userId}`,
       'auth_security'
@@ -766,24 +772,45 @@ export class AuthSecurityManager {
   }
 
   private async checkConcurrentSessions(): Promise<void> {
-    const userSessions = new Map<string, AuthSession[]>()
+    try {
+      // Fetch all active sessions grouped by user from database
+      const { data: sessions, error } = await supabaseAdmin
+        .from('auth_sessions')
+        .select('*')
+        .eq('is_active', true)
+        .gt('expires_at', new Date().toISOString())
 
-    const entries = Array.from(userSessions.entries())
-    for (const [userId, sessions] of entries) {
-      const activeSessions = sessions.filter(s => s.isActive)
-      if (activeSessions.length > AUTH_SECURITY_CONFIG.session.maxConcurrentSessions) {
-        const sortedSessions = activeSessions.sort(
-          (a: AuthSession, b: AuthSession) => a.createdAt.getTime() - b.createdAt.getTime()
-        )
-        const sessionsToInvalidate = sortedSessions.slice(
-          0,
-          activeSessions.length - AUTH_SECURITY_CONFIG.session.maxConcurrentSessions
-        )
+      if (error || !sessions) {
+        return
+      }
 
-        for (const session of sessionsToInvalidate) {
-          await this.invalidateSession(session.sessionId, 'concurrent_sessions')
+      // Group sessions by user
+      const userSessions = new Map<string, typeof sessions>()
+      for (const session of sessions) {
+        const userSessionList = userSessions.get(session.user_id) || []
+        userSessionList.push(session)
+        userSessions.set(session.user_id, userSessionList)
+      }
+
+      // Check each user for concurrent session violations
+      for (const [userId, userSessionList] of userSessions.entries()) {
+        if (userSessionList.length > AUTH_SECURITY_CONFIG.session.maxConcurrentSessions) {
+          // Sort by creation time, oldest first
+          const sortedSessions = userSessionList.sort(
+            (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          )
+          const sessionsToInvalidate = sortedSessions.slice(
+            0,
+            userSessionList.length - AUTH_SECURITY_CONFIG.session.maxConcurrentSessions
+          )
+
+          for (const session of sessionsToInvalidate) {
+            await this.invalidateSession(session.session_id, 'concurrent_sessions')
+          }
         }
       }
+    } catch (error) {
+      console.error('Error checking concurrent sessions:', error)
     }
   }
 }

@@ -11,7 +11,11 @@ import { createClient } from '@supabase/supabase-js'
 import { withAPISecurity, API_SECURITY_CONFIGS } from '@/lib/security/api-security'
 import { inputValidator, VALIDATION_SCHEMAS } from '@/lib/security/input-validation'
 import { sybilPreventionEngine } from '@/lib/security/sybil-prevention'
-import { securityMonitor } from '@/lib/audit/security-monitor'
+import {
+  securityMonitor,
+  SecurityIncidentType,
+  IncidentSeverity
+} from '@/lib/audit/security-monitor'
 import { updateTrustScoreFromAction } from '@/lib/security/trust-integration'
 import {
   cacheResponse,
@@ -173,8 +177,8 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
     console.error('Error fetching emergency events:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     await securityMonitor.createAlert(
-      'database_error' as any,
-      'medium' as any,
+      SecurityIncidentType.DATABASE_ERROR,
+      IncidentSeverity.MEDIUM,
       'Database error in emergency events fetch',
       `Error: ${errorMessage}`,
       'api_security'
@@ -202,8 +206,8 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (
 
     if (!validationResult.isValid) {
       await securityMonitor.createAlert(
-        'malicious_activity' as any,
-        'medium' as any,
+        SecurityIncidentType.MALICIOUS_ACTIVITY,
+        IncidentSeverity.MEDIUM,
         'Invalid input in emergency event creation',
         `Security flags: ${validationResult.securityFlags.map(f => f.type).join(', ')}`,
         'api_security',
@@ -243,8 +247,8 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (
       const userRisk = sybilPreventionEngine.getUserRiskAssessment(context.userId)
       if (userRisk.riskLevel === 'high' || userRisk.riskLevel === 'critical') {
         await securityMonitor.createAlert(
-          'malicious_activity' as any,
-          'high' as any,
+          SecurityIncidentType.MALICIOUS_ACTIVITY,
+          IncidentSeverity.HIGH,
           `High-risk user ${context.userId} attempted emergency event creation`,
           `Risk score: ${userRisk.riskScore}, Flags: ${userRisk.flags.length}`,
           'sybil_prevention'
@@ -290,8 +294,8 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (
     if (error) {
       console.error('Error creating emergency event:', error)
       await securityMonitor.createAlert(
-        'database_error' as any,
-        'medium' as any,
+        SecurityIncidentType.DATABASE_ERROR,
+        IncidentSeverity.MEDIUM,
         'Database error in emergency event creation',
         `Error: ${error.message}`,
         'api_security',
@@ -348,8 +352,8 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (
     console.error('Unexpected error in POST /api/emergency:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     await securityMonitor.createAlert(
-      'system_error' as any,
-      'high' as any,
+      SecurityIncidentType.SYSTEM_ERROR,
+      IncidentSeverity.HIGH,
       'Unexpected error in emergency event creation',
       `Error: ${errorMessage}`,
       'api_security'
@@ -410,7 +414,7 @@ export const PUT = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
     const sanitizedData = validationResult.sanitizedData
 
     // Build update object
-    const updates: any = {
+    const updates: Record<string, unknown> = {
       updated_at: new Date().toISOString()
     }
 
@@ -454,8 +458,8 @@ export const PUT = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
     if (error) {
       console.error('Error updating emergency event:', error)
       await securityMonitor.createAlert(
-        'database_error' as any,
-        'medium' as any,
+        SecurityIncidentType.DATABASE_ERROR,
+        IncidentSeverity.MEDIUM,
         'Database error in emergency event update',
         `Error: ${error.message}`,
         'api_security',
@@ -483,8 +487,8 @@ export const PUT = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
     console.error('Unexpected error in PUT /api/emergency:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     await securityMonitor.createAlert(
-      'system_error' as any,
-      'high' as any,
+      SecurityIncidentType.SYSTEM_ERROR,
+      IncidentSeverity.HIGH,
       'Unexpected error in emergency event update',
       `Error: ${errorMessage}`,
       'api_security'
@@ -536,8 +540,8 @@ export const DELETE = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
     if (archiveError) {
       console.error('Error archiving emergency event:', archiveError)
       await securityMonitor.createAlert(
-        'database_error' as any,
-        'medium' as any,
+        SecurityIncidentType.DATABASE_ERROR,
+        IncidentSeverity.MEDIUM,
         'Database error in emergency event archival',
         `Error: ${archiveError.message}`,
         'api_security',
@@ -559,8 +563,8 @@ export const DELETE = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
     if (deleteError) {
       console.error('Error deleting emergency event:', deleteError)
       await securityMonitor.createAlert(
-        'database_error' as any,
-        'medium' as any,
+        SecurityIncidentType.DATABASE_ERROR,
+        IncidentSeverity.MEDIUM,
         'Database error in emergency event deletion',
         `Error: ${deleteError.message}`,
         'api_security',
@@ -580,8 +584,8 @@ export const DELETE = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
     console.error('Unexpected error in DELETE /api/emergency:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     await securityMonitor.createAlert(
-      'system_error' as any,
-      'high' as any,
+      SecurityIncidentType.SYSTEM_ERROR,
+      IncidentSeverity.HIGH,
       'Unexpected error in emergency event deletion',
       `Error: ${errorMessage}`,
       'api_security'

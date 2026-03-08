@@ -61,22 +61,17 @@ export const useAuthStore = create<AuthStore>()(
 
       // Actions
       signIn: async (email: string, password: string) => {
-        console.log('🔍 DEBUG: signIn called', { email })
         set({ isLoading: true, error: null })
 
         try {
-          console.log('🔍 DEBUG: Attempting Supabase signIn')
           const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password
           })
 
           if (error) {
-            console.error('❌ DEBUG: Supabase signIn error', error)
             throw error
           }
-
-          console.log('✅ DEBUG: Supabase signIn successful', { user: data.user?.id })
 
           if (data.user && data.session) {
             const user: User = {
@@ -113,7 +108,6 @@ export const useAuthStore = create<AuthStore>()(
             })
           }
         } catch (error) {
-          console.error('❌ DEBUG: signIn failed', error)
           set({
             error: error instanceof Error ? error.message : 'Sign in failed',
             isLoading: false
@@ -122,22 +116,17 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       signUp: async (email: string, password: string) => {
-        console.log('🔍 DEBUG: signUp called in authStore', { email })
         set({ isLoading: true, error: null })
 
         try {
-          console.log('🔍 DEBUG: Attempting Supabase signUp')
           const { data, error } = await supabase.auth.signUp({
             email,
             password
           })
 
           if (error) {
-            console.error('❌ DEBUG: Supabase signUp error', error)
             throw error
           }
-
-          console.log('✅ DEBUG: Supabase signUp successful', { user: data.user?.id })
 
           if (data.user && data.session) {
             // User is automatically signed in
@@ -175,14 +164,12 @@ export const useAuthStore = create<AuthStore>()(
             })
           } else {
             // Email confirmation required
-            console.log('🔍 DEBUG: Email confirmation required')
             set({
               error: 'Please check your email to confirm your account',
               isLoading: false
             })
           }
         } catch (error) {
-          console.error('❌ DEBUG: signUp failed', error)
           set({
             error: error instanceof Error ? error.message : 'Sign up failed',
             isLoading: false
@@ -191,12 +178,10 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       signOut: async () => {
-        console.log('🔍 DEBUG: signOut called')
         try {
           await supabase.auth.signOut()
-          console.log('✅ DEBUG: Supabase signOut successful')
-        } catch (error) {
-          console.error('❌ DEBUG: Supabase signOut error', error)
+        } catch {
+          // Sign out on client even if server signout fails
         }
 
         set({

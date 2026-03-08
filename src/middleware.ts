@@ -12,7 +12,11 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createHash, randomBytes } from 'crypto'
-import { securityMonitor } from '@/lib/audit/security-monitor'
+import {
+  securityMonitor,
+  SecurityIncidentType,
+  IncidentSeverity
+} from '@/lib/audit/security-monitor'
 import {
   trustSecurityMiddleware,
   trustBasedRateLimitMiddleware
@@ -39,6 +43,35 @@ const suspiciousIPs = new Map<
   }
 >()
 
+// Configuration for suspicious IP tracking
+const SUSPICIOUS_IP_CONFIG = {
+  maxSize: 10000, // Maximum number of IPs to track
+  cleanupInterval: 60 * 60 * 1000, // Cleanup every hour
+  maxAge: 24 * 60 * 60 * 1000, // Remove entries older than 24 hours
+  blockThreshold: 100, // Score threshold for blocking
+  suspiciousThreshold: 50 // Score threshold for suspicious activity
+}
+
+// Periodic cleanup of old entries
+if (typeof setInterval !== 'undefined') {
+  setInterval(() => {
+    const now = Date.now()
+    for (const [ip, data] of suspiciousIPs.entries()) {
+      if (now - data.lastActivity > SUSPICIOUS_IP_CONFIG.maxAge) {
+        suspiciousIPs.delete(ip)
+      }
+    }
+    // If map is still too large, remove lowest-score entries
+    if (suspiciousIPs.size > SUSPICIOUS_IP_CONFIG.maxSize) {
+      const entries = Array.from(suspiciousIPs.entries()).sort((a, b) => a[1].score - b[1].score)
+      const toRemove = entries.slice(0, suspiciousIPs.size - SUSPICIOUS_IP_CONFIG.maxSize)
+      for (const [ip] of toRemove) {
+        suspiciousIPs.delete(ip)
+      }
+    }
+  }, SUSPICIOUS_IP_CONFIG.cleanupInterval)
+}
+
 // Emergency mode detection
 let emergencyMode = false
 let emergencyModeExpiry = 0
@@ -53,7 +86,7 @@ function isSuspiciousIP(ip: string): boolean {
   }
 
   // Check if IP is temporarily blocked
-  if (suspicious.score > 100) {
+  if (suspicious.score > SUSPICIOUS_IP_CONFIG.blockThreshold) {
     return true
   }
 
@@ -62,7 +95,7 @@ function isSuspiciousIP(ip: string): boolean {
   const decayAmount = Math.floor(timeSinceLastActivity / (60 * 60 * 1000)) // Decay per hour
   suspicious.score = Math.max(0, suspicious.score - decayAmount * 10)
 
-  return suspicious.score > 50
+  return suspicious.score > SUSPICIOUS_IP_CONFIG.suspiciousThreshold
 }
 
 /**
@@ -87,10 +120,10 @@ function updateSuspiciousIP(ip: string, offense: string, severity: number = 10):
   suspiciousIPs.set(ip, suspicious)
 
   // Log to security monitor if score is high
-  if (suspicious.score > 50) {
+  if (suspicious.score > SUSPICIOUS_IP_CONFIG.suspiciousThreshold) {
     securityMonitor.createAlert(
-      'malicious_activity' as any,
-      'medium' as any,
+      SecurityIncidentType.MALICIOUS_ACTIVITY,
+      IncidentSeverity.MEDIUM,
       `Suspicious activity from IP: ${ip}`,
       `IP score: ${suspicious.score}, Offense: ${offense}`,
       'middleware'
@@ -124,8 +157,8 @@ function activateEmergencyMode(duration: number = 60 * 60 * 1000): void {
   emergencyModeExpiry = Date.now() + duration
 
   securityMonitor.createAlert(
-    'system_compromise' as any,
-    'high' as any,
+    SecurityIncidentType.SYSTEM_COMPROMISE,
+    IncidentSeverity.HIGH,
     'Emergency mode activated',
     `Emergency mode activated for ${duration / 1000 / 60} minutes due to security threats`,
     'middleware'
@@ -354,8 +387,8 @@ export async function middleware(req: NextRequest) {
 
   // Log request for monitoring with trust context
   await securityMonitor.createAlert(
-    'anomalous_behavior' as any,
-    'low' as any,
+    SecurityIncidentType.ANOMALOUS_BEHAVIOR,
+    IncidentSeverity.LOW,
     'API request processed',
     `${req.method} ${pathname} from ${ip}${trustContext ? ` (Trust: ${trustContext.trustWeight}, Level: ${trustContext.trustThreshold})` : ''}`,
     'middleware',
