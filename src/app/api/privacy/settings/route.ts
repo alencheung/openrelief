@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
+import { getServerSession } from '@/lib/auth'
 import { PrivacySettings } from '@/hooks/usePrivacy'
 
 // Mock database for privacy settings

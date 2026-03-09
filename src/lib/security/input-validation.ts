@@ -483,13 +483,21 @@ export class InputValidator {
   }
 }
 
+// Predefined validation schema types
+type ValidationSchema = Record<string, ValidationRule[]>
+interface ValidationSchemas {
+  emergencyReport: ValidationSchema
+  userRegistration: ValidationSchema
+  apiQuery: ValidationSchema
+}
+
 // Predefined validation schemas
-export const VALIDATION_SCHEMAS = {
+export const VALIDATION_SCHEMAS: ValidationSchemas = {
   // Emergency report validation
   emergencyReport: {
     title: [
       { name: 'title', required: true, type: 'string', minLength: 5, maxLength: 200, sanitize: true, stripHtml: true },
-      { name: 'title', type: 'string', pattern: /^[a-zA-Z0-9\s\-.,!?]+$/, custom: (value) => {
+      { name: 'title', type: 'string', pattern: /^[a-zA-Z0-9\s\-.,!?]+$/, custom: (value: string) => {
         if (value.length > 0 && !value.trim()) {
           return 'Title cannot be empty or whitespace only'
         }
@@ -503,7 +511,7 @@ export const VALIDATION_SCHEMAS = {
       { name: 'severity', required: true, type: 'number', min: 1, max: 10 }
     ],
     location: [
-      { name: 'location', required: true, type: 'object', custom: (value) => {
+      { name: 'location', required: true, type: 'object', custom: (value: { latitude?: number; longitude?: number }) => {
         if (!value.latitude || !value.longitude) {
           return 'Location must include latitude and longitude'
         }
@@ -527,7 +535,7 @@ export const VALIDATION_SCHEMAS = {
       { name: 'email', required: true, type: 'email', maxLength: 254 }
     ],
     password: [
-      { name: 'password', required: true, type: 'string', minLength: 12, maxLength: 128, custom: (value) => {
+      { name: 'password', required: true, type: 'string', minLength: 12, maxLength: 128, custom: (value: string) => {
         if (!/(?=.*[a-z])/.test(value)) {
           return 'Password must contain at least one lowercase letter'
         }
@@ -544,7 +552,7 @@ export const VALIDATION_SCHEMAS = {
       } }
     ],
     confirmPassword: [
-      { name: 'confirmPassword', required: true, type: 'string', custom: (value, formData) => {
+      { name: 'confirmPassword', required: true, type: 'string', custom: (value: string, formData?: { password?: string }) => {
         if (value !== formData?.password) {
           return 'Passwords do not match'
         }

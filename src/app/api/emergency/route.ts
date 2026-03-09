@@ -117,16 +117,43 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
           query = query.eq('type_id', parseInt(sanitizedData.type_id, 10))
         }
 
+        let nearbyEventIds: string[] | null = null
+
         if (sanitizedData.radius && sanitizedData.center_lat && sanitizedData.center_lng) {
           const radiusMeters = parseFloat(sanitizedData.radius)
           const centerLat = parseFloat(sanitizedData.center_lat)
           const centerLng = parseFloat(sanitizedData.center_lng)
 
-          query = query.rpc('nearby_emergency_events', {
-            center_lat: centerLat,
-            center_lng: centerLng,
-            radius_meters: radiusMeters
-          })
+          // Call RPC separately to get nearby event IDs
+          const { data: nearbyEvents, error: rpcError } = await supabase.rpc(
+            'nearby_emergency_events',
+            {
+              center_lat: centerLat,
+              center_lng: centerLng,
+              radius_meters: radiusMeters
+            }
+          )
+
+          if (rpcError) {
+            throw rpcError
+          }
+
+          if (nearbyEvents && Array.isArray(nearbyEvents)) {
+            nearbyEventIds = nearbyEvents.map((e: { id: string }) => e.id)
+            if (nearbyEventIds.length === 0) {
+              // No nearby events found, return empty result early
+              return {
+                data: [],
+                pagination: {
+                  total: 0,
+                  limit: parseInt(sanitizedData.limit, 10),
+                  offset: parseInt(sanitizedData.offset, 10),
+                  hasMore: false
+                }
+              }
+            }
+            query = query.in('id', nearbyEventIds)
+          }
         }
 
         if (sanitizedData.limit) {
@@ -153,7 +180,7 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
             limit: parseInt(sanitizedData.limit, 10),
             offset: parseInt(sanitizedData.offset, 10),
             hasMore:
-              (count || 0) > parseInt(sanitizedData.offset, 10) + parseInt(sanitizedData.limit, 10)
+              (count || 0) > (parseInt(sanitizedData.offset, 10) + parseInt(sanitizedData.limit, 10))
           }
         }
       },
@@ -212,10 +239,12 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (
         `Security flags: ${validationResult.securityFlags.map(f => f.type).join(', ')}`,
         'api_security',
         {
-          userId: context.userId,
+          ...(context.userId ? { userId: context.userId } : {}),
           ipAddress: context.ipAddress,
-          errors: validationResult.errors,
-          securityFlags: validationResult.securityFlags
+          metadata: {
+            errors: validationResult.errors,
+            securityFlags: validationResult.securityFlags
+          }
         }
       )
 

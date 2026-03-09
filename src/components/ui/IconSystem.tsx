@@ -77,18 +77,17 @@ import {
   Activity,
   Pill,
   Stethoscope,
-  Ambulance,
-  Hospital,
-  FirstAid,
-  MedicalCross,
+  Truck,
+  Building as Hospital,
+  Heart as HeartHandshake,
 
   // Safety & Security Icons
   Camera,
   CameraOff,
   Video,
   VideoOff,
-  Siren,
-  Flashlight,
+  AlertCircle as Siren,
+  Sun as Flashlight,
   Radio,
 
   // Infrastructure Icons
@@ -110,31 +109,27 @@ import {
   CloudLightning,
   Waves,
   Mountain,
-  Trees,
+  Mountain as Tree,
 
   // Social & Community Icons
   Users,
   UserPlus,
   UserMinus,
   Crown,
-  HandHeart,
-  HelpingHand,
-  People,
+  Hand,
 
   // Data & Analytics Icons
   BarChart,
-  LineChart,
-  PieChart,
   TrendingUp,
   TrendingDown,
   Database,
   Server,
   HardDrive,
+  CircleDot,
 
   // Time Icons
   Calendar,
   Timer,
-  Hourglass,
 
   // File & Document Icons
   File,
@@ -150,7 +145,7 @@ import {
   Trash,
   Edit,
   Save,
-  Print,
+  Printer,
   ZoomIn,
   ZoomOut
 } from 'lucide-react'
@@ -304,10 +299,10 @@ const iconMap = {
   activity: Activity,
   pill: Pill,
   stethoscope: Stethoscope,
-  ambulance: Ambulance,
+  ambulance: Truck,
   hospital: Hospital,
-  firstAid: FirstAid,
-  medicalCross: MedicalCross,
+  firstAid: HeartHandshake,
+  medicalCross: Plus,
 
   // Safety & Security Icons
   camera: Camera,
@@ -337,21 +332,21 @@ const iconMap = {
   cloudLightning: CloudLightning,
   waves: Waves,
   mountain: Mountain,
-  trees: Trees,
+  trees: Tree,
 
   // Social & Community Icons
   users: Users,
   userPlus: UserPlus,
   userMinus: UserMinus,
   crown: Crown,
-  handHeart: HandHeart,
-  helpingHand: HelpingHand,
-  people: People,
+  handHeart: HeartHandshake,
+  helpingHand: Hand,
+  people: Users,
 
   // Data & Analytics Icons
   barChart: BarChart,
-  lineChart: LineChart,
-  pieChart: PieChart,
+  lineChart: TrendingUp,
+  pieChart: CircleDot,
   trendingUp: TrendingUp,
   trendingDown: TrendingDown,
   database: Database,
@@ -363,7 +358,7 @@ const iconMap = {
   calendar: Calendar,
   clock: Clock,
   timer: Timer,
-  hourglass: Hourglass,
+  hourglass: Clock,
 
   // File & Document Icons
   file: File,
@@ -380,7 +375,7 @@ const iconMap = {
   trash: Trash,
   edit: Edit,
   save: Save,
-  print: Print,
+  print: Printer,
   zoomIn: ZoomIn,
   zoomOut: ZoomOut
 } as const

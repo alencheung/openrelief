@@ -1,7 +1,19 @@
 import { Ratelimit } from '@upstash/ratelimit'
 import { NextRequest } from 'next/server'
-import { createHash } from 'crypto'
 import { getRedisClient, checkRedisAvailability, type Redis } from './client'
+
+// Simple hash function that works in Edge Runtime
+// Uses Math.imul for multiplication to which is cleaner to
+function simpleHash(str: string): string {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i)
+    hash = Math.imul(hash, 5) - hash + char
+    // Use >>> 0 to ensure 32-bit integer
+    hash = hash >>> 0
+  }
+  return Math.abs(hash).toString(16).padStart(8, '0')
+}
 
 export type RateLimitTier = 'emergency' | 'auth' | 'api' | 'upload'
 
@@ -275,7 +287,7 @@ export function generateRateLimitKey(req: NextRequest, tier: string): string {
   const userId = req.headers.get('x-user-id') ?? 'anonymous'
 
   const keyData = `${tier}:${ip}:${userId}:${userAgent}`
-  return createHash('sha256').update(keyData).digest('hex').substring(0, 16)
+  return simpleHash(keyData)
 }
 
 export function getClientIP(req: NextRequest): string {

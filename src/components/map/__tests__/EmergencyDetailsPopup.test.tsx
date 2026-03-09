@@ -21,6 +21,72 @@ vi.mock('@/components/ui', () => ({
       data-variant={variant}
       data-show-severity={showSeverity}
       data-severity={severity}
+    />
+  </div>
+  ),
+  TrustBadge: ({ level, score, size, showPercentage, label }: any) => (
+    <div
+      data-testid="trust-badge"
+      data-level={level}
+      data-score={score}
+      data-size={size}
+      data-show-percentage={showPercentage}
+    >
+      {label}
+    </div>
+  ),
+  StatusIndicator: ({ status, size, variant, pulse, showIcon, label }: any) => (
+    <div
+      data-testid="status-indicator"
+      data-status={status}
+      data-size={size}
+      data-variant={variant}
+      data-pulse={pulse}
+      data-show-icon={showIcon}
+    >
+      {label}
+    </div>
+  ),
+  Icon: ({ name, size, variant, className }: any) => (
+    <div
+      data-testid="icon"
+      data-name={name}
+      data-size={size}
+      data-variant={variant}
+      className={className}
+    >
+      {name}
+    </div>
+  ),
+  EnhancedCard: ({ children, className, ...props }: any) => (
+    <div data-testid="enhanced-card" className={className} {...props}>
+      {children}
+    </div>
+  ),
+  EnhancedButton: ({ children, onClick, variant, size, leftIcon, className, ...props }: any) => (
+    <button
+      onClick={onClick}
+      data-variant={variant}
+      data-size={size}
+      className={className}
+      {...props}
+    >
+      {leftIcon}
+      {children}
+    </button>
+  )
+}))
+
+// Mock UI components
+vi.mock('@/components/ui', () => ({
+  EmergencyIndicator: ({ type, size, variant, showSeverity, severity, label }: any) => (
+    <div
+      data-testid="emergency-indicator"
+      data-type={type}
+      data-size={size}
+      data-variant={variant}
+      data-show-severity={showSeverity}
+      data-severity={severity}
     >
       {label}
     </div>

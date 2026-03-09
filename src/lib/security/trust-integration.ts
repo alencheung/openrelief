@@ -918,4 +918,26 @@ export class TrustScoreManager {
 // Global trust score manager instance
 export const trustScoreManager = new TrustScoreManager()
 
+/**
+ * Update trust score from a user action
+ *
+ * This is a convenience function that wraps the TrustScoreManager's calculateTrustScore method.
+ */
+export async function updateTrustScoreFromAction(
+  userId: string,
+  action: 'report' | 'confirm' | 'dispute' | 'endorse' | 'moderate',
+  context: any
+): Promise<{
+  newScore: number
+  previousScore: number
+  change: number
+  factors: TrustFactors
+}> {
+  const result = await trustScoreManager.calculateTrustScore(userId, action, context)
+  return {
+    ...result,
+    change: result.change
+  }
+}
+
 export default trustScoreManager

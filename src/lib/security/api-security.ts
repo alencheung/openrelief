@@ -646,7 +646,7 @@ export function withAPISecurity(config?: APISecurityConfig) {
 }
 
 // Predefined security configurations
-export const API_SECURITY_CONFIGS = {
+export const API_SECURITY_CONFIGS: Record<string, APISecurityConfig> = {
   // Public endpoints
   public: {
     requireAuth: false,
@@ -655,7 +655,7 @@ export const API_SECURITY_CONFIGS = {
       'https://openrelief.org',
       'https://staging.openrelief.org'
     ],
-    auditLevel: 'low' as const
+    auditLevel: 'low'
   },
 
   // Authentication endpoints
@@ -663,7 +663,7 @@ export const API_SECURITY_CONFIGS = {
     requireAuth: false,
     enableCORS: true,
     rateLimitTier: 'auth',
-    auditLevel: 'high' as const,
+    auditLevel: 'high',
     inputSchema: {
       email: [{ name: 'email', required: true, type: 'email', maxLength: 254 }],
       password: [
@@ -679,7 +679,7 @@ export const API_SECURITY_CONFIGS = {
     minTrustScore: 0.3,
     rateLimitTier: 'emergency',
     validateSybil: true,
-    auditLevel: 'high' as const,
+    auditLevel: 'high',
     inputSchema: {
       title: [
         {
@@ -712,14 +712,14 @@ export const API_SECURITY_CONFIGS = {
     requireMFA: true,
     minTrustScore: 0.8,
     allowedRoles: ['admin', 'moderator'],
-    auditLevel: 'critical' as const,
+    auditLevel: 'critical',
     validateSybil: true
   },
 
   // General user endpoints
   user: {
     requireAuth: true,
-    auditLevel: 'medium' as const,
+    auditLevel: 'medium',
     validateSybil: true
   }
 }
