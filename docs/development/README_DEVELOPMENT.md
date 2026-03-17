@@ -3,7 +3,8 @@
 ## Quick Start
 
 ### Prerequisites
-- Node.js 18+ 
+
+- Node.js 18+
 - npm or yarn
 - Supabase CLI (for local development)
 - Git
@@ -11,6 +12,7 @@
 ### Local Development Setup
 
 1. **Clone and Install**
+
    ```bash
    git clone https://github.com/openrelief/openrelief.git
    cd openrelief
@@ -18,19 +20,21 @@
    ```
 
 2. **Environment Configuration**
+
    ```bash
    cp .env.example .env.local
    # Edit .env.local with your configuration
    ```
 
 3. **Start Supabase (Local)**
+
    ```bash
    # Start local Supabase stack
    supabase start
-   
+
    # Apply database migrations
    supabase db push
-   
+
    # Seed with sample data
    supabase db seed
    ```
@@ -130,6 +134,7 @@ src/
 ### Environment Variables
 
 Key variables for development:
+
 ```bash
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
@@ -165,6 +170,7 @@ npm run test:performance
 ### Common Issues
 
 1. **Supabase Connection Issues**
+
    ```bash
    # Restart Supabase
    supabase stop
@@ -172,6 +178,7 @@ npm run test:performance
    ```
 
 2. **TypeScript Errors**
+
    ```bash
    # Regenerate types
    npm run db:generate

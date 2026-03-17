@@ -2,7 +2,9 @@
 
 ## Project Overview
 
-This document provides a hierarchical task breakdown structure for the OpenRelief v2.0 platform development, showing detailed relationships between deliverables, dependencies, and resource requirements.
+This document provides a hierarchical task breakdown structure for the
+OpenRelief v2.0 platform development, showing detailed relationships between
+deliverables, dependencies, and resource requirements.
 
 ## Task Hierarchy Visualization
 
@@ -56,6 +58,7 @@ OpenRelief v2.0 Platform Development (24 weeks)
 #### 1.1 Project Setup & Architecture
 
 **Task 1.1.1: Repository & CI/CD Pipeline Setup**
+
 - **Duration**: 5 days
 - **Effort**: 40 hours
 - **Resources**: DevOps Engineer (1), Frontend Developer (0.5)
@@ -74,6 +77,7 @@ OpenRelief v2.0 Platform Development (24 weeks)
 - **Mitigation**: Use proven templates, early testing
 
 **Task 1.1.2: Supabase Database Setup**
+
 - **Duration**: 3 days
 - **Effort**: 24 hours
 - **Resources**: Backend Developer (1), Database Specialist (0.5)
@@ -94,6 +98,7 @@ OpenRelief v2.0 Platform Development (24 weeks)
 #### 1.2 Database Schema Implementation
 
 **Task 1.2.1: User Profiles & Trust Tables**
+
 - **Duration**: 4 days
 - **Effort**: 32 hours
 - **Resources**: Database Specialist (1), Backend Developer (0.5)
@@ -112,6 +117,7 @@ OpenRelief v2.0 Platform Development (24 weeks)
 - **Mitigation**: Early load testing, query optimization
 
 **Task 1.2.2: Subscription System Normalization**
+
 - **Duration**: 3 days
 - **Effort**: 24 hours
 - **Resources**: Database Specialist (1)
@@ -130,6 +136,7 @@ OpenRelief v2.0 Platform Development (24 weeks)
 - **Mitigation**: Proper indexing, query analysis
 
 **Task 1.2.3: Emergency Events Schema**
+
 - **Duration**: 4 days
 - **Effort**: 32 hours
 - **Resources**: Database Specialist (1), Backend Developer (0.5)
@@ -150,6 +157,7 @@ OpenRelief v2.0 Platform Development (24 weeks)
 #### 1.3 Frontend Foundation
 
 **Task 1.3.1: Next.js PWA Setup**
+
 - **Duration**: 4 days
 - **Effort**: 32 hours
 - **Resources**: Frontend Developer (1)
@@ -168,6 +176,7 @@ OpenRelief v2.0 Platform Development (24 weeks)
 - **Mitigation**: Cross-browser testing, progressive enhancement
 
 **Task 1.3.2: State Management Setup**
+
 - **Duration**: 3 days
 - **Effort**: 24 hours
 - **Resources**: Frontend Developer (1)
@@ -188,6 +197,7 @@ OpenRelief v2.0 Platform Development (24 weeks)
 #### 1.4 Map Integration
 
 **Task 1.4.1: MapLibre Integration**
+
 - **Duration**: 5 days
 - **Effort**: 40 hours
 - **Resources**: Frontend Developer (1), GIS Specialist (0.5)
@@ -206,6 +216,7 @@ OpenRelief v2.0 Platform Development (24 weeks)
 - **Mitigation**: Vector tile optimization, testing
 
 **Task 1.4.2: HXL Resource Tagging**
+
 - **Duration**: 3 days
 - **Effort**: 24 hours
 - **Resources**: Frontend Developer (1), Data Specialist (0.5)
@@ -228,6 +239,7 @@ OpenRelief v2.0 Platform Development (24 weeks)
 #### 2.1 Trust Score Implementation
 
 **Task 2.1.1: Trust Score Algorithm**
+
 - **Duration**: 6 days
 - **Effort**: 48 hours
 - **Resources**: Backend Developer (1), Data Scientist (0.5)
@@ -246,6 +258,7 @@ OpenRelief v2.0 Platform Development (24 weeks)
 - **Mitigation**: Mathematical validation, simulation testing
 
 **Task 2.1.2: Trust Score UI Components**
+
 - **Duration**: 4 days
 - **Effort**: 32 hours
 - **Resources**: Frontend Developer (1)
@@ -266,6 +279,7 @@ OpenRelief v2.0 Platform Development (24 weeks)
 #### 2.2 Consensus Engine
 
 **Task 2.2.1: Weighted Voting System**
+
 - **Duration**: 5 days
 - **Effort**: 40 hours
 - **Resources**: Backend Developer (1), Database Specialist (0.5)
@@ -284,6 +298,7 @@ OpenRelief v2.0 Platform Development (24 weeks)
 - **Mitigation**: Comprehensive testing, simulation
 
 **Task 2.2.2: Database Triggers**
+
 - **Duration**: 4 days
 - **Effort**: 32 hours
 - **Resources**: Database Specialist (1)
@@ -304,6 +319,7 @@ OpenRelief v2.0 Platform Development (24 weeks)
 #### 2.3 Security Implementation
 
 **Task 2.3.1: Sybil Attack Prevention**
+
 - **Duration**: 5 days
 - **Effort**: 40 hours
 - **Resources**: Security Specialist (1), Backend Developer (0.5)
@@ -326,6 +342,7 @@ OpenRelief v2.0 Platform Development (24 weeks)
 #### 3.1 High-Performance Dispatcher
 
 **Task 3.1.1: PostGIS Spatial Optimization**
+
 - **Duration**: 6 days
 - **Effort**: 48 hours
 - **Resources**: Database Specialist (1), GIS Specialist (0.5)
@@ -344,6 +361,7 @@ OpenRelief v2.0 Platform Development (24 weeks)
 - **Mitigation**: Early testing, query optimization
 
 **Task 3.1.2: Edge Function Integration**
+
 - **Duration**: 4 days
 - **Effort**: 32 hours
 - **Resources**: Backend Developer (1), DevOps Engineer (0.5)
@@ -364,6 +382,7 @@ OpenRelief v2.0 Platform Development (24 weeks)
 #### 3.2 Fatigue Guard System
 
 **Task 3.2.1: Inverse-Square Algorithm**
+
 - **Duration**: 4 days
 - **Effort**: 32 hours
 - **Resources**: Backend Developer (1), Mathematics Specialist (0.5)
@@ -382,6 +401,7 @@ OpenRelief v2.0 Platform Development (24 weeks)
 - **Mitigation**: Peer review, comprehensive testing
 
 **Task 3.2.2: Notification Controls**
+
 - **Duration**: 3 days
 - **Effort**: 24 hours
 - **Resources**: Frontend Developer (1)
@@ -402,6 +422,7 @@ OpenRelief v2.0 Platform Development (24 weeks)
 #### 3.3 iOS Background Strategy
 
 **Task 3.3.1: Silent Push System**
+
 - **Duration**: 5 days
 - **Effort**: 40 hours
 - **Resources**: Mobile Developer (1), Backend Developer (0.5)
@@ -420,6 +441,7 @@ OpenRelief v2.0 Platform Development (24 weeks)
 - **Mitigation**: Early testing, alternative approaches
 
 **Task 3.3.2: Service Worker Sync**
+
 - **Duration**: 4 days
 - **Effort**: 32 hours
 - **Resources**: Frontend Developer (1)
@@ -442,6 +464,7 @@ OpenRelief v2.0 Platform Development (24 weeks)
 #### 4.1 Offline Mesh Networking
 
 **Task 4.1.1: Local Storage Implementation**
+
 - **Duration**: 5 days
 - **Effort**: 40 hours
 - **Resources**: Frontend Developer (1), Database Specialist (0.5)
@@ -460,6 +483,7 @@ OpenRelief v2.0 Platform Development (24 weeks)
 - **Mitigation**: Proven libraries, comprehensive testing
 
 **Task 4.1.2: Peer Discovery**
+
 - **Duration**: 4 days
 - **Effort**: 32 hours
 - **Resources**: Mobile Developer (1), Networking Specialist (0.5)
@@ -480,6 +504,7 @@ OpenRelief v2.0 Platform Development (24 weeks)
 #### 4.2 LoRaWAN Integration
 
 **Task 4.2.1: Hardware Interface**
+
 - **Duration**: 6 days
 - **Effort**: 48 hours
 - **Resources**: Hardware Specialist (1), IoT Developer (0.5)
@@ -501,22 +526,24 @@ OpenRelief v2.0 Platform Development (24 weeks)
 
 ### Team Allocation Overview
 
-| Phase | Frontend | Backend | Database | DevOps | Security | Mobile | GIS | Hardware |
-|-------|----------|---------|----------|--------|---------|--------|-----|----------|
-| Phase 1 | 2.0 | 1.0 | 2.0 | 1.0 | 0.0 | 0.0 | 0.5 | 0.0 |
-| Phase 2 | 1.0 | 1.5 | 1.5 | 0.0 | 1.0 | 0.0 | 0.0 | 0.0 |
-| Phase 3 | 1.0 | 1.5 | 1.0 | 0.5 | 0.0 | 1.0 | 0.5 | 0.0 |
-| Phase 4 | 1.0 | 0.0 | 0.5 | 0.0 | 0.0 | 1.0 | 0.0 | 1.5 |
+| Phase   | Frontend | Backend | Database | DevOps | Security | Mobile | GIS | Hardware |
+| ------- | -------- | ------- | -------- | ------ | -------- | ------ | --- | -------- |
+| Phase 1 | 2.0      | 1.0     | 2.0      | 1.0    | 0.0      | 0.0    | 0.5 | 0.0      |
+| Phase 2 | 1.0      | 1.5     | 1.5      | 0.0    | 1.0      | 0.0    | 0.0 | 0.0      |
+| Phase 3 | 1.0      | 1.5     | 1.0      | 0.5    | 0.0      | 1.0    | 0.5 | 0.0      |
+| Phase 4 | 1.0      | 0.0     | 0.5      | 0.0    | 0.0      | 1.0    | 0.0 | 1.5      |
 
 ### Critical Path Analysis
 
 **Critical Path Tasks (Total Duration: 24 weeks)**
+
 1. Task 1.1.1 → Task 1.1.2 → Task 1.2.1 → Task 1.2.3 (Weeks 1-4)
 2. Task 2.1.1 → Task 2.2.1 → Task 2.2.2 (Weeks 7-11)
 3. Task 3.1.1 → Task 3.1.2 (Weeks 13-16)
 4. Task 3.3.1 → Task 3.3.2 (Weeks 15-18)
 
 **Parallel Tasks (Can be executed concurrently)**
+
 - Tasks 1.3.x and 1.4.x (Frontend foundation)
 - Tasks 2.1.2 and 2.3.x (UI and security)
 - Tasks 3.2.x and 3.3.x (Fatigue guard and iOS)
@@ -524,18 +551,21 @@ OpenRelief v2.0 Platform Development (24 weeks)
 ## Risk-Adjusted Timeline
 
 ### Best Case Scenario (20 weeks)
+
 - No major technical blockers
 - All team members available full-time
 - Requirements remain stable
 - Early testing reveals no major issues
 
 ### Expected Case Scenario (24 weeks)
+
 - Minor technical challenges resolved
 - Some requirement adjustments
 - Team learning curve for new technologies
 - Normal debugging and optimization cycles
 
 ### Worst Case Scenario (30 weeks)
+
 - Major technical challenges (iOS background, PostGIS performance)
 - Significant requirement changes
 - Team availability issues
@@ -544,24 +574,28 @@ OpenRelief v2.0 Platform Development (24 weeks)
 ## Quality Gates & Checkpoints
 
 ### Phase 1 Gate (Week 6)
+
 - **Technical**: All database schemas implemented and tested
 - **Performance**: Map rendering < 2 seconds, database queries < 50ms
 - **Security**: Authentication system working, basic RLS policies
 - **User**: Basic PWA functionality verified
 
 ### Phase 2 Gate (Week 12)
+
 - **Technical**: Trust algorithm mathematically verified, consensus working
 - **Performance**: Trust calculations < 100ms, consensus triggers < 1 second
 - **Security**: Sybil prevention mechanisms tested
 - **User**: Trust score visualization intuitive
 
 ### Phase 3 Gate (Week 18)
+
 - **Technical**: Alert dispatch < 100ms, spatial queries optimized
 - **Performance**: Support for 10K+ concurrent users in testing
 - **Security**: Rate limiting and abuse prevention working
 - **User**: iOS background functionality verified
 
 ### Phase 4 Gate (Week 24)
+
 - **Technical**: Offline mesh networking functional
 - **Performance**: Zero-connectivity scenarios handled
 - **Security**: End-to-end encryption verified
@@ -570,15 +604,19 @@ OpenRelief v2.0 Platform Development (24 weeks)
 ## Success Metrics Dashboard
 
 ### Technical KPIs
+
 - **Code Quality**: Coverage > 80%, SonarQube quality gate pass
 - **Performance**: Alert dispatch latency, query response times
 - **Reliability**: Uptime, error rates, mean time to recovery
 - **Security**: Vulnerability count, penetration test results
 
 ### Product KPIs
+
 - **User Adoption**: Active users, retention rates
 - **Engagement**: Notification opt-in rates, daily active users
 - **Impact**: Emergency response time improvements
 - **Satisfaction**: User ratings, feedback scores
 
-This comprehensive task breakdown provides the foundation for successful project execution of the OpenRelief v2.0 platform, with clear dependencies, resource requirements, and success criteria for each component.
+This comprehensive task breakdown provides the foundation for successful project
+execution of the OpenRelief v2.0 platform, with clear dependencies, resource
+requirements, and success criteria for each component.

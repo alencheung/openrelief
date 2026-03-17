@@ -1,6 +1,8 @@
 # Contributing to OpenRelief
 
-Thank you for your interest in contributing to OpenRelief! This guide will help you get started with contributing to this open-source emergency coordination platform.
+Thank you for your interest in contributing to OpenRelief! This guide will help
+you get started with contributing to this open-source emergency coordination
+platform.
 
 ## Table of Contents
 
@@ -25,6 +27,7 @@ Before you begin, ensure you have the following installed:
 ### Initial Setup
 
 1. **Fork the Repository**
+
    ```bash
    # Fork on GitHub, then clone your fork
    git clone https://github.com/your-username/openrelief.git
@@ -32,24 +35,27 @@ Before you begin, ensure you have the following installed:
    ```
 
 2. **Install Dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Set Up Local Database**
+
    ```bash
    # Start local Supabase instance
    supabase start
-   
+
    # Apply database migrations
    supabase db push
    ```
 
 4. **Environment Configuration**
+
    ```bash
    # Copy environment template
    cp .env.example .env.local
-   
+
    # Configure your local environment variables
    # See .env.example for required variables
    ```
@@ -132,15 +138,16 @@ We welcome the following types of contributions:
    - Comment on the issue you want to work on
 
 2. **Create a Branch**
+
    ```bash
    # From develop branch
    git checkout develop
    git pull origin develop
    git checkout -b feature/your-feature-name
-   
+
    # For bug fixes
    git checkout -b fix/issue-number-description
-   
+
    # For hotfixes
    git checkout -b hotfix/issue-number-description
    ```
@@ -151,14 +158,15 @@ We welcome the following types of contributions:
    - Update documentation if needed
 
 4. **Test Your Changes**
+
    ```bash
    # Run all tests
    npm run test
-   
+
    # Check code quality
    npm run lint
    npm run type-check
-   
+
    # Test manually in browser
    npm run dev
    ```
@@ -189,7 +197,7 @@ const EmergencyAlert: React.FC<{ event: EmergencyEvent }> = ({ event }) => {
   });
 
   if (isLoading) return <LoadingSpinner />;
-  
+
   return <AlertComponent event={event} details={data} />;
 };
 ```
@@ -240,7 +248,7 @@ CREATE TABLE emergency_events (
 );
 
 -- Create spatial index
-CREATE INDEX idx_emergency_events_location 
+CREATE INDEX idx_emergency_events_location
 ON emergency_events USING GIST (location);
 
 -- Enable RLS
@@ -277,7 +285,7 @@ describe('EmergencyMap', () => {
 
   it('should display emergency alerts on map', async () => {
     renderWithQuery(<EmergencyMap />);
-    
+
     await waitFor(() => {
       expect(screen.getByTestId('emergency-marker')).toBeInTheDocument();
     });
@@ -293,7 +301,7 @@ describe('EmergencyMap', () => {
     });
 
     renderWithQuery(<EmergencyMap />);
-    
+
     expect(mockGeolocation.getCurrentPosition).toHaveBeenCalled();
   });
 });
@@ -323,6 +331,7 @@ npm run test:performance
 ### Before Submitting
 
 1. **Ensure Tests Pass**
+
    ```bash
    npm run test
    npm run lint
@@ -335,9 +344,10 @@ npm run test:performance
    - Update API documentation
 
 3. **Commit Message Format**
+
    ```
    type(scope): description
-   
+
    feat(alert): add silent push notifications
    fix(database): resolve spatial query performance issue
    docs(readme): update installation instructions
@@ -351,23 +361,28 @@ npm run test:performance
    - Description: Detailed explanation of changes
 
 2. **PR Template**
+
    ```markdown
    ## Description
+
    Brief description of changes
-   
+
    ## Type of Change
+
    - [ ] Bug fix
    - [ ] New feature
    - [ ] Breaking change
    - [ ] Documentation update
-   
+
    ## Testing
+
    - [ ] Unit tests pass
    - [ ] Integration tests pass
    - [ ] E2E tests pass
    - [ ] Manual testing completed
-   
+
    ## Checklist
+
    - [ ] Code follows project standards
    - [ ] Self-review completed
    - [ ] Documentation updated
@@ -381,51 +396,57 @@ npm run test:performance
 
 ## Issue Reporting
 
+### Using GitHub Templates
+
+We provide templates for common issue types:
+
+- **[Bug Report](.github/ISSUE_TEMPLATE/bug_report.md)** - Report bugs
+- **[Feature Request](.github/ISSUE_TEMPLATE/feature_request.md)** - Suggest
+  features
+- **[Security Vulnerability](.github/ISSUE_TEMPLATE/security_vulnerability.md)** -
+  Report security issues (non-sensitive only)
+
+For sensitive security issues, please email security@openrelief.org instead of
+creating a public issue.
+
 ### Bug Reports
 
 Use the following template for bug reports:
 
 ```markdown
-**Bug Description**
-Clear description of the issue
+**Bug Description** Clear description of the issue
 
 **Steps to Reproduce**
+
 1. Go to...
 2. Click on...
 3. See error
 
-**Expected Behavior**
-What should happen
+**Expected Behavior** What should happen
 
-**Actual Behavior**
-What actually happens
+**Actual Behavior** What actually happens
 
 **Environment**
+
 - OS: [e.g. iOS 15, Android 12, Windows 11]
 - Browser: [e.g. Chrome 96, Safari 15]
 - App Version: [e.g. v2.0.1]
 
-**Additional Context**
-Screenshots, logs, or other relevant information
+**Additional Context** Screenshots, logs, or other relevant information
 ```
 
 ### Feature Requests
 
 ```markdown
-**Feature Description**
-Clear description of the proposed feature
+**Feature Description** Clear description of the proposed feature
 
-**Problem Statement**
-What problem does this solve?
+**Problem Statement** What problem does this solve?
 
-**Proposed Solution**
-How should this work?
+**Proposed Solution** How should this work?
 
-**Alternatives Considered**
-Other approaches you've thought about
+**Alternatives Considered** Other approaches you've thought about
 
-**Additional Context**
-Any other relevant information
+**Additional Context** Any other relevant information
 ```
 
 ## Community Guidelines
@@ -443,7 +464,8 @@ We are committed to providing a welcoming and inclusive environment. Please:
 ### Getting Help
 
 - **Discord**: [Join our community](https://discord.gg/openrelief)
-- **GitHub Discussions**: [Ask questions](https://github.com/openrelief/openrelief/discussions)
+- **GitHub Discussions**:
+  [Ask questions](https://github.com/openrelief/openrelief/discussions)
 - **Issues**: [Report problems](https://github.com/openrelief/openrelief/issues)
 
 ### Recognition
@@ -473,8 +495,11 @@ Contributors are recognized through:
 
 ## Thank You!
 
-Your contributions help make OpenRelief better and can save lives during emergencies. Every contribution, no matter how small, is valuable and appreciated.
+Your contributions help make OpenRelief better and can save lives during
+emergencies. Every contribution, no matter how small, is valuable and
+appreciated.
 
 ---
 
-*If you have any questions about contributing, please don't hesitate to ask in our Discord community or GitHub Discussions.*
+_If you have any questions about contributing, please don't hesitate to ask in
+our Discord community or GitHub Discussions._

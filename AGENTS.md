@@ -30,13 +30,24 @@ npx jest --testNamePattern="should add event"
 npm run test:emergency                # Emergency-related tests
 npm run test:trust                    # Trust system tests
 npm run test:consensus                # Consensus engine tests
+npm run test:hooks                    # useTrustSystem hook tests
 npm run test:integration              # Integration tests
 npm run test:spatial                  # Spatial query tests
+npm run test:security                 # Security tests (node script)
+npm run test:pwa                      # PWA tests (node script)
 
 # E2E Tests
 npm run test:e2e                      # Cypress tests
+npm run test:e2e:open                 # Cypress UI mode
 npm run test:e2e:playwright           # Playwright tests
 npm run test:e2e:playwright:open      # Playwright UI mode
+npm run test:e2e:playwright:debug     # Playwright debug mode
+
+# Lighthouse / Performance
+npm run test:lighthouse               # Run Lighthouse CI
+npm run test:lighthouse:mobile        # Mobile Lighthouse
+npm run test:lighthouse:desktop       # Desktop Lighthouse
+npm run test:lighthouse:pwa           # PWA-focused Lighthouse
 ```
 
 ### Database (Supabase)
@@ -45,8 +56,9 @@ npm run test:e2e:playwright:open      # Playwright UI mode
 npm run db:generate   # Generate TypeScript types from schema
 npm run db:migrate    # Push migrations
 npm run db:reset      # Reset local database
-supabase start        # Start local Supabase
-supabase stop         # Stop local Supabase
+npm run db:seed       # Seed local database
+npm run supabase:start
+npm run supabase:stop
 ```
 
 ### Formatting
@@ -56,14 +68,27 @@ npm run format        # Format with Prettier
 npm run format:check  # Check formatting
 ```
 
+## Project Architecture
+
+- **Framework**: Next.js 15 (App Router) + React 18
+- **Language**: TypeScript (strict mode, all strict checks enabled)
+- **Database/Auth**: Supabase (Postgres, Auth, RLS, Realtime)
+- **State**: Zustand (with persist + subscribeWithSelector middleware)
+- **Data Fetching**: TanStack Query v5
+- **Styling**: Tailwind CSS + CVA (class-variance-authority) + Radix UI
+- **Maps**: MapLibre GL + Leaflet (dual map support)
+- **Spatial**: Turf.js + geolib
+- **Edge Functions**: Cloudflare Workers (see `src/edge/`)
+- **Monitoring**: Sentry (client/server/edge)
+- **Rate Limiting**: Upstash Redis
+- **Validation**: Zod (runtime) + custom validators (`src/lib/validation.ts`)
+
 ## Code Style Guidelines
 
 ### Imports
 
-- Use path aliases: `@/components/*`, `@/lib/*`, `@/hooks/*`, `@/store/*`,
-  `@/types`, `@/utils/*`
-- Group imports: React/Next first, external libraries second, internal aliases
-  third
+Use path aliases defined in tsconfig: `@/*` maps to `./src/*`. Group: React/Next
+first, external libs second, internal aliases third.
 
 ```typescript
 import { useState, useEffect } from 'react'
@@ -75,111 +100,137 @@ import { Database } from '@/types/database'
 ### Formatting (Prettier + ESLint)
 
 - No semicolons
-- Single quotes for strings
+- Single quotes, avoid escapes only
 - 2-space indentation
-- No trailing commas
-- Max line length: 100 chars (Prettier), 120 chars (ESLint warning)
+- No trailing commas (`trailingComma: "none"`)
+- Max line: 100 chars (Prettier), 120 chars (ESLint warning)
 - Curly braces required for all control structures
 - Arrow functions: avoid parens for single param `x => x`
+- Use `import type` for type-only imports
+- `no-console`: warn (allow `console.warn`, `console.error`)
+- `eqeqeq: ["error", "always"]` — always use `===`
+- `prefer-const` is off — `let` is acceptable
 
 ### TypeScript
 
-- Strict mode enabled with all strict checks
-- `noUncheckedIndexedAccess: true` - always check for undefined on array access
+- Strict mode with all strict checks + `noUncheckedIndexedAccess`
+- `noImplicitReturns`, `noFallthroughCasesInSwitch`, `noImplicitOverride`
+- `exactOptionalPropertyTypes: true` — use `?` or `| undefined`, not both
 - Use Database types from `@/types/database` for Supabase tables
-- Prefer explicit types for function parameters
-- Avoid `any` - use `unknown` when type is truly unknown
-- Unused vars prefixed with underscore: `_unused`
+- `@typescript-eslint/no-explicit-any` is off (allowed), but prefer typed
+  alternatives
+- Unused vars: prefix with `_` to suppress warnings
 
 ### Naming Conventions
 
 - Components: PascalCase (`TrustBadge.tsx`, `EmergencyMap.tsx`)
 - Hooks: camelCase with `use` prefix (`useEmergencyEvents.ts`)
 - Stores: camelCase with `Store` suffix (`emergencyStore.ts`)
-- Utilities: camelCase (`utils.ts`, `map-utils.ts`)
 - Types/Interfaces: PascalCase (`EmergencyEvent`, `EmergencyFilter`)
-- Files: kebab-case for utilities, PascalCase for components
+- Utility files: kebab-case (`map-utils.ts`, `errorHandling.ts`)
+- App Router: folder-based routing under `src/app/`
 
 ### React Components
 
-- Use function components with arrow functions
-- Forward refs pattern for UI components:
+- Function components with arrow functions
+- Forward refs for UI primitives:
 
 ```typescript
-const MyComponent = React.forwardRef<HTMLDivElement, Props>(
-  ({ prop1, prop2 }, ref) => {
-    return <div ref={ref}>...</div>
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, ...props }, ref) => {
+    return <Comp className={cn(buttonVariants({ variant, className }))} ref={ref} {...props} />
   }
 )
-MyComponent.displayName = 'MyComponent'
+Button.displayName = 'Button'
 ```
 
-- Use class-variance-authority (CVA) for component variants
-- Extract complex logic to custom hooks
+- Use CVA for component variants (see `src/components/ui/Button.tsx`)
+- Merge classNames with `cn()` from `@/lib/utils` (clsx + tailwind-merge)
+- Extract complex logic to custom hooks in `src/hooks/`
+- Wrap pages with `<Providers>` (includes QueryClientProvider, etc.)
 
 ### State Management (Zustand)
 
-- Use `create` from zustand with middleware pattern:
-
 ```typescript
-export const useStore = create<StoreType>()(
+export const useEmergencyStore = create<EmergencyState>()(
   subscribeWithSelector(
     persist(
       (set, get) => ({ ...state, ...actions }),
-      { name: 'store-name', partialize: (state) => ({...}) }
+      { name: 'emergency-store', partialize: (state) => ({...}) }
     )
   )
 )
 ```
 
-- Define State and Actions interfaces separately
-- Export selectors for common use cases:
+- Separate State and Actions interfaces
+- Export selectors:
   `export const useEvents = () => useStore(state => state.events)`
+- Store files in `src/store/`
 
 ### Data Fetching (TanStack Query)
 
-- Use query hooks for reads, mutation hooks for writes
+- Query hooks for reads, mutation hooks for writes (`src/hooks/queries/`)
 - Query keys as arrays: `['emergency-events', filters]`
-- Invalidate related queries on mutations:
+- Invalidate on mutations:
   `queryClient.invalidateQueries({ queryKey: ['emergency-events'] })`
+- Set `enabled` flag for conditional queries
 
 ### Error Handling
 
-- Use structured error classification from `@/lib/errorHandling`
-- Handle errors with `classifyError()` for consistent error types
-- Use circuit breaker pattern for external services
-- Always provide user-friendly error messages
-- Log errors with context, never expose secrets
+- Structured error classification: `@/lib/errorHandling.ts`
+- ErrorInfo type with severity levels: `low | medium | high | critical`
+- Retry with exponential backoff via `RetryConfig`
+- Always provide user-facing error messages
+- Log errors with context; never expose secrets
+
+### Validation
+
+- Use Zod schemas for runtime validation of user input
+- Custom validators in `src/lib/validation.ts` for form fields
+- Sanitize HTML with `isomorphic-dompurify`
 
 ### Testing
 
-- Place tests in `__tests__` directories or `.test.ts` suffix
-- Use describe/it blocks for organization
-- Reset store state in beforeEach:
-
-```typescript
-beforeEach(() => {
-  const { reset } = useStore.getState()
-  reset()
-})
-```
-
-- Use `act()` for state updates in tests
-- Import fixtures from `@/test-utils/fixtures/`
+- Jest with next/jest, jsdom environment
+- Tests in `__tests__/` dirs or `.test.ts`/`.spec.ts` suffix
+- Use `@testing-library/react` + `@testing-library/jest-dom`
+- `data-testid` attribute for queries (configured in jest.setup.js)
+- Global mocks in `jest.setup.js`: router, image, fetch, Supabase, TanStack
+  Query, MapLibre, Leaflet, localStorage, geolocation, IntersectionObserver
+- Fixtures from `@/test-utils/fixtures/`
+- Custom test utils from `@/test-utils/`
+- Reset stores in beforeEach: `const { reset } = useStore.getState(); reset()`
+- Coverage thresholds: 70% global, 85% for map components, 90% for supabase
+  client
 
 ### Security
 
-- Never log or commit secrets, API keys, or credentials
-- Validate all user input with Zod schemas
-- Use Supabase RLS policies for data access control
+- Never log or commit secrets/API keys
+- Next.js middleware enforces security headers, rate limiting, input validation
+  (`src/middleware.ts`)
+- Supabase RLS policies for data access control
+- Redis-backed rate limiting via Upstash
+- Trust-based security middleware for API routes
 - Sanitize HTML with `isomorphic-dompurify`
+
+### Edge Functions
+
+- Cloudflare Workers in `src/edge/`
+- Config in `wrangler.toml` (dev) and `wrangler.production.toml`
 
 ### File Organization
 
-- One component per file
-- Export from index files: `export * from './component'`
-- Keep files under 500 lines - split larger files
-- Co-locate tests with source files
+- `src/app/` — Next.js App Router pages and API routes
+- `src/components/` — React components organized by feature (ui/, map/, trust/,
+  emergency/, etc.)
+- `src/hooks/` — Custom React hooks
+- `src/store/` — Zustand stores
+- `src/lib/` — Utilities, configs, error handling, monitoring, security
+- `src/types/` — TypeScript type definitions
+- `src/edge/` — Cloudflare Workers
+- `src/test-utils/` — Test helpers and fixtures
+- One component per file, export from barrel `index.ts`
+- Keep files under 500 lines
 
 ## Pre-commit Hooks
 
