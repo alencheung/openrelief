@@ -237,3 +237,68 @@ export const useEmergencyStore = create<EmergencyState>()(
 - Husky + lint-staged runs on commit
 - Auto-fixes ESLint issues and formats with Prettier
 - Blocks commits with TypeScript errors
+
+## Autonomous Agent Workflow
+
+When completing tasks, the agent should autonomously execute the following
+quality assurance loop:
+
+### Self-Commit Authorization
+
+The agent is authorized to commit changes WITHOUT explicit user permission when:
+
+1. The task was explicitly requested by the user
+2. The changes are scoped to the requested task
+3. All quality checks pass (lint, typecheck, tests)
+
+### Quality Feedback Loop
+
+After making code changes, the agent MUST run the following checks in sequence:
+
+```bash
+# Step 1: Lint (auto-fix if possible)
+npm run lint:fix
+
+# Step 2: Type check
+npm run type-check
+
+# Step 3: Run relevant tests
+npm run test
+
+# Step 4: Build verification
+npm run build
+```
+
+### Commit Protocol
+
+1. Run `git status` and `git diff` to review changes
+2. Run lint, typecheck, and tests
+3. If any check fails:
+   - Fix the issue immediately
+   - Re-run the failed check
+   - Repeat until all checks pass
+4. Create a descriptive commit message following conventional commits:
+   - `feat:` for new features
+   - `fix:` for bug fixes
+   - `refactor:` for code refactoring
+   - `test:` for test additions/changes
+   - `docs:` for documentation
+   - `chore:` for maintenance tasks
+5. Stage and commit changes with `git add . && git commit -m "message"`
+6. Report the commit hash to the user
+
+### Skip Conditions
+
+- Skip tests if changes are documentation-only (`.md` files)
+- Skip tests if explicitly told by user
+- Skip build if lint or typecheck fails (fix first)
+
+### Error Recovery
+
+If a check fails:
+
+1. Analyze the error output
+2. Apply the minimal fix required
+3. Re-run only the failed check first
+4. Then run all checks to ensure no regressions
+5. Continue the loop until all checks pass
