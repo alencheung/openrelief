@@ -110,7 +110,8 @@ export function AccessibilityPanel({
   className,
   showAdvanced = false
 }: AccessibilityPanelProps) {
-  const { prefersReducedMotion: _prefersReducedMotion } = useReducedMotion() as any
+  const motionState = useReducedMotion() as any
+  const prefersReducedMotion = motionState.prefersReducedMotion ?? false
   const { announcePolite } = useAriaAnnouncer()
 
   const [localSettings, setLocalSettings] = useState(settings)
@@ -194,7 +195,7 @@ export function AccessibilityPanel({
     const defaults: AccessibilitySettings = {
       highContrast: false,
       largeText: false,
-      reducedMotion: _prefersReducedMotion as boolean,
+      reducedMotion: prefersReducedMotion,
       screenReader: false,
       keyboardNavigation: true,
       textSize: 'medium',

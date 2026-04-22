@@ -90,6 +90,21 @@ function createMockSupabaseClient() {
       signOut: async () => {
         await new Promise(resolve => setTimeout(resolve, 500))
         return { error: null }
+      },
+
+      getSession: async () => {
+        return {
+          data: { session: null },
+          error: null
+        }
+      },
+
+      onAuthStateChange: () => {
+        return { data: { subscription: { unsubscribe: () => {} } } }
+      },
+
+      signInWithOAuth: async () => {
+        return { data: { provider: 'google', url: 'https://accounts.google.com' }, error: null }
       }
     },
 

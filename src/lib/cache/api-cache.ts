@@ -89,7 +89,9 @@ async function getRedisClient(): Promise<RedisClient | null> {
         }
       } else {
         try {
-          const IORedis = await import(/* webpackIgnore: true */ 'ioredis').then(m => m.default || m)
+          const IORedis = await import(/* webpackIgnore: true */ 'ioredis').then(
+            m => m.default || m
+          )
           const redis = new IORedis(redisUrl)
           redisClient = {
             get: key => redis.get(key),

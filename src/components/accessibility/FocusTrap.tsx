@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, forwardRef, useCallback } from 'react'
+import React, { useEffect, useRef, forwardRef, useCallback } from 'react'
 import { useFocusManagement } from '@/hooks/accessibility'
 
 export interface FocusTrapProps {
@@ -120,7 +120,7 @@ export const FocusTrap = forwardRef<HTMLDivElement, FocusTrapProps>(
      * Merge refs
      */
     const setRefs = (element: HTMLDivElement | null) => {
-      containerRef.current = element
+      ;(containerRef as any).current = element
       if (typeof ref === 'function') {
         ref(element)
       } else if (ref) {
@@ -417,7 +417,7 @@ export function createTemporaryFocusTrap(
   if (autoFocus) {
     const focusableElements = getFocusableElements()
     if (focusableElements.length > 0) {
-      focusableElements[0].focus()
+      focusableElements[0]?.focus()
     } else {
       element.focus()
     }
@@ -480,7 +480,7 @@ export function useFocusTrapStack() {
 
     if (index !== -1) {
       const trap = stackRef.current[index]
-      trap.cleanup()
+      trap?.cleanup()
       stackRef.current.splice(index, 1)
       return true
     }

@@ -1,5 +1,26 @@
 {
   "permissions": {
-    "allow": ["Bash(npm run build)", "WebSearch", "Bash(python -m json.tool)"]
+    "allow": [
+      "Bash(npm run build)",
+      "WebSearch",
+      "Bash(python -m json.tool)",
+      "Skill(update-config)",
+      "Bash(node *)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/typecheck.js",
+            "timeout": 30,
+            "statusMessage": "Checking TypeScript types..."
+          }
+        ]
+      }
+    ]
   }
 }
