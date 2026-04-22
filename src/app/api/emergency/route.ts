@@ -180,7 +180,7 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
             limit: parseInt(sanitizedData.limit, 10),
             offset: parseInt(sanitizedData.offset, 10),
             hasMore:
-              (count || 0) > (parseInt(sanitizedData.offset, 10) + parseInt(sanitizedData.limit, 10))
+              (count || 0) > parseInt(sanitizedData.offset, 10) + parseInt(sanitizedData.limit, 10)
           }
         }
       },
@@ -329,8 +329,7 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (
         `Error: ${error.message}`,
         'api_security',
         {
-          userId: context.userId,
-          reporterId: sanitizedData.reporter_id
+          userId: context.userId ?? 'unknown'
         }
       )
 
@@ -352,17 +351,12 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (
     // Update trust score for successful emergency report
     if (context.userId) {
       try {
-        await updateTrustScoreFromAction(
-          context.userId,
-          'report',
-          {
-            eventId: data.id,
-            severity: sanitizedData.severity,
-            trustWeight: calculatedTrustWeight,
-            timestamp: new Date().toISOString()
-          },
-          'success'
-        )
+        await updateTrustScoreFromAction(context.userId, 'report', {
+          eventId: data.id,
+          severity: sanitizedData.severity,
+          trustWeight: calculatedTrustWeight,
+          timestamp: new Date().toISOString()
+        })
       } catch (trustError) {
         console.error('Error updating trust score:', trustError)
         // Don't fail the request if trust score update fails
@@ -493,9 +487,9 @@ export const PUT = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
         `Error: ${error.message}`,
         'api_security',
         {
-          userId: context.userId,
+          userId: context.userId ?? 'unknown',
           eventId
-        }
+        } as any
       )
 
       return NextResponse.json(
@@ -575,9 +569,9 @@ export const DELETE = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
         `Error: ${archiveError.message}`,
         'api_security',
         {
-          userId: context.userId,
+          userId: context.userId ?? 'unknown',
           eventId
-        }
+        } as any
       )
 
       return NextResponse.json({ error: 'Failed to archive emergency event' }, { status: 500 })
@@ -598,9 +592,9 @@ export const DELETE = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
         `Error: ${deleteError.message}`,
         'api_security',
         {
-          userId: context.userId,
+          userId: context.userId ?? 'unknown',
           eventId
-        }
+        } as any
       )
 
       return NextResponse.json({ error: 'Failed to delete emergency event' }, { status: 500 })

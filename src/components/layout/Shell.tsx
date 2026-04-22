@@ -3,7 +3,7 @@
 import { useRouter, usePathname } from 'next/navigation'
 import { useAuth, useAuthActions } from '@/store/authStore'
 import { cn } from '@/lib/utils'
-import { Shield, Map, AlertTriangle, LogOut, Menu, X, Bell, User } from 'lucide-react'
+import { Shield, Map, AlertTriangle, LogOut, Menu, X, User } from 'lucide-react'
 import { useState } from 'react'
 
 export function Header() {

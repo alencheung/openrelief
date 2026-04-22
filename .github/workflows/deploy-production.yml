@@ -24,22 +24,10 @@ env:
   CACHE_VERSION: v2
 
 jobs:
-  # Workflow disabled - all jobs will be skipped
-  disabled:
-    name: Workflow Disabled
-    runs-on: ubuntu-latest
-    if: false
-    steps:
-      - name: Workflow is disabled
-        run: |
-          echo "This workflow has been disabled to prevent failures."
-          echo "To re-enable, remove the 'disabled' job and 'if: false' condition."
-
   # Pre-deployment checks
   pre-deploy-checks:
     name: Pre-deployment Checks
     runs-on: ubuntu-latest
-    if: false
     outputs:
       should-deploy: ${{ steps.check.outputs.should-deploy }}
       deploy-environment: ${{ steps.check.outputs.deploy-environment }}
@@ -83,7 +71,6 @@ jobs:
     name: Security & Compliance
     runs-on: ubuntu-latest
     needs: pre-deploy-checks
-    if: false
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -136,7 +123,6 @@ jobs:
     name: Build & Test
     runs-on: ubuntu-latest
     needs: [pre-deploy-checks, security-compliance]
-    if: false
     strategy:
       matrix:
         node-version: [18.x]
@@ -201,7 +187,6 @@ jobs:
     name: E2E Tests
     runs-on: ubuntu-latest
     needs: [pre-deploy-checks, security-compliance]
-    if: false
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -260,7 +245,6 @@ jobs:
     name: Production Deployment Approval
     runs-on: ubuntu-latest
     needs: [pre-deploy-checks, build-test, e2e-tests]
-    if: false
     steps:
       - name: Wait for approval
         run: |
@@ -272,7 +256,6 @@ jobs:
     name: Deploy to Vercel
     runs-on: ubuntu-latest
     needs: [pre-deploy-checks, build-test, e2e-tests]
-    if: false
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -318,7 +301,6 @@ jobs:
     name: Deploy Edge Functions
     runs-on: ubuntu-latest
     needs: [pre-deploy-checks, deploy-vercel]
-    if: false
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -344,7 +326,6 @@ jobs:
     name: Database Migrations
     runs-on: ubuntu-latest
     needs: [pre-deploy-checks, deploy-vercel]
-    if: false
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -377,7 +358,6 @@ jobs:
     name: Performance Tests
     runs-on: ubuntu-latest
     needs: [deploy-vercel, deploy-edge-functions, database-migrations]
-    if: false
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -409,7 +389,6 @@ jobs:
     name: Health Checks
     runs-on: ubuntu-latest
     needs: [deploy-vercel, deploy-edge-functions, database-migrations]
-    if: false
     steps:
       - name: Wait for deployment
         run: sleep 60
@@ -436,7 +415,6 @@ jobs:
     name: Notify Team
     runs-on: ubuntu-latest
     needs: [deploy-vercel, deploy-edge-functions, database-migrations, performance-tests, health-checks]
-    if: false
     steps:
       - name: Notify Slack on Success
         if: success()

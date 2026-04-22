@@ -8,9 +8,7 @@ function simpleHash(str: string): string {
   let hash = 0
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i)
-    hash = Math.imul(hash, 5) - hash + char
-    // Use >>> 0 to ensure 32-bit integer
-    hash = hash >>> 0
+    hash = (Math.imul(hash, 5) - hash + char) >>> 0 // eslint-disable-line no-bitwise, operator-assignment
   }
   return Math.abs(hash).toString(16).padStart(8, '0')
 }

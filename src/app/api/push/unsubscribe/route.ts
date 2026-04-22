@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { endpoint, userId } = body
+    const { endpoint } = body
 
     if (!endpoint) {
       return NextResponse.json({ error: 'Endpoint required' }, { status: 400 })

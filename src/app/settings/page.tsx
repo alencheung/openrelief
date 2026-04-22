@@ -2,13 +2,11 @@
 
 import { useState } from 'react'
 import { useAuth, useAuthActions } from '@/store/authStore'
-import { useRouter } from 'next/navigation'
-import { Bell, MapPin, Eye, Save } from 'lucide-react'
+import { Bell, Eye, Save } from 'lucide-react'
 
 export default function SettingsPage() {
   const { user, isAuthenticated } = useAuth()
   const { updateUser } = useAuthActions()
-  const router = useRouter()
   const [saved, setSaved] = useState(false)
 
   const [locationSharing, setLocationSharing] = useState(

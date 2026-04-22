@@ -1,0 +1,11 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+Disallow: /api/
+Disallow: /admin/
+Disallow: /settings/
+Disallow: /profile/
+Disallow: /auth/
+
+Sitemap: https://openrelief.org/sitemap.xml

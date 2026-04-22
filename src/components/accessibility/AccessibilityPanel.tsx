@@ -17,7 +17,6 @@ import {
 } from 'lucide-react'
 
 export interface AccessibilitySettings {
-
   /**
    * Whether high contrast mode is enabled
    */
@@ -65,7 +64,6 @@ export interface AccessibilitySettings {
 }
 
 export interface AccessibilityPanelProps {
-
   /**
    * Current accessibility settings
    */
@@ -112,7 +110,7 @@ export function AccessibilityPanel({
   className,
   showAdvanced = false
 }: AccessibilityPanelProps) {
-  const { prefersReducedMotion } = useReducedMotion()
+  const { prefersReducedMotion: _prefersReducedMotion } = useReducedMotion() as any
   const { announcePolite } = useAriaAnnouncer()
 
   const [localSettings, setLocalSettings] = useState(settings)
@@ -196,7 +194,7 @@ export function AccessibilityPanel({
     const defaults: AccessibilitySettings = {
       highContrast: false,
       largeText: false,
-      reducedMotion: prefersReducedMotion,
+      reducedMotion: _prefersReducedMotion as boolean,
       screenReader: false,
       keyboardNavigation: true,
       textSize: 'medium',
@@ -226,10 +224,7 @@ export function AccessibilityPanel({
 
   return (
     <div
-      className={cn(
-        'fixed inset-0 z-50 flex items-center justify-center bg-black/50',
-        className
-      )}
+      className={cn('fixed inset-0 z-50 flex items-center justify-center bg-black/50', className)}
       role="dialog"
       aria-modal="true"
       aria-labelledby="accessibility-panel-title"
@@ -238,7 +233,10 @@ export function AccessibilityPanel({
       <div className="bg-background border border-border rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border">
-          <h2 id="accessibility-panel-title" className="text-lg font-semibold flex items-center gap-2">
+          <h2
+            id="accessibility-panel-title"
+            className="text-lg font-semibold flex items-center gap-2"
+          >
             <Settings className="w-5 h-5" />
             Accessibility Settings
           </h2>
@@ -397,12 +395,12 @@ export function AccessibilityPanel({
                 <div className="flex items-center justify-between p-4 border border-border rounded-md">
                   <div>
                     <div className="font-medium">Focus Indicators</div>
-                    <div className="text-sm text-muted-foreground">
-                      Show clear focus indicators
-                    </div>
+                    <div className="text-sm text-muted-foreground">Show clear focus indicators</div>
                   </div>
                   <button
-                    onClick={() => updateSetting('showFocusIndicators', !localSettings.showFocusIndicators)}
+                    onClick={() =>
+                      updateSetting('showFocusIndicators', !localSettings.showFocusIndicators)
+                    }
                     className={cn(
                       'p-2 rounded-md transition-colors',
                       localSettings.showFocusIndicators
@@ -419,12 +417,12 @@ export function AccessibilityPanel({
                 <div className="flex items-center justify-between p-4 border border-border rounded-md">
                   <div>
                     <div className="font-medium">Keyboard Navigation</div>
-                    <div className="text-sm text-muted-foreground">
-                      Enable keyboard shortcuts
-                    </div>
+                    <div className="text-sm text-muted-foreground">Enable keyboard shortcuts</div>
                   </div>
                   <button
-                    onClick={() => updateSetting('keyboardNavigation', !localSettings.keyboardNavigation)}
+                    onClick={() =>
+                      updateSetting('keyboardNavigation', !localSettings.keyboardNavigation)
+                    }
                     className={cn(
                       'p-2 rounded-md transition-colors',
                       localSettings.keyboardNavigation
@@ -441,12 +439,12 @@ export function AccessibilityPanel({
                 <div className="flex items-center justify-between p-4 border border-border rounded-md">
                   <div>
                     <div className="font-medium">Audio Announcements</div>
-                    <div className="text-sm text-muted-foreground">
-                      Enable audio feedback
-                    </div>
+                    <div className="text-sm text-muted-foreground">Enable audio feedback</div>
                   </div>
                   <button
-                    onClick={() => updateSetting('audioAnnouncements', !localSettings.audioAnnouncements)}
+                    onClick={() =>
+                      updateSetting('audioAnnouncements', !localSettings.audioAnnouncements)
+                    }
                     className={cn(
                       'p-2 rounded-md transition-colors',
                       localSettings.audioAnnouncements
@@ -473,10 +471,12 @@ export function AccessibilityPanel({
               <div className="p-4 border border-border rounded-md">
                 <div className="space-y-2 text-sm">
                   <div>
-                    <strong>Screen Reader:</strong> {localSettings.screenReader ? 'Enabled' : 'Disabled'}
+                    <strong>Screen Reader:</strong>{' '}
+                    {localSettings.screenReader ? 'Enabled' : 'Disabled'}
                   </div>
                   <div>
-                    <strong>System Reduced Motion:</strong> {prefersReducedMotion ? 'Preferred' : 'Not Preferred'}
+                    <strong>System Reduced Motion:</strong>{' '}
+                    {prefersReducedMotion ? 'Preferred' : 'Not Preferred'}
                   </div>
                   <div>
                     <strong>Current Settings:</strong>

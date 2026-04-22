@@ -14,7 +14,7 @@ interface AuthGuardProps {
 
 export default function AuthGuard({ children, fallback }: AuthGuardProps) {
   const [isLoading, setIsLoading] = useState(true)
-  const { isAuthenticated, user, setLoading } = useAuthStore()
+  const { isAuthenticated, user } = useAuthStore()
   const router = useRouter()
 
   useEffect(() => {

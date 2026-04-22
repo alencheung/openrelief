@@ -1,14 +1,12 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { useAuthActions, useAuth } from '@/store/authStore'
 import { Button } from '@/components/ui/Button'
 import { Shield } from 'lucide-react'
 
 export default function LoginPage() {
-  const router = useRouter()
-  const { signInWithGoogle } = useAuthActions()
-  const { isLoading, error, clearError } = useAuth()
+  const { signInWithGoogle, clearError } = useAuthActions()
+  const { isLoading, error } = useAuth()
 
   const handleGoogleSignIn = async () => {
     clearError()

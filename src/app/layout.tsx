@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import { Suspense } from 'react'
 import { Providers } from '@/components/providers/Providers'
 import { Header, Footer } from '@/components/layout/Shell'
+import { CookieConsent } from '@/components/layout/CookieConsent'
 import { initSentry } from '@/lib/monitoring/sentry'
 import './globals.css'
 
@@ -93,6 +94,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </Suspense>
             </main>
             <Footer />
+            <CookieConsent />
           </div>
         </Providers>
       </body>
