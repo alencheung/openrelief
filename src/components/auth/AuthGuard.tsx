@@ -1,7 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Shield, AlertTriangle } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
+import { useAuthStore } from '@/store/authStore'
+import { Shield } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 
 interface AuthGuardProps {
@@ -10,22 +13,92 @@ interface AuthGuardProps {
 }
 
 export default function AuthGuard({ children, fallback }: AuthGuardProps) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const { isAuthenticated, user, setLoading } = useAuthStore()
+  const router = useRouter()
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const checkSession = async () => {
       try {
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        setIsAuthenticated(true)
-      } catch (error) {
-        setIsAuthenticated(false)
+        const {
+          data: { session }
+        } = await supabase.auth.getSession()
+
+        if (session?.user) {
+          useAuthStore.setState({
+            user: {
+              id: session.user.id,
+              email: session.user.email ?? '',
+              trust_score: 0.5,
+              notification_preferences: {
+                email: true,
+                push: true,
+                sms: false,
+                quiet_hours: { start: '22:00', end: '07:00' }
+              },
+              privacy_settings: {
+                location_sharing: true,
+                profile_visibility: 'public' as const,
+                data_retention: 30
+              }
+            },
+            isAuthenticated: true,
+            session: {
+              access_token: session.access_token,
+              refresh_token: session.refresh_token,
+              expires_at: session.expires_at ?? 0
+            }
+          })
+        }
+      } catch {
       } finally {
         setIsLoading(false)
       }
     }
 
-    checkAuth()
+    const {
+      data: { subscription }
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        useAuthStore.setState({
+          user: {
+            id: session.user.id,
+            email: session.user.email ?? '',
+            trust_score: 0.5,
+            notification_preferences: {
+              email: true,
+              push: true,
+              sms: false,
+              quiet_hours: { start: '22:00', end: '07:00' }
+            },
+            privacy_settings: {
+              location_sharing: true,
+              profile_visibility: 'public' as const,
+              data_retention: 30
+            }
+          },
+          isAuthenticated: true,
+          session: {
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+            expires_at: session.expires_at ?? 0
+          }
+        })
+      } else {
+        useAuthStore.setState({
+          user: null,
+          isAuthenticated: false,
+          session: null
+        })
+      }
+      setIsLoading(false)
+    })
+
+    checkSession()
+
+    return () => {
+      subscription.unsubscribe()
+    }
   }, [])
 
   if (isLoading) {
@@ -39,7 +112,7 @@ export default function AuthGuard({ children, fallback }: AuthGuardProps) {
     )
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !user) {
     return (
       fallback || (
         <div className="flex min-h-screen items-center justify-center bg-gray-50">
@@ -54,42 +127,9 @@ export default function AuthGuard({ children, fallback }: AuthGuardProps) {
               </p>
             </div>
 
-            <div className="space-y-6">
-              <div className="rounded-md bg-yellow-50 border border-yellow-200 p-4">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <AlertTriangle className="h-5 w-5 text-yellow-400" />
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-yellow-800">Demo Mode Active</h3>
-                    <div className="mt-2 text-sm text-yellow-700">
-                      <p>
-                        This is a demonstration of the OpenRelief platform. In production, proper
-                        authentication would be required.
-                      </p>
-                      <p className="mt-2">
-                        For demo purposes, you can continue with limited access.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                {process.env.NODE_ENV !== 'production' && (
-                  <Button
-                    onClick={() => setIsAuthenticated(true)}
-                    variant="default"
-                    className="w-full"
-                  >
-                    Continue to Demo
-                  </Button>
-                )}
-                <Button variant="outline" className="w-full">
-                  Sign In with Supabase
-                </Button>
-              </div>
-            </div>
+            <Button onClick={() => router.push('/login')} variant="default" className="w-full">
+              Sign In
+            </Button>
 
             <div className="mt-6 text-center">
               <p className="text-xs text-gray-500">

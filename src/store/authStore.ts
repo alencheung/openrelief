@@ -41,6 +41,7 @@ export interface AuthState {
 export interface AuthActions {
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string) => Promise<void>
+  signInWithGoogle: () => Promise<void>
   signOut: () => void
   updateUser: (updates: Partial<User>) => void
   clearError: () => void
@@ -177,6 +178,26 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
+      signInWithGoogle: async () => {
+        set({ isLoading: true, error: null })
+        try {
+          const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              redirectTo: `${window.location.origin}/auth/callback`
+            }
+          })
+          if (error) {
+            throw error
+          }
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Google sign in failed',
+            isLoading: false
+          })
+        }
+      },
+
       signOut: async () => {
         try {
           await supabase.auth.signOut()
@@ -232,6 +253,7 @@ export const useAuthActions = () =>
   useAuthStore(state => ({
     signIn: state.signIn,
     signUp: state.signUp,
+    signInWithGoogle: state.signInWithGoogle,
     signOut: state.signOut,
     updateUser: state.updateUser,
     clearError: state.clearError,

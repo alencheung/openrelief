@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { AlertTriangle, MapPin, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useEmergencyStore, useLocationStore, useOfflineStore } from '@/store'
+import { useAuth } from '@/store/authStore'
 import { EmergencyEvent } from '@/types'
 import {
   useFocusManagement,
@@ -101,6 +102,7 @@ export default function EmergencyReportInterface({
   initialLocation,
   mapInstance
 }: EmergencyReportInterfaceProps) {
+  const { user } = useAuth()
   const [currentStep, setCurrentStep] = useState(0)
   const [selectedType, setSelectedType] = useState<EmergencyType | null>(null)
   const [title, setTitle] = useState('')
@@ -369,8 +371,7 @@ export default function EmergencyReportInterface({
 
     const emergencyReport: Omit<EmergencyEvent, 'id' | 'created_at' | 'updated_at'> = {
       type_id: selectedType!.id,
-      // This would come from auth
-      reporter_id: 'current-user',
+      reporter_id: user?.id ?? 'anonymous',
       title,
       description,
       location: `${location!.lat} ${location!.lng}`,

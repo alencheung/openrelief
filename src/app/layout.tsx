@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import { Suspense } from 'react'
 import { Providers } from '@/components/providers/Providers'
+import { Header, Footer } from '@/components/layout/Shell'
 import { initSentry } from '@/lib/monitoring/sentry'
 import './globals.css'
 
@@ -78,8 +79,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={`${inter.className} h-full antialiased`}>
         <Providers>
-          <div className="min-h-full">
-            <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+          <div className="min-h-full flex flex-col">
+            <Header />
+            <main className="flex-1">
+              <Suspense
+                fallback={
+                  <div className="flex items-center justify-center py-20">
+                    <div className="loading-spinner h-8 w-8" />
+                  </div>
+                }
+              >
+                {children}
+              </Suspense>
+            </main>
+            <Footer />
           </div>
         </Providers>
       </body>
