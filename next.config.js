@@ -102,7 +102,6 @@ const withPWA = require('next-pwa')({
 const nextConfig = {
   experimental: {
     optimizeCss: true,
-    isrMemoryCacheSize: 100,
     optimizePackageImports: [
       'lucide-react',
       '@heroicons/react',
@@ -379,6 +378,10 @@ module.exports = withSentryConfig(withPWA(nextConfig), {
   widenClientFileUpload: true,
   tunnelRoute: '/monitoring-tunnel',
   hideSourceMaps: true,
-  disableLogger: true,
-  automaticVercelMonitors: true
+  webpack: {
+    treeshake: {
+      removeDebugLogging: true
+    },
+    automaticVercelMonitors: true
+  }
 })

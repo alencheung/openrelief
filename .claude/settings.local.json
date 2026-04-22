@@ -5,7 +5,9 @@
       "WebSearch",
       "Bash(python -m json.tool)",
       "Skill(update-config)",
-      "Bash(node *)"
+      "Bash(node *)",
+      "Bash(npx next *)",
+      "Bash(kill %1)"
     ]
   },
   "hooks": {

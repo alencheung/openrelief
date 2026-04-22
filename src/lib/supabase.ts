@@ -4,8 +4,9 @@ import { Database } from '@/types/database'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
-// Mock client should ONLY be used in test environment - never in production
-const shouldUseMockClient = process.env.NODE_ENV === 'test'
+// Use mock client in test, or in dev when env vars aren't configured
+const shouldUseMockClient =
+  process.env.NODE_ENV === 'test' || (process.env.NODE_ENV === 'development' && !supabaseUrl)
 
 export const supabase = shouldUseMockClient
   ? createMockSupabaseClient()
@@ -25,7 +26,7 @@ export const supabase = shouldUseMockClient
 // Service role client for server-side operations
 export const supabaseAdmin = shouldUseMockClient
   ? createMockSupabaseClient()
-  : createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+  : createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY || '', {
       auth: {
         autoRefreshToken: false,
         persistSession: false
@@ -34,8 +35,8 @@ export const supabaseAdmin = shouldUseMockClient
 
 // Mock Supabase client for test environment only
 function createMockSupabaseClient() {
-  if (process.env.NODE_ENV !== 'test') {
-    console.warn('Warning: Mock Supabase client is intended for test environment only')
+  if (process.env.NODE_ENV !== 'test' && process.env.NODE_ENV !== 'development') {
+    console.warn('Warning: Mock Supabase client should not be used in production')
   }
 
   return {
@@ -130,8 +131,18 @@ function createMockSupabaseClient() {
               error: null
             })
         }),
+        in: (column: string, values: any[]) => ({
+          then: (resolve: any) =>
+            resolve({
+              data: [],
+              error: null
+            })
+        }),
         order: () => ({
           eq: () => ({
+            limit: () => Promise.resolve({ data: [], error: null })
+          }),
+          in: () => ({
             limit: () => Promise.resolve({ data: [], error: null })
           })
         }),
