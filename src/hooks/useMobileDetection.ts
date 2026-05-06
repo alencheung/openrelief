@@ -39,9 +39,7 @@ const deviceBreakpoints: Record<DeviceType, { min: number; max: number }> = {
 }
 
 export function useMobileDetection(): MobileDetectionState {
-  const [state, setState] = useState<MobileDetectionState>(() =>
-    getInitialState()
-  )
+  const [state, setState] = useState<MobileDetectionState>(() => getInitialState())
 
   function getInitialState(): MobileDetectionState {
     if (typeof window === 'undefined') {
@@ -78,7 +76,11 @@ export function useMobileDetection(): MobileDetectionState {
     }
   }
 
-  function calculateState(width: number, height: number, pixelRatio: number): Omit<MobileDetectionState, 'screenWidth' | 'screenHeight' | 'pixelRatio'> {
+  function calculateState(
+    width: number,
+    height: number,
+    pixelRatio: number
+  ): Omit<MobileDetectionState, 'screenWidth' | 'screenHeight' | 'pixelRatio'> {
     const breakpoint = getCurrentBreakpoint(width)
     const orientation = height > width ? 'portrait' : 'landscape'
     const deviceType = getCurrentDeviceType(width)
@@ -167,8 +169,8 @@ export function getResponsiveValue<T>(
   const currentIndex = breakpointOrder.indexOf(breakpoint)
 
   for (let i = currentIndex; i < breakpointOrder.length; i++) {
-    const bp = breakpointOrder[i]
-    if (values[bp] !== undefined) {
+    const bp = breakpointOrder[i] as Breakpoint
+    if (bp && values[bp] !== undefined) {
       return values[bp]!
     }
   }
@@ -189,10 +191,7 @@ export function isViewportInRange(
 }
 
 // Hook for responsive values that change based on breakpoint
-export function useResponsiveValue<T>(
-  values: Partial<Record<Breakpoint, T>>,
-  defaultValue: T
-): T {
+export function useResponsiveValue<T>(values: Partial<Record<Breakpoint, T>>, defaultValue: T): T {
   const { breakpoint } = useMobileDetection()
   return getResponsiveValue(breakpoint, values, defaultValue)
 }

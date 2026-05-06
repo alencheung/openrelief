@@ -143,7 +143,7 @@ export function IOSBackgroundManager({ className }: IOSBackgroundManagerProps) {
             <div className="text-center">
               <div className="text-2xl font-bold">{queueStatus.queued}</div>
               <p className="text-sm text-muted-foreground">Queued Emergencies</p>
-              {queueStatus.processing && (
+              {queueStatus.running > 0 && (
                 <RefreshCw className="h-4 w-4 animate-spin mx-auto mt-1 text-blue-600" />
               )}
             </div>

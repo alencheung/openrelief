@@ -18,7 +18,9 @@ interface UseIOSBackgroundReturn {
   isInitializing: boolean
   queueStatus: {
     queued: number
-    processing: boolean
+    running: number
+    completed: number
+    failed: number
   }
   initialize: () => Promise<boolean>
   updateConfig: (updates: Partial<iOSBackgroundConfig>) => void
