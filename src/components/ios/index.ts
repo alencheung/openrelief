@@ -1,1 +1,1 @@
-export { iOSBackgroundManager } from './iOSBackgroundManager'
+export { IOSBackgroundManager } from './iOSBackgroundManager'

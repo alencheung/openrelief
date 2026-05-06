@@ -259,6 +259,12 @@
       }
     },
     {
+      "files": ["src/components/map/ResponsiveMapContainer.tsx"],
+      "rules": {
+        "comma-spacing": "off"
+      }
+    },
+    {
       "files": ["src/test-utils/mocks/*.ts"],
       "parserOptions": {
         "project": null

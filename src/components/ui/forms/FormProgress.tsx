@@ -3,28 +3,25 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 import { Check, AlertCircle, Loader2 } from 'lucide-react'
 
-const formProgressVariants = cva(
-  'w-full',
-  {
-    variants: {
-      variant: {
-        default: '',
-        steps: '',
-        dots: '',
-        bar: ''
-      },
-      size: {
-        sm: 'text-xs',
-        default: 'text-sm',
-        lg: 'text-base'
-      }
+const formProgressVariants = cva('w-full', {
+  variants: {
+    variant: {
+      default: '',
+      steps: '',
+      dots: '',
+      bar: ''
     },
-    defaultVariants: {
-      variant: 'default',
-      size: 'default'
+    size: {
+      sm: 'text-xs',
+      default: 'text-sm',
+      lg: 'text-base'
     }
+  },
+  defaultVariants: {
+    variant: 'default',
+    size: 'default'
   }
-)
+})
 
 export interface FormStep {
   id: string
@@ -36,8 +33,7 @@ export interface FormStep {
 }
 
 export interface FormProgressProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof formProgressVariants> {
+  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof formProgressVariants> {
   steps: FormStep[]
   currentStep: number
   onStepClick?: (stepIndex: number, step: FormStep) => void
@@ -50,26 +46,30 @@ export interface FormProgressProps
 }
 
 const FormProgress = React.forwardRef<HTMLDivElement, FormProgressProps>(
-  ({
-    className,
-    steps,
-    currentStep,
-    onStepClick,
-    showStepNumbers = true,
-    showDescriptions = false,
-    clickable = true,
-    orientation = 'horizontal',
-    variant: progressVariant = 'default',
-    animateTransitions = true,
-    size,
-    ...props
-  }, ref) => {
+  (
+    {
+      className,
+      steps,
+      currentStep,
+      onStepClick,
+      showStepNumbers = true,
+      showDescriptions = false,
+      clickable = true,
+      orientation = 'horizontal',
+      variant: progressVariant = 'default',
+      animateTransitions = true,
+      size,
+      ...props
+    },
+    ref
+  ) => {
     const isVertical = orientation === 'vertical'
 
     // Get step status
     const getStepStatus = (index: number): 'pending' | 'active' | 'completed' | 'error' => {
-      if (steps[index].status) {
-        return steps[index].status
+      const step = steps[index]
+      if (step?.status) {
+        return step.status
       }
       if (index < currentStep) {
         return 'completed'
@@ -165,18 +165,18 @@ const FormProgress = React.forwardRef<HTMLDivElement, FormProgressProps>(
             <div className="flex justify-between">
               {steps.map((step, index) => (
                 <div key={step.id} className="text-xs text-center max-w-[80px]">
-                  <div className={cn(
-                    'font-medium',
-                    getStepStatus(index) === 'active' && 'text-primary',
-                    getStepStatus(index) === 'completed' && 'text-success',
-                    getStepStatus(index) === 'error' && 'text-destructive'
-                  )}>
+                  <div
+                    className={cn(
+                      'font-medium',
+                      getStepStatus(index) === 'active' && 'text-primary',
+                      getStepStatus(index) === 'completed' && 'text-success',
+                      getStepStatus(index) === 'error' && 'text-destructive'
+                    )}
+                  >
                     {step.title}
                   </div>
                   {step.description && (
-                    <div className="text-muted-foreground mt-1">
-                      {step.description}
-                    </div>
+                    <div className="text-muted-foreground mt-1">{step.description}</div>
                   )}
                 </div>
               ))}
@@ -254,32 +254,31 @@ const FormProgress = React.forwardRef<HTMLDivElement, FormProgressProps>(
                 onClick={() => handleStepClick(index, step)}
               >
                 {/* Step Icon */}
-                <div className={cn(
-                  'relative flex items-center justify-center w-10 h-10 rounded-full border-2 font-medium transition-all duration-normal',
-                  animateTransitions && 'transition-all duration-normal',
-                  isActive && 'ring-2 ring-primary/20',
-                  getStepColor(status)
-                )}>
+                <div
+                  className={cn(
+                    'relative flex items-center justify-center w-10 h-10 rounded-full border-2 font-medium transition-all duration-normal',
+                    animateTransitions && 'transition-all duration-normal',
+                    isActive && 'ring-2 ring-primary/20',
+                    getStepColor(status)
+                  )}
+                >
                   {getStepIcon(status, step, index)}
                 </div>
 
                 {/* Step Content */}
-                <div className={cn(
-                  'text-left',
-                  isVertical ? 'flex-1' : 'text-center'
-                )}>
-                  <div className={cn(
-                    'font-medium',
-                    isActive && 'text-primary',
-                    isCompleted && 'text-success',
-                    hasError && 'text-destructive'
-                  )}>
+                <div className={cn('text-left', isVertical ? 'flex-1' : 'text-center')}>
+                  <div
+                    className={cn(
+                      'font-medium',
+                      isActive && 'text-primary',
+                      isCompleted && 'text-success',
+                      hasError && 'text-destructive'
+                    )}
+                  >
                     {step.title}
                   </div>
                   {showDescriptions && step.description && (
-                    <div className="text-muted-foreground text-xs mt-1">
-                      {step.description}
-                    </div>
+                    <div className="text-muted-foreground text-xs mt-1">{step.description}</div>
                   )}
                 </div>
               </div>
@@ -305,7 +304,7 @@ const FormProgress = React.forwardRef<HTMLDivElement, FormProgressProps>(
 FormProgress.displayName = 'FormProgress'
 
 // Progress summary component
-export interface FormProgressSummaryProps {
+export interface FormProgressSummaryProps extends React.HTMLAttributes<HTMLDivElement> {
   currentStep: number
   totalSteps: number
   completedSteps: number
@@ -317,23 +316,31 @@ export interface FormProgressSummaryProps {
 }
 
 export const FormProgressSummary = React.forwardRef<HTMLDivElement, FormProgressSummaryProps>(
-  ({
-    className,
-    currentStep,
-    totalSteps,
-    completedSteps,
-    estimatedTime,
-    timeRemaining,
-    showPercentage = true,
-    showTimeEstimate = true,
-    variant = 'default'
-  }, ref) => {
+  (
+    {
+      className,
+      currentStep,
+      totalSteps,
+      completedSteps,
+      estimatedTime,
+      timeRemaining,
+      showPercentage = true,
+      showTimeEstimate = true,
+      variant = 'default'
+    },
+    ref
+  ) => {
     const percentage = Math.round((completedSteps / totalSteps) * 100)
 
     if (variant === 'compact') {
       return (
-        <div ref={ref} className={cn('flex items-center gap-2 text-sm text-muted-foreground', className)}>
-          <span>Step {currentStep + 1} of {totalSteps}</span>
+        <div
+          ref={ref}
+          className={cn('flex items-center gap-2 text-sm text-muted-foreground', className)}
+        >
+          <span>
+            Step {currentStep + 1} of {totalSteps}
+          </span>
           {showPercentage && <span>({percentage}%)</span>}
         </div>
       )
@@ -346,9 +353,7 @@ export const FormProgressSummary = React.forwardRef<HTMLDivElement, FormProgress
             Step {currentStep + 1} of {totalSteps}
           </span>
           {showPercentage && (
-            <span className="text-sm text-muted-foreground">
-              {percentage}% Complete
-            </span>
+            <span className="text-sm text-muted-foreground">{percentage}% Complete</span>
           )}
         </div>
 
@@ -361,13 +366,9 @@ export const FormProgressSummary = React.forwardRef<HTMLDivElement, FormProgress
 
         {showTimeEstimate && (estimatedTime || timeRemaining) && (
           <div className="text-xs text-muted-foreground">
-            {estimatedTime && (
-              <span>Estimated time: {estimatedTime} min</span>
-            )}
+            {estimatedTime && <span>Estimated time: {estimatedTime} min</span>}
             {estimatedTime && timeRemaining && ' • '}
-            {timeRemaining && (
-              <span>Time remaining: {timeRemaining} min</span>
-            )}
+            {timeRemaining && <span>Time remaining: {timeRemaining} min</span>}
           </div>
         )}
       </div>

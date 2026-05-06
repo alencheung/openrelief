@@ -47,7 +47,8 @@ export interface AudioRecording {
 }
 
 export interface AudioRecorderProps
-  extends React.HTMLAttributes<HTMLDivElement>,
+  extends
+    Omit<React.HTMLAttributes<HTMLDivElement>, 'onError'>,
     VariantProps<typeof audioRecorderVariants> {
   label?: string
   helperText?: string
@@ -79,31 +80,34 @@ export interface AudioRecorderProps
 }
 
 const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
-  ({
-    className,
-    variant,
-    size,
-    label,
-    helperText,
-    errorText,
-    successText,
-    warningText,
-    maxDuration = 300, // 5 minutes default
-    showLevels = true,
-    showDuration = true,
-    showPlayback = true,
-    autoStop = true,
-    quality = 'medium',
-    format = 'webm',
-    onRecordingStart,
-    onRecordingStop,
-    onRecordingPause,
-    onRecordingResume,
-    onError,
-    renderRecording,
-    renderControls,
-    ...props
-  }, ref) => {
+  (
+    {
+      className,
+      variant,
+      size,
+      label,
+      helperText,
+      errorText,
+      successText,
+      warningText,
+      maxDuration = 300, // 5 minutes default
+      showLevels = true,
+      showDuration = true,
+      showPlayback = true,
+      autoStop = true,
+      quality = 'medium',
+      format = 'webm',
+      onRecordingStart,
+      onRecordingStop,
+      onRecordingPause,
+      onRecordingResume,
+      onError,
+      renderRecording,
+      renderControls,
+      ...props
+    },
+    ref
+  ) => {
     const [isRecording, setIsRecording] = React.useState(false)
     const [isPaused, setIsPaused] = React.useState(false)
     const [isProcessing, setIsProcessing] = React.useState(false)
@@ -239,7 +243,7 @@ const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
 
         audioChunksRef.current = []
 
-        mediaRecorder.ondataavailable = (event) => {
+        mediaRecorder.ondataavailable = event => {
           if (event.data.size > 0) {
             audioChunksRef.current.push(event.data)
           }
@@ -254,10 +258,12 @@ const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
             url,
             duration,
             timestamp: new Date(),
-            levels: showLevels ? audioLevels.map((level, index) => ({
-              level,
-              timestamp: Date.now() - (audioLevels.length - index) * 100
-            })) : undefined
+            levels: showLevels
+              ? audioLevels.map((level, index) => ({
+                  level,
+                  timestamp: Date.now() - (audioLevels.length - index) * 100
+                }))
+              : undefined
           }
 
           setCurrentRecording(recording)
@@ -431,11 +437,7 @@ const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
     return (
       <div ref={ref} className={cn('space-y-4', className)} {...props}>
         {/* Label */}
-        {label && (
-          <label className="block text-sm font-medium text-foreground">
-            {label}
-          </label>
-        )}
+        {label && <label className="block text-sm font-medium text-foreground">{label}</label>}
 
         {/* Recording Controls */}
         {renderControls ? (
@@ -462,7 +464,11 @@ const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
               {isProcessing ? (
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-current" />
               ) : isRecording ? (
-                isPaused ? <Play className="h-6 w-6" /> : <Pause className="h-6 w-6" />
+                isPaused ? (
+                  <Play className="h-6 w-6" />
+                ) : (
+                  <Pause className="h-6 w-6" />
+                )
               ) : (
                 <Mic className="h-6 w-6" />
               )}
@@ -503,8 +509,7 @@ const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
                 <div
                   className={cn(
                     'h-full transition-all duration-100',
-                    level > 0.7 ? 'bg-destructive'
-                      : level > 0.4 ? 'bg-warning' : 'bg-success'
+                    level > 0.7 ? 'bg-destructive' : level > 0.4 ? 'bg-warning' : 'bg-success'
                   )}
                   style={{ width: `${level * 100}%` }}
                 />
@@ -530,13 +535,7 @@ const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
                 </div>
 
                 {/* Playback Controls */}
-                {showPlayback && (
-                  <audio
-                    src={currentRecording.url}
-                    controls
-                    className="h-8"
-                  />
-                )}
+                {showPlayback && <audio src={currentRecording.url} controls className="h-8" />}
 
                 {/* Delete Button */}
                 <button
@@ -563,16 +562,18 @@ const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
 
         {/* Helper Text */}
         {(helperText || errorText || successText || warningText) && (
-          <div className={cn(
-            'text-xs flex items-center gap-1',
-            errorText
-              ? 'text-destructive'
-              : successText
-                ? 'text-success'
-                : warningText
-                  ? 'text-warning'
-                  : 'text-muted-foreground'
-          )}>
+          <div
+            className={cn(
+              'text-xs flex items-center gap-1',
+              errorText
+                ? 'text-destructive'
+                : successText
+                  ? 'text-success'
+                  : warningText
+                    ? 'text-warning'
+                    : 'text-muted-foreground'
+            )}
+          >
             {errorText && <AlertCircle className="h-3 w-3" />}
             {successText && <CheckCircle className="h-3 w-3" />}
             {errorText || successText || warningText || helperText}

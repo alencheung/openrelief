@@ -1,7 +1,17 @@
 import * as React from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
-import { Upload, X, File, Image, Film, Music, FileText, AlertCircle, CheckCircle } from 'lucide-react'
+import {
+  Upload,
+  X,
+  File,
+  Image,
+  Film,
+  Music,
+  FileText,
+  AlertCircle,
+  CheckCircle
+} from 'lucide-react'
 
 const enhancedFileUploadVariants = cva(
   'relative flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg transition-all duration-normal',
@@ -34,7 +44,8 @@ export interface FilePreview {
 }
 
 export interface EnhancedFileUploadProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'>,
+  extends
+    Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'size'>,
     VariantProps<typeof enhancedFileUploadVariants> {
   label?: string
   helperText?: string
@@ -59,33 +70,36 @@ export interface EnhancedFileUploadProps
 }
 
 const EnhancedFileUpload = React.forwardRef<HTMLInputElement, EnhancedFileUploadProps>(
-  ({
-    className,
-    variant,
-    size,
-    label,
-    helperText,
-    errorText,
-    successText,
-    warningText,
-    placeholder = 'Drop files here or click to browse',
-    accept,
-    multiple = false,
-    maxFiles = 5,
-    maxSize = 10 * 1024 * 1024, // 10MB default
-    showPreviews = true,
-    floatingLabel = false,
-    required = false,
-    validateOnChange = false,
-    validator,
-    onValidationChange,
-    onFilesChange,
-    onFileRemove,
-    renderPreview,
-    renderUploadArea,
-    disabled,
-    ...props
-  }, ref) => {
+  (
+    {
+      className,
+      variant,
+      size,
+      label,
+      helperText,
+      errorText,
+      successText,
+      warningText,
+      placeholder = 'Drop files here or click to browse',
+      accept,
+      multiple = false,
+      maxFiles = 5,
+      maxSize = 10 * 1024 * 1024, // 10MB default
+      showPreviews = true,
+      floatingLabel = false,
+      required = false,
+      validateOnChange = false,
+      validator,
+      onValidationChange,
+      onFilesChange,
+      onFileRemove,
+      renderPreview,
+      renderUploadArea,
+      disabled,
+      ...props
+    },
+    ref
+  ) => {
     const [isDragActive, setIsDragActive] = React.useState(false)
     const [files, setFiles] = React.useState<File[]>([])
     const [previews, setPreviews] = React.useState<FilePreview[]>([])
@@ -94,12 +108,12 @@ const EnhancedFileUpload = React.forwardRef<HTMLInputElement, EnhancedFileUpload
       message: string | null
     }>({ isValid: null, message: null })
 
-    const inputRef = React.useRef<HTMLInputElement>(null)
+    const inputRef = React.useRef<HTMLInputElement | null>(null)
     const inputId = `file-upload-${React.useId()}`
 
     // Determine final variant based on props and validation state
     const getVariant = () => {
-      if (errorText || validationState.message && !validationState.isValid) {
+      if (errorText || (validationState.message && !validationState.isValid)) {
         return 'error'
       }
       if (successText || validationState.isValid) {
@@ -128,10 +142,14 @@ const EnhancedFileUpload = React.forwardRef<HTMLInputElement, EnhancedFileUpload
     // Get file icon
     const getFileIcon = (type: 'image' | 'video' | 'audio' | 'document') => {
       switch (type) {
-        case 'image': return <Image className="h-4 w-4" />
-        case 'video': return <Film className="h-4 w-4" />
-        case 'audio': return <Music className="h-4 w-4" />
-        case 'document': return <FileText className="h-4 w-4" />
+        case 'image':
+          return <Image className="h-4 w-4" />
+        case 'video':
+          return <Film className="h-4 w-4" />
+        case 'audio':
+          return <Music className="h-4 w-4" />
+        case 'document':
+          return <FileText className="h-4 w-4" />
       }
     }
 
@@ -178,7 +196,7 @@ const EnhancedFileUpload = React.forwardRef<HTMLInputElement, EnhancedFileUpload
 
       // Limit number of files
       if (!multiple) {
-        fileList = [fileList[0]].filter(Boolean)
+        fileList = fileList.slice(0, 1)
       } else if (fileList.length > maxFiles) {
         fileList = fileList.slice(0, maxFiles)
       }
@@ -245,14 +263,18 @@ const EnhancedFileUpload = React.forwardRef<HTMLInputElement, EnhancedFileUpload
       const newFiles = files.filter((_, index) => index !== previewIndex)
 
       // Revoke object URL to free memory
-      URL.revokeObjectURL(preview.url)
+      if (preview) {
+        URL.revokeObjectURL(preview.url)
+      }
 
       setPreviews(newPreviews)
       setFiles(newFiles)
 
       validateFiles(newFiles)
       onFilesChange?.(newFiles, newPreviews)
-      onFileRemove?.(fileId, preview.file)
+      if (preview) {
+        onFileRemove?.(fileId, preview.file)
+      }
     }
 
     // Clean up object URLs on unmount
@@ -299,7 +321,7 @@ const EnhancedFileUpload = React.forwardRef<HTMLInputElement, EnhancedFileUpload
         >
           {/* Hidden File Input */}
           <input
-            ref={(node) => {
+            ref={node => {
               if (typeof ref === 'function') {
                 ref(node)
               } else if (ref) {
@@ -322,10 +344,9 @@ const EnhancedFileUpload = React.forwardRef<HTMLInputElement, EnhancedFileUpload
             renderUploadArea(isDragActive)
           ) : (
             <div className="flex flex-col items-center justify-center text-center space-y-2">
-              <Upload className={cn(
-                'h-8 w-8 text-muted-foreground',
-                isDragActive && 'text-primary'
-              )} />
+              <Upload
+                className={cn('h-8 w-8 text-muted-foreground', isDragActive && 'text-primary')}
+              />
               <p className="text-sm text-muted-foreground">
                 {isDragActive ? 'Drop files here' : placeholder}
               </p>
@@ -347,10 +368,11 @@ const EnhancedFileUpload = React.forwardRef<HTMLInputElement, EnhancedFileUpload
         {showPreviews && hasFiles && (
           <div className="space-y-2">
             <div className="text-sm font-medium text-foreground">
-              Files ({files.length}{maxFiles && `/${maxFiles}`})
+              Files ({files.length}
+              {maxFiles && `/${maxFiles}`})
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {previews.map((preview) => (
+              {previews.map(preview => (
                 <div key={preview.id} className="relative group">
                   {renderPreview ? (
                     renderPreview(preview)
@@ -398,18 +420,23 @@ const EnhancedFileUpload = React.forwardRef<HTMLInputElement, EnhancedFileUpload
 
         {/* Helper Text */}
         {(helperText || errorText || successText || warningText || validationState.message) && (
-          <div className={cn(
-            'text-xs flex items-center gap-1',
-            errorText || (validationState.message && !validationState.isValid)
-              ? 'text-destructive'
-              : successText || validationState.isValid
-                ? 'text-success'
-                : warningText
-                  ? 'text-warning'
-                  : 'text-muted-foreground'
-          )}>
-            {errorText || (validationState.message && !validationState.isValid) && <AlertCircle className="h-3 w-3" />}
-            {successText || validationState.isValid && <CheckCircle className="h-3 w-3" />}
+          <div
+            className={cn(
+              'text-xs flex items-center gap-1',
+              errorText || (validationState.message && !validationState.isValid)
+                ? 'text-destructive'
+                : successText || validationState.isValid
+                  ? 'text-success'
+                  : warningText
+                    ? 'text-warning'
+                    : 'text-muted-foreground'
+            )}
+          >
+            {errorText ||
+              (validationState.message && !validationState.isValid && (
+                <AlertCircle className="h-3 w-3" />
+              ))}
+            {successText || (validationState.isValid && <CheckCircle className="h-3 w-3" />)}
             {errorText || successText || warningText || validationState.message || helperText}
           </div>
         )}

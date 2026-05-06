@@ -45,7 +45,7 @@ export const useEmergencyEvents = (filters?: {
         // Cache for offline use
         useOfflineStore.getState().setCache('emergency-events', data, {
           tags: ['emergency', 'events'],
-          expiresAt: Date.now() + (5 * 60 * 1000) // 5 minutes
+          expiresAt: Date.now() + 5 * 60 * 1000 // 5 minutes
         })
 
         return data
@@ -73,7 +73,7 @@ export const useEmergencyEvents = (filters?: {
       }
       return failureCount < 3
     },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000)
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000)
   })
 }
 
@@ -107,7 +107,7 @@ export const useInfiniteEmergencyEvents = (filters?: {
       }
     },
     initialPageParam: 0,
-    getNextPageParam: (lastPage) => lastPage.hasMore ? lastPage.nextPage : undefined,
+    getNextPageParam: lastPage => (lastPage.hasMore ? lastPage.nextPage : undefined),
     staleTime: 30 * 1000
   })
 }
@@ -121,7 +121,8 @@ export const useEmergencyEvent = (id: string) => {
       try {
         const { data, error } = await supabase
           .from('emergency_events')
-          .select(`
+          .select(
+            `
             *,
             emergency_types (*),
             reporter: user_profiles (
@@ -135,7 +136,8 @@ export const useEmergencyEvent = (id: string) => {
                 trust_score
               )
             )
-          `)
+          `
+          )
           .eq('id', id)
           .single()
 
@@ -187,7 +189,9 @@ export const useCreateEmergencyEvent = () => {
         const minScore = thresholds?.reporting || 0.3
 
         if (userScore && userScore.score < minScore) {
-          const error = new Error(`Insufficient trust score to report emergencies. Required: ${minScore}, Current: ${userScore.score}`)
+          const error = new Error(
+            `Insufficient trust score to report emergencies. Required: ${minScore}, Current: ${userScore.score}`
+          )
 
           // Add notification for user feedback
           addNotification({
@@ -237,7 +241,7 @@ export const useCreateEmergencyEvent = () => {
           addNotification({
             type: 'system',
             title: 'Emergency Report Queued',
-            message: 'Your emergency report will be synced when you\'re back online.',
+            message: "Your emergency report will be synced when you're back online.",
             severity: 'info',
             priority: 'medium',
             channels: { inApp: true, push: false, email: false, sms: false }
@@ -282,7 +286,7 @@ export const useCreateEmergencyEvent = () => {
         throw error
       }
     },
-    onSuccess: (data) => {
+    onSuccess: data => {
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: ['emergency-events'] })
       queryClient.setQueryData(['emergency-event', data.id], data)
@@ -356,7 +360,7 @@ export const useUpdateEmergencyEvent = () => {
         throw error
       }
     },
-    onSuccess: (data) => {
+    onSuccess: data => {
       queryClient.invalidateQueries({ queryKey: ['emergency-events'] })
       queryClient.setQueryData(['emergency-event', data.id], data)
     },
@@ -451,7 +455,7 @@ export const useConfirmEvent = () => {
       queryClient.invalidateQueries({ queryKey: ['emergency-event', variables.eventId] })
       queryClient.invalidateQueries({ queryKey: ['event-confirmations', variables.eventId] })
     },
-    onError: (error) => {
+    onError: error => {
       console.error('Confirm event mutation error:', error)
     }
   })
@@ -479,7 +483,7 @@ export const useEmergencyTypes = () => {
         // Cache for offline use
         useOfflineStore.getState().setCache('emergency-types', data, {
           tags: ['emergency', 'types'],
-          expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
+          expiresAt: Date.now() + 24 * 60 * 60 * 1000 // 24 hours
         })
 
         return data
@@ -543,13 +547,17 @@ export const useNearbyEmergencyEvents = (
 }
 
 // Query for user's reported events
-export const useUserEmergencyEvents = (userId: string, status?: Database['public']['Enums']['emergency_events_status']) => {
+export const useUserEmergencyEvents = (
+  userId: string,
+  status?: Database['public']['Enums']['emergency_events_status']
+) => {
   return useQuery({
     queryKey: ['user-emergency-events', userId, status],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('emergency_events')
-        .select(`
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const query: any = (supabase.from('emergency_events') as any)
+        .select(
+          `
           *,
           emergency_types (*),
           confirmations: event_confirmations (
@@ -557,10 +565,16 @@ export const useUserEmergencyEvents = (userId: string, status?: Database['public
             user_id,
             created_at
           )
-        `)
+        `
+        )
         .eq('reporter_id', userId)
-        .eq(status ? 'status' : 'status', status || 'active')
+        .eq('status', status || 'active')
         .order('created_at', { ascending: false })
+      const { data, error } = await query
+      if (error) {
+        throw error
+      }
+      return data
 
       if (error) {
         throw error
@@ -580,9 +594,9 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
   const Δφ = ((lat2 - lat1) * Math.PI) / 180
   const Δλ = ((lon2 - lon1) * Math.PI) / 180
 
-  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2)
-    + Math.cos(φ1) * Math.cos(φ2)
-    * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 
   return R * c // Distance in meters

@@ -324,31 +324,31 @@ const PrivacyDashboard: React.FC = () => {
     })
   }
 
-  // Get privacy impact color
-  const getPrivacyImpactColor = (impact: 'low' | 'medium' | 'high') => {
+  // Get privacy impact status
+  const getPrivacyImpactStatus = (impact: 'low' | 'medium' | 'high') => {
     switch (impact) {
       case 'low':
-        return 'green'
+        return 'resolved'
       case 'medium':
-        return 'yellow'
+        return 'pending'
       case 'high':
-        return 'red'
+        return 'critical'
       default:
-        return 'gray'
+        return 'inactive'
     }
   }
 
-  // Get privacy zone color
-  const _getPrivacyZoneColor = (level: 'high' | 'medium' | 'low') => {
+  // Get privacy zone status
+  const _getPrivacyZoneStatus = (level: 'high' | 'medium' | 'low') => {
     switch (level) {
       case 'high':
-        return 'red'
+        return 'critical'
       case 'medium':
-        return 'yellow'
+        return 'pending'
       case 'low':
-        return 'green'
+        return 'resolved'
       default:
-        return 'gray'
+        return 'inactive'
     }
   }
 
@@ -401,15 +401,15 @@ const PrivacyDashboard: React.FC = () => {
   const getPrivacyBudgetStatus = () => {
     const percentage = (dataUsage.privacyBudgetUsed / dataUsage.privacyBudgetTotal) * 100
     if (percentage >= 90) {
-      return { status: 'critical', color: 'red' }
+      return { status: 'critical' as const, color: 'critical' as const }
     }
     if (percentage >= 75) {
-      return { status: 'warning', color: 'yellow' }
+      return { status: 'warning' as const, color: 'pending' as const }
     }
     if (percentage >= 50) {
-      return { status: 'moderate', color: 'blue' }
+      return { status: 'moderate' as const, color: 'active' as const }
     }
-    return { status: 'good', color: 'green' }
+    return { status: 'good' as const, color: 'resolved' as const }
   }
 
   // Get privacy level indicator
@@ -422,15 +422,15 @@ const PrivacyDashboard: React.FC = () => {
     ].filter(Boolean).length
 
     if (enabledFeatures === 4) {
-      return { level: 'Maximum', color: 'green' }
+      return { level: 'Maximum', color: 'resolved' as const }
     }
     if (enabledFeatures >= 3) {
-      return { level: 'High', color: 'blue' }
+      return { level: 'High', color: 'active' as const }
     }
     if (enabledFeatures >= 2) {
-      return { level: 'Medium', color: 'yellow' }
+      return { level: 'Medium', color: 'pending' as const }
     }
-    return { level: 'Basic', color: 'red' }
+    return { level: 'Basic', color: 'critical' as const }
   }
 
   const privacyLevel = getPrivacyLevel()
@@ -441,7 +441,7 @@ const PrivacyDashboard: React.FC = () => {
         <h1 className="text-3xl font-bold">Privacy Dashboard</h1>
         <div className="flex items-center space-x-2">
           <span className="text-sm text-gray-600">Privacy Level:</span>
-          <StatusIndicator status={privacyLevel.color} text={privacyLevel.level} />
+          <StatusIndicator status={privacyLevel.color} label={privacyLevel.level} />
         </div>
       </div>
 
@@ -522,7 +522,7 @@ const PrivacyDashboard: React.FC = () => {
                 <div className="text-gray-600">Budget Used</div>
                 <StatusIndicator
                   status={getPrivacyBudgetStatus().color}
-                  text={getPrivacyBudgetStatus().status}
+                  label={getPrivacyBudgetStatus().status}
                 />
               </div>
             </div>
@@ -546,8 +546,8 @@ const PrivacyDashboard: React.FC = () => {
                 >
                   <div className="flex items-center space-x-3">
                     <StatusIndicator
-                      status={getPrivacyImpactColor(activity.privacyImpact)}
-                      text=""
+                      status={getPrivacyImpactStatus(activity.privacyImpact)}
+                      label=""
                     />
                     <div>
                       <div className="font-medium capitalize">{activity.operation}</div>
@@ -818,10 +818,10 @@ const PrivacyDashboard: React.FC = () => {
                   <div className="w-full bg-gray-200 rounded-full h-2.5">
                     <div
                       className={`h-2.5 rounded-full ${
-                        getPrivacyBudgetStatus().color === 'red' && 'bg-red-600'
-                      } ${getPrivacyBudgetStatus().color === 'yellow' && 'bg-yellow-600'} ${
-                        getPrivacyBudgetStatus().color === 'blue' && 'bg-blue-600'
-                      } ${getPrivacyBudgetStatus().color === 'green' && 'bg-green-600'}`}
+                        getPrivacyBudgetStatus().color === 'critical' && 'bg-red-600'
+                      } ${getPrivacyBudgetStatus().color === 'pending' && 'bg-yellow-600'} ${
+                        getPrivacyBudgetStatus().color === 'active' && 'bg-blue-600'
+                      } ${getPrivacyBudgetStatus().color === 'resolved' && 'bg-green-600'}`}
                       style={{ width: `${dataUsage.privacyBudgetUsed * 100}%` }}
                     ></div>
                   </div>
@@ -829,7 +829,7 @@ const PrivacyDashboard: React.FC = () => {
                     <span className="text-gray-600">Status:</span>
                     <StatusIndicator
                       status={getPrivacyBudgetStatus().color}
-                      text={getPrivacyBudgetStatus().status}
+                      label={getPrivacyBudgetStatus().status}
                     />
                   </div>
                   <div className="flex justify-between">
@@ -850,11 +850,11 @@ const PrivacyDashboard: React.FC = () => {
                     <span className="text-2xl font-bold">{privacyImpactScore.score}</span>
                     <StatusIndicator
                       status={
-                        (privacyImpactScore.score >= 80 && 'green') ||
-                        (privacyImpactScore.score >= 60 && 'yellow') ||
-                        'red'
+                        (privacyImpactScore.score >= 80 && 'resolved') ||
+                        (privacyImpactScore.score >= 60 && 'pending') ||
+                        'critical'
                       }
-                      text=""
+                      label=""
                     />
                   </div>
                 </div>
@@ -916,7 +916,7 @@ const PrivacyDashboard: React.FC = () => {
                           checked={item.autoDelete}
                           onChange={e => {
                             const updated = [...dataRetention]
-                            updated[index].autoDelete = e.target.checked
+                            updated[index]!.autoDelete = e.target.checked
                             setDataRetention(updated)
                           }}
                         />

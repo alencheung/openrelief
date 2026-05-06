@@ -24,9 +24,8 @@ import {
   EyeIcon,
   EyeOffIcon,
   RadioIcon,
-  RadioOffIcon,
-  SatelliteIcon,
-  SatelliteOffIcon,
+  RadioIcon as RadioOffIcon,
+  SatelliteIcon as SatelliteOffIcon,
   ZapIcon,
   ZapOffIcon,
   DatabaseIcon,
@@ -41,7 +40,7 @@ import {
   ShieldIcon,
   ShieldOffIcon,
   MapIcon,
-  MapOffIcon,
+  MapIcon as MapOffIcon,
   NavigationIcon,
   NavigationOffIcon,
   PhoneIcon,
@@ -50,10 +49,8 @@ import {
   VideoOffIcon,
   MicIcon,
   MicOffIcon,
-  ShareIcon,
-  ShareOffIcon,
-  SendIcon,
-  SendOffIcon,
+  Share2Icon as ShareOffIcon,
+  SendIcon as SendOffIcon,
   HeartIcon,
   HeartOffIcon
 } from 'lucide-react'
@@ -103,14 +100,12 @@ export function RealtimeOfflineIndicator() {
     lastOfflineTime
   } = useNetworkStatus()
 
-  const {
-    pendingActions,
-    failedActions,
-    metrics
-  } = useOfflineStore()
+  const { metrics } = useOfflineStore()
+  const pendingActions = metrics.pendingActions
+  const failedActions = metrics.failedActions
 
   const { announcePolite, announceAssertive } = useAriaAnnouncer()
-  const { prefersReducedMotion } = useReducedMotion()
+  const { isReduced: prefersReducedMotion } = useReducedMotion()
 
   const [expanded, setExpanded] = useState(false)
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>({
@@ -412,17 +407,11 @@ export function RealtimeOfflineIndicator() {
     setRealtimeStatus(prev => ({
       ...prev,
       features: prev.features.map(f =>
-        f.id === featureId
-          ? { ...f, active: !f.active, status: newStatus }
-          : f
+        f.id === featureId ? { ...f, active: !f.active, status: newStatus } : f
       )
     }))
 
-    announcePolite(
-      feature.active
-        ? `${feature.name} disabled`
-        : `${feature.name} enabled`
-    )
+    announcePolite(feature.active ? `${feature.name} disabled` : `${feature.name} enabled`)
   }
 
   // Handle reconnect all
@@ -465,22 +454,27 @@ export function RealtimeOfflineIndicator() {
     <>
       {/* Main Real-time Status Indicator */}
       <div className="fixed top-4 left-4 z-50 max-w-sm">
-        <div className={`
+        <div
+          className={`
           relative flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg backdrop-blur-sm
           transition-all duration-300 ease-in-out
-          ${isOnline
-      ? 'bg-white/90 border border-gray-200 text-gray-900'
-      : 'bg-red-600/90 border border-red-700 text-white'
-    }
+          ${
+            isOnline
+              ? 'bg-white/90 border border-gray-200 text-gray-900'
+              : 'bg-red-600/90 border border-red-700 text-white'
+          }
           ${prefersReducedMotion ? '' : 'hover:shadow-xl'}
-        `}>
+        `}
+        >
           {/* Status Icon and Text */}
           <div className="flex items-center gap-2">
-            <div className={`
+            <div
+              className={`
               relative flex items-center justify-center w-8 h-8 rounded-full
               transition-all duration-300
               ${isOnline ? 'bg-green-100' : 'bg-red-100'}
-            `}>
+            `}
+            >
               {isOnline ? (
                 <ActivityIcon className="w-4 h-4 text-green-600" />
               ) : (
@@ -505,8 +499,11 @@ export function RealtimeOfflineIndicator() {
 
           {/* Connection Quality */}
           <div className="flex items-center gap-1">
-            <div className={`px-2 py-1 rounded-full text-xs font-medium ${getConnectionQualityColor()}`}>
-              {realtimeStatus.connectionQuality.charAt(0).toUpperCase() + realtimeStatus.connectionQuality.slice(1)}
+            <div
+              className={`px-2 py-1 rounded-full text-xs font-medium ${getConnectionQualityColor()}`}
+            >
+              {realtimeStatus.connectionQuality.charAt(0).toUpperCase() +
+                realtimeStatus.connectionQuality.slice(1)}
             </div>
           </div>
 
@@ -539,17 +536,17 @@ export function RealtimeOfflineIndicator() {
 
       {/* Expanded Features Panel */}
       {expanded && (
-        <div className={`
+        <div
+          className={`
           absolute top-full left-0 mt-2 p-4 w-96 max-h-96 overflow-y-auto
           bg-white rounded-xl shadow-2xl border border-gray-200
           ${prefersReducedMotion ? '' : 'animate-slide-in-up'}
-        `}>
+        `}
+        >
           <div className="space-y-4">
             {/* Header */}
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Real-time Features
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-900">Real-time Features</h3>
               <div className="flex items-center gap-2">
                 <StatusIndicator
                   status={isOnline ? 'active' : 'inactive'}
@@ -574,53 +571,48 @@ export function RealtimeOfflineIndicator() {
                 <div>
                   <span className="text-gray-600">Connection Quality</span>
                   <p className={`font-medium ${getConnectionQualityColor()}`}>
-                    {realtimeStatus.connectionQuality.charAt(0).toUpperCase() + realtimeStatus.connectionQuality.slice(1)}
+                    {realtimeStatus.connectionQuality.charAt(0).toUpperCase() +
+                      realtimeStatus.connectionQuality.slice(1)}
                   </p>
                 </div>
                 <div>
                   <span className="text-gray-600">Latency</span>
-                  <p className="font-medium">
-                    {rtt ? `${rtt}ms` : 'Unknown'}
-                  </p>
+                  <p className="font-medium">{rtt ? `${rtt}ms` : 'Unknown'}</p>
                 </div>
                 <div>
                   <span className="text-gray-600">Active Features</span>
-                  <p className="font-medium text-green-600">
-                    {activeFeatures.length}
-                  </p>
+                  <p className="font-medium text-green-600">{activeFeatures.length}</p>
                 </div>
                 <div>
                   <span className="text-gray-600">Offline Features</span>
-                  <p className="font-medium text-red-600">
-                    {offlineFeatures.length}
-                  </p>
+                  <p className="font-medium text-red-600">{offlineFeatures.length}</p>
                 </div>
               </div>
             </div>
 
             {/* Features List */}
             <div className="space-y-2">
-              {realtimeStatus.features.map((feature) => (
+              {realtimeStatus.features.map(feature => (
                 <div
                   key={feature.id}
                   className={`
                     flex items-center justify-between p-3 rounded-lg border
                     transition-all duration-200 cursor-pointer
-                    ${feature.active
-                  ? 'border-green-200 bg-green-50'
-                  : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                }
+                    ${
+                      feature.active
+                        ? 'border-green-200 bg-green-50'
+                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    }
                   `}
                   onClick={() => handleFeatureToggle(feature.id)}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`
+                    <div
+                      className={`
                       flex items-center justify-center w-10 h-10 rounded-lg
-                      ${feature.active
-                  ? 'bg-green-100'
-                  : 'bg-gray-100'
-                }
-                    `}>
+                      ${feature.active ? 'bg-green-100' : 'bg-gray-100'}
+                    `}
+                    >
                       {feature.active ? (
                         <feature.icon className="w-5 h-5 text-green-600" />
                       ) : (
@@ -630,28 +622,31 @@ export function RealtimeOfflineIndicator() {
 
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <h4 className="font-medium text-gray-900">
-                          {feature.name}
-                        </h4>
-                        <div className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(feature.priority)}`}>
+                        <h4 className="font-medium text-gray-900">{feature.name}</h4>
+                        <div
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(feature.priority)}`}
+                        >
                           {feature.priority}
                         </div>
                       </div>
-                      <p className="text-sm text-gray-600">
-                        {feature.description}
-                      </p>
+                      <p className="text-sm text-gray-600">{feature.description}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <StatusIndicator
-                          status={feature.status === 'connected' ? 'active'
-                            : feature.status === 'connecting' ? 'pending'
-                              : feature.status === 'error' ? 'critical' : 'inactive'}
+                          status={
+                            feature.status === 'connected'
+                              ? 'active'
+                              : feature.status === 'connecting'
+                                ? 'pending'
+                                : feature.status === 'error'
+                                  ? 'critical'
+                                  : 'inactive'
+                          }
                           size="sm"
                           animated={feature.status === 'connecting'}
+                          label={feature.status ?? 'unknown'}
                         />
                         {feature.latency && (
-                          <span className="text-xs text-gray-500">
-                            {feature.latency}ms
-                          </span>
+                          <span className="text-xs text-gray-500">{feature.latency}ms</span>
                         )}
                         {feature.messageCount !== undefined && (
                           <span className="text-xs text-gray-500">
@@ -659,9 +654,7 @@ export function RealtimeOfflineIndicator() {
                           </span>
                         )}
                         {feature.activeUsers !== undefined && (
-                          <span className="text-xs text-gray-500">
-                            {feature.activeUsers} users
-                          </span>
+                          <span className="text-xs text-gray-500">{feature.activeUsers} users</span>
                         )}
                       </div>
                     </div>
@@ -672,16 +665,24 @@ export function RealtimeOfflineIndicator() {
                       <div className="w-2 h-2 bg-blue-500 rounded-full" title="Offline capable" />
                     )}
                     {feature.requiresNetwork && (
-                      <WifiIcon className="w-3 h-3 text-gray-400" title="Requires network" />
+                      <span title="Requires network">
+                        <WifiIcon className="w-3 h-3 text-gray-400" />
+                      </span>
                     )}
                     {feature.requiresLocation && (
-                      <NavigationIcon className="w-3 h-3 text-gray-400" title="Requires location" />
+                      <span title="Requires location">
+                        <NavigationIcon className="w-3 h-3 text-gray-400" />
+                      </span>
                     )}
                     {feature.requiresCamera && (
-                      <VideoIcon className="w-3 h-3 text-gray-400" title="Requires camera" />
+                      <span title="Requires camera">
+                        <VideoIcon className="w-3 h-3 text-gray-400" />
+                      </span>
                     )}
                     {feature.requiresMicrophone && (
-                      <MicIcon className="w-3 h-3 text-gray-400" title="Requires microphone" />
+                      <span title="Requires microphone">
+                        <MicIcon className="w-3 h-3 text-gray-400" />
+                      </span>
                     )}
 
                     <Button
@@ -712,20 +713,17 @@ export function RealtimeOfflineIndicator() {
                 <div>
                   <span className="text-gray-600">High Priority</span>
                   <p className="font-medium">
-                    {realtimeStatus.features.filter(f => f.priority === 'high' && f.active).length} active
+                    {realtimeStatus.features.filter(f => f.priority === 'high' && f.active).length}{' '}
+                    active
                   </p>
                 </div>
                 <div>
                   <span className="text-gray-600">Message Queue</span>
-                  <p className="font-medium">
-                    {realtimeStatus.messageQueue}
-                  </p>
+                  <p className="font-medium">{realtimeStatus.messageQueue}</p>
                 </div>
                 <div>
                   <span className="text-gray-600">Failed Messages</span>
-                  <p className="font-medium text-red-600">
-                    {realtimeStatus.failedMessages}
-                  </p>
+                  <p className="font-medium text-red-600">{realtimeStatus.failedMessages}</p>
                 </div>
               </div>
             </div>
@@ -739,7 +737,8 @@ export function RealtimeOfflineIndicator() {
           {isOnline ? 'Real-time features are online' : 'Real-time features are offline'}
           {activeFeatures.length > 0 && `${activeFeatures.length} real-time features are active`}
           {offlineFeatures.length > 0 && `${offlineFeatures.length} real-time features are offline`}
-          {criticalFeatures.filter(f => !f.active).length > 0 && `${criticalFeatures.filter(f => !f.active).length} critical features are offline`}
+          {criticalFeatures.filter(f => !f.active).length > 0 &&
+            `${criticalFeatures.filter(f => !f.active).length} critical features are offline`}
           {rtt && `Current latency: ${rtt}ms`}
         </div>
       </ScreenReaderOnly>

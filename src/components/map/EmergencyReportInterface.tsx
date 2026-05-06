@@ -205,7 +205,7 @@ export default function EmergencyReportInterface({
           errors.type = 'Please select an emergency type'
           announceFieldError('Emergency type', 'Please select an emergency type')
         } else {
-          announceFieldSuccess('Emergency type', 'Emergency type selected')
+          announceFieldSuccess('Emergency type')
         }
         break
       // Emergency Details
@@ -220,7 +220,7 @@ export default function EmergencyReportInterface({
           errors.title = 'Title must be less than 100 characters'
           announceFieldError('Title', 'Title must be less than 100 characters')
         } else {
-          announceFieldSuccess('Title', 'Title is valid')
+          announceFieldSuccess('Title')
         }
 
         if (!description.trim()) {
@@ -233,7 +233,7 @@ export default function EmergencyReportInterface({
           errors.description = 'Description must be less than 500 characters'
           announceFieldError('Description', 'Description must be less than 500 characters')
         } else {
-          announceFieldSuccess('Description', 'Description is valid')
+          announceFieldSuccess('Description')
         }
         break
       // Location
@@ -242,7 +242,7 @@ export default function EmergencyReportInterface({
           errors.location = 'Please select a location on the map'
           announceFieldError('Location', 'Please select a location on the map')
         } else {
-          announceFieldSuccess('Location', 'Location selected')
+          announceFieldSuccess('Location')
         }
         break
     }
@@ -258,20 +258,20 @@ export default function EmergencyReportInterface({
     if (validateStep(currentStep)) {
       const nextStep = Math.min(currentStep + 1, formSteps.length - 1)
       setCurrentStep(nextStep)
-      announcePolite(`Moved to step ${nextStep + 1}: ${formSteps[nextStep].title}`)
+      announcePolite(`Moved to step ${nextStep + 1}: ${formSteps[nextStep]?.title ?? ''}`)
     }
   }
 
   const handlePrevStep = () => {
     const prevStep = Math.max(currentStep - 1, 0)
     setCurrentStep(prevStep)
-    announcePolite(`Moved to step ${prevStep + 1}: ${formSteps[prevStep].title}`)
+    announcePolite(`Moved to step ${prevStep + 1}: ${formSteps[prevStep]?.title ?? ''}`)
   }
 
   const handleStepClick = (stepIndex: number) => {
     if (stepIndex < currentStep || validateStep(currentStep)) {
       setCurrentStep(stepIndex)
-      announcePolite(`Jumped to step ${stepIndex + 1}: ${formSteps[stepIndex].title}`)
+      announcePolite(`Jumped to step ${stepIndex + 1}: ${formSteps[stepIndex]?.title ?? ''}`)
     }
   }
 
@@ -443,7 +443,7 @@ export default function EmergencyReportInterface({
 
   return (
     <div
-      ref={containerRef}
+      ref={containerRef as React.Ref<HTMLDivElement>}
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
       role="dialog"
       aria-modal="true"
@@ -803,7 +803,7 @@ export default function EmergencyReportInterface({
                 variant="outline"
                 onClick={handlePrevStep}
                 disabled={isSubmitting}
-                aria-label={`Go to previous step: ${formSteps[currentStep - 1].title}`}
+                aria-label={`Go to previous step: ${formSteps[currentStep - 1]?.title ?? ''}`}
               >
                 Previous
               </EnhancedButton>
@@ -813,7 +813,7 @@ export default function EmergencyReportInterface({
               <EnhancedButton
                 onClick={handleNextStep}
                 disabled={isSubmitting}
-                aria-label={`Go to next step: ${formSteps[currentStep + 1].title}`}
+                aria-label={`Go to next step: ${formSteps[currentStep + 1]?.title ?? ''}`}
               >
                 Next
               </EnhancedButton>

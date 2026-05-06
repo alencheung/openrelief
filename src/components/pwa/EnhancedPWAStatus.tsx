@@ -89,18 +89,12 @@ export function EnhancedPWAStatus() {
     lastOfflineTime
   } = useNetworkStatus()
 
-  const {
-    isSyncing,
-    syncProgress,
-    pendingActions,
-    failedActions,
-    metrics,
-    storageQuota,
-    settings
-  } = useOfflineStore()
+  const { isSyncing, syncProgress, metrics, storageQuota, settings } = useOfflineStore()
+  const pendingActions = metrics.pendingActions
+  const failedActions = metrics.failedActions
 
   const { announcePolite, announceAssertive } = useAriaAnnouncer()
-  const { prefersReducedMotion: _prefersReducedMotion } = useReducedMotion()
+  const { isReduced: _prefersReducedMotion } = useReducedMotion()
 
   const [activeTab, setActiveTab] = useState<
     'overview' | 'network' | 'storage' | 'performance' | 'sync'
@@ -151,6 +145,7 @@ export function EnhancedPWAStatus() {
       connection.addEventListener('change', handleChange)
       return () => connection.removeEventListener('change', handleChange)
     }
+    return undefined
   }, [])
 
   // Load status data
@@ -159,7 +154,7 @@ export function EnhancedPWAStatus() {
       // Load cache status
       const cacheManager = PWACacheManager.getInstance()
       const caches = await cacheManager.getCacheInfo()
-      setCacheStatus(caches)
+      setCacheStatus(caches as any)
 
       // Load performance metrics
       const perf = await PWAPerformance.measurePageLoad()
@@ -353,13 +348,13 @@ export function EnhancedPWAStatus() {
                     if (isSyncing) {
                       return <Loader2Icon className="w-5 h-5 animate-spin text-blue-600" />
                     }
-                    if (pendingActions.length > 0) {
+                    if (pendingActions > 0) {
                       return <ClockIcon className="w-5 h-5 text-orange-600" />
                     }
                     return <CheckCircle2Icon className="w-5 h-5 text-green-600" />
                   })()}
                 </div>
-                <div className="text-2xl font-bold text-gray-900">{pendingActions.length}</div>
+                <div className="text-2xl font-bold text-gray-900">{pendingActions}</div>
                 <div className="text-sm text-gray-600">Pending actions</div>
               </Card>
 
@@ -867,14 +862,12 @@ export function EnhancedPWAStatus() {
 
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Pending Actions</span>
-                    <span className="text-sm font-medium text-orange-600">
-                      {pendingActions.length}
-                    </span>
+                    <span className="text-sm font-medium text-orange-600">{pendingActions}</span>
                   </div>
 
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Failed Actions</span>
-                    <span className="text-sm font-medium text-red-600">{failedActions.length}</span>
+                    <span className="text-sm font-medium text-red-600">{failedActions}</span>
                   </div>
 
                   <div className="flex justify-between items-center">
@@ -971,8 +964,8 @@ export function EnhancedPWAStatus() {
         <div aria-live="polite" aria-atomic="true">
           {isOnline ? 'You are online' : 'You are currently offline'}
           {isSyncing && 'Synchronization is in progress'}
-          {pendingActions.length > 0 && `You have ${pendingActions.length} pending actions`}
-          {failedActions.length > 0 && `You have ${failedActions.length} failed actions`}
+          {pendingActions > 0 && `You have ${pendingActions} pending actions`}
+          {failedActions > 0 && `You have ${failedActions} failed actions`}
           {storageQuota.percentage > 80 && 'Storage usage is critically high'}
         </div>
       </ScreenReaderOnly>

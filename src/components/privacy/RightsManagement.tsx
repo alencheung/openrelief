@@ -56,71 +56,73 @@ import {
 
 // Types for GDPR rights management
 interface DataRequest {
-  id: string;
-  type: 'access' | 'rectification' | 'erasure' | 'portability' | 'restriction';
-  status: 'draft' | 'submitted' | 'processing' | 'completed' | 'rejected' | 'appealed';
-  title: string;
-  description: string;
-  dataTypes: string[];
-  createdAt: Date;
-  submittedAt?: Date;
-  completedAt?: Date;
-  estimatedCompletion?: Date;
-  responseDeadline?: Date;
-  attachments: string[];
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  referenceNumber?: string;
-  legalBasis: string;
-  deliveryMethod: 'download' | 'email' | 'api_access' | 'physical_copy';
+  id: string
+  type: 'access' | 'rectification' | 'erasure' | 'portability' | 'restriction'
+  status: 'draft' | 'submitted' | 'processing' | 'completed' | 'rejected' | 'appealed'
+  title: string
+  description: string
+  dataTypes: string[]
+  createdAt: Date
+  submittedAt?: Date
+  completedAt?: Date
+  estimatedCompletion?: Date
+  responseDeadline?: Date
+  attachments: string[]
+  priority: 'low' | 'medium' | 'high' | 'urgent'
+  referenceNumber?: string
+  legalBasis: string
+  deliveryMethod: 'download' | 'email' | 'api_access' | 'physical_copy'
 }
 
 interface ConsentRecord {
-  id: string;
-  purpose: string;
-  description: string;
-  dataTypes: string[];
-  consentGiven: boolean;
-  consentDate: Date;
-  expiryDate?: Date;
-  canWithdraw: boolean;
-  withdrawnAt?: Date;
-  legalBasis: string;
-  processingLocation: 'local' | 'regional' | 'international';
-  automatedDecision: boolean;
+  id: string
+  purpose: string
+  description: string
+  dataTypes: string[]
+  consentGiven: boolean
+  consentDate: Date
+  expiryDate?: Date
+  canWithdraw: boolean
+  withdrawnAt?: Date
+  legalBasis: string
+  processingLocation: 'local' | 'regional' | 'international'
+  automatedDecision: boolean
 }
 
 interface DataProcessingActivity {
-  id: string;
-  timestamp: Date;
-  operation: string;
-  dataType: string;
-  purpose: string;
-  legalBasis: string;
-  retentionPeriod: number;
-  dataSubjects: number;
-  automatedDecision: boolean;
-  privacyImpact: 'low' | 'medium' | 'high';
-  location?: string;
+  id: string
+  timestamp: Date
+  operation: string
+  dataType: string
+  purpose: string
+  legalBasis: string
+  retentionPeriod: number
+  dataSubjects: number
+  automatedDecision: boolean
+  privacyImpact: 'low' | 'medium' | 'high'
+  location?: string
 }
 
 interface DataSubjectRequest {
-  id: string;
-  type: 'confirmation' | 'objection' | 'restriction';
-  category: 'marketing' | 'profiling' | 'automated_decision' | 'data_portability';
-  status: 'pending' | 'processing' | 'completed' | 'rejected';
-  title: string;
-  description: string;
-  createdAt: Date;
-  responseDue: Date;
-  respondedAt?: Date;
-  outcome?: string;
-  appealable: boolean;
-  appealDeadline?: Date;
+  id: string
+  type: 'confirmation' | 'objection' | 'restriction'
+  category: 'marketing' | 'profiling' | 'automated_decision' | 'data_portability'
+  status: 'pending' | 'processing' | 'completed' | 'rejected'
+  title: string
+  description: string
+  createdAt: Date
+  responseDue: Date
+  respondedAt?: Date
+  outcome?: string
+  appealable: boolean
+  appealDeadline?: Date
 }
 
 const RightsManagement: React.FC = () => {
   const { toast } = useToast()
-  const [activeTab, setActiveTab] = useState<'requests' | 'consent' | 'activity' | 'subjects'>('requests')
+  const [activeTab, setActiveTab] = useState<'requests' | 'consent' | 'activity' | 'subjects'>(
+    'requests'
+  )
   const [isLoading, setIsLoading] = useState(false)
   const [selectedRequest, setSelectedRequest] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -134,8 +136,16 @@ const RightsManagement: React.FC = () => {
       type: 'access',
       status: 'completed',
       title: 'Complete Data Export Request',
-      description: 'Request for all personal data including location history, emergency reports, trust score, and profile information',
-      dataTypes: ['location_data', 'health_data', 'emergency_reports', 'trust_score', 'user_profile', 'communication_logs'],
+      description:
+        'Request for all personal data including location history, emergency reports, trust score, and profile information',
+      dataTypes: [
+        'location_data',
+        'health_data',
+        'emergency_reports',
+        'trust_score',
+        'user_profile',
+        'communication_logs'
+      ],
       createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
       submittedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
       completedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
@@ -187,7 +197,8 @@ const RightsManagement: React.FC = () => {
     {
       id: 'consent-001',
       purpose: 'Emergency Response Services',
-      description: 'Consent to share location and health data with emergency services during crisis situations',
+      description:
+        'Consent to share location and health data with emergency services during crisis situations',
       dataTypes: ['location_data', 'health_data', 'emergency_contacts'],
       consentGiven: true,
       consentDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
@@ -272,7 +283,8 @@ const RightsManagement: React.FC = () => {
       category: 'profiling',
       status: 'completed',
       title: 'Objection to Automated Profiling',
-      description: 'Objection to automated trust score calculation based on inferred characteristics',
+      description:
+        'Objection to automated trust score calculation based on inferred characteristics',
       createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
       responseDue: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000),
       respondedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
@@ -286,7 +298,8 @@ const RightsManagement: React.FC = () => {
       category: 'automated_decision',
       status: 'pending',
       title: 'Restriction of Automated Decision Making',
-      description: 'Request to restrict automated decisions affecting emergency response capabilities',
+      description:
+        'Request to restrict automated decisions affecting emergency response capabilities',
       createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
       responseDue: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000),
       appealable: true,
@@ -311,26 +324,38 @@ const RightsManagement: React.FC = () => {
     return `${diffDays} days ago`
   }
 
-  // Get status color
+  // Get status value for StatusIndicator
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'green'
-      case 'processing': return 'blue'
-      case 'submitted': return 'yellow'
-      case 'rejected': case 'appealed': return 'red'
-      case 'draft': return 'gray'
-      default: return 'gray'
+      case 'completed':
+        return 'resolved'
+      case 'processing':
+        return 'active'
+      case 'submitted':
+        return 'pending'
+      case 'rejected':
+      case 'appealed':
+        return 'critical'
+      case 'draft':
+        return 'inactive'
+      default:
+        return 'inactive'
     }
   }
 
-  // Get priority color
+  // Get priority value for StatusIndicator
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'urgent': return 'red'
-      case 'high': return 'orange'
-      case 'medium': return 'yellow'
-      case 'low': return 'green'
-      default: return 'gray'
+      case 'urgent':
+        return 'critical'
+      case 'high':
+        return 'critical'
+      case 'medium':
+        return 'pending'
+      case 'low':
+        return 'resolved'
+      default:
+        return 'inactive'
     }
   }
 
@@ -365,9 +390,7 @@ const RightsManagement: React.FC = () => {
 
       setConsentRecords(prev =>
         prev.map(consent =>
-          consent.id === id
-            ? { ...consent, consentGiven: false, withdrawnAt: new Date() }
-            : consent
+          consent.id === id ? { ...consent, consentGiven: false, withdrawnAt: new Date() } : consent
         )
       )
 
@@ -418,7 +441,7 @@ const RightsManagement: React.FC = () => {
             <Calendar className="h-5 w-5 text-gray-600" />
             <select
               value={dateRange}
-              onChange={(e) => setDateRange(e.target.value as any)}
+              onChange={e => setDateRange(e.target.value as any)}
               className="border rounded px-2 py-1 text-sm"
             >
               <option value="7d">Last 7 days</option>
@@ -432,7 +455,7 @@ const RightsManagement: React.FC = () => {
 
       {/* Tab Navigation */}
       <div className="flex space-x-1 border-b overflow-x-auto">
-        {(['requests', 'consent', 'activity', 'subjects'] as const).map((tab) => (
+        {(['requests', 'consent', 'activity', 'subjects'] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -442,10 +465,15 @@ const RightsManagement: React.FC = () => {
                 : 'text-gray-600 hover:text-gray-800'
             }`}
           >
-            {tab === 'requests' ? 'Data Requests'
-              : tab === 'consent' ? 'Consent Management'
-                : tab === 'activity' ? 'Processing Activity'
-                  : tab === 'subjects' ? 'Subject Rights' : tab}
+            {tab === 'requests'
+              ? 'Data Requests'
+              : tab === 'consent'
+                ? 'Consent Management'
+                : tab === 'activity'
+                  ? 'Processing Activity'
+                  : tab === 'subjects'
+                    ? 'Subject Rights'
+                    : tab}
           </button>
         ))}
       </div>
@@ -461,7 +489,7 @@ const RightsManagement: React.FC = () => {
                   <Filter className="h-4 w-4 text-gray-600" />
                   <select
                     value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
+                    onChange={e => setFilterStatus(e.target.value)}
                     className="border rounded px-2 py-1 text-sm"
                   >
                     <option value="all">All Status</option>
@@ -478,7 +506,7 @@ const RightsManagement: React.FC = () => {
                     type="text"
                     placeholder="Search requests..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={e => setSearchQuery(e.target.value)}
                     className="border rounded px-2 py-1 text-sm"
                   />
                 </div>
@@ -489,7 +517,11 @@ const RightsManagement: React.FC = () => {
                   <FileText className="h-4 w-4 mr-2" />
                   Access Request
                 </Button>
-                <Button onClick={() => submitDataRequest('rectification')} size="sm" variant="outline">
+                <Button
+                  onClick={() => submitDataRequest('rectification')}
+                  size="sm"
+                  variant="outline"
+                >
                   <Edit className="h-4 w-4 mr-2" />
                   Rectification
                 </Button>
@@ -497,7 +529,11 @@ const RightsManagement: React.FC = () => {
                   <Trash2 className="h-4 w-4 mr-2" />
                   Erasure
                 </Button>
-                <Button onClick={() => submitDataRequest('portability')} size="sm" variant="outline">
+                <Button
+                  onClick={() => submitDataRequest('portability')}
+                  size="sm"
+                  variant="outline"
+                >
                   <Download className="h-4 w-4 mr-2" />
                   Portability
                 </Button>
@@ -506,25 +542,26 @@ const RightsManagement: React.FC = () => {
 
             <div className="space-y-4">
               {dataRequests
-                .filter(request =>
-                  (filterStatus === 'all' || request.status === filterStatus)
-                  && (searchQuery === ''
-                    || request.title.toLowerCase().includes(searchQuery.toLowerCase())
-                    || request.description.toLowerCase().includes(searchQuery.toLowerCase())
-                  )
+                .filter(
+                  request =>
+                    (filterStatus === 'all' || request.status === filterStatus) &&
+                    (searchQuery === '' ||
+                      request.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      request.description.toLowerCase().includes(searchQuery.toLowerCase()))
                 )
-                .map((request) => (
+                .map(request => (
                   <div key={request.id} className="border rounded-lg p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center space-x-2">
-                        <StatusIndicator status={getStatusColor(request.status)} text="" />
+                        <StatusIndicator status={getStatusColor(request.status)} label="" />
                         <div>
                           <h3 className="font-medium">{request.title}</h3>
                           <div className="flex items-center space-x-2 mt-1">
-                            <span className="text-sm text-gray-600">
-                              Type: {request.type}
-                            </span>
-                            <StatusIndicator status={getPriorityColor(request.priority)} text={request.priority} />
+                            <span className="text-sm text-gray-600">Type: {request.type}</span>
+                            <StatusIndicator
+                              status={getPriorityColor(request.priority)}
+                              label={request.priority}
+                            />
                           </div>
                         </div>
                       </div>
@@ -547,8 +584,11 @@ const RightsManagement: React.FC = () => {
                       <div>
                         <span className="text-gray-600">Data Types:</span>
                         <div className="flex flex-wrap gap-1 mt-1">
-                          {request.dataTypes.map((type) => (
-                            <span key={type} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                          {request.dataTypes.map(type => (
+                            <span
+                              key={type}
+                              className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs"
+                            >
                               {type.replace('_', ' ')}
                             </span>
                           ))}
@@ -556,7 +596,9 @@ const RightsManagement: React.FC = () => {
                       </div>
                       <div>
                         <span className="text-gray-600">Delivery Method:</span>
-                        <div className="font-medium capitalize">{request.deliveryMethod.replace('_', ' ')}</div>
+                        <div className="font-medium capitalize">
+                          {request.deliveryMethod.replace('_', ' ')}
+                        </div>
                       </div>
                     </div>
 
@@ -641,13 +683,13 @@ const RightsManagement: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-              {consentRecords.map((consent) => (
+              {consentRecords.map(consent => (
                 <div key={consent.id} className="border rounded-lg p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center space-x-2">
                       <StatusIndicator
-                        status={consent.consentGiven ? 'green' : 'red'}
-                        text=""
+                        status={consent.consentGiven ? 'resolved' : 'critical'}
+                        label=""
                       />
                       <div>
                         <h3 className="font-medium">{consent.purpose}</h3>
@@ -655,7 +697,9 @@ const RightsManagement: React.FC = () => {
                       </div>
                     </div>
                     <div className="text-sm text-gray-600">
-                      {consent.consentGiven ? `Given: ${formatTimeAgo(consent.consentDate)}` : 'Not given'}
+                      {consent.consentGiven
+                        ? `Given: ${formatTimeAgo(consent.consentDate)}`
+                        : 'Not given'}
                     </div>
                   </div>
 
@@ -663,8 +707,11 @@ const RightsManagement: React.FC = () => {
                     <div>
                       <span className="text-gray-600">Data Types:</span>
                       <div className="flex flex-wrap gap-1 mt-1">
-                        {consent.dataTypes.map((type) => (
-                          <span key={type} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                        {consent.dataTypes.map(type => (
+                          <span
+                            key={type}
+                            className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs"
+                          >
                             {type.replace('_', ' ')}
                           </span>
                         ))}
@@ -672,7 +719,9 @@ const RightsManagement: React.FC = () => {
                     </div>
                     <div>
                       <span className="text-gray-600">Processing Location:</span>
-                      <div className="font-medium capitalize">{consent.processingLocation.replace('_', ' ')}</div>
+                      <div className="font-medium capitalize">
+                        {consent.processingLocation.replace('_', ' ')}
+                      </div>
                     </div>
                   </div>
 
@@ -696,7 +745,9 @@ const RightsManagement: React.FC = () => {
                     </div>
                     <div className="flex items-center space-x-2">
                       <span className="text-sm text-gray-600">
-                        {consent.withdrawnAt ? `Withdrawn: ${formatTimeAgo(consent.withdrawnAt)}` : 'Active'}
+                        {consent.withdrawnAt
+                          ? `Withdrawn: ${formatTimeAgo(consent.withdrawnAt)}`
+                          : 'Active'}
                       </span>
                       {consent.canWithdraw && consent.consentGiven && !consent.withdrawnAt && (
                         <Button
@@ -730,7 +781,7 @@ const RightsManagement: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-              {processingActivities.map((activity) => (
+              {processingActivities.map(activity => (
                 <div key={activity.id} className="border rounded-lg p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center space-x-2">
@@ -741,7 +792,7 @@ const RightsManagement: React.FC = () => {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <StatusIndicator status={getStatusColor('processing')} text="" />
+                      <StatusIndicator status={getStatusColor('processing')} label="" />
                       <span className="text-sm text-gray-600">
                         {formatTimeAgo(activity.timestamp)}
                       </span>
@@ -772,14 +823,22 @@ const RightsManagement: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                       <div>
                         <span className="text-gray-600">Automated Decision:</span>
-                        <div className="font-medium">{activity.automatedDecision ? 'Yes' : 'No'}</div>
+                        <div className="font-medium">
+                          {activity.automatedDecision ? 'Yes' : 'No'}
+                        </div>
                       </div>
                       <div>
                         <span className="text-gray-600">Privacy Impact:</span>
-                        <StatusIndicator status={
-                          activity.privacyImpact === 'high' ? 'red'
-                            : activity.privacyImpact === 'medium' ? 'yellow' : 'green'
-                        } text={activity.privacyImpact} />
+                        <StatusIndicator
+                          status={
+                            activity.privacyImpact === 'high'
+                              ? 'critical'
+                              : activity.privacyImpact === 'medium'
+                                ? 'pending'
+                                : 'resolved'
+                          }
+                          label={activity.privacyImpact}
+                        />
                       </div>
                     </div>
                   </div>
@@ -810,26 +869,22 @@ const RightsManagement: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-              {subjectRequests.map((request) => (
+              {subjectRequests.map(request => (
                 <div key={request.id} className="border rounded-lg p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center space-x-2">
-                      <StatusIndicator status={getStatusColor(request.status)} text="" />
+                      <StatusIndicator status={getStatusColor(request.status)} label="" />
                       <div>
                         <h3 className="font-medium">{request.title}</h3>
                         <div className="flex items-center space-x-2 mt-1">
-                          <span className="text-sm text-gray-600">
-                            Type: {request.type}
-                          </span>
+                          <span className="text-sm text-gray-600">Type: {request.type}</span>
                           <span className="text-sm text-gray-600">
                             Category: {request.category}
                           </span>
                         </div>
                       </div>
                     </div>
-                    <div className="text-sm text-gray-600">
-                      {formatTimeAgo(request.createdAt)}
-                    </div>
+                    <div className="text-sm text-gray-600">{formatTimeAgo(request.createdAt)}</div>
                   </div>
 
                   <p className="text-gray-800 mb-3">{request.description}</p>

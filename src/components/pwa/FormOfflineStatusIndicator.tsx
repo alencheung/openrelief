@@ -84,9 +84,10 @@ export function FormOfflineStatusIndicator({
   autoSaveDelay = 3000
 }: FormOfflineStatusProps) {
   const { isOnline, isOffline } = useNetworkStatus()
-  const { addAction, pendingActions, isSyncing } = useOfflineStore()
+  const { addAction, metrics, isSyncing } = useOfflineStore()
+  const pendingActions = metrics.pendingActions
   const { announcePolite, announceAssertive } = useAriaAnnouncer()
-  const { prefersReducedMotion } = useReducedMotion()
+  const { isReduced: prefersReducedMotion } = useReducedMotion()
 
   const [formStatus, setFormStatus] = useState<FormStatus>({
     id: formId,
@@ -162,6 +163,7 @@ export function FormOfflineStatusIndicator({
       const actionId = addAction({
         type: 'update',
         table: 'form_drafts',
+        maxRetries: 3,
         data: {
           formId,
           formName,
@@ -170,8 +172,6 @@ export function FormOfflineStatusIndicator({
           userAgent: navigator.userAgent,
           url: window.location.href
         },
-        endpoint: '/api/forms/draft',
-        method: 'POST',
         priority: 'medium'
       })
 
@@ -230,9 +230,8 @@ export function FormOfflineStatusIndicator({
             userAgent: navigator.userAgent,
             url: window.location.href
           },
-          endpoint: '/api/forms/submit',
-          method: 'POST',
-          priority: 'high'
+          priority: 'high',
+          maxRetries: 3
         })
 
         setFormStatus(prev => ({

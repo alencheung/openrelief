@@ -56,10 +56,12 @@ export function EmergencyOfflineIndicator() {
   const { isOnline, isOffline, connectionType, effectiveType, downlink, lastOnlineTime } =
     useNetworkStatus()
 
-  const { pendingActions, failedActions, metrics, storageQuota } = useOfflineStore()
+  const { metrics, storageQuota } = useOfflineStore()
+  const pendingActions = metrics.pendingActions
+  const failedActions = metrics.failedActions
 
   const { announcePolite, announceAssertive } = useAriaAnnouncer()
-  const { prefersReducedMotion } = useReducedMotion()
+  const { isReduced: prefersReducedMotion } = useReducedMotion()
 
   const [expanded, setExpanded] = useState(false)
   const [offlineMode, setOfflineMode] = useState<OfflineMode>({
@@ -647,7 +649,7 @@ export function EmergencyOfflineIndicator() {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-gray-600">Pending Actions:</span>
-                    <p className="font-medium text-orange-600">{pendingActions.length}</p>
+                    <p className="font-medium text-orange-600">{pendingActions}</p>
                   </div>
                   <div>
                     <span className="text-gray-600">Storage Used:</span>
@@ -682,8 +684,7 @@ export function EmergencyOfflineIndicator() {
           {batteryLevel !== null &&
             batteryLevel < 20 &&
             `Battery level is critically low at ${Math.round(batteryLevel)}%`}
-          {pendingActions.length > 0 &&
-            `You have ${pendingActions.length} pending emergency actions`}
+          {pendingActions > 0 && `You have ${pendingActions} pending emergency actions`}
         </div>
       </ScreenReaderOnly>
     </>

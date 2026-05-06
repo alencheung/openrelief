@@ -127,17 +127,17 @@ const AlertItem: React.FC<AlertItemProps> = ({
   const getEmergencyIcon = (type: string) => {
     switch (type) {
       case 'fire':
-        return 'flame'
+        return 'fire'
       case 'medical':
-        return 'heartPulse'
+        return 'medical'
       case 'security':
-        return 'shield'
+        return 'security'
       case 'natural':
-        return 'cloudRain'
+        return 'natural'
       case 'infrastructure':
-        return 'wrench'
+        return 'infrastructure'
       default:
-        return 'alertTriangle'
+        return 'info'
     }
   }
 

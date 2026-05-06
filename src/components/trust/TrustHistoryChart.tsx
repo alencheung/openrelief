@@ -1,7 +1,17 @@
 'use client'
 
 import React, { useMemo } from 'react'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts'
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Area,
+  AreaChart
+} from 'recharts'
 import { format, subDays, isAfter } from 'date-fns'
 import { useTrustHistory, useTrustScore } from '@/store'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -59,7 +69,7 @@ export function TrustHistoryChart({
 
       // Find the most recent score up to this date
       let score = currentTrustScore?.score || 0.5
-      for (const [d, s] of dailyScores.entries()) {
+      for (const [d, s] of Array.from(dailyScores.entries())) {
         const dDate = new Date(d + ', ' + date.getFullYear())
         if (dDate <= date) {
           score = s
@@ -92,10 +102,14 @@ export function TrustHistoryChart({
 
   const getActionTypeColor = (actionType: string) => {
     switch (actionType) {
-      case 'report': return '#10b981' // green
-      case 'confirm': return '#3b82f6' // blue
-      case 'dispute': return '#f59e0b' // orange
-      default: return '#6b7280' // gray
+      case 'report':
+        return '#10b981' // green
+      case 'confirm':
+        return '#3b82f6' // blue
+      case 'dispute':
+        return '#f59e0b' // orange
+      default:
+        return '#6b7280' // gray
     }
   }
 
@@ -105,13 +119,13 @@ export function TrustHistoryChart({
       return (
         <div className="bg-white p-3 border rounded-lg shadow-lg">
           <p className="text-sm font-medium">{label}</p>
-          <p className="text-sm text-blue-600">
-            Score: {data.score.toFixed(1)}%
-          </p>
+          <p className="text-sm text-blue-600">Score: {data.score.toFixed(1)}%</p>
           {data.change !== 0 && (
             <p className="text-sm">
-              Change: <span className={data.change > 0 ? 'text-green-600' : 'text-red-600'}>
-                {data.change > 0 ? '+' : ''}{data.change.toFixed(1)}%
+              Change:{' '}
+              <span className={data.change > 0 ? 'text-green-600' : 'text-red-600'}>
+                {data.change > 0 ? '+' : ''}
+                {data.change.toFixed(1)}%
               </span>
             </p>
           )}
@@ -134,9 +148,7 @@ export function TrustHistoryChart({
         <CardTitle className="flex items-center justify-between">
           <span>Trust Score Trend</span>
           <div className="flex gap-2">
-            <Badge variant="outline">
-              Last {days} days
-            </Badge>
+            <Badge variant="outline">Last {days} days</Badge>
             {currentTrustScore && (
               <Badge variant={currentTrustScore.score >= 0.7 ? 'default' : 'secondary'}>
                 {(currentTrustScore.score * 100).toFixed(0)}%
@@ -149,11 +161,7 @@ export function TrustHistoryChart({
         <ResponsiveContainer width="100%" height={height}>
           <ChartComponent data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis
-              dataKey="date"
-              tick={{ fontSize: 12 }}
-              interval="preserveStartEnd"
-            />
+            <XAxis dataKey="date" tick={{ fontSize: 12 }} interval="preserveStartEnd" />
             <YAxis
               domain={[0, 100]}
               tick={{ fontSize: 12 }}
@@ -246,11 +254,12 @@ export function TrustFactorsRadar({ userId, className }: TrustFactorsRadarProps)
 
     return Object.entries(trustScore.factors).map(([key, value]) => ({
       factor: factorLabels[key] || key,
-      value: key === 'responseTime'
-        ? Math.max(0, 100 - (value * 100 / 60)) // Convert response time to 0-100 scale
-        : key === 'penaltyScore'
-          ? Math.max(0, 100 - (value * 100)) // Invert penalty score
-          : value * 100,
+      value:
+        key === 'responseTime'
+          ? Math.max(0, 100 - (value * 100) / 60) // Convert response time to 0-100 scale
+          : key === 'penaltyScore'
+            ? Math.max(0, 100 - value * 100) // Invert penalty score
+            : value * 100,
       fullMark: 100
     }))
   }, [trustScore])
@@ -259,9 +268,7 @@ export function TrustFactorsRadar({ userId, className }: TrustFactorsRadarProps)
     return (
       <Card className={className}>
         <CardContent className="p-6">
-          <div className="text-center text-muted-foreground">
-            No trust factor data available
-          </div>
+          <div className="text-center text-muted-foreground">No trust factor data available</div>
         </CardContent>
       </Card>
     )
@@ -274,18 +281,11 @@ export function TrustFactorsRadar({ userId, className }: TrustFactorsRadarProps)
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {radarData.map((factor) => (
+          {radarData.map(factor => (
             <div key={factor.factor} className="text-center">
               <div className="relative w-16 h-16 mx-auto mb-2">
                 <svg className="w-16 h-16 transform -rotate-90">
-                  <circle
-                    cx="32"
-                    cy="32"
-                    r="28"
-                    stroke="#e5e7eb"
-                    strokeWidth="4"
-                    fill="none"
-                  />
+                  <circle cx="32" cy="32" r="28" stroke="#e5e7eb" strokeWidth="4" fill="none" />
                   <circle
                     cx="32"
                     cy="32"

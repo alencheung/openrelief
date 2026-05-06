@@ -8,6 +8,11 @@ import { OfflineActionQueueVisualization } from './OfflineActionQueueVisualizati
 import { SyncProgressNotification } from './SyncProgressNotification'
 import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 import { useOfflineStore } from '@/store/offlineStore'
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
+}
 import { useAriaAnnouncer } from '@/hooks/accessibility/useAriaAnnouncer'
 import { useReducedMotion } from '@/hooks/accessibility/useReducedMotion'
 import { Button } from '@/components/ui/Button'
@@ -71,9 +76,11 @@ export function EnhancedPWAManager({
   position = 'bottom-left'
 }: PWAManagerProps) {
   const { isOnline, isOffline, lastOnlineTime } = useNetworkStatus()
-  const { pendingActions, failedActions, isSyncing } = useOfflineStore()
+  const { metrics, isSyncing } = useOfflineStore()
+  const pendingActions = metrics.pendingActions
+  const failedActions = metrics.failedActions
   const { announcePolite, announceAssertive } = useAriaAnnouncer()
-  const { prefersReducedMotion } = useReducedMotion()
+  const { isReduced: prefersReducedMotion } = useReducedMotion()
 
   const [pwaStatus, setPwaStatus] = useState<PWAInstallationStatus>({
     isInstallable: false,
@@ -595,6 +602,7 @@ export function EnhancedPWAManager({
               status={serviceWorkerReady ? 'active' : 'pending'}
               size="sm"
               animated={!serviceWorkerReady}
+              label={serviceWorkerReady ? 'Ready' : 'Loading'}
             />
             <div className="text-xs text-gray-600">{pwaStatus.isStandalone ? 'PWA' : 'Web'}</div>
           </div>
@@ -646,8 +654,8 @@ export function EnhancedPWAManager({
           {isOnline && 'You are now online'}
           {updateAvailable && 'A new version of OpenRelief is available'}
           {isSyncing && 'Synchronization is in progress'}
-          {pendingActions.length > 0 && `You have ${pendingActions.length} pending actions`}
-          {failedActions.length > 0 && `You have ${failedActions.length} failed actions`}
+          {pendingActions > 0 && `You have ${pendingActions} pending actions`}
+          {failedActions > 0 && `You have ${failedActions} failed actions`}
         </div>
       </ScreenReaderOnly>
     </>

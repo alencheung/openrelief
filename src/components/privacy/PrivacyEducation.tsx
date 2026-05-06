@@ -445,9 +445,23 @@ const PrivacyEducation: React.FC = () => {
     }
   ])
 
+  const formatTimeAgo = (date: string | Date) => {
+    const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000)
+    if (seconds < 60) {
+      return 'just now'
+    }
+    if (seconds < 3600) {
+      return `${Math.floor(seconds / 60)}m ago`
+    }
+    if (seconds < 86400) {
+      return `${Math.floor(seconds / 3600)}h ago`
+    }
+    return `${Math.floor(seconds / 86400)}d ago`
+  }
+
   // Start tutorial
   const startTutorial = (id: string) => {
-    setSelectedTutorial(id)
+    _setSelectedTutorial(id)
   }
 
   // Implement recommendation
@@ -476,33 +490,33 @@ const PrivacyEducation: React.FC = () => {
     }
   }
 
-  // Get risk color
+  // Get risk status for StatusIndicator
   const getRiskColor = (risk: string) => {
     switch (risk) {
       case 'low':
-        return 'green'
+        return 'resolved'
       case 'medium':
-        return 'yellow'
+        return 'pending'
       case 'high':
-        return 'orange'
+        return 'critical'
       case 'critical':
-        return 'red'
+        return 'critical'
       default:
-        return 'gray'
+        return 'inactive'
     }
   }
 
-  // Get importance color
+  // Get importance status for StatusIndicator
   const getImportanceColor = (importance: string) => {
     switch (importance) {
       case 'essential':
-        return 'red'
+        return 'critical'
       case 'recommended':
-        return 'blue'
+        return 'active'
       case 'advanced':
-        return 'green'
+        return 'resolved'
       default:
-        return 'gray'
+        return 'inactive'
     }
   }
 
@@ -685,14 +699,14 @@ const PrivacyEducation: React.FC = () => {
                 <div key={rec.id} className="border rounded-lg p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center space-x-2">
-                      <StatusIndicator status={getRiskColor(rec.impact)} text="" />
+                      <StatusIndicator status={getRiskColor(rec.impact)} label="" />
                       <div>
                         <h3 className="font-medium">{rec.title}</h3>
                         <div className="flex items-center space-x-2 mt-1">
                           <span className="text-sm text-gray-600 capitalize">
                             {rec.type.replace('_', ' ')}
                           </span>
-                          <StatusIndicator status={getRiskColor(rec.impact)} text={rec.impact} />
+                          <StatusIndicator status={getRiskColor(rec.impact)} label={rec.impact} />
                         </div>
                       </div>
                     </div>
@@ -765,7 +779,7 @@ const PrivacyEducation: React.FC = () => {
                 <div key={assessment.id} className="border rounded-lg p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center space-x-2">
-                      <StatusIndicator status={getRiskColor(assessment.currentRisk)} text="" />
+                      <StatusIndicator status={getRiskColor(assessment.currentRisk)} label="" />
                       <div>
                         <h3 className="font-medium">{assessment.title}</h3>
                         <div className="flex items-center space-x-2 mt-1">
@@ -774,7 +788,7 @@ const PrivacyEducation: React.FC = () => {
                             <span className="text-2xl font-bold">{assessment.score}</span>
                             <StatusIndicator
                               status={getRiskColor(assessment.currentRisk)}
-                              text={assessment.currentRisk}
+                              label={assessment.currentRisk}
                             />
                           </div>
                         </div>
@@ -813,7 +827,7 @@ const PrivacyEducation: React.FC = () => {
                               <span className="text-sm text-gray-600">{factor.weight}</span>
                               <StatusIndicator
                                 status={getRiskColor(factor.risk)}
-                                text={factor.risk}
+                                label={factor.risk}
                               />
                             </div>
                           </div>
@@ -858,7 +872,7 @@ const PrivacyEducation: React.FC = () => {
                 <div key={practice.id} className="border rounded-lg p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center space-x-2">
-                      <StatusIndicator status={getImportanceColor(practice.importance)} text="" />
+                      <StatusIndicator status={getImportanceColor(practice.importance)} label="" />
                       <div>
                         <h3 className="font-medium">{practice.title}</h3>
                         <div className="flex items-center space-x-2 mt-1">
@@ -867,7 +881,7 @@ const PrivacyEducation: React.FC = () => {
                           </span>
                           <StatusIndicator
                             status={getImportanceColor(practice.importance)}
-                            text={practice.importance}
+                            label={practice.importance}
                           />
                         </div>
                       </div>
@@ -975,7 +989,7 @@ const PrivacyEducation: React.FC = () => {
                 <div key={setting.id} className="border rounded-lg p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center space-x-2">
-                      <StatusIndicator status={getRiskColor(setting.impact)} text="" />
+                      <StatusIndicator status={getRiskColor(setting.impact)} label="" />
                       <div>
                         <h3 className="font-medium">{setting.name}</h3>
                         <p className="text-sm text-gray-600 mt-1">{setting.description}</p>
@@ -1019,7 +1033,7 @@ const PrivacyEducation: React.FC = () => {
                       <span className="text-sm text-gray-600">Impact:</span>
                       <StatusIndicator
                         status={getRiskColor(setting.impact)}
-                        text={setting.impact}
+                        label={setting.impact}
                       />
                     </div>
                   </div>

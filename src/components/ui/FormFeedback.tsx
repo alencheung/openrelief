@@ -1,13 +1,7 @@
 import React from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
-import {
-  CheckCircle,
-  AlertCircle,
-  AlertTriangle,
-  Info,
-  XCircle
-} from 'lucide-react'
+import { CheckCircle, AlertCircle, AlertTriangle, Info, XCircle } from 'lucide-react'
 
 const formFeedbackVariants = cva(
   'form-feedback flex items-start gap-2 text-sm font-medium animate-fade-in',
@@ -40,8 +34,7 @@ const formFeedbackVariants = cva(
 )
 
 export interface FormFeedbackProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof formFeedbackVariants> {
+  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof formFeedbackVariants> {
   message: string
   showIcon?: boolean
   dismissible?: boolean
@@ -56,7 +49,9 @@ const feedbackIcons = {
   info: Info
 }
 
-const getVariantStyles = (type: keyof typeof formFeedbackVariants.variants.type, variant: string) => {
+type FeedbackType = 'success' | 'error' | 'warning' | 'info'
+
+const getVariantStyles = (type: FeedbackType, variant: string) => {
   if (variant === 'solid') {
     switch (type) {
       case 'success':
@@ -106,39 +101,35 @@ const getVariantStyles = (type: keyof typeof formFeedbackVariants.variants.type,
 }
 
 const FormFeedback = React.forwardRef<HTMLDivElement, FormFeedbackProps>(
-  ({
-    className,
-    type,
-    size,
-    variant,
-    message,
-    showIcon = true,
-    dismissible = false,
-    onDismiss,
-    title,
-    ...props
-  }, ref) => {
+  (
+    {
+      className,
+      type,
+      size,
+      variant,
+      message,
+      showIcon = true,
+      dismissible = false,
+      onDismiss,
+      title,
+      ...props
+    },
+    ref
+  ) => {
     const IconComponent = feedbackIcons[type as keyof typeof feedbackIcons]
-    const variantStyles = getVariantStyles(type, variant || 'default')
+    const variantStyles = getVariantStyles(type ?? 'info', variant || 'default')
 
     return (
       <div
         ref={ref}
-        className={cn(
-          formFeedbackVariants({ type, size, variant, className }),
-          variantStyles
-        )}
+        className={cn(formFeedbackVariants({ type, size, variant, className }), variantStyles)}
         role="alert"
         {...props}
       >
-        {showIcon && IconComponent && (
-          <IconComponent className="w-4 h-4 flex-shrink-0 mt-0.5" />
-        )}
+        {showIcon && IconComponent && <IconComponent className="w-4 h-4 flex-shrink-0 mt-0.5" />}
 
         <div className="flex-1 min-w-0">
-          {title && (
-            <h4 className="font-semibold mb-1">{title}</h4>
-          )}
+          {title && <h4 className="font-semibold mb-1">{title}</h4>}
           <p className="text-current">{message}</p>
         </div>
 

@@ -288,7 +288,7 @@ const MapLegend: React.FC<MapLegendProps> = ({
           {/* Emergency Types Section */}
           <LegendSection
             title="Emergency Types"
-            icon={<Icon name="alertTriangle" size="xs" />}
+            icon={<Icon name="fire" size="xs" />}
             collapsible
             initiallyCollapsed={false}
           >
@@ -311,7 +311,7 @@ const MapLegend: React.FC<MapLegendProps> = ({
           {showSeverityIndicators && (
             <LegendSection
               title="Severity Levels"
-              icon={<Icon name="alertCircle" size="xs" />}
+              icon={<Icon name="info" size="xs" />}
               collapsible
               initiallyCollapsed={true}
             >
@@ -336,7 +336,7 @@ const MapLegend: React.FC<MapLegendProps> = ({
           {showTrustIndicators && (
             <LegendSection
               title="Trust Levels"
-              icon={<Icon name="shield" size="xs" />}
+              icon={<Icon name="security" size="xs" />}
               collapsible
               initiallyCollapsed={true}
             >
@@ -361,7 +361,7 @@ const MapLegend: React.FC<MapLegendProps> = ({
           {showLayerControls && (
             <LegendSection
               title="Map Layers"
-              icon={<Icon name="layers" size="xs" />}
+              icon={<Icon name="default" size="xs" />}
               collapsible
               initiallyCollapsed={false}
             >

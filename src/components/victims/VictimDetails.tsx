@@ -51,7 +51,8 @@ const statusConfig: Record<VictimStatus, { color: string; bgColor: string; label
     label: 'Trapped'
   },
   missing: { color: 'text-red-600', bgColor: 'bg-red-50 dark:bg-red-950', label: 'Missing' },
-  deceased: { color: 'text-gray-600', bgColor: 'bg-gray-50 dark:bg-gray-950', label: 'Deceased' }
+  deceased: { color: 'text-gray-600', bgColor: 'bg-gray-50 dark:bg-gray-950', label: 'Deceased' },
+  unknown: { color: 'text-gray-400', bgColor: 'bg-gray-50 dark:bg-gray-950', label: 'Unknown' }
 }
 
 const injurySeverityConfig: Record<Injury['severity'], { color: string; label: string }> = {

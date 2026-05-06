@@ -186,7 +186,7 @@ export function MobileEmergencyReport({
   const validateCurrentStep = (): boolean => {
     const newErrors: Record<string, string> = {}
 
-    switch (steps[currentStep].id) {
+    switch (steps[currentStep]?.id) {
       case 'type':
         if (!selectedType) {
           newErrors.type = 'Please select an emergency type'
@@ -344,7 +344,7 @@ export function MobileEmergencyReport({
           <X className="w-5 h-5" />
         </button>
         <div className="flex items-center gap-2">
-          <EmergencyIndicator type="critical" size="sm" />
+          <EmergencyIndicator type="fire" size="sm" label="Emergency" />
           <h1 className="text-lg font-semibold">Report Emergency</h1>
         </div>
         <div className="w-9" /> {/* Spacer for centering */}

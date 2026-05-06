@@ -5,10 +5,9 @@
  * disorders or those who prefer reduced motion for better accessibility.
  */
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 
 export interface ReducedMotionOptions {
-
   /**
    * Whether to respect system preference
    */
@@ -41,7 +40,6 @@ export interface ReducedMotionOptions {
 }
 
 export interface ReducedMotionState {
-
   /**
    * Whether reduced motion is currently active
    */
@@ -74,7 +72,6 @@ export interface ReducedMotionState {
 }
 
 export interface ReducedMotionControls {
-
   /**
    * Toggle reduced motion
    */
@@ -104,7 +101,9 @@ export interface ReducedMotionControls {
 /**
  * Hook for managing reduced motion preferences
  */
-export function useReducedMotion(options: ReducedMotionOptions = {}): ReducedMotionState & ReducedMotionControls {
+export function useReducedMotion(
+  options: ReducedMotionOptions = {}
+): ReducedMotionState & ReducedMotionControls {
   const {
     respectSystemPreference = true,
     enableControls = true,
@@ -136,9 +135,7 @@ export function useReducedMotion(options: ReducedMotionOptions = {}): ReducedMot
   /**
    * Calculate effective reduced motion state
    */
-  const isReduced = respectSystemPreference
-    ? systemPrefersReduced || userReduced
-    : userReduced
+  const isReduced = respectSystemPreference ? systemPrefersReduced || userReduced : userReduced
 
   /**
    * Toggle reduced motion
@@ -152,10 +149,13 @@ export function useReducedMotion(options: ReducedMotionOptions = {}): ReducedMot
   /**
    * Set reduced motion state
    */
-  const setReducedMotion = useCallback((reduced: boolean) => {
-    setUserReduced(reduced)
-    onReducedMotionChange?.(reduced)
-  }, [onReducedMotionChange])
+  const setReducedMotion = useCallback(
+    (reduced: boolean) => {
+      setUserReduced(reduced)
+      onReducedMotionChange?.(reduced)
+    },
+    [onReducedMotionChange]
+  )
 
   /**
    * Set animation duration
@@ -264,7 +264,13 @@ export function useReducedMotion(options: ReducedMotionOptions = {}): ReducedMot
       setAnimationDuration,
       setTransitionDuration,
       resetToSystemPreference
-    }
+    },
+    // Flattened controls for ReducedMotionControls interface
+    toggleReducedMotion,
+    setReducedMotion,
+    setAnimationDuration,
+    setTransitionDuration,
+    resetToSystemPreference
   }
 }
 
@@ -327,20 +333,17 @@ export function useReducedMotionAnimation<T extends Record<string, any>>(
 /**
  * Hook for reduced motion transitions
  */
-export function useReducedMotionTransition(options: {
-  duration?: number
-  easing?: string
-  delay?: number
-  property?: string | string[]
-} = {}) {
+export function useReducedMotionTransition(
+  options: {
+    duration?: number
+    easing?: string
+    delay?: number
+    property?: string | string[]
+  } = {}
+) {
   const { isReduced } = useReducedMotion()
 
-  const {
-    duration = 200,
-    easing = 'ease-in-out',
-    delay = 0,
-    property = 'all'
-  } = options
+  const { duration = 200, easing = 'ease-in-out', delay = 0, property = 'all' } = options
 
   /**
    * Get transition properties respecting reduced motion
@@ -365,9 +368,7 @@ export function useReducedMotionTransition(options: {
 
   return {
     transitionProps: getTransitionProps(),
-    transitionString: isReduced
-      ? 'none'
-      : `${property} ${duration}ms ${easing} ${delay}ms`,
+    transitionString: isReduced ? 'none' : `${property} ${duration}ms ${easing} ${delay}ms`,
     isReduced
   }
 }
@@ -406,17 +407,20 @@ export function useReducedMotionAnimationFrame() {
   /**
    * Request animation frame respecting reduced motion
    */
-  const requestAnimationFrame = useCallback((callback: () => void) => {
-    if (isReduced) {
-      // For reduced motion, use setTimeout with longer delay
-      callbackRef.current = callback
-      animationFrameRef.current = window.setTimeout(callback, 16) as any
-    } else {
-      // Use standard requestAnimationFrame
-      callbackRef.current = callback
-      animationFrameRef.current = window.requestAnimationFrame(callback)
-    }
-  }, [isReduced])
+  const requestAnimationFrame = useCallback(
+    (callback: () => void) => {
+      if (isReduced) {
+        // For reduced motion, use setTimeout with longer delay
+        callbackRef.current = callback
+        animationFrameRef.current = window.setTimeout(callback, 16) as any
+      } else {
+        // Use standard requestAnimationFrame
+        callbackRef.current = callback
+        animationFrameRef.current = window.requestAnimationFrame(callback)
+      }
+    },
+    [isReduced]
+  )
 
   /**
    * Cancel animation frame
@@ -455,31 +459,37 @@ export function useReducedMotionScroll() {
   /**
    * Scroll to element respecting reduced motion
    */
-  const scrollToElement = useCallback((element: HTMLElement, options?: ScrollIntoViewOptions) => {
-    const scrollOptions: ScrollIntoViewOptions = {
-      behavior: getScrollBehavior(),
-      block: 'start',
-      inline: 'nearest',
-      ...options
-    }
+  const scrollToElement = useCallback(
+    (element: HTMLElement, options?: ScrollIntoViewOptions) => {
+      const scrollOptions: ScrollIntoViewOptions = {
+        behavior: getScrollBehavior(),
+        block: 'start',
+        inline: 'nearest',
+        ...options
+      }
 
-    element.scrollIntoView(scrollOptions)
-  }, [isReduced])
+      element.scrollIntoView(scrollOptions)
+    },
+    [isReduced]
+  )
 
   /**
    * Scroll to position respecting reduced motion
    */
-  const scrollToPosition = useCallback((x: number, y: number) => {
-    if (isReduced) {
-      window.scrollTo(x, y)
-    } else {
-      window.scrollTo({
-        left: x,
-        top: y,
-        behavior: 'smooth'
-      })
-    }
-  }, [isReduced])
+  const scrollToPosition = useCallback(
+    (x: number, y: number) => {
+      if (isReduced) {
+        window.scrollTo(x, y)
+      } else {
+        window.scrollTo({
+          left: x,
+          top: y,
+          behavior: 'smooth'
+        })
+      }
+    },
+    [isReduced]
+  )
 
   return {
     getScrollBehavior,
@@ -492,18 +502,16 @@ export function useReducedMotionScroll() {
 /**
  * Hook for reduced motion carousel
  */
-export function useReducedMotionCarousel(options: {
-  autoPlay?: boolean
-  interval?: number
-  transitionDuration?: number
-} = {}) {
+export function useReducedMotionCarousel(
+  options: {
+    autoPlay?: boolean
+    interval?: number
+    transitionDuration?: number
+  } = {}
+) {
   const { isReduced } = useReducedMotion()
 
-  const {
-    autoPlay = false,
-    interval = 3000,
-    transitionDuration = 500
-  } = options
+  const { autoPlay = false, interval = 3000, transitionDuration = 500 } = options
 
   const [currentIndex, setCurrentIndex] = useState(0)
   const intervalRef = useRef<NodeJS.Timeout>()
@@ -591,17 +599,20 @@ export function useReducedMotionVideo() {
   /**
    * Play video respecting reduced motion
    */
-  const playVideo = useCallback((video: HTMLVideoElement) => {
-    if (isReduced) {
-      // For reduced motion, show poster instead of playing
-      video.poster = video.poster || ''
-      return
-    }
+  const playVideo = useCallback(
+    (video: HTMLVideoElement) => {
+      if (isReduced) {
+        // For reduced motion, show poster instead of playing
+        video.poster = video.poster || ''
+        return
+      }
 
-    video.play().catch(error => {
-      console.warn('Video playback failed:', error)
-    })
-  }, [isReduced])
+      video.play().catch(error => {
+        console.warn('Video playback failed:', error)
+      })
+    },
+    [isReduced]
+  )
 
   return {
     getVideoProps,

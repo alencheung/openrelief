@@ -51,10 +51,15 @@ export function IOSBackgroundManager({ className }: IOSBackgroundManagerProps) {
     useIOSSpecificFeatures()
 
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
-  const [testPayload, setTestPayload] = useState({
+  const [testPayload, setTestPayload] = useState<{
+    title: string
+    message: string
+    severity: 'low' | 'medium' | 'high' | 'critical'
+    requiresAction: boolean
+  }>({
     title: 'Test Emergency',
     message: 'This is a test emergency notification',
-    severity: 'high' as const,
+    severity: 'high',
     requiresAction: true
   })
 
@@ -189,7 +194,9 @@ export function IOSBackgroundManager({ className }: IOSBackgroundManagerProps) {
               <div className="flex items-center gap-2">
                 <Switch
                   checked={config.silentPushEnabled}
-                  onCheckedChange={checked => updateConfig({ silentPushEnabled: checked })}
+                  onCheckedChange={(checked: boolean) =>
+                    updateConfig({ silentPushEnabled: checked })
+                  }
                   disabled={!isInitialized}
                 />
                 <div className={cn('text-sm', getStatusColor(config.silentPushEnabled))}>
@@ -211,7 +218,7 @@ export function IOSBackgroundManager({ className }: IOSBackgroundManagerProps) {
                       <span className="text-sm">Critical Alerts</span>
                       <Switch
                         checked={config.criticalAlertsEnabled}
-                        onCheckedChange={checked =>
+                        onCheckedChange={(checked: boolean) =>
                           updateConfig({ criticalAlertsEnabled: checked })
                         }
                         disabled={!isInitialized}
@@ -246,7 +253,9 @@ export function IOSBackgroundManager({ className }: IOSBackgroundManagerProps) {
               <div className="flex items-center gap-2">
                 <Switch
                   checked={config.backgroundLocationEnabled}
-                  onCheckedChange={checked => updateConfig({ backgroundLocationEnabled: checked })}
+                  onCheckedChange={(checked: boolean) =>
+                    updateConfig({ backgroundLocationEnabled: checked })
+                  }
                   disabled={!isInitialized}
                 />
                 <div className={cn('text-sm', getStatusColor(config.backgroundLocationEnabled))}>
@@ -301,7 +310,9 @@ export function IOSBackgroundManager({ className }: IOSBackgroundManagerProps) {
               <div className="flex items-center gap-2">
                 <Switch
                   checked={config.batteryOptimizationHandled}
-                  onCheckedChange={checked => updateConfig({ batteryOptimizationHandled: checked })}
+                  onCheckedChange={(checked: boolean) =>
+                    updateConfig({ batteryOptimizationHandled: checked })
+                  }
                   disabled={!isInitialized}
                 />
                 <div className={cn('text-sm', getStatusColor(config.batteryOptimizationHandled))}>

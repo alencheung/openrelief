@@ -51,11 +51,12 @@ export function SyncProgressNotification({
   autoHide = true,
   autoHideDelay = 5000
 }: SyncNotificationProps) {
-  const { isSyncing, syncProgress, pendingActions, failedActions, lastSyncTime, metrics } =
-    useOfflineStore()
+  const { isSyncing, syncProgress, lastSyncTime, metrics } = useOfflineStore()
+  const pendingActions = metrics.pendingActions
+  const failedActions = metrics.failedActions
 
   const { announcePolite, announceAssertive } = useAriaAnnouncer()
-  const { prefersReducedMotion } = useReducedMotion()
+  const { isReduced: prefersReducedMotion } = useReducedMotion()
 
   const [showDetails, setShowDetails] = useState(initialShowDetails)
   const [visible, setVisible] = useState(false)
@@ -78,7 +79,7 @@ export function SyncProgressNotification({
       name: 'Emergency Reports',
       status: 'pending',
       progress: 0,
-      total: pendingActions.filter(a => a.table === 'emergency_reports').length,
+      total: 0,
       icon: AlertTriangleIcon
     },
     {
@@ -86,7 +87,7 @@ export function SyncProgressNotification({
       name: 'Location Data',
       status: 'pending',
       progress: 0,
-      total: pendingActions.filter(a => a.table === 'locations').length,
+      total: 0,
       icon: MapPinIcon
     },
     {
@@ -94,7 +95,7 @@ export function SyncProgressNotification({
       name: 'User Data',
       status: 'pending',
       progress: 0,
-      total: pendingActions.filter(a => a.table === 'users').length,
+      total: 0,
       icon: FileTextIcon
     },
     {
@@ -102,9 +103,7 @@ export function SyncProgressNotification({
       name: 'Other Data',
       status: 'pending',
       progress: 0,
-      total: pendingActions.filter(
-        a => !['emergency_reports', 'locations', 'users'].includes(a.table)
-      ).length,
+      total: 0,
       icon: DatabaseIcon
     },
     {
@@ -174,12 +173,15 @@ export function SyncProgressNotification({
       })
 
       setSyncStages(stages)
-      setCurrentStage(stages[stageIndex].id)
+      const currentStageData = stages[stageIndex]
+      if (currentStageData) {
+        setCurrentStage(currentStageData.id)
 
-      // Announce progress
-      announcePolite(
-        `Sync progress: ${Math.round(progressPercentage)}% - ${stages[stageIndex].name}`
-      )
+        // Announce progress
+        announcePolite(
+          `Sync progress: ${Math.round(progressPercentage)}% - ${currentStageData.name}`
+        )
+      }
     } else if (syncProgress.current === syncProgress.total && syncProgress.total > 0) {
       // Success
       const stages = syncStages.map(stage => ({
@@ -200,7 +202,7 @@ export function SyncProgressNotification({
         }, autoHideDelay)
         setAutoHideTimer(timer)
       }
-    } else if (failedActions.length > 0) {
+    } else if (failedActions > 0) {
       // Some failures
       announceAssertive('Synchronization completed with some errors')
     }
@@ -257,7 +259,7 @@ export function SyncProgressNotification({
     return null
   }
 
-  const hasErrors = failedActions.length > 0
+  const hasErrors = failedActions > 0
   const isCompleted =
     !isSyncing && syncProgress.current === syncProgress.total && syncProgress.total > 0
 
@@ -316,7 +318,7 @@ export function SyncProgressNotification({
                     {isCompleted
                       ? `${syncProgress.total} actions synchronized`
                       : hasErrors
-                        ? `${failedActions.length} actions failed`
+                        ? `${failedActions} actions failed`
                         : `${syncProgress.current} of ${syncProgress.total} actions`}
                   </p>
                 </div>
@@ -484,6 +486,7 @@ export function SyncProgressNotification({
                       }
                       size="sm"
                       animated={stage.status === 'in-progress'}
+                      label={stage.name}
                     />
                   </div>
                 ))}
@@ -528,7 +531,7 @@ export function SyncProgressNotification({
         <div aria-live="polite" aria-atomic="true">
           {isSyncing && `Synchronization in progress: ${Math.round(overallProgress)}% complete`}
           {isCompleted && 'Synchronization completed successfully'}
-          {hasErrors && `Synchronization completed with ${failedActions.length} errors`}
+          {hasErrors && `Synchronization completed with ${failedActions} errors`}
         </div>
       </ScreenReaderOnly>
     </>

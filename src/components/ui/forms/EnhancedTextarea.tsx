@@ -87,7 +87,7 @@ const EnhancedTextarea = React.forwardRef<HTMLTextAreaElement, EnhancedTextareaP
       message: string | null
     }>({ isValid: null, message: null })
 
-    const textareaRef = React.useRef<HTMLTextAreaElement>(null)
+    const textareaRef = React.useRef<HTMLTextAreaElement | null>(null)
     const generatedId = React.useId()
     const inputId = id || `textarea-${generatedId}`
     const hasValue = value !== undefined && value !== ''

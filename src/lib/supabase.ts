@@ -109,78 +109,46 @@ function createMockSupabaseClient() {
       }
     },
 
-    from: (table: string) => ({
-      select: (columns?: string) => ({
-        eq: (column: string, value: any) => ({
-          single: () =>
-            Promise.resolve({
-              data:
-                table === 'user_profiles'
-                  ? {
-                      user_id: 'mock-user-id',
-                      trust_score: 0.5,
-                      created_at: new Date().toISOString(),
-                      updated_at: new Date().toISOString()
-                    }
-                  : null,
-              error: null
-            }),
-          then: (resolve: any) =>
-            resolve({
-              data: [],
-              error: null
-            })
-        }),
-        in: (column: string, values: any[]) => ({
-          then: (resolve: any) =>
-            resolve({
-              data: [],
-              error: null
-            })
-        }),
-        order: () => ({
-          eq: () => ({
-            limit: () => Promise.resolve({ data: [], error: null })
-          }),
-          in: () => ({
-            limit: () => Promise.resolve({ data: [], error: null })
-          })
-        }),
-        then: (resolve: any) =>
-          resolve({
-            data: [],
-            error: null
-          })
-      }),
-      insert: (data: any) => ({
-        select: () => ({
-          single: () => Promise.resolve({ data, error: null })
-        }),
-        then: (resolve: any) => resolve({ data, error: null })
-      }),
-      update: (data: any) => ({
-        eq: (column: string, value: any) => ({
-          select: () => ({
-            single: () => Promise.resolve({ data, error: null })
-          })
-        })
-      }),
-      upsert: (data: any) => ({
-        select: () => ({
-          single: () => Promise.resolve({ data, error: null })
-        })
-      })
-    }),
+    from: (_table: string) => {
+      const makeChain = (): Record<string, any> => {
+        const chain: Record<string, any> = {}
+        chain.select = (..._args: any[]) => chain
+        chain.insert = (..._args: any[]) => chain
+        chain.update = (..._args: any[]) => chain
+        chain.upsert = (..._args: any[]) => chain
+        chain.delete = () => chain
+        chain.eq = (..._args: any[]) => chain
+        chain.neq = (..._args: any[]) => chain
+        chain.in = (..._args: any[]) => chain
+        chain.order = (..._args: any[]) => chain
+        chain.limit = (..._args: any[]) => chain
+        chain.range = (..._args: any[]) => chain
+        chain.single = () => Promise.resolve({ data: null, error: null })
+        chain.maybeSingle = () => Promise.resolve({ data: null, error: null })
+        chain.then = (resolve: any) => resolve({ data: [], error: null })
+        return chain
+      }
+      return makeChain()
+    },
 
     rpc: (fnName: string, params: any) => {
       return Promise.resolve({ data: null, error: null })
     },
 
-    channel: (channelName: string) => ({
-      on: () => ({
-        subscribe: () => ({ unsubscribe: () => {} })
-      })
-    })
+    channel: (_channelName: string) => {
+      const mockChannel: Record<string, any> = {
+        on: (..._args: any[]) => mockChannel,
+        subscribe: (_callback?: any) => mockChannel,
+        unsubscribe: () => {},
+        track: (_state: any) => Promise.resolve({}),
+        untrack: () => Promise.resolve({}),
+        presenceState: () => ({}),
+        send: (_message: any) => Promise.resolve({})
+      }
+      return mockChannel
+    },
+
+    removeChannel: (_channel: any) => Promise.resolve({ data: null, error: null })
   }
 }
 

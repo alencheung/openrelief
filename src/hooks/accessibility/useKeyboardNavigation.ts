@@ -3,7 +3,6 @@
 import { useEffect, useCallback, useRef } from 'react'
 
 export interface KeyboardShortcut {
-
   /**
    * Key or key combination (e.g., 'Enter', 'Ctrl+K', 'Shift+Tab')
    */
@@ -41,7 +40,6 @@ export interface KeyboardShortcut {
 }
 
 export interface KeyboardNavigationOptions {
-
   /**
    * Whether keyboard navigation is enabled
    */
@@ -69,7 +67,6 @@ export interface KeyboardNavigationOptions {
 }
 
 export interface KeyboardNavigationState {
-
   /**
    * Whether keyboard navigation is currently active
    */
@@ -100,13 +97,7 @@ export interface KeyboardNavigationState {
  * Hook for comprehensive keyboard navigation and shortcuts
  */
 export function useKeyboardNavigation(options: KeyboardNavigationOptions = {}) {
-  const {
-    enabled = true,
-    enableHelp = true,
-    shortcuts = [],
-    onKeyDown,
-    onKeyUp
-  } = options
+  const { enabled = true, enableHelp = true, shortcuts = [], onKeyDown, onKeyUp } = options
 
   const stateRef = useRef<KeyboardNavigationState>({
     isActive: false,
@@ -125,58 +116,66 @@ export function useKeyboardNavigation(options: KeyboardNavigationOptions = {}) {
   /**
    * Parse key combination string into key and modifiers
    */
-  const parseKeyCombo = useCallback((combo: string): {
-    key: string
-    ctrl: boolean
-    shift: boolean
-    alt: boolean
-    meta: boolean
-  } => {
-    const parts = combo.toLowerCase().split('+').map(part => part.trim())
+  const parseKeyCombo = useCallback(
+    (
+      combo: string
+    ): {
+      key: string
+      ctrl: boolean
+      shift: boolean
+      alt: boolean
+      meta: boolean
+    } => {
+      const parts = combo
+        .toLowerCase()
+        .split('+')
+        .map(part => part.trim())
 
-    return {
-      key: parts.find(part => !['ctrl', 'shift', 'alt', 'meta'].includes(part)) || '',
-      ctrl: parts.includes('ctrl'),
-      shift: parts.includes('shift'),
-      alt: parts.includes('alt'),
-      meta: parts.includes('meta')
-    }
-  }, [])
+      return {
+        key: parts.find(part => !['ctrl', 'shift', 'alt', 'meta'].includes(part)) || '',
+        ctrl: parts.includes('ctrl'),
+        shift: parts.includes('shift'),
+        alt: parts.includes('alt'),
+        meta: parts.includes('meta')
+      }
+    },
+    []
+  )
 
   /**
    * Check if keyboard event matches a key combination
    */
-  const matchesKeyCombo = useCallback((
-    event: KeyboardEvent,
-    combo: string
-  ): boolean => {
-    const { key, ctrl, shift, alt, meta } = parseKeyCombo(combo)
+  const matchesKeyCombo = useCallback(
+    (event: KeyboardEvent, combo: string): boolean => {
+      const { key, ctrl, shift, alt, meta } = parseKeyCombo(combo)
 
-    // Normalize event key
-    const eventKey = event.key.toLowerCase()
-    const comboKey = key.toLowerCase()
+      // Normalize event key
+      const eventKey = event.key.toLowerCase()
+      const comboKey = key.toLowerCase()
 
-    // Check main key
-    if (eventKey !== comboKey) {
-      return false
-    }
+      // Check main key
+      if (eventKey !== comboKey) {
+        return false
+      }
 
-    // Check modifiers
-    if (ctrl !== event.ctrlKey) {
-      return false
-    }
-    if (shift !== event.shiftKey) {
-      return false
-    }
-    if (alt !== event.altKey) {
-      return false
-    }
-    if (meta !== event.metaKey) {
-      return false
-    }
+      // Check modifiers
+      if (ctrl !== event.ctrlKey) {
+        return false
+      }
+      if (shift !== event.shiftKey) {
+        return false
+      }
+      if (alt !== event.altKey) {
+        return false
+      }
+      if (meta !== event.metaKey) {
+        return false
+      }
 
-    return true
-  }, [parseKeyCombo])
+      return true
+    },
+    [parseKeyCombo]
+  )
 
   /**
    * Register a new keyboard shortcut
@@ -189,18 +188,13 @@ export function useKeyboardNavigation(options: KeyboardNavigationOptions = {}) {
    * Unregister a keyboard shortcut
    */
   const unregisterShortcut = useCallback((key: string) => {
-    stateRef.current.shortcuts = stateRef.current.shortcuts.filter(
-      shortcut => shortcut.key !== key
-    )
+    stateRef.current.shortcuts = stateRef.current.shortcuts.filter(shortcut => shortcut.key !== key)
   }, [])
 
   /**
    * Execute a shortcut action
    */
-  const executeShortcut = useCallback((
-    shortcut: KeyboardShortcut,
-    event: KeyboardEvent
-  ) => {
+  const executeShortcut = useCallback((shortcut: KeyboardShortcut, event: KeyboardEvent) => {
     if (shortcut.enabled === false) {
       return
     }
@@ -246,13 +240,16 @@ export function useKeyboardNavigation(options: KeyboardNavigationOptions = {}) {
           <h2 class="text-lg font-semibold mb-4">Keyboard Shortcuts</h2>
           <div class="space-y-2">
             ${stateRef.current.shortcuts
-    .filter(shortcut => shortcut.enabled !== false && shortcut.description)
-    .map(shortcut => `
+              .filter(shortcut => shortcut.enabled !== false && shortcut.description)
+              .map(
+                shortcut => `
                 <div class="flex justify-between items-center py-2 border-b">
                   <span class="text-sm text-muted-foreground">${shortcut.description}</span>
                   <kbd class="px-2 py-1 text-xs bg-muted rounded">${shortcut.key}</kbd>
                 </div>
-              `).join('')}
+              `
+              )
+              .join('')}
           </div>
           <button 
             class="mt-4 w-full px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
@@ -282,7 +279,7 @@ export function useKeyboardNavigation(options: KeyboardNavigationOptions = {}) {
       document.addEventListener('keydown', handleEscape)
 
       // Remove dialog when clicking outside
-      dialog.addEventListener('click', (e) => {
+      dialog.addEventListener('click', e => {
         if (e.target === dialog) {
           dialog.remove()
           helpDialogRef.current = null
@@ -295,58 +292,71 @@ export function useKeyboardNavigation(options: KeyboardNavigationOptions = {}) {
   /**
    * Handle key down events
    */
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (!enabled) {
-      return
-    }
-
-    // Update state
-    stateRef.current.isActive = true
-    stateRef.current.modifiers = {
-      ctrl: event.ctrlKey,
-      shift: event.shiftKey,
-      alt: event.altKey,
-      meta: event.metaKey
-    }
-    stateRef.current.lastKey = event.key
-
-    // Call custom key down handler
-    onKeyDown?.(event)
-
-    // Check for matching shortcuts
-    for (const shortcut of stateRef.current.shortcuts) {
-      if (matchesKeyCombo(event, shortcut.key)) {
-        executeShortcut(shortcut, event)
-        break // Stop after first match
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (!enabled) {
+        return
       }
-    }
 
-    // Show help dialog for '?' key
-    if (enableHelp && event.key === '?' && !event.ctrlKey && !event.shiftKey && !event.altKey && !event.metaKey) {
-      event.preventDefault()
-      showHelpDialog()
-    }
-  }, [enabled, onKeyDown, matchesKeyCombo, executeShortcut, enableHelp, showHelpDialog])
+      // Update state
+      stateRef.current.isActive = true
+      stateRef.current.modifiers = {
+        ctrl: event.ctrlKey,
+        shift: event.shiftKey,
+        alt: event.altKey,
+        meta: event.metaKey
+      }
+      stateRef.current.lastKey = event.key
+
+      // Call custom key down handler
+      onKeyDown?.(event)
+
+      // Check for matching shortcuts
+      for (const shortcut of stateRef.current.shortcuts) {
+        if (matchesKeyCombo(event, shortcut.key)) {
+          executeShortcut(shortcut, event)
+          break // Stop after first match
+        }
+      }
+
+      // Show help dialog for '?' key
+      if (
+        enableHelp &&
+        event.key === '?' &&
+        !event.ctrlKey &&
+        !event.shiftKey &&
+        !event.altKey &&
+        !event.metaKey
+      ) {
+        event.preventDefault()
+        showHelpDialog()
+      }
+    },
+    [enabled, onKeyDown, matchesKeyCombo, executeShortcut, enableHelp, showHelpDialog]
+  )
 
   /**
    * Handle key up events
    */
-  const handleKeyUp = useCallback((event: KeyboardEvent) => {
-    if (!enabled) {
-      return
-    }
+  const handleKeyUp = useCallback(
+    (event: KeyboardEvent) => {
+      if (!enabled) {
+        return
+      }
 
-    // Update state
-    stateRef.current.modifiers = {
-      ctrl: event.ctrlKey,
-      shift: event.shiftKey,
-      alt: event.altKey,
-      meta: event.metaKey
-    }
+      // Update state
+      stateRef.current.modifiers = {
+        ctrl: event.ctrlKey,
+        shift: event.shiftKey,
+        alt: event.altKey,
+        meta: event.metaKey
+      }
 
-    // Call custom key up handler
-    onKeyUp?.(event)
-  }, [enabled, onKeyUp])
+      // Call custom key up handler
+      onKeyUp?.(event)
+    },
+    [enabled, onKeyUp]
+  )
 
   /**
    * Set up global keyboard event listeners
@@ -413,79 +423,94 @@ export function useArrowNavigation(options: {
   const { items, orientation = 'vertical', loop = true, onNavigate } = options
   const currentIndexRef = useRef(-1)
 
-  const navigate = useCallback((direction: 'up' | 'down' | 'left' | 'right') => {
-    if (items.length === 0) {
-      return
-    }
+  const navigate = useCallback(
+    (direction: 'up' | 'down' | 'left' | 'right') => {
+      if (items.length === 0) {
+        return
+      }
 
-    let newIndex = currentIndexRef.current
+      let newIndex = currentIndexRef.current
 
-    switch (direction) {
-      case 'up':
-        if (orientation === 'vertical' || orientation === 'both') {
-          newIndex = newIndex > 0 ? newIndex - 1 : (loop ? items.length - 1 : 0)
-        }
-        break
-      case 'down':
-        if (orientation === 'vertical' || orientation === 'both') {
-          newIndex = newIndex < items.length - 1 ? newIndex + 1 : (loop ? 0 : items.length - 1)
-        }
-        break
-      case 'left':
-        if (orientation === 'horizontal' || orientation === 'both') {
-          newIndex = newIndex > 0 ? newIndex - 1 : (loop ? items.length - 1 : 0)
-        }
-        break
-      case 'right':
-        if (orientation === 'horizontal' || orientation === 'both') {
-          newIndex = newIndex < items.length - 1 ? newIndex + 1 : (loop ? 0 : items.length - 1)
-        }
-        break
-    }
+      switch (direction) {
+        case 'up':
+          if (orientation === 'vertical' || orientation === 'both') {
+            newIndex = newIndex > 0 ? newIndex - 1 : loop ? items.length - 1 : 0
+          }
+          break
+        case 'down':
+          if (orientation === 'vertical' || orientation === 'both') {
+            newIndex = newIndex < items.length - 1 ? newIndex + 1 : loop ? 0 : items.length - 1
+          }
+          break
+        case 'left':
+          if (orientation === 'horizontal' || orientation === 'both') {
+            newIndex = newIndex > 0 ? newIndex - 1 : loop ? items.length - 1 : 0
+          }
+          break
+        case 'right':
+          if (orientation === 'horizontal' || orientation === 'both') {
+            newIndex = newIndex < items.length - 1 ? newIndex + 1 : loop ? 0 : items.length - 1
+          }
+          break
+      }
 
-    if (newIndex !== currentIndexRef.current && newIndex >= 0 && newIndex < items.length) {
-      currentIndexRef.current = newIndex
-      items[newIndex]?.focus()
-      onNavigate?.(newIndex, items[newIndex])
-    }
-  }, [items, orientation, loop, onNavigate])
+      if (newIndex !== currentIndexRef.current && newIndex >= 0 && newIndex < items.length) {
+        currentIndexRef.current = newIndex
+        const item = items[newIndex]
+        item?.focus()
+        if (item) {
+          onNavigate?.(newIndex, item)
+        }
+      }
+    },
+    [items, orientation, loop, onNavigate]
+  )
 
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    switch (event.key) {
-      case 'ArrowUp':
-        event.preventDefault()
-        navigate('up')
-        break
-      case 'ArrowDown':
-        event.preventDefault()
-        navigate('down')
-        break
-      case 'ArrowLeft':
-        event.preventDefault()
-        navigate('left')
-        break
-      case 'ArrowRight':
-        event.preventDefault()
-        navigate('right')
-        break
-      case 'Home':
-        event.preventDefault()
-        if (items.length > 0) {
-          currentIndexRef.current = 0
-          items[0]?.focus()
-          onNavigate?.(0, items[0])
-        }
-        break
-      case 'End':
-        event.preventDefault()
-        if (items.length > 0) {
-          currentIndexRef.current = items.length - 1
-          items[items.length - 1]?.focus()
-          onNavigate?.(items.length - 1, items[items.length - 1])
-        }
-        break
-    }
-  }, [navigate, items, onNavigate])
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      switch (event.key) {
+        case 'ArrowUp':
+          event.preventDefault()
+          navigate('up')
+          break
+        case 'ArrowDown':
+          event.preventDefault()
+          navigate('down')
+          break
+        case 'ArrowLeft':
+          event.preventDefault()
+          navigate('left')
+          break
+        case 'ArrowRight':
+          event.preventDefault()
+          navigate('right')
+          break
+        case 'Home':
+          event.preventDefault()
+          if (items.length > 0) {
+            currentIndexRef.current = 0
+            const homeItem = items[0]
+            homeItem?.focus()
+            if (homeItem) {
+              onNavigate?.(0, homeItem)
+            }
+          }
+          break
+        case 'End':
+          event.preventDefault()
+          if (items.length > 0) {
+            currentIndexRef.current = items.length - 1
+            const endItem = items[items.length - 1]
+            endItem?.focus()
+            if (endItem) {
+              onNavigate?.(items.length - 1, endItem)
+            }
+          }
+          break
+      }
+    },
+    [navigate, items, onNavigate]
+  )
 
   return {
     currentIndex: currentIndexRef.current,
@@ -497,56 +522,74 @@ export function useArrowNavigation(options: {
 /**
  * Hook for roving tabindex management
  */
-export function useRovingTabIndex(items: HTMLElement[], options: {
-  orientation?: 'horizontal' | 'vertical'
-  loop?: boolean
-  onActivate?: (index: number, element: HTMLElement) => void
-} = {}) {
+export function useRovingTabIndex(
+  items: HTMLElement[],
+  options: {
+    orientation?: 'horizontal' | 'vertical'
+    loop?: boolean
+    onActivate?: (index: number, element: HTMLElement) => void
+  } = {}
+) {
   const { orientation = 'vertical', loop = true, onActivate } = options
   const activeIndexRef = useRef(-1)
 
-  const setActiveIndex = useCallback((index: number) => {
-    if (index < 0 || index >= items.length) {
-      return
-    }
+  const setActiveIndex = useCallback(
+    (index: number) => {
+      if (index < 0 || index >= items.length) {
+        return
+      }
 
-    // Update tabindexes
-    items.forEach((item, i) => {
-      item.tabIndex = i === index ? 0 : -1
-    })
+      // Update tabindexes
+      items.forEach((item, i) => {
+        item.tabIndex = i === index ? 0 : -1
+      })
 
-    activeIndexRef.current = index
-    onActivate?.(index, items[index])
-  }, [items, onActivate])
+      activeIndexRef.current = index
+      const activeItem = items[index]
+      if (activeItem) {
+        onActivate?.(index, activeItem)
+      }
+    },
+    [items, onActivate]
+  )
 
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    switch (event.key) {
-      case 'ArrowUp':
-      case 'ArrowLeft':
-        event.preventDefault()
-        const prevIndex = activeIndexRef.current > 0
-          ? activeIndexRef.current - 1
-          : (loop ? items.length - 1 : activeIndexRef.current)
-        setActiveIndex(prevIndex)
-        break
-      case 'ArrowDown':
-      case 'ArrowRight':
-        event.preventDefault()
-        const nextIndex = activeIndexRef.current < items.length - 1
-          ? activeIndexRef.current + 1
-          : (loop ? 0 : activeIndexRef.current)
-        setActiveIndex(nextIndex)
-        break
-      case 'Home':
-        event.preventDefault()
-        setActiveIndex(0)
-        break
-      case 'End':
-        event.preventDefault()
-        setActiveIndex(items.length - 1)
-        break
-    }
-  }, [items, loop, setActiveIndex])
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      switch (event.key) {
+        case 'ArrowUp':
+        case 'ArrowLeft':
+          event.preventDefault()
+          const prevIndex =
+            activeIndexRef.current > 0
+              ? activeIndexRef.current - 1
+              : loop
+                ? items.length - 1
+                : activeIndexRef.current
+          setActiveIndex(prevIndex)
+          break
+        case 'ArrowDown':
+        case 'ArrowRight':
+          event.preventDefault()
+          const nextIndex =
+            activeIndexRef.current < items.length - 1
+              ? activeIndexRef.current + 1
+              : loop
+                ? 0
+                : activeIndexRef.current
+          setActiveIndex(nextIndex)
+          break
+        case 'Home':
+          event.preventDefault()
+          setActiveIndex(0)
+          break
+        case 'End':
+          event.preventDefault()
+          setActiveIndex(items.length - 1)
+          break
+      }
+    },
+    [items, loop, setActiveIndex]
+  )
 
   // Initialize tabindexes
   useEffect(() => {

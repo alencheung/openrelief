@@ -38,7 +38,9 @@ const enhancedInputVariants = cva(
 )
 
 export interface EnhancedInputProps
-  extends React.InputHTMLAttributes<HTMLInputElement>, VariantProps<typeof enhancedInputVariants> {
+  extends
+    Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>,
+    VariantProps<typeof enhancedInputVariants> {
   label?: string
   helperText?: string
   errorText?: string
@@ -95,6 +97,9 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, EnhancedInputProps>(
     const inputId = id || `input-${generatedId}`
     const hasValue = value !== undefined && value !== ''
     const isFloating = floatingLabel && (isFocused || hasValue)
+
+    // Build aria-describedby ID for helper/error text
+    const getDescribedBy = () => `${inputId}-description`
 
     // Accessibility hooks
     const { announcePolite } = useAriaAnnouncer()

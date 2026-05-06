@@ -22,7 +22,7 @@ import {
   XIcon,
   RouterIcon,
   SmartphoneIcon,
-  EthernetIcon
+  CableIcon
 } from 'lucide-react'
 
 interface ConnectionQuality {
@@ -53,16 +53,12 @@ export function EnhancedNetworkStatusIndicator() {
     lastOfflineTime
   } = useNetworkStatus()
 
-  const {
-    isSyncing,
-    syncProgress,
-    pendingActions,
-    failedActions,
-    metrics: _metrics
-  } = useOfflineStore()
+  const { isSyncing, syncProgress, metrics } = useOfflineStore()
+  const pendingActions = metrics.pendingActions
+  const failedActions = metrics.failedActions
 
   const { announcePolite, announceAssertive } = useAriaAnnouncer()
-  const { prefersReducedMotion } = useReducedMotion()
+  const { isReduced: prefersReducedMotion } = useReducedMotion()
 
   const [expanded, setExpanded] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
@@ -150,7 +146,7 @@ export function EnhancedNetworkStatusIndicator() {
       case 'ethernet':
         return {
           type: 'ethernet',
-          icon: EthernetIcon,
+          icon: CableIcon,
           label: 'Ethernet',
           color: 'text-green-600'
         }
@@ -325,12 +321,12 @@ export function EnhancedNetworkStatusIndicator() {
           )}
 
           {/* Sync Status */}
-          {(isSyncing || pendingActions.length > 0) && (
+          {(isSyncing || pendingActions > 0) && (
             <div className="flex items-center gap-2">
               {isSyncing && <Loader2Icon className="w-4 h-4 animate-spin text-blue-600" />}
-              {pendingActions.length > 0 && (
+              {pendingActions > 0 && (
                 <span className="text-xs font-medium bg-orange-100 text-orange-800 px-2 py-1 rounded-full">
-                  {pendingActions.length} pending
+                  {pendingActions} pending
                 </span>
               )}
             </div>
@@ -416,7 +412,7 @@ export function EnhancedNetworkStatusIndicator() {
               )}
 
               {/* Sync Status */}
-              {(pendingActions.length > 0 || failedActions.length > 0) && (
+              {(pendingActions > 0 || failedActions > 0) && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Sync Status</span>
@@ -426,15 +422,11 @@ export function EnhancedNetworkStatusIndicator() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <span className="text-xs text-gray-500">Pending</span>
-                      <p className="text-sm font-medium text-orange-600">
-                        {pendingActions.length} items
-                      </p>
+                      <p className="text-sm font-medium text-orange-600">{pendingActions} items</p>
                     </div>
                     <div>
                       <span className="text-xs text-gray-500">Failed</span>
-                      <p className="text-sm font-medium text-red-600">
-                        {failedActions.length} items
-                      </p>
+                      <p className="text-sm font-medium text-red-600">{failedActions} items</p>
                     </div>
                   </div>
 
@@ -507,7 +499,7 @@ export function EnhancedNetworkStatusIndicator() {
         <div aria-live="polite" aria-atomic="true">
           {isOnline ? 'You are online' : 'You are offline'}
           {isSyncing && 'Sync in progress'}
-          {pendingActions.length > 0 && `You have ${pendingActions.length} pending actions`}
+          {pendingActions > 0 && `You have ${pendingActions} pending actions`}
         </div>
       </ScreenReaderOnly>
     </>

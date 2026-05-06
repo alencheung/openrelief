@@ -203,7 +203,6 @@ export default function SignupForm() {
                   showRequirements={!isMobile}
                   showPassword={showPassword}
                   onTogglePassword={() => setShowPassword(!showPassword)}
-                  compact={isMobile}
                 />
               )}
 
@@ -240,7 +239,7 @@ export default function SignupForm() {
                 <EnhancedCheckbox
                   label="I agree to the Terms of Service and Privacy Policy"
                   checked={agreedToTerms}
-                  onChange={checked => setAgreedToTerms(checked)}
+                  onChange={e => setAgreedToTerms(e.target.checked)}
                   required
                   errorText={errors.terms}
                 />
@@ -248,7 +247,7 @@ export default function SignupForm() {
                 <EnhancedCheckbox
                   label="Send me emergency alerts and updates"
                   checked={emailNewsletter}
-                  onChange={checked => setEmailNewsletter(checked)}
+                  onChange={e => setEmailNewsletter(e.target.checked)}
                   helperText="We'll only send you critical updates and emergency information"
                 />
               </div>

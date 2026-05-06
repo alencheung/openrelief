@@ -12,6 +12,7 @@ import {
   Archive,
   ChevronRight
 } from 'lucide-react'
+import type { EmergencyEvent as StoreEmergencyEvent } from '@/store'
 import { cn } from '@/lib/utils'
 import { useEmergencyStore, useEmergencyActions } from '@/store'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -48,8 +49,8 @@ interface WorkflowAction {
 
 interface EmergencyEvent {
   id: string
-  type: string
-  severity: 'low' | 'medium' | 'high' | 'critical'
+  type: 'fire' | 'medical' | 'security' | 'natural' | 'infrastructure'
+  severity: number
   title: string
   description: string
   location: {
@@ -67,6 +68,7 @@ interface EmergencyEvent {
   trustWeight: number
   confirmationCount: number
   disputeCount: number
+  created_at: string
   createdAt: string
   updatedAt: string
   expiresAt: string
@@ -88,7 +90,7 @@ interface EmergencyEvent {
 }
 
 export function EmergencyWorkflowManager({ className }: EmergencyWorkflowManagerProps) {
-  const { selectedEvent } = useEmergencyStore()
+  const selectedEvent = useEmergencyStore(state => state.selectedEvent) as EmergencyEvent | null
   const { updateEvent, setSelectedEvent } = useEmergencyActions()
 
   const [activeTab, setActiveTab] = useState<'overview' | 'workflow' | 'consensus' | 'actions'>(
@@ -102,7 +104,7 @@ export function EmergencyWorkflowManager({ className }: EmergencyWorkflowManager
     () => ({
       id: 'emergency-123',
       type: 'fire',
-      severity: 'high',
+      severity: 4,
       title: 'Building Fire Reported',
       description:
         'Multiple reports of fire in downtown commercial building. Smoke visible from several blocks away.',
@@ -121,6 +123,7 @@ export function EmergencyWorkflowManager({ className }: EmergencyWorkflowManager
       trustWeight: 0.75,
       confirmationCount: 12,
       disputeCount: 2,
+      created_at: '2024-01-15T10:30:00Z',
       createdAt: '2024-01-15T10:30:00Z',
       updatedAt: '2024-01-15T11:45:00Z',
       expiresAt: '2024-01-16T10:30:00Z',
@@ -162,21 +165,21 @@ export function EmergencyWorkflowManager({ className }: EmergencyWorkflowManager
         title: 'Report Received',
         description: 'Emergency report has been received and validated',
         status: 'completed',
-        timestamp: new Date(emergency.createdAt).getTime()
+        timestamp: new Date(emergency.created_at).getTime()
       },
       {
         id: 'location_verification',
         title: 'Location Verification',
         description: 'Verifying report location and accuracy',
         status: emergency.status === 'pending' ? 'in_progress' : 'completed',
-        timestamp: new Date(emergency.createdAt).getTime() + 300000
+        timestamp: new Date(emergency.created_at).getTime() + 300000
       },
       {
         id: 'trust_assessment',
         title: 'Trust Assessment',
         description: 'Evaluating reporter trust score and history',
         status: 'completed',
-        timestamp: new Date(emergency.createdAt).getTime() + 600000,
+        timestamp: new Date(emergency.created_at).getTime() + 600000,
         assignee: 'Trust System'
       },
       {
@@ -229,7 +232,7 @@ export function EmergencyWorkflowManager({ className }: EmergencyWorkflowManager
         label: 'Escalate Priority',
         description: 'Escalate to emergency services',
         icon: AlertTriangle,
-        available: emergency.severity === 'critical',
+        available: emergency.severity >= 4,
         requiresAuth: true
       },
       {
@@ -268,15 +271,15 @@ export function EmergencyWorkflowManager({ className }: EmergencyWorkflowManager
       switch (action.type) {
         case 'confirm':
           await updateEvent(emergency.id, {
-            status: 'confirmed',
-            confirmationCount: emergency.confirmationCount + 1
+            status: 'active',
+            confirmation_count: emergency.confirmationCount + 1
           })
           break
 
         case 'dispute':
           await updateEvent(emergency.id, {
-            status: 'disputed',
-            disputeCount: emergency.disputeCount + 1
+            status: 'active',
+            dispute_count: emergency.disputeCount + 1
           })
           break
 
@@ -286,13 +289,13 @@ export function EmergencyWorkflowManager({ className }: EmergencyWorkflowManager
         case 'resolve':
           await updateEvent(emergency.id, {
             status: 'resolved',
-            resolvedAt: new Date().toISOString()
+            resolved_at: new Date().toISOString()
           })
           break
 
         case 'archive':
           await updateEvent(emergency.id, {
-            status: 'archived'
+            status: 'expired'
           })
           break
       }
@@ -348,7 +351,11 @@ export function EmergencyWorkflowManager({ className }: EmergencyWorkflowManager
                 size="sm"
                 label={emergency.status.toUpperCase()}
               />
-              <Button variant="outline" size="sm" onClick={() => setSelectedEvent(emergency)}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedEvent(emergency as any)}
+              >
                 View Details
               </Button>
             </div>
@@ -484,7 +491,7 @@ export function EmergencyWorkflowManager({ className }: EmergencyWorkflowManager
                 <div>
                   <h4 className="font-medium mb-2">Created</h4>
                   <p className="text-sm text-muted-foreground">
-                    {new Date(emergency.createdAt).toLocaleString()}
+                    {new Date(emergency.created_at).toLocaleString()}
                   </p>
                 </div>
 

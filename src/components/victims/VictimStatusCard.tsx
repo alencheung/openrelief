@@ -10,7 +10,8 @@ import {
   CheckCircle,
   Heart,
   HelpCircle,
-  XCircle
+  XCircle,
+  User
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -59,6 +60,12 @@ const statusConfig: Record<
     bgColor: 'bg-gray-50 dark:bg-gray-950',
     icon: XCircle,
     label: 'Deceased'
+  },
+  unknown: {
+    color: 'text-gray-400',
+    bgColor: 'bg-gray-50 dark:bg-gray-950',
+    icon: User,
+    label: 'Unknown'
   }
 }
 

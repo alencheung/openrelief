@@ -32,7 +32,8 @@ export interface RangeSliderMark {
 }
 
 export interface EnhancedRangeSliderProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'onChange'>,
+  extends
+    Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'onChange' | 'size'>,
     VariantProps<typeof enhancedRangeSliderVariants> {
   label?: string
   helperText?: string
@@ -60,36 +61,39 @@ export interface EnhancedRangeSliderProps
 }
 
 const EnhancedRangeSlider = React.forwardRef<HTMLInputElement, EnhancedRangeSliderProps>(
-  ({
-    className,
-    variant,
-    size,
-    label,
-    helperText,
-    errorText,
-    successText,
-    warningText,
-    min = 0,
-    max = 100,
-    step = 1,
-    value,
-    defaultValue = 0,
-    showValue = true,
-    showMinMax = false,
-    showMarks = false,
-    marks = [],
-    valueFormatter = (val) => val.toString(),
-    floatingLabel = false,
-    required = false,
-    validateOnChange = false,
-    validator,
-    onValidationChange,
-    onChange,
-    renderValue,
-    renderThumb,
-    disabled,
-    ...props
-  }, ref) => {
+  (
+    {
+      className,
+      variant,
+      size,
+      label,
+      helperText,
+      errorText,
+      successText,
+      warningText,
+      min = 0,
+      max = 100,
+      step = 1,
+      value,
+      defaultValue = 0,
+      showValue = true,
+      showMinMax = false,
+      showMarks = false,
+      marks = [],
+      valueFormatter = val => val.toString(),
+      floatingLabel = false,
+      required = false,
+      validateOnChange = false,
+      validator,
+      onValidationChange,
+      onChange,
+      renderValue,
+      renderThumb,
+      disabled,
+      ...props
+    },
+    ref
+  ) => {
     const [currentValue, setCurrentValue] = React.useState(value || defaultValue)
     const [isDragging, setIsDragging] = React.useState(false)
     const [validationState, setValidationState] = React.useState<{
@@ -97,7 +101,7 @@ const EnhancedRangeSlider = React.forwardRef<HTMLInputElement, EnhancedRangeSlid
       message: string | null
     }>({ isValid: null, message: null })
 
-    const sliderRef = React.useRef<HTMLInputElement>(null)
+    const sliderRef = React.useRef<HTMLInputElement | null>(null)
     const inputId = `range-slider-${React.useId()}`
     const hasValue = value !== undefined
 
@@ -110,7 +114,7 @@ const EnhancedRangeSlider = React.forwardRef<HTMLInputElement, EnhancedRangeSlid
 
     // Determine final variant based on props and validation state
     const getVariant = () => {
-      if (errorText || validationState.message && !validationState.isValid) {
+      if (errorText || (validationState.message && !validationState.isValid)) {
         return 'error'
       }
       if (successText || validationState.isValid) {
@@ -223,7 +227,7 @@ const EnhancedRangeSlider = React.forwardRef<HTMLInputElement, EnhancedRangeSlid
 
             {/* Hidden Input */}
             <input
-              ref={(node) => {
+              ref={node => {
                 if (typeof ref === 'function') {
                   ref(node)
                 } else if (ref) {
@@ -257,16 +261,21 @@ const EnhancedRangeSlider = React.forwardRef<HTMLInputElement, EnhancedRangeSlid
                 currentVariant === 'error' && 'bg-destructive',
                 currentVariant === 'success' && 'bg-success',
                 currentVariant === 'warning' && 'bg-warning',
-                size === 'sm' ? 'w-3 h-3 -translate-x-1.5' : size === 'lg' ? 'w-5 h-5 -translate-x-2.5' : 'w-4 h-4 -translate-x-2',
+                size === 'sm'
+                  ? 'w-3 h-3 -translate-x-1.5'
+                  : size === 'lg'
+                    ? 'w-5 h-5 -translate-x-2.5'
+                    : 'w-4 h-4 -translate-x-2',
                 disabled && 'opacity-50 cursor-not-allowed'
               )}
-              style={{ left: `calc(${percentage}% - ${size === 'sm' ? '6px' : size === 'lg' ? '10px' : '8px'})` }}
+              style={{
+                left: `calc(${percentage}% - ${size === 'sm' ? '6px' : size === 'lg' ? '10px' : '8px'})`
+              }}
             >
-              {renderThumb ? renderThumb(currentValue) : (
-                <div className={cn(
-                  'w-full h-full rounded-full',
-                  isDragging && 'bg-white/20'
-                )} />
+              {renderThumb ? (
+                renderThumb(currentValue)
+              ) : (
+                <div className={cn('w-full h-full rounded-full', isDragging && 'bg-white/20')} />
               )}
             </div>
           </div>
@@ -284,10 +293,12 @@ const EnhancedRangeSlider = React.forwardRef<HTMLInputElement, EnhancedRangeSlid
                   >
                     <div className="w-0.5 h-2 bg-muted-foreground" />
                     {mark.label && (
-                      <span className={cn(
-                        'text-xs text-muted-foreground whitespace-nowrap',
-                        mark.position === 'above' ? 'mb-1 order-2' : 'mt-1'
-                      )}>
+                      <span
+                        className={cn(
+                          'text-xs text-muted-foreground whitespace-nowrap',
+                          mark.position === 'above' ? 'mb-1 order-2' : 'mt-1'
+                        )}
+                      >
                         {mark.label}
                       </span>
                     )}
@@ -299,8 +310,10 @@ const EnhancedRangeSlider = React.forwardRef<HTMLInputElement, EnhancedRangeSlid
 
           {/* Value Display */}
           {showValue && (
-            <div className="absolute -top-8 left-0 transform -translate-x-1/2 bg-background border rounded-md px-2 py-1 text-xs font-medium shadow-sm"
-              style={{ left: `${percentage}%` }}>
+            <div
+              className="absolute -top-8 left-0 transform -translate-x-1/2 bg-background border rounded-md px-2 py-1 text-xs font-medium shadow-sm"
+              style={{ left: `${percentage}%` }}
+            >
               {renderValue ? renderValue(currentValue) : valueFormatter(currentValue)}
             </div>
           )}
@@ -308,16 +321,18 @@ const EnhancedRangeSlider = React.forwardRef<HTMLInputElement, EnhancedRangeSlid
 
         {/* Helper Text */}
         {(helperText || errorText || successText || warningText || validationState.message) && (
-          <div className={cn(
-            'text-xs',
-            errorText || (validationState.message && !validationState.isValid)
-              ? 'text-destructive'
-              : successText || validationState.isValid
-                ? 'text-success'
-                : warningText
-                  ? 'text-warning'
-                  : 'text-muted-foreground'
-          )}>
+          <div
+            className={cn(
+              'text-xs',
+              errorText || (validationState.message && !validationState.isValid)
+                ? 'text-destructive'
+                : successText || validationState.isValid
+                  ? 'text-success'
+                  : warningText
+                    ? 'text-warning'
+                    : 'text-muted-foreground'
+            )}
+          >
             {errorText || successText || warningText || validationState.message || helperText}
           </div>
         )}

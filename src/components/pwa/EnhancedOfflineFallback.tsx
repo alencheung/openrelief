@@ -61,10 +61,12 @@ export function EnhancedOfflineFallback() {
     downlink
   } = useNetworkStatus()
 
-  const { pendingActions, failedActions, metrics, storageQuota, settings } = useOfflineStore()
+  const { metrics, storageQuota, settings } = useOfflineStore()
+  const pendingActions = metrics.pendingActions
+  const failedActions = metrics.failedActions
 
   const { announcePolite, announceAssertive } = useAriaAnnouncer()
-  const { prefersReducedMotion } = useReducedMotion()
+  const { isReduced: prefersReducedMotion } = useReducedMotion()
 
   const [isRetrying, setIsRetrying] = useState(false)
   const [selectedTab, setSelectedTab] = useState<'actions' | 'capabilities' | 'status'>('actions')
@@ -598,16 +600,12 @@ export function EnhancedOfflineFallback() {
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Pending Actions</span>
-                      <span className="text-sm font-medium text-orange-600">
-                        {pendingActions.length}
-                      </span>
+                      <span className="text-sm font-medium text-orange-600">{pendingActions}</span>
                     </div>
 
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Failed Actions</span>
-                      <span className="text-sm font-medium text-red-600">
-                        {failedActions.length}
-                      </span>
+                      <span className="text-sm font-medium text-red-600">{failedActions}</span>
                     </div>
 
                     <div className="flex justify-between">
@@ -743,8 +741,8 @@ export function EnhancedOfflineFallback() {
       <ScreenReaderOnly>
         <div aria-live="polite" aria-atomic="true">
           {isOnline ? 'You are online' : 'You are currently offline'}
-          {pendingActions.length > 0 && `You have ${pendingActions.length} pending actions`}
-          {failedActions.length > 0 && `You have ${failedActions.length} failed actions`}
+          {pendingActions > 0 && `You have ${pendingActions} pending actions`}
+          {failedActions > 0 && `You have ${failedActions} failed actions`}
           {lastSyncTime && `Last synchronization was at ${lastSyncTime.toLocaleString()}`}
         </div>
       </ScreenReaderOnly>

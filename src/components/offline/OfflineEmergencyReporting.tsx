@@ -20,6 +20,7 @@ import {
   Flame,
   HeartPulse,
   Shield,
+  CloudRain,
   Zap,
   Video
 } from 'lucide-react'
@@ -88,11 +89,7 @@ export function OfflineEmergencyReporting({
   onReportSubmitted,
   initialLocation
 }: OfflineEmergencyReportingProps) {
-  const {
-    pendingActions: _pendingActions,
-    addOfflineAction,
-    clearSyncedActions: _clearSyncedActions
-  } = useOfflineActions()
+  const { addAction: addOfflineAction, removeAction: _clearSyncedActions } = useOfflineActions()
   const { userLocation, locationAccuracy } = useEmergencyStore()
   const { storageQuota: _storageQuota, addAction: _addAction } = useOfflineStore()
 
@@ -101,7 +98,9 @@ export function OfflineEmergencyReporting({
     severity: 'high',
     title: '',
     description: '',
-    location: initialLocation || null
+    location: initialLocation
+      ? { latitude: initialLocation.lat, longitude: initialLocation.lng, accuracy: 0 }
+      : undefined
   })
 
   const [images, setImages] = useState<string[]>([])
@@ -142,6 +141,7 @@ export function OfflineEmergencyReporting({
       // 5 minutes ago
       timestamp: Date.now() - 300000,
       images: ['image1.jpg'],
+      videos: [],
       audio: 'audio1.mp3',
       metadata: {
         deviceInfo: 'iPhone 14 Pro',
@@ -236,17 +236,20 @@ export function OfflineEmergencyReporting({
         accuracy: locationAccuracy
       }
     }
-    return (
-      initialLocation || {
-        latitude: 37.7749,
-        longitude: -122.4194,
-        accuracy: 10
-      }
-    )
+    return initialLocation
+      ? { latitude: initialLocation.lat, longitude: initialLocation.lng, accuracy: 10 }
+      : {
+          latitude: 37.7749,
+          longitude: -122.4194,
+          accuracy: 10
+        }
   }
 
   // Handle image capture
-  const handleImageCapture = (files: FileList) => {
+  const handleImageCapture = (files: FileList | null) => {
+    if (!files) {
+      return
+    }
     const imageArray = Array.from(files)
     const newImages = [...images, ...imageArray.map(file => URL.createObjectURL(file))]
     // Limit to 5 images
@@ -254,7 +257,10 @@ export function OfflineEmergencyReporting({
   }
 
   // Handle video capture
-  const handleVideoCapture = (files: FileList) => {
+  const handleVideoCapture = (files: FileList | null) => {
+    if (!files) {
+      return
+    }
     const videoArray = Array.from(files)
     const newVideos = [...videos, ...videoArray.map(file => URL.createObjectURL(file))]
     // Limit to 2 videos
@@ -302,8 +308,12 @@ export function OfflineEmergencyReporting({
     }
 
     const report: OfflineReport = {
-      id: `offline-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       ...currentReport,
+      id: `offline-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      type: currentReport.type || 'fire',
+      severity: currentReport.severity || 'high',
+      title: currentReport.title || '',
+      description: currentReport.description || '',
       location: getCurrentLocation(),
       reporter: {
         id: 'current-user',
@@ -314,11 +324,11 @@ export function OfflineEmergencyReporting({
       timestamp: Date.now(),
       images,
       videos,
-      audio: audioRecording,
+      audio: audioRecording ?? undefined,
       metadata: {
         deviceInfo: navigator.userAgent,
         // Would need Battery API
-        batteryLevel: 'unknown',
+        batteryLevel: undefined,
         networkStatus: navigator.onLine ? 'online' : 'offline',
         gpsAccuracy: getCurrentLocation().accuracy,
         estimatedDataSize:
@@ -348,7 +358,7 @@ export function OfflineEmergencyReporting({
       severity: 'high',
       title: '',
       description: '',
-      location: null
+      location: undefined
     })
     setImages([])
     setVideos([])
@@ -547,7 +557,12 @@ export function OfflineEmergencyReporting({
                         ? `${color}-100 border-${color}-500 bg-${color}-50`
                         : 'border-gray-200 hover:border-gray-300'
                     )}
-                    onClick={() => setCurrentReport(prev => ({ ...prev, severity }))}
+                    onClick={() =>
+                      setCurrentReport(prev => ({
+                        ...prev,
+                        severity: level as OfflineReport['severity']
+                      }))
+                    }
                   >
                     <div
                       className={cn(
@@ -564,8 +579,8 @@ export function OfflineEmergencyReporting({
             {/* Title and Description */}
             <div className="space-y-4">
               <div>
+                <label className="text-sm font-medium mb-2 block">Title</label>
                 <Input
-                  label="Title"
                   value={currentReport.title || ''}
                   onChange={e => setCurrentReport(prev => ({ ...prev, title: e.target.value }))}
                   placeholder="Brief description of the emergency"
@@ -780,9 +795,9 @@ export function OfflineEmergencyReporting({
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <EmergencyIndicator
-                          type={report.type}
+                          type={(report.type as any) ?? 'fire'}
                           label={report.type}
-                          severity={report.severity}
+                          severity={undefined}
                           showSeverity
                         />
 
@@ -875,7 +890,9 @@ export function OfflineEmergencyReporting({
                       </div>
                       <div>
                         <span className="font-medium">Data Size:</span>
-                        <div>{Math.round(report.metadata?.estimatedDataSize / 1024 / 1024)}MB</div>
+                        <div>
+                          {Math.round((report.metadata?.estimatedDataSize ?? 0) / 1024 / 1024)}MB
+                        </div>
                       </div>
                       <div>
                         <span className="font-medium">Network:</span>
@@ -909,7 +926,7 @@ export function OfflineEmergencyReporting({
                 <span className="text-sm font-medium">Auto Sync</span>
                 <Switch
                   checked={queue.autoSyncEnabled}
-                  onCheckedChange={checked =>
+                  onCheckedChange={(checked: boolean) =>
                     setQueue(prev => ({ ...prev, autoSyncEnabled: checked }))
                   }
                 />
@@ -919,7 +936,7 @@ export function OfflineEmergencyReporting({
                 <span className="text-sm font-medium">Compression</span>
                 <Switch
                   checked={queue.compressionEnabled}
-                  onCheckedChange={checked =>
+                  onCheckedChange={(checked: boolean) =>
                     setQueue(prev => ({ ...prev, compressionEnabled: checked }))
                   }
                 />

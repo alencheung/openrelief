@@ -78,7 +78,7 @@ import {
   Pill,
   Stethoscope,
   Truck,
-  Building as Hospital,
+  Building,
   Heart as HeartHandshake,
 
   // Safety & Security Icons
@@ -91,7 +91,6 @@ import {
   Radio,
 
   // Infrastructure Icons
-  Building,
   Zap,
   Wifi,
   WifiOff,
@@ -103,7 +102,7 @@ import {
   Wind,
 
   // Weather & Nature Icons
-  Sun,
+  Sun as SunIcon,
   Cloud,
   CloudSnow,
   CloudLightning,
@@ -149,6 +148,10 @@ import {
   ZoomIn,
   ZoomOut
 } from 'lucide-react'
+
+// Aliases for icons used under multiple names
+const Hospital = Building
+const Sun = SunIcon
 
 const iconVariants = cva('inline-flex items-center justify-center transition-all duration-normal', {
   variants: {
@@ -411,7 +414,7 @@ const Icon = React.forwardRef<SVGSVGElement, IconProps>(
           {
             'animate-spin': animated && name === 'loading',
             'animate-pulse': animated && (name === 'active' || name === 'critical'),
-            'animate-bounce': animated && name === 'notification'
+            'animate-bounce': animated && name === 'bell'
           },
           className
         )}
@@ -428,22 +431,64 @@ Icon.displayName = 'Icon'
 export const EmergencyIcon = ({
   type,
   ...props
-}: Omit<IconProps, 'name'> & { type: keyof typeof emergencyIcons }) => (
-  <Icon name={emergencyIcons[type] ? type : 'default'} {...props} />
-)
+}: Omit<IconProps, 'name'> & { type: keyof typeof emergencyIcons }) => {
+  const IconComponent = emergencyIcons[type] || emergencyIcons.default
+  return (
+    <IconComponent
+      className={cn(
+        iconVariants({
+          size: props.size,
+          variant: props.variant,
+          weight: props.weight,
+          animated: props.animated,
+          interactive: props.interactive
+        })
+      )}
+      aria-label={props.label || type}
+    />
+  )
+}
 
 export const TrustIcon = ({
   level,
   ...props
-}: Omit<IconProps, 'name'> & { level: keyof typeof trustIcons }) => (
-  <Icon name={trustIcons[level] || 'default'} {...props} />
-)
+}: Omit<IconProps, 'name'> & { level: keyof typeof trustIcons }) => {
+  const IconComponent = trustIcons[level] || trustIcons.default
+  return (
+    <IconComponent
+      className={cn(
+        iconVariants({
+          size: props.size,
+          variant: props.variant,
+          weight: props.weight,
+          animated: props.animated,
+          interactive: props.interactive
+        })
+      )}
+      aria-label={props.label || level}
+    />
+  )
+}
 
 export const StatusIcon = ({
   status,
   ...props
-}: Omit<IconProps, 'name'> & { status: keyof typeof statusIcons }) => (
-  <Icon name={statusIcons[status] || 'default'} {...props} />
-)
+}: Omit<IconProps, 'name'> & { status: keyof typeof statusIcons }) => {
+  const IconComponent = statusIcons[status] || statusIcons.default
+  return (
+    <IconComponent
+      className={cn(
+        iconVariants({
+          size: props.size,
+          variant: props.variant,
+          weight: props.weight,
+          animated: props.animated,
+          interactive: props.interactive
+        })
+      )}
+      aria-label={props.label || status}
+    />
+  )
+}
 
 export { Icon, iconVariants, iconMap, emergencyIcons, trustIcons, statusIcons }

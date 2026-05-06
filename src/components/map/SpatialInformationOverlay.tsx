@@ -193,7 +193,7 @@ const AreaRadius: React.FC<AreaRadiusProps> = ({ radius, unitSystem, animated = 
 
   return (
     <div className="flex items-center gap-2">
-      <Icon name="target" size="sm" variant="primary" />
+      <Icon name="info" size="sm" variant="primary" />
       <div className="flex flex-col">
         <span className="text-xs text-muted-foreground">Radius</span>
         <span className={cn('text-sm font-semibold text-foreground', animated && 'animate-pulse')}>
@@ -323,7 +323,7 @@ const AccuracyDisplay: React.FC<AccuracyDisplayProps> = ({ accuracy, unitSystem 
 
   return (
     <div className="flex items-center gap-2">
-      <Icon name="target" size="sm" variant="muted" />
+      <Icon name="info" size="sm" variant="muted" />
       <div className="flex flex-col">
         <span className="text-xs text-muted-foreground">Accuracy</span>
         <span className="text-sm font-semibold text-foreground">{formatAccuracy(accuracy)}</span>

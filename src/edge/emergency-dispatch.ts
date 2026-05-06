@@ -5,7 +5,7 @@
  * Meets <100ms latency requirement for critical emergency communications
  */
 
-import { Request, Response } from '@cloudflare/workers-types'
+import { Request, Response, ExecutionContext, ScheduledEvent } from '@cloudflare/workers-types'
 
 // Types
 interface EmergencyEvent {
@@ -51,6 +51,7 @@ interface AlertTarget {
     maxDistance: number
   }
   lastActive: number
+  metadata?: Record<string, any>
 }
 
 interface DispatchResult {
@@ -81,9 +82,9 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   const Δφ = ((lat2 - lat1) * Math.PI) / 180
   const Δλ = ((lon2 - lon1) * Math.PI) / 180
 
-  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2)
-    + Math.cos(φ1) * Math.cos(φ2)
-    * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 
   return R * c // Distance in meters
@@ -148,7 +149,8 @@ function filterTargets(
 
     // Check if user is active
     const timeSinceActive = Date.now() - target.lastActive
-    if (timeSinceActive > 7 * 24 * 60 * 60 * 1000) { // 7 days
+    if (timeSinceActive > 7 * 24 * 60 * 60 * 1000) {
+      // 7 days
       shouldSkip = true
       skipReason = 'inactive_user'
     }
@@ -170,7 +172,10 @@ function filterTargets(
     }
 
     // Check quiet hours (unless critical)
-    if (emergency.severity !== 'critical' && isInQuietHours(target.preferences, emergency.timestamp)) {
+    if (
+      emergency.severity !== 'critical' &&
+      isInQuietHours(target.preferences, emergency.timestamp)
+    ) {
       shouldSkip = true
       skipReason = 'quiet_hours'
     }
@@ -189,7 +194,8 @@ function filterTargets(
     }
 
     // Check location accuracy
-    if (target.location.accuracy > 1000) { // 1km accuracy threshold
+    if (target.location.accuracy > 1000) {
+      // 1km accuracy threshold
       shouldSkip = true
       skipReason = 'poor_location'
     }
@@ -305,7 +311,7 @@ export default {
       let errors: string[] = []
 
       // Process batches concurrently
-      const batchPromises = batches.map(async (batch) => {
+      const batchPromises = batches.map(async batch => {
         const batchResults = await Promise.allSettled(
           batch.map(target => sendPushNotification(target, emergency, env))
         )
@@ -346,10 +352,7 @@ export default {
       )
 
       // Update metrics
-      ctx.waitUntil(env.DISPATCH_METRICS.put(
-        `metrics:${Date.now()}`,
-        JSON.stringify(analytics)
-      ))
+      ctx.waitUntil(env.DISPATCH_METRICS.put(`metrics:${Date.now()}`, JSON.stringify(analytics)))
 
       const result: DispatchResult = {
         success: successCount > 0,
@@ -393,7 +396,7 @@ export default {
   async scheduled(event: ScheduledEvent, env: any, ctx: ExecutionContext): Promise<void> {
     try {
       // Clean up old analytics data
-      const cutoffTime = Date.now() - (30 * 24 * 60 * 60 * 1000) // 30 days ago
+      const cutoffTime = Date.now() - 30 * 24 * 60 * 60 * 1000 // 30 days ago
       const analyticsList = await env.ANALYTICS_KV.list({ prefix: 'analytics:' })
 
       for (const key of analyticsList.keys) {
@@ -414,8 +417,8 @@ export default {
           const now = Date.now()
 
           // Remove inactive targets (30 days)
-          const activeTargets = targets.filter(target =>
-            now - target.lastActive < 30 * 24 * 60 * 60 * 1000
+          const activeTargets = targets.filter(
+            target => now - target.lastActive < 30 * 24 * 60 * 60 * 1000
           )
 
           await env.TARGETS_KV.put(targetsKey, JSON.stringify(activeTargets))
@@ -450,9 +453,13 @@ export async function getMetrics(request: Request, env: any): Promise<Response> 
     const url = new URL(request.url)
     const timeRange = url.searchParams.get('range') || '1h' // Default to 1 hour
 
-    const cutoffTime = Date.now() - (timeRange === '1h' ? 60 * 60 * 1000
-      : timeRange === '24h' ? 24 * 60 * 60 * 1000
-        : 7 * 24 * 60 * 60 * 1000) // 7 days
+    const cutoffTime =
+      Date.now() -
+      (timeRange === '1h'
+        ? 60 * 60 * 1000
+        : timeRange === '24h'
+          ? 24 * 60 * 60 * 1000
+          : 7 * 24 * 60 * 60 * 1000) // 7 days
 
     const metricsList = await env.DISPATCH_METRICS.list({ prefix: 'metrics:' })
     const relevantMetrics = []
@@ -469,9 +476,12 @@ export async function getMetrics(request: Request, env: any): Promise<Response> 
 
     // Calculate aggregates
     const totalDispatches = relevantMetrics.length
-    const avgExecutionTime = relevantMetrics.reduce((sum, m) => sum + m.executionTime, 0) / totalDispatches
+    const avgExecutionTime =
+      relevantMetrics.reduce((sum, m) => sum + m.executionTime, 0) / totalDispatches
     const totalTargetsReached = relevantMetrics.reduce((sum, m) => sum + m.targetsReached, 0)
-    const avgSuccessRate = totalTargetsReached / relevantMetrics.reduce((sum, m) => sum + (m.targetsReached + m.targetsSkipped), 0)
+    const avgSuccessRate =
+      totalTargetsReached /
+      relevantMetrics.reduce((sum, m) => sum + (m.targetsReached + m.targetsSkipped), 0)
 
     const metrics = {
       timeRange,
@@ -479,10 +489,13 @@ export async function getMetrics(request: Request, env: any): Promise<Response> 
       avgExecutionTime: Math.round(avgExecutionTime),
       totalTargetsReached,
       avgSuccessRate: Math.round(avgSuccessRate * 100),
-      regionBreakdown: relevantMetrics.reduce((acc, m) => {
-        acc[m.region] = (acc[m.region] || 0) + 1
-        return acc
-      }, {} as Record<string, number>)
+      regionBreakdown: relevantMetrics.reduce(
+        (acc, m) => {
+          acc[m.region] = (acc[m.region] || 0) + 1
+          return acc
+        },
+        {} as Record<string, number>
+      )
     }
 
     return new Response(JSON.stringify(metrics), {

@@ -43,8 +43,7 @@ const trustBadgeVariants = cva(
 )
 
 export interface TrustBadgeProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof trustBadgeVariants> {
+  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof trustBadgeVariants> {
   score: number
   maxScore?: number
   showPercentage?: boolean
@@ -54,7 +53,9 @@ export interface TrustBadgeProps
   label?: string
 }
 
-const getTrustLevel = (score: number, maxScore = 100): keyof typeof trustBadgeVariants.variants.level => {
+type TrustLevel = 'excellent' | 'good' | 'moderate' | 'low' | 'critical'
+
+const getTrustLevel = (score: number, maxScore = 100): TrustLevel => {
   const percentage = (score / maxScore) * 100
   if (percentage >= 90) {
     return 'excellent'
@@ -71,7 +72,7 @@ const getTrustLevel = (score: number, maxScore = 100): keyof typeof trustBadgeVa
   return 'critical'
 }
 
-const getTrustIcon = (level: keyof typeof trustBadgeVariants.variants.level) => {
+const getTrustIcon = (level: TrustLevel) => {
   switch (level) {
     case 'excellent':
     case 'good':
@@ -99,19 +100,22 @@ const getTrendIcon = (trend?: 'up' | 'down' | 'stable') => {
 }
 
 const TrustBadge = React.forwardRef<HTMLDivElement, TrustBadgeProps>(
-  ({
-    className,
-    score,
-    maxScore = 100,
-    size,
-    variant,
-    showPercentage = true,
-    showIcon = true,
-    showTrend = false,
-    trend,
-    label,
-    ...props
-  }, ref) => {
+  (
+    {
+      className,
+      score,
+      maxScore = 100,
+      size,
+      variant,
+      showPercentage = true,
+      showIcon = true,
+      showTrend = false,
+      trend,
+      label,
+      ...props
+    },
+    ref
+  ) => {
     const level = getTrustLevel(score, maxScore)
     const IconComponent = showIcon ? getTrustIcon(level) : null
     const TrendComponent = showTrend ? getTrendIcon(trend) : null
@@ -126,29 +130,38 @@ const TrustBadge = React.forwardRef<HTMLDivElement, TrustBadgeProps>(
       >
         {variant === 'indicator' && (
           <div className="absolute left-2 top-1/2 -translate-y-1/2">
-            <div className={cn(
-              'w-2 h-2 rounded-full',
-              level === 'excellent' || level === 'good' ? 'bg-green-500'
-                : level === 'moderate' ? 'bg-yellow-500'
-                  : level === 'low' ? 'bg-orange-500' : 'bg-red-500'
-            )} />
+            <div
+              className={cn(
+                'w-2 h-2 rounded-full',
+                level === 'excellent' || level === 'good'
+                  ? 'bg-green-500'
+                  : level === 'moderate'
+                    ? 'bg-yellow-500'
+                    : level === 'low'
+                      ? 'bg-orange-500'
+                      : 'bg-red-500'
+              )}
+            />
           </div>
         )}
 
-        {IconComponent && (
-          <IconComponent className="w-3 h-3 flex-shrink-0" />
-        )}
+        {IconComponent && <IconComponent className="w-3 h-3 flex-shrink-0" />}
 
         <span className="truncate">
           {label || (showPercentage ? `${percentage}%` : `${score}/${maxScore}`)}
         </span>
 
         {TrendComponent && (
-          <TrendComponent className={cn(
-            'w-3 h-3 flex-shrink-0',
-            trend === 'up' ? 'text-green-600'
-              : trend === 'down' ? 'text-red-600' : 'text-gray-500'
-          )} />
+          <TrendComponent
+            className={cn(
+              'w-3 h-3 flex-shrink-0',
+              trend === 'up'
+                ? 'text-green-600'
+                : trend === 'down'
+                  ? 'text-red-600'
+                  : 'text-gray-500'
+            )}
+          />
         )}
       </div>
     )

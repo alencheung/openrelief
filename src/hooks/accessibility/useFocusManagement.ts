@@ -3,7 +3,6 @@
 import { useRef, useEffect, useCallback } from 'react'
 
 export interface FocusManagementOptions {
-
   /**
    * Whether to trap focus within the container
    */
@@ -119,7 +118,7 @@ export function useFocusManagement(options: FocusManagementOptions = {}) {
    */
   const getFirstFocusableElement = useCallback((): HTMLElement | null => {
     const elements = getFocusableElements()
-    return elements.length > 0 ? elements[0] : null
+    return elements.length > 0 ? (elements[0] ?? null) : null
   }, [getFocusableElements])
 
   /**
@@ -127,7 +126,7 @@ export function useFocusManagement(options: FocusManagementOptions = {}) {
    */
   const getLastFocusableElement = useCallback((): HTMLElement | null => {
     const elements = getFocusableElements()
-    return elements.length > 0 ? elements[elements.length - 1] : null
+    return elements.length > 0 ? (elements[elements.length - 1] ?? null) : null
   }, [getFocusableElements])
 
   /**
@@ -205,10 +204,10 @@ export function useFocusManagement(options: FocusManagementOptions = {}) {
 
         if (event.shiftKey) {
           // Shift + Tab: Move to previous element
-          if (document.activeElement === firstElement) {
+          if (firstElement && document.activeElement === firstElement) {
             event.preventDefault()
-            lastElement.focus()
-          } else if (document.activeElement === lastElement) {
+            lastElement?.focus()
+          } else if (lastElement && document.activeElement === lastElement && firstElement) {
             // Tab: Move to next element
             event.preventDefault()
             firstElement.focus()
@@ -311,8 +310,8 @@ export function useFocusOrder(elements: HTMLElement[]) {
       return
     }
 
-    currentIndexRef.current
-      = currentIndexRef.current <= 0 ? elements.length - 1 : currentIndexRef.current - 1
+    currentIndexRef.current =
+      currentIndexRef.current <= 0 ? elements.length - 1 : currentIndexRef.current - 1
     elements[currentIndexRef.current]?.focus()
   }, [elements])
 

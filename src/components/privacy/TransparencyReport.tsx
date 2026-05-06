@@ -39,69 +39,71 @@ import {
 
 // Types for transparency reporting
 interface DataProcessingLog {
-  id: string;
-  timestamp: Date;
-  dataType: string;
-  operation: string;
-  purpose: string;
-  legalBasis: string;
-  retentionPeriod: number;
-  automatedDecision: boolean;
-  privacyImpact: 'low' | 'medium' | 'high';
-  dataSubjects: number; // Number of affected users
+  id: string
+  timestamp: Date
+  dataType: string
+  operation: string
+  purpose: string
+  legalBasis: string
+  retentionPeriod: number
+  automatedDecision: boolean
+  privacyImpact: 'low' | 'medium' | 'high'
+  dataSubjects: number // Number of affected users
 }
 
 interface AlgorithmicDecision {
-  id: string;
-  timestamp: Date;
-  algorithm: string;
-  decision: string;
-  confidence: number;
+  id: string
+  timestamp: Date
+  algorithm: string
+  decision: string
+  confidence: number
   factors: {
-    name: string;
-    weight: number;
-    value: string;
-  }[];
-  explanation: string;
-  impact: string;
-  userCanAppeal: boolean;
+    name: string
+    weight: number
+    value: string
+  }[]
+  explanation: string
+  impact: string
+  userCanAppeal: boolean
 }
 
 interface DataAccessEntry {
-  id: string;
-  timestamp: Date;
-  accessor: string; // Who accessed the data
-  purpose: string;
-  dataType: string;
-  dataVolume: string;
-  legalBasis: string;
-  location?: string;
-  successful: boolean;
+  id: string
+  timestamp: Date
+  accessor: string // Who accessed the data
+  purpose: string
+  dataType: string
+  dataVolume: string
+  legalBasis: string
+  location?: string
+  successful: boolean
 }
 
 interface LegalRequestStatus {
-  id: string;
-  type: 'data_access' | 'deletion' | 'correction' | 'portability' | 'objection';
-  status: 'pending' | 'processing' | 'completed' | 'rejected' | 'appealed';
-  createdAt: Date;
-  updatedAt: Date;
-  description: string;
-  responseDeadline?: Date;
-  estimatedCompletion?: Date;
-  canUserContact: boolean;
+  id: string
+  type: 'data_access' | 'deletion' | 'correction' | 'portability' | 'objection'
+  status: 'pending' | 'processing' | 'completed' | 'rejected' | 'appealed'
+  createdAt: Date
+  updatedAt: Date
+  description: string
+  responseDeadline?: Date
+  estimatedCompletion?: Date
+  canUserContact: boolean
 }
 
 interface SystemTransparencyMetric {
-  metric: string;
-  value: string | number;
-  trend: 'up' | 'down' | 'stable';
-  period: string;
-  description: string;
+  metric: string
+  value: string | number
+  trend: 'up' | 'down' | 'stable'
+  period: string
+  description: string
 }
 
 const TransparencyReport: React.FC = () => {
   const { toast } = useToast()
-  const [activeTab, setActiveTab] = useState<'processing' | 'algorithms' | 'access' | 'legal' | 'metrics'>('processing')
+  const [activeTab, setActiveTab] = useState<
+    'processing' | 'algorithms' | 'access' | 'legal' | 'metrics'
+  >('processing')
   const [isLoading, setIsLoading] = useState(false)
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d')
   const [searchQuery, setSearchQuery] = useState('')
@@ -160,7 +162,8 @@ const TransparencyReport: React.FC = () => {
         { name: 'Community Feedback', weight: 0.15, value: 'Positive' },
         { name: 'Data Quality', weight: 0.1, value: 'Good' }
       ],
-      explanation: 'Trust score increased due to consistent emergency response participation and positive community feedback',
+      explanation:
+        'Trust score increased due to consistent emergency response participation and positive community feedback',
       impact: 'User may access additional emergency response features',
       userCanAppeal: true
     },
@@ -176,7 +179,8 @@ const TransparencyReport: React.FC = () => {
         { name: 'Available Resources', weight: 0.2, value: 'Limited' },
         { name: 'Response Time', weight: 0.15, value: 'Critical' }
       ],
-      explanation: 'High severity assessment and critical response time requirements led to medical resource prioritization',
+      explanation:
+        'High severity assessment and critical response time requirements led to medical resource prioritization',
       impact: 'Emergency response resources allocated to specified area',
       userCanAppeal: true
     }
@@ -297,34 +301,48 @@ const TransparencyReport: React.FC = () => {
     return `${diffDays} days ago`
   }
 
-  // Get privacy impact color
-  const getPrivacyImpactColor = (impact: 'low' | 'medium' | 'high') => {
+  // Get privacy impact status
+  const getPrivacyImpactStatus = (impact: 'low' | 'medium' | 'high') => {
     switch (impact) {
-      case 'low': return 'green'
-      case 'medium': return 'yellow'
-      case 'high': return 'red'
-      default: return 'gray'
+      case 'low':
+        return 'resolved'
+      case 'medium':
+        return 'pending'
+      case 'high':
+        return 'critical'
+      default:
+        return 'inactive'
     }
   }
 
-  // Get status color
+  // Get status value for StatusIndicator
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'green'
-      case 'processing': return 'blue'
-      case 'pending': return 'yellow'
-      case 'rejected': case 'appealed': return 'red'
-      default: return 'gray'
+      case 'completed':
+        return 'resolved'
+      case 'processing':
+        return 'active'
+      case 'pending':
+        return 'pending'
+      case 'rejected':
+      case 'appealed':
+        return 'critical'
+      default:
+        return 'inactive'
     }
   }
 
   // Get trend icon
   const getTrendIcon = (trend: 'up' | 'down' | 'stable') => {
     switch (trend) {
-      case 'up': return <TrendingUp className="h-4 w-4 text-green-600" />
-      case 'down': return <TrendingUp className="h-4 w-4 text-red-600 rotate-180" />
-      case 'stable': return <div className="h-4 w-4 bg-gray-400 rounded-full" />
-      default: return null
+      case 'up':
+        return <TrendingUp className="h-4 w-4 text-green-600" />
+      case 'down':
+        return <TrendingUp className="h-4 w-4 text-red-600 rotate-180" />
+      case 'stable':
+        return <div className="h-4 w-4 bg-gray-400 rounded-full" />
+      default:
+        return null
     }
   }
 
@@ -359,7 +377,7 @@ const TransparencyReport: React.FC = () => {
             <label className="text-sm text-gray-600">Date Range:</label>
             <select
               value={dateRange}
-              onChange={(e) => setDateRange(e.target.value as any)}
+              onChange={e => setDateRange(e.target.value as any)}
               className="border rounded px-3 py-1 text-sm"
             >
               <option value="7d">Last 7 days</option>
@@ -375,7 +393,7 @@ const TransparencyReport: React.FC = () => {
               type="text"
               placeholder="Search transparency logs..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={e => setSearchQuery(e.target.value)}
               className="border rounded px-3 py-1 text-sm"
             />
           </div>
@@ -394,7 +412,7 @@ const TransparencyReport: React.FC = () => {
 
       {/* Tab Navigation */}
       <div className="flex space-x-1 border-b overflow-x-auto">
-        {(['processing', 'algorithms', 'access', 'legal', 'metrics'] as const).map((tab) => (
+        {(['processing', 'algorithms', 'access', 'legal', 'metrics'] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -404,11 +422,17 @@ const TransparencyReport: React.FC = () => {
                 : 'text-gray-600 hover:text-gray-800'
             }`}
           >
-            {tab === 'processing' ? 'Data Processing'
-              : tab === 'algorithms' ? 'Algorithmic Decisions'
-                : tab === 'access' ? 'Data Access Logs'
-                  : tab === 'legal' ? 'Legal Requests'
-                    : tab === 'metrics' ? 'System Metrics' : tab}
+            {tab === 'processing'
+              ? 'Data Processing'
+              : tab === 'algorithms'
+                ? 'Algorithmic Decisions'
+                : tab === 'access'
+                  ? 'Data Access Logs'
+                  : tab === 'legal'
+                    ? 'Legal Requests'
+                    : tab === 'metrics'
+                      ? 'System Metrics'
+                      : tab}
           </button>
         ))}
       </div>
@@ -426,17 +450,18 @@ const TransparencyReport: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-              {processingLogs.map((log) => (
+              {processingLogs.map(log => (
                 <div key={log.id} className="border rounded-lg p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center space-x-2">
-                      <StatusIndicator status={getPrivacyImpactColor(log.privacyImpact)} text="" />
+                      <StatusIndicator
+                        status={getPrivacyImpactStatus(log.privacyImpact)}
+                        label=""
+                      />
                       <h3 className="font-medium">{log.operation}</h3>
                       <span className="text-sm text-gray-600">• {log.dataType}</span>
                     </div>
-                    <div className="text-sm text-gray-600">
-                      {formatTimeAgo(log.timestamp)}
-                    </div>
+                    <div className="text-sm text-gray-600">{formatTimeAgo(log.timestamp)}</div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -464,7 +489,10 @@ const TransparencyReport: React.FC = () => {
                     </div>
                     <div className="flex items-center space-x-2">
                       <span className="text-gray-600">Privacy Impact:</span>
-                      <StatusIndicator status={getPrivacyImpactColor(log.privacyImpact)} text={log.privacyImpact} />
+                      <StatusIndicator
+                        status={getPrivacyImpactStatus(log.privacyImpact)}
+                        label={log.privacyImpact}
+                      />
                     </div>
                   </div>
                 </div>
@@ -487,7 +515,7 @@ const TransparencyReport: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-              {algorithmicDecisions.map((decision) => (
+              {algorithmicDecisions.map(decision => (
                 <div key={decision.id} className="border rounded-lg p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center space-x-2">
@@ -496,8 +524,14 @@ const TransparencyReport: React.FC = () => {
                     </div>
                     <div className="flex items-center space-x-2">
                       <StatusIndicator
-                        status={decision.confidence >= 0.8 ? 'green' : decision.confidence >= 0.6 ? 'yellow' : 'red'}
-                        text=""
+                        status={
+                          decision.confidence >= 0.8
+                            ? 'resolved'
+                            : decision.confidence >= 0.6
+                              ? 'pending'
+                              : 'critical'
+                        }
+                        label=""
                       />
                       <span className="text-sm font-medium">
                         {Math.round(decision.confidence * 100)}% confidence
@@ -519,7 +553,10 @@ const TransparencyReport: React.FC = () => {
                     <h4 className="font-medium mb-2">Decision Factors:</h4>
                     <div className="space-y-2">
                       {decision.factors.map((factor, index) => (
-                        <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                        >
                           <span className="text-sm font-medium">{factor.name}</span>
                           <div className="flex items-center space-x-2">
                             <div className="w-20 bg-gray-200 rounded-full h-2">
@@ -575,7 +612,7 @@ const TransparencyReport: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-              {accessLogs.map((entry) => (
+              {accessLogs.map(entry => (
                 <div key={entry.id} className="border rounded-lg p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center space-x-2">
@@ -587,8 +624,8 @@ const TransparencyReport: React.FC = () => {
                     </div>
                     <div className="flex items-center space-x-2">
                       <StatusIndicator
-                        status={entry.successful ? 'green' : 'red'}
-                        text=""
+                        status={entry.successful ? 'resolved' : 'critical'}
+                        label=""
                       />
                       <span className="text-sm font-medium">
                         {entry.successful ? 'Successful' : 'Failed'}
@@ -637,23 +674,17 @@ const TransparencyReport: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-              {legalRequests.map((request) => (
+              {legalRequests.map(request => (
                 <div key={request.id} className="border rounded-lg p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center space-x-2">
-                      <StatusIndicator status={getStatusColor(request.status)} text="" />
+                      <StatusIndicator status={getStatusColor(request.status)} label="" />
                       <div>
-                        <h3 className="font-medium capitalize">
-                          {request.type.replace('_', ' ')}
-                        </h3>
-                        <span className="text-sm text-gray-600">
-                          • {request.status}
-                        </span>
+                        <h3 className="font-medium capitalize">{request.type.replace('_', ' ')}</h3>
+                        <span className="text-sm text-gray-600">• {request.status}</span>
                       </div>
                     </div>
-                    <div className="text-sm text-gray-600">
-                      {formatTimeAgo(request.createdAt)}
-                    </div>
+                    <div className="text-sm text-gray-600">{formatTimeAgo(request.createdAt)}</div>
                   </div>
 
                   <div className="mb-3">
@@ -672,13 +703,17 @@ const TransparencyReport: React.FC = () => {
                     {request.responseDeadline && (
                       <div>
                         <span className="text-gray-600">Response Deadline:</span>
-                        <div className="font-medium">{request.responseDeadline.toLocaleDateString()}</div>
+                        <div className="font-medium">
+                          {request.responseDeadline.toLocaleDateString()}
+                        </div>
                       </div>
                     )}
                     {request.estimatedCompletion && (
                       <div>
                         <span className="text-gray-600">Est. Completion:</span>
-                        <div className="font-medium">{request.estimatedCompletion.toLocaleDateString()}</div>
+                        <div className="font-medium">
+                          {request.estimatedCompletion.toLocaleDateString()}
+                        </div>
                       </div>
                     )}
                     <div className="flex items-center space-x-2">

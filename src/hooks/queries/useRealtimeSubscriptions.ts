@@ -113,8 +113,9 @@ export const useRealtimeSubscription = (config: SubscriptionConfig) => {
           `[Realtime] Attempting to subscribe to ${config.table} (attempt ${retryCount + 1})`
         )
 
-        const channel = supabase
-          .channel(channelName)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const channel: any = supabase.channel(channelName)
+        channel
           .on(
             'postgres_changes' as any,
             {
@@ -139,7 +140,7 @@ export const useRealtimeSubscription = (config: SubscriptionConfig) => {
               }
             }
           )
-          .subscribe(status => {
+          .subscribe((status: string) => {
             console.log(`[Realtime] Subscription status for ${config.table}:`, status)
 
             switch (status) {
@@ -616,8 +617,9 @@ export const useMultipleRealtimeSubscriptions = (configs: SubscriptionConfig[]) 
 
     configs.forEach((config, index) => {
       const channelName = `realtime-multi-${config.table}-${index}-${Date.now()}`
-      const channel = supabase
-        .channel(channelName)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const channel: any = supabase.channel(channelName)
+      channel
         .on(
           'postgres_changes' as any,
           {
@@ -637,13 +639,13 @@ export const useMultipleRealtimeSubscriptions = (configs: SubscriptionConfig[]) 
             config.callback(enhancedPayload)
           }
         )
-        .subscribe(status => {
+        .subscribe((status: string) => {
           if (status === 'SUBSCRIBED') {
             console.log(`[Realtime] Subscribed to ${config.table}`)
           }
         })
 
-      channels.push(channel)
+      channels.push(channel as any)
     })
 
     channelsRef.current = channels
@@ -744,29 +746,29 @@ export const useRealtimeConnection = () => {
     console.log('[Realtime] Establishing connection to Supabase')
 
     // Listen to connection events
-    const channel = supabase
-      .channel('system-connection')
-      .on('system', {}, payload => {
-        console.log('[Realtime] System event:', payload)
-      })
-      .subscribe(status => {
-        console.log(`[Realtime] Connection status: ${status}`)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const channel: any = supabase.channel('system-connection')
+    channel.on('system' as any, {}, (payload: any) => {
+      console.log('[Realtime] System event:', payload)
+    })
+    channel.subscribe((status: string) => {
+      console.log(`[Realtime] Connection status: ${status}`)
 
-        switch (status) {
-          case 'SUBSCRIBED':
-            handleConnect()
-            break
-          case 'CHANNEL_ERROR':
-            handleError('Channel subscription error')
-            break
-          case 'TIMED_OUT':
-            handleError('Connection timeout')
-            break
-          case 'CLOSED':
-            handleDisconnect()
-            break
-        }
-      })
+      switch (status) {
+        case 'SUBSCRIBED':
+          handleConnect()
+          break
+        case 'CHANNEL_ERROR':
+          handleError('Channel subscription error')
+          break
+        case 'TIMED_OUT':
+          handleError('Connection timeout')
+          break
+        case 'CLOSED':
+          handleDisconnect()
+          break
+      }
+    })
 
     return channel
   }, [isOnline, handleConnect, handleError, handleDisconnect])
@@ -811,6 +813,11 @@ export const useRealtimeConnection = () => {
       }
     }
   }, [establishConnection, setRealtimeEnabled])
+
+  return {
+    status: connectionStatusRef.current,
+    error: null as string | null
+  }
 }
 
 /**
@@ -881,7 +888,7 @@ export const usePresenceTracking = (
           console.log('[Realtime] User left:', leftState)
         }
       })
-      .subscribe(async status => {
+      .subscribe(async (status: string) => {
         if (status === 'SUBSCRIBED') {
           const presenceState: ShardedPresenceState = {
             user_id: userId,

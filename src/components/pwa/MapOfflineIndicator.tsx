@@ -13,7 +13,6 @@ import {
   WifiOffIcon,
   WifiIcon,
   MapIcon,
-  MapOffIcon,
   MapPinIcon,
   NavigationIcon,
   NavigationOffIcon,
@@ -22,7 +21,6 @@ import {
   DatabaseIcon,
   HardDriveIcon,
   LayersIcon,
-  LayersOffIcon,
   EyeIcon,
   EyeOffIcon,
   ZoomInIcon,
@@ -37,9 +35,7 @@ import {
   CheckCircle2Icon,
   InfoIcon,
   CompassIcon,
-  CompassOffIcon,
   SatelliteIcon,
-  SatelliteOffIcon,
   ActivityIcon,
   ClockIcon,
   FileTextIcon,
@@ -111,22 +107,13 @@ export function MapOfflineIndicator({
   position = 'top-right',
   compact = false
 }: MapOfflineIndicatorProps) {
-  const {
-    isOnline,
-    isOffline,
-    connectionType,
-    effectiveType,
-    downlink
-  } = useNetworkStatus()
+  const { isOnline, isOffline, connectionType, effectiveType, downlink } = useNetworkStatus()
 
-  const {
-    pendingActions,
-    metrics,
-    storageQuota
-  } = useOfflineStore()
+  const { metrics, storageQuota } = useOfflineStore()
+  const pendingActions = metrics.pendingActions
 
   const { announcePolite, announceAssertive } = useAriaAnnouncer()
-  const { prefersReducedMotion } = useReducedMotion()
+  const { isReduced: prefersReducedMotion } = useReducedMotion()
 
   const [expanded, setExpanded] = useState(false)
   const [mapStatus, setMapStatus] = useState<MapOfflineStatus>({
@@ -269,8 +256,9 @@ export function MapOfflineIndicator({
       }
     ]
 
-    const totalCacheSize = layers.reduce((sum, layer) => sum + (layer.cacheSize || 0), 0)
-                           + cachedAreas.reduce((sum, area) => sum + area.size, 0)
+    const totalCacheSize =
+      layers.reduce((sum, layer) => sum + (layer.cacheSize || 0), 0) +
+      cachedAreas.reduce((sum, area) => sum + area.size, 0)
 
     setMapStatus({
       isOfflineMode: isOffline,
@@ -282,7 +270,7 @@ export function MapOfflineIndicator({
       autoDownloadEnabled: true,
       currentRegion: 'default',
       zoomLevel: 10,
-      centerCoords: [40.7128, -74.0060],
+      centerCoords: [40.7128, -74.006],
       trackingEnabled: false,
       locationAccuracy: null
     })
@@ -302,9 +290,7 @@ export function MapOfflineIndicator({
       onLayerToggle(layerId, newEnabled)
     }
 
-    announcePolite(
-      `${layer.name} ${newEnabled ? 'enabled' : 'disabled'} for offline use`
-    )
+    announcePolite(`${layer.name} ${newEnabled ? 'enabled' : 'disabled'} for offline use`)
   }
 
   // Handle cache clear
@@ -313,9 +299,7 @@ export function MapOfflineIndicator({
       onCacheClear(cacheId)
     }
 
-    announcePolite(
-      cacheId ? `Cache cleared for ${cacheId}` : 'All map cache cleared'
-    )
+    announcePolite(cacheId ? `Cache cleared for ${cacheId}` : 'All map cache cleared')
   }
 
   // Handle map download
@@ -393,7 +377,9 @@ export function MapOfflineIndicator({
   }
 
   const offlineLayers = mapStatus.availableLayers.filter(l => l.offlineCapable && l.cached)
-  const criticalLayers = mapStatus.availableLayers.filter(l => l.priority === 'critical' && l.offlineCapable)
+  const criticalLayers = mapStatus.availableLayers.filter(
+    l => l.priority === 'critical' && l.offlineCapable
+  )
   const expiredCaches = mapStatus.cachedAreas.filter(c => c.status === 'expired')
   const cacheUsagePercentage = (mapStatus.totalCacheSize / mapStatus.maxCacheSize) * 100
 
@@ -405,24 +391,29 @@ export function MapOfflineIndicator({
     <>
       {/* Main Map Offline Indicator */}
       <div className={`fixed ${getPositionClasses()} z-50 ${compact ? 'max-w-xs' : 'max-w-sm'}`}>
-        <div className={`
+        <div
+          className={`
           relative flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg backdrop-blur-sm
           transition-all duration-300 ease-in-out
-          ${mapStatus.isOfflineMode
-      ? 'bg-red-600/90 border border-red-700 text-white'
-      : 'bg-green-600/90 border border-green-700 text-white'
-    }
+          ${
+            mapStatus.isOfflineMode
+              ? 'bg-red-600/90 border border-red-700 text-white'
+              : 'bg-green-600/90 border border-green-700 text-white'
+          }
           ${prefersReducedMotion ? '' : 'hover:shadow-xl'}
-        `}>
+        `}
+        >
           {/* Status Icon and Text */}
           <div className="flex items-center gap-2">
-            <div className={`
+            <div
+              className={`
               relative flex items-center justify-center w-8 h-8 rounded-full
               transition-all duration-300
               ${mapStatus.isOfflineMode ? 'bg-white/20' : 'bg-white/20'}
-            `}>
+            `}
+            >
               {mapStatus.isOfflineMode ? (
-                <MapOffIcon className="w-4 h-4" />
+                <MapIcon className="w-4 h-4" />
               ) : (
                 <MapIcon className="w-4 h-4" />
               )}
@@ -437,9 +428,7 @@ export function MapOfflineIndicator({
               <span className="text-sm font-medium">
                 {mapStatus.isOfflineMode ? 'Offline Maps' : 'Online Maps'}
               </span>
-              <span className="text-xs opacity-75">
-                {offlineLayers.length} layers cached
-              </span>
+              <span className="text-xs opacity-75">{offlineLayers.length} layers cached</span>
             </div>
           </div>
 
@@ -451,14 +440,16 @@ export function MapOfflineIndicator({
                 className="h-2 rounded-full transition-all duration-300"
                 style={{
                   width: `${Math.min(100, cacheUsagePercentage)}%`,
-                  backgroundColor: cacheUsagePercentage > 80 ? '#ef4444'
-                    : cacheUsagePercentage > 60 ? '#f59e0b' : '#10b981'
+                  backgroundColor:
+                    cacheUsagePercentage > 80
+                      ? '#ef4444'
+                      : cacheUsagePercentage > 60
+                        ? '#f59e0b'
+                        : '#10b981'
                 }}
               />
             </div>
-            <span className="text-xs">
-              {Math.round(cacheUsagePercentage)}%
-            </span>
+            <span className="text-xs">{Math.round(cacheUsagePercentage)}%</span>
           </div>
 
           {/* Expand/Collapse Button */}
@@ -479,17 +470,17 @@ export function MapOfflineIndicator({
 
         {/* Expanded Map Details Panel */}
         {expanded && !compact && (
-          <div className={`
+          <div
+            className={`
             absolute top-full right-0 mt-2 p-4 w-96 max-h-96 overflow-y-auto
             bg-white rounded-xl shadow-2xl border border-gray-200
             ${prefersReducedMotion ? '' : 'animate-slide-in-up'}
-          `}>
+          `}
+          >
             <div className="space-y-4">
               {/* Header */}
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Map Offline Status
-                </h3>
+                <h3 className="text-lg font-semibold text-gray-900">Map Offline Status</h3>
                 <StatusIndicator
                   status={mapStatus.isOfflineMode ? 'inactive' : 'active'}
                   size="sm"
@@ -519,19 +510,21 @@ export function MapOfflineIndicator({
                     <div className="flex justify-between mb-1">
                       <span className="text-gray-600">Used Space</span>
                       <span className="font-medium">
-                        {Math.round(mapStatus.totalCacheSize / 1024 / 1024)}MB / {Math.round(mapStatus.maxCacheSize / 1024 / 1024)}MB
+                        {Math.round(mapStatus.totalCacheSize / 1024 / 1024)}MB /{' '}
+                        {Math.round(mapStatus.maxCacheSize / 1024 / 1024)}MB
                       </span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
                         className={`
                           h-2 rounded-full transition-all duration-300
-                          ${cacheUsagePercentage > 80
-            ? 'bg-red-500'
-            : cacheUsagePercentage > 60
-              ? 'bg-yellow-500'
-              : 'bg-green-500'
-          }
+                          ${
+                            cacheUsagePercentage > 80
+                              ? 'bg-red-500'
+                              : cacheUsagePercentage > 60
+                                ? 'bg-yellow-500'
+                                : 'bg-green-500'
+                          }
                         `}
                         style={{ width: `${Math.min(100, cacheUsagePercentage)}%` }}
                       />
@@ -544,16 +537,17 @@ export function MapOfflineIndicator({
               <div className="space-y-2">
                 <h4 className="text-sm font-medium text-gray-900">Critical Layers</h4>
                 <div className="space-y-2">
-                  {criticalLayers.map((layer) => (
+                  {criticalLayers.map(layer => (
                     <div
                       key={layer.id}
                       className={`
                         flex items-center justify-between p-3 rounded-lg border
                         transition-all duration-200 cursor-pointer
-                        ${selectedLayer === layer.id
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                    }
+                        ${
+                          selectedLayer === layer.id
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                        }
                         ${getPriorityColor(layer.priority)}
                       `}
                       onClick={() => handleLayerToggle(layer.id)}
@@ -563,7 +557,9 @@ export function MapOfflineIndicator({
                         <div>
                           <p className="text-sm font-medium">{layer.name}</p>
                           <p className="text-xs text-gray-600">
-                            {layer.cacheSize ? `${Math.round(layer.cacheSize / 1024 / 1024)}MB cached` : 'Not cached'}
+                            {layer.cacheSize
+                              ? `${Math.round(layer.cacheSize / 1024 / 1024)}MB cached`
+                              : 'Not cached'}
                           </p>
                         </div>
                       </div>
@@ -575,7 +571,10 @@ export function MapOfflineIndicator({
                           label={layer.cached ? 'Cached' : 'Not Cached'}
                         />
                         {layer.offlineCapable && (
-                          <div className="w-2 h-2 bg-green-500 rounded-full" title="Available offline" />
+                          <div
+                            className="w-2 h-2 bg-green-500 rounded-full"
+                            title="Available offline"
+                          />
                         )}
                       </div>
                     </div>
@@ -587,7 +586,7 @@ export function MapOfflineIndicator({
               <div className="space-y-2">
                 <h4 className="text-sm font-medium text-gray-900">Cached Areas</h4>
                 <div className="space-y-2">
-                  {mapStatus.cachedAreas.map((area) => (
+                  {mapStatus.cachedAreas.map(area => (
                     <div
                       key={area.id}
                       className={`
@@ -608,17 +607,20 @@ export function MapOfflineIndicator({
 
                       <div className="flex items-center gap-2">
                         <StatusIndicator
-                          status={area.status === 'active' ? 'active'
-                            : area.status === 'downloading' ? 'pending'
-                              : area.status === 'expired' ? 'critical' : 'inactive'}
+                          status={
+                            area.status === 'active'
+                              ? 'active'
+                              : area.status === 'downloading'
+                                ? 'pending'
+                                : area.status === 'expired'
+                                  ? 'critical'
+                                  : 'inactive'
+                          }
                           size="sm"
                           animated={area.status === 'downloading'}
+                          label={area.status}
                         />
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleCacheClear(area.id)}
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => handleCacheClear(area.id)}>
                           <XIcon className="w-3 h-3" />
                         </Button>
                       </div>
@@ -631,16 +633,17 @@ export function MapOfflineIndicator({
               <div className="space-y-2">
                 <h4 className="text-sm font-medium text-gray-900">Available Layers</h4>
                 <div className="space-y-2">
-                  {mapStatus.availableLayers.map((layer) => (
+                  {mapStatus.availableLayers.map(layer => (
                     <div
                       key={layer.id}
                       className={`
                         flex items-center justify-between p-3 rounded-lg border
                         transition-all duration-200 cursor-pointer
-                        ${selectedLayer === layer.id
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                    }
+                        ${
+                          selectedLayer === layer.id
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                        }
                         ${getPriorityColor(layer.priority)}
                       `}
                       onClick={() => handleLayerToggle(layer.id)}
@@ -662,7 +665,10 @@ export function MapOfflineIndicator({
                           label={layer.cached ? 'Cached' : 'Not Cached'}
                         />
                         {layer.offlineCapable && (
-                          <div className="w-2 h-2 bg-green-500 rounded-full" title="Available offline" />
+                          <div
+                            className="w-2 h-2 bg-green-500 rounded-full"
+                            title="Available offline"
+                          />
                         )}
                         {layer.required && (
                           <div className="w-2 h-2 bg-red-500 rounded-full" title="Required" />

@@ -291,15 +291,15 @@ const DataExportTool: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
-        return 'green'
+        return 'resolved'
       case 'processing':
-        return 'blue'
+        return 'active'
       case 'pending':
-        return 'yellow'
+        return 'pending'
       case 'failed':
-        return 'red'
+        return 'critical'
       default:
-        return 'gray'
+        return 'inactive'
     }
   }
 
@@ -506,7 +506,7 @@ const DataExportTool: React.FC = () => {
                         <div className="flex items-center space-x-2">
                           <StatusIndicator
                             status={getStatusColor(request.status)}
-                            text={request.status}
+                            label={request.status}
                           />
                           {request.status === 'completed' && request.downloadUrl && (
                             <Button size="sm" onClick={() => downloadExport(request)}>
@@ -549,7 +549,7 @@ const DataExportTool: React.FC = () => {
                         </div>
                         <StatusIndicator
                           status={getStatusColor(request.status)}
-                          text={request.status}
+                          label={request.status}
                         />
                       </div>
                     ))}

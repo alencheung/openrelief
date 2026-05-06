@@ -10,11 +10,18 @@ export type UserProfileInsert = Database['public']['Tables']['user_profiles']['I
 export type UserProfileUpdate = Database['public']['Tables']['user_profiles']['Update']
 export type UserTrustHistory = Database['public']['Tables']['user_trust_history']['Row']
 export type UserSubscription = Database['public']['Tables']['user_subscriptions']['Row']
-export type UserNotificationSettings = Database['public']['Tables']['user_notification_settings']['Row']
+export type UserNotificationSettings =
+  Database['public']['Tables']['user_notification_settings']['Row']
 
 // User profile queries with privacy protection
 export const useUserProfile = (userId: string, options: { applyPrivacy?: boolean } = {}) => {
-  const { protectUserData, encryptSensitiveData, decryptSensitiveData, privacyContext } = usePrivacy({
+  const {
+    protectUserData,
+    encryptSensitiveData,
+    decryptSensitiveData,
+    privacyContext,
+    applyTemporalDecayToData
+  } = usePrivacy({
     userId,
     enableLogging: true
   })
@@ -30,11 +37,12 @@ export const useUserProfile = (userId: string, options: { applyPrivacy?: boolean
         if (options.applyPrivacy) {
           // Apply temporal decay to trust score
           if (data.trust_score && data.updated_at) {
-            data.trust_score = privacyContext.applyTemporalDecayToData?.(
-              data.trust_score,
-              new Date(data.updated_at),
-              'trustScore'
-            ) || data.trust_score
+            data.trust_score =
+              applyTemporalDecayToData?.(
+                data.trust_score,
+                new Date(data.updated_at),
+                'trustScore'
+              ) || data.trust_score
           }
 
           // Protect user data with anonymization
@@ -88,7 +96,7 @@ export const useUserProfile = (userId: string, options: { applyPrivacy?: boolean
         // Cache for offline use
         useOfflineStore.getState().setCache(`user-profile-${userId}`, protectedData, {
           tags: ['user', 'profile'],
-          expiresAt: Date.now() + (10 * 60 * 1000) // 10 minutes
+          expiresAt: Date.now() + 10 * 60 * 1000 // 10 minutes
         })
 
         return protectedData
@@ -128,7 +136,7 @@ export const useCreateUserProfile = () => {
           addNotification({
             type: 'system',
             title: 'Profile Queued',
-            message: 'Your profile will be created when you\'re back online.',
+            message: "Your profile will be created when you're back online.",
             severity: 'info',
             priority: 'medium',
             channels: { inApp: true, push: false, email: false, sms: false }
@@ -154,7 +162,7 @@ export const useCreateUserProfile = () => {
         throw error
       }
     },
-    onSuccess: (data) => {
+    onSuccess: data => {
       queryClient.invalidateQueries({ queryKey: ['user-profile'] })
       queryClient.setQueryData(['user-profile', data.user_id], data)
     }
@@ -186,7 +194,7 @@ export const useUpdateUserProfile = () => {
           addNotification({
             type: 'system',
             title: 'Profile Update Queued',
-            message: 'Your profile update will be synced when you\'re back online.',
+            message: "Your profile update will be synced when you're back online.",
             severity: 'info',
             priority: 'medium',
             channels: { inApp: true, push: false, email: false, sms: false }
@@ -267,8 +275,8 @@ export const useTrustHistory = (userId?: string, limit: number = 50) => {
   return useQuery({
     queryKey: ['trust-history', userId, limit],
     queryFn: async () => {
-      let query = supabase
-        .from('user_trust_history')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let query: any = (supabase.from('user_trust_history') as any)
         .select('*')
         .order('created_at', { ascending: false })
         .limit(limit)
@@ -379,7 +387,7 @@ export const useUserSubscriptions = (userId: string) => {
         // Cache for offline use
         useOfflineStore.getState().setCache(`user-subscriptions-${userId}`, data, {
           tags: ['user', 'subscriptions'],
-          expiresAt: Date.now() + (15 * 60 * 1000) // 15 minutes
+          expiresAt: Date.now() + 15 * 60 * 1000 // 15 minutes
         })
 
         return data
@@ -591,14 +599,17 @@ export const useNearbyUsers = (
     queryKey: ['nearby-users', center, radius, limit, options.applyPrivacy],
     queryFn: async () => {
       // Apply privacy protection to center location
-      const protectedCenter = options.applyPrivacy ? protectLocationData(center, {
-        applyDifferentialPrivacy: privacyContext.settings.differentialPrivacy,
-        applyAnonymization: privacyContext.settings.anonymizeData
-      }) : { data: center }
+      const protectedCenter = options.applyPrivacy
+        ? protectLocationData({ latitude: center.lat, longitude: center.lng } as any, {
+            applyDifferentialPrivacy: privacyContext.settings.differentialPrivacy,
+            applyAnonymization: privacyContext.settings.anonymizeData
+          })
+        : { data: center }
 
+      const centerData = protectedCenter.data as any
       const { data, error } = await (supabase.rpc as any)('get_nearby_users', {
-        p_lat: protectedCenter.data.lat,
-        p_lng: protectedCenter.data.lng,
+        p_lat: centerData.lat ?? centerData.latitude,
+        p_lng: centerData.lng ?? centerData.longitude,
         p_radius_meters: radius,
         p_limit: limit
       })

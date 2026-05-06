@@ -36,7 +36,8 @@ export interface SelectOption {
 }
 
 export interface EnhancedSelectProps
-  extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'onChange'>,
+  extends
+    Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'onChange' | 'size'>,
     VariantProps<typeof enhancedSelectVariants> {
   options: SelectOption[]
   label?: string
@@ -62,34 +63,37 @@ export interface EnhancedSelectProps
 }
 
 const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
-  ({
-    className,
-    variant,
-    size,
-    options,
-    label,
-    helperText,
-    errorText,
-    successText,
-    warningText,
-    placeholder = 'Select an option',
-    searchable = false,
-    clearable = false,
-    multi = false,
-    floatingLabel = false,
-    required = false,
-    value,
-    onChange,
-    onSearch,
-    leftIcon,
-    rightIcon,
-    maxVisibleOptions = 8,
-    groupBy,
-    renderOption,
-    renderValue,
-    disabled,
-    ...props
-  }, ref) => {
+  (
+    {
+      className,
+      variant,
+      size,
+      options,
+      label,
+      helperText,
+      errorText,
+      successText,
+      warningText,
+      placeholder = 'Select an option',
+      searchable = false,
+      clearable = false,
+      multi = false,
+      floatingLabel = false,
+      required = false,
+      value,
+      onChange,
+      onSearch,
+      leftIcon,
+      rightIcon,
+      maxVisibleOptions = 8,
+      groupBy,
+      renderOption,
+      renderValue,
+      disabled,
+      ...props
+    },
+    ref
+  ) => {
     const [isOpen, setIsOpen] = React.useState(false)
     const [searchQuery, setSearchQuery] = React.useState('')
     const [highlightedIndex, setHighlightedIndex] = React.useState(-1)
@@ -99,7 +103,8 @@ const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
     const dropdownRef = React.useRef<HTMLDivElement>(null)
     const inputId = `select-${React.useId()}`
 
-    const hasValue = value !== undefined && value !== '' && (Array.isArray(value) ? value.length > 0 : true)
+    const hasValue =
+      value !== undefined && value !== '' && (Array.isArray(value) ? value.length > 0 : true)
     const isFloating = floatingLabel && (isOpen || hasValue)
 
     // Filter options based on search query
@@ -108,10 +113,11 @@ const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
         return options
       }
 
-      return options.filter(option =>
-        option.label.toLowerCase().includes(searchQuery.toLowerCase())
-        || option.value.toLowerCase().includes(searchQuery.toLowerCase())
-        || option.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      return options.filter(
+        option =>
+          option.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          option.value.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          option.description?.toLowerCase().includes(searchQuery.toLowerCase())
       )
     }, [options, searchQuery])
 
@@ -121,14 +127,17 @@ const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
         return { '': filteredOptions }
       }
 
-      return filteredOptions.reduce((groups, option) => {
-        const group = groupBy(option) || ''
-        if (!groups[group]) {
-          groups[group] = []
-        }
-        groups[group].push(option)
-        return groups
-      }, {} as Record<string, SelectOption[]>)
+      return filteredOptions.reduce(
+        (groups, option) => {
+          const group = groupBy(option) || ''
+          if (!groups[group]) {
+            groups[group] = []
+          }
+          groups[group].push(option)
+          return groups
+        },
+        {} as Record<string, SelectOption[]>
+      )
     }, [filteredOptions, groupBy])
 
     // Get selected options
@@ -195,13 +204,11 @@ const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
       switch (e.key) {
         case 'ArrowDown':
           e.preventDefault()
-          setHighlightedIndex(prev =>
-            prev < filteredOptions.length - 1 ? prev + 1 : prev
-          )
+          setHighlightedIndex(prev => (prev < filteredOptions.length - 1 ? prev + 1 : prev))
           break
         case 'ArrowUp':
           e.preventDefault()
-          setHighlightedIndex(prev => prev > 0 ? prev - 1 : prev)
+          setHighlightedIndex(prev => (prev > 0 ? prev - 1 : prev))
           break
         case 'Enter':
           e.preventDefault()
@@ -231,7 +238,9 @@ const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
     // Scroll highlighted option into view
     React.useEffect(() => {
       if (highlightedIndex >= 0 && dropdownRef.current) {
-        const highlightedElement = dropdownRef.current.querySelector(`[data-option-index="${highlightedIndex}"]`)
+        const highlightedElement = dropdownRef.current.querySelector(
+          `[data-option-index="${highlightedIndex}"]`
+        )
         if (highlightedElement) {
           highlightedElement.scrollIntoView({ block: 'nearest' })
         }
@@ -316,7 +325,7 @@ const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
                     {option.icon}
                     {option.label}
                     <button
-                      onClick={(e) => {
+                      onClick={e => {
                         e.stopPropagation()
                         handleOptionSelect(option)
                       }}
@@ -329,8 +338,8 @@ const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
               </div>
             ) : selectedOptions.length > 0 ? (
               <div className="flex items-center gap-2">
-                {selectedOptions[0].icon}
-                {selectedOptions[0].label}
+                {selectedOptions[0]?.icon}
+                {selectedOptions[0]?.label}
               </div>
             ) : (
               <span className="text-muted-foreground">{placeholder}</span>
@@ -342,7 +351,7 @@ const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
             {errorText && <AlertCircle className="h-4 w-4 text-destructive" />}
             {clearable && hasValue && (
               <button
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation()
                   handleClear()
                 }}
@@ -351,7 +360,14 @@ const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
                 <X className="h-4 w-4" />
               </button>
             )}
-            {rightIcon || <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', isOpen && 'rotate-180')} />}
+            {rightIcon || (
+              <ChevronDown
+                className={cn(
+                  'h-4 w-4 text-muted-foreground transition-transform',
+                  isOpen && 'rotate-180'
+                )}
+              />
+            )}
           </div>
         </div>
 
@@ -368,7 +384,7 @@ const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
                     type="text"
                     placeholder="Search..."
                     value={searchQuery}
-                    onChange={(e) => {
+                    onChange={e => {
                       setSearchQuery(e.target.value)
                       onSearch?.(e.target.value)
                       setHighlightedIndex(-1)
@@ -390,7 +406,9 @@ const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
                     </div>
                   )}
                   {groupOptions.map((option, index) => {
-                    const isSelected = selectedOptions.some(selected => selected.value === option.value)
+                    const isSelected = selectedOptions.some(
+                      selected => selected.value === option.value
+                    )
                     const globalIndex = filteredOptions.indexOf(option)
 
                     return (
@@ -441,16 +459,18 @@ const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
 
         {/* Helper Text */}
         {(helperText || errorText || successText || warningText) && (
-          <div className={cn(
-            'mt-2 text-xs',
-            errorText
-              ? 'text-destructive'
-              : successText
-                ? 'text-success'
-                : warningText
-                  ? 'text-warning'
-                  : 'text-muted-foreground'
-          )}>
+          <div
+            className={cn(
+              'mt-2 text-xs',
+              errorText
+                ? 'text-destructive'
+                : successText
+                  ? 'text-success'
+                  : warningText
+                    ? 'text-warning'
+                    : 'text-muted-foreground'
+            )}
+          >
             {errorText || successText || warningText || helperText}
           </div>
         )}

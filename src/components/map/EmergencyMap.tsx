@@ -93,7 +93,7 @@ export default function EmergencyMap({
     enableHelp: true
   })
   const { announcePolite, announceAssertive: _announceAssertive } = useAriaAnnouncer()
-  const { prefersReducedMotion } = useReducedMotion()
+  const { isReduced: prefersReducedMotion } = useReducedMotion()
 
   const [isMapLoaded, setIsMapLoaded] = useState(false)
   const [selectedEmergency, setSelectedEmergency] = useState<EmergencyEvent | null>(null)
@@ -639,7 +639,7 @@ export default function EmergencyMap({
     if (selectedEmergency && navigator.share) {
       navigator.share({
         title: selectedEmergency.title,
-        text: selectedEmergency.description,
+        text: selectedEmergency.description ?? undefined,
         url: window.location.href
       })
     }
@@ -690,24 +690,36 @@ export default function EmergencyMap({
   // Convert proximity alerts to enhanced format
   const enhancedProximityAlerts: ProximityAlert[] = useMemo(() => {
     return proximityAlerts.map(alert => {
-      const emergency = events.find(e => e.id === alert.emergencyId)
+      const emergency = events.find(e => e.id === alert.targetId)
       return {
         id: alert.id,
-        emergencyId: alert.emergencyId,
+        emergencyId: alert.targetId,
         emergencyType: emergency?.emergency_types?.slug || 'unknown',
         title: emergency?.title || 'Unknown Emergency',
         message: alert.message,
         severity: alert.severity as 'low' | 'moderate' | 'high' | 'critical',
         distance: alert.distance || 0,
-        estimatedTime: alert.estimatedTime,
-        trustScore: emergency?.trust_weight,
-        timestamp: alert.timestamp || new Date().toISOString(),
+        estimatedTime: undefined,
+        trustScore: emergency?.trust_weight ?? undefined,
+        timestamp: typeof alert.timestamp === 'string' ? alert.timestamp : new Date().toISOString(),
         isRead: false,
         actions: [
           {
             id: 'navigate',
             label: 'Navigate',
-            action: () => handleAlertClick(alert),
+            action: () =>
+              handleAlertClick({
+                ...alert,
+                emergencyId: alert.targetId,
+                emergencyType: 'unknown',
+                title: 'Proximity Alert',
+                severity: 'moderate' as const,
+                estimatedTime: undefined,
+                trustScore: undefined,
+                timestamp:
+                  typeof alert.timestamp === 'string' ? alert.timestamp : new Date().toISOString(),
+                isRead: false
+              }),
             variant: 'outline'
           },
           {
@@ -730,7 +742,7 @@ export default function EmergencyMap({
     return {
       id: selectedEmergency.id,
       title: selectedEmergency.title,
-      description: selectedEmergency.description,
+      description: selectedEmergency.description || '',
       emergencyType: selectedEmergency.emergency_types?.slug || 'unknown',
       severity: selectedEmergency.severity,
       status: selectedEmergency.status,
@@ -1128,7 +1140,7 @@ export default function EmergencyMap({
       {/* Spatial Information Overlay */}
       {showSpatialInfo && spatialInfoVisible && (
         <SpatialInformationOverlay
-          spatialInfo={spatialInfo}
+          spatialInfo={spatialInfo as any}
           position={responsiveSpatialPosition as any}
           size={isMobile ? 'sm' : 'sm'}
           variant={isMobile ? 'minimal' : 'compact'}

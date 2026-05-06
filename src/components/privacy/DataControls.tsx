@@ -418,15 +418,15 @@ const DataControls: React.FC = () => {
   const getPrivacyLevelColor = (level: LocationPrivacyZone['privacyLevel']) => {
     switch (level) {
       case 'public':
-        return 'green'
+        return 'resolved'
       case 'private':
-        return 'yellow'
+        return 'pending'
       case 'restricted':
-        return 'orange'
+        return 'pending'
       case 'sanitized':
-        return 'red'
+        return 'critical'
       default:
-        return 'gray'
+        return 'inactive'
     }
   }
 
@@ -434,17 +434,17 @@ const DataControls: React.FC = () => {
   const getEncryptionLevelColor = (level: DataTypePermission['encryptionLevel']) => {
     switch (level) {
       case 'none':
-        return 'red'
+        return 'critical'
       case 'basic':
-        return 'orange'
+        return 'pending'
       case 'standard':
-        return 'yellow'
+        return 'pending'
       case 'enhanced':
-        return 'blue'
+        return 'active'
       case 'maximum':
-        return 'green'
+        return 'resolved'
       default:
-        return 'gray'
+        return 'inactive'
     }
   }
 
@@ -510,8 +510,8 @@ const DataControls: React.FC = () => {
                     </div>
                     <div className="flex items-center space-x-2">
                       <StatusIndicator
-                        status={permission.enabled ? 'green' : 'red'}
-                        text={permission.enabled ? 'Enabled' : 'Disabled'}
+                        status={permission.enabled ? 'active' : 'inactive'}
+                        label={permission.enabled ? 'Enabled' : 'Disabled'}
                       />
                       <span className="text-sm text-gray-600">Category: {permission.category}</span>
                     </div>
@@ -578,7 +578,7 @@ const DataControls: React.FC = () => {
                       <div className="flex items-center space-x-2">
                         <StatusIndicator
                           status={getEncryptionLevelColor(permission.encryptionLevel)}
-                          text=""
+                          label=""
                         />
                         <span className="text-sm text-gray-600">
                           Current: {permission.encryptionLevel.replace('_', ' ')}
@@ -658,7 +658,7 @@ const DataControls: React.FC = () => {
                     <div className="flex items-center space-x-2">
                       <StatusIndicator
                         status={getPrivacyLevelColor(zone.privacyLevel)}
-                        text={zone.privacyLevel}
+                        label={zone.privacyLevel}
                       />
                       <Button variant="outline" size="sm">
                         <Edit className="h-4 w-4 mr-2" />
@@ -1086,8 +1086,8 @@ const DataControls: React.FC = () => {
                 </div>
                 <div className="flex items-center space-x-2">
                   <StatusIndicator
-                    status={purpose.required ? 'green' : 'yellow'}
-                    text={purpose.required ? 'Required' : 'Optional'}
+                    status={purpose.required ? 'active' : 'pending'}
+                    label={purpose.required ? 'Required' : 'Optional'}
                   />
                   <span className="text-sm text-gray-600">Category: {purpose.category}</span>
                 </div>

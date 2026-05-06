@@ -204,6 +204,7 @@ const AccessibilityMapFeatures: React.FC<AccessibilityMapFeaturesProps> = ({
       document.addEventListener('keydown', handleKeyDown)
       return () => document.removeEventListener('keydown', handleKeyDown)
     }
+    return undefined
   }, [settings.keyboardNavigation, handleKeyDown])
 
   // Apply accessibility classes to document
@@ -256,7 +257,7 @@ const AccessibilityMapFeatures: React.FC<AccessibilityMapFeaturesProps> = ({
       // Apply high contrast style - using map instance directly
       const currentStyle = mapInstance.getStyle()
       if (currentStyle && currentStyle.layers) {
-        const highContrastLayers = currentStyle.layers.map(layer => ({
+        const highContrastLayers = currentStyle.layers.map((layer: any) => ({
           ...layer,
           paint: {
             ...layer.paint,

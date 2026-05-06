@@ -73,7 +73,7 @@ export default function GeofenceManager({
     removeGeofence,
     updateGeofence,
     toggleGeofence,
-    _checkGeofences,
+    checkGeofences,
     geofenceHistory
   } = useLocationStore()
 

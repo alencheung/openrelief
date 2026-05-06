@@ -31,6 +31,10 @@ interface UseIOSBackgroundReturn {
 
 export function useIOSBackground(): UseIOSBackgroundReturn {
   const [config, setConfig] = useState<iOSBackgroundConfig>({
+    pushEnabled: true,
+    backgroundFetchEnabled: true,
+    geolocationEnabled: true,
+    processingTasksEnabled: true,
     silentPushEnabled: false,
     backgroundLocationEnabled: false,
     batteryOptimizationHandled: false,
@@ -41,7 +45,9 @@ export function useIOSBackground(): UseIOSBackgroundReturn {
   const [isInitializing, setIsInitializing] = useState(false)
   const [queueStatus, setQueueStatus] = useState({
     queued: 0,
-    processing: false
+    running: 0,
+    completed: 0,
+    failed: 0
   })
 
   const initializationRef = useRef(false)
@@ -175,6 +181,7 @@ export function useIOSBackground(): UseIOSBackgroundReturn {
         }
       }
     }
+    return undefined
   }, [isInitialized])
 
   // Auto-initialize on mount

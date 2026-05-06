@@ -128,7 +128,7 @@ const ResourceRequestForm = React.forwardRef<HTMLDivElement, ResourceRequestForm
                 <label className="text-sm font-medium mb-2 block">Resource Type</label>
                 <EnhancedSelect
                   value={resourceType}
-                  onValueChange={value => setResourceType(value as ResourceType)}
+                  onChange={value => setResourceType(value as ResourceType)}
                   options={resourceTypes}
                 />
               </div>

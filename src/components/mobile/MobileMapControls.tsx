@@ -396,7 +396,7 @@ export function MobileEmergencyControls({
         aria-label="Emergency alerts"
         aria-expanded={isExpanded}
       >
-        <EmergencyIndicator type="critical" pulse />
+        <EmergencyIndicator type="fire" label="Emergency" />
         <span className="text-sm font-medium">
           {emergencies.length} Emergency{emergencies.length !== 1 ? 'ies' : ''}
         </span>
@@ -432,7 +432,12 @@ export function MobileEmergencyControls({
                   }}
                 >
                   <div className="flex items-start gap-3">
-                    <EmergencyIndicator type={emergency.type} size="sm" className="mt-1" />
+                    <EmergencyIndicator
+                      type={emergency.type}
+                      size="sm"
+                      className="mt-1"
+                      label={emergency.type}
+                    />
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-sm truncate">{emergency.title}</div>
                       <div className="text-xs text-muted-foreground">

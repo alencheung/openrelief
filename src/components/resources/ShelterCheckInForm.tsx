@@ -178,7 +178,7 @@ const ShelterCheckInForm = React.forwardRef<HTMLDivElement, ShelterCheckInFormPr
                   <div className="flex items-center gap-3 p-3 border rounded-lg">
                     <EnhancedCheckbox
                       checked={medicalNeeds}
-                      onCheckedChange={checked => setMedicalNeeds(checked as boolean)}
+                      onChange={e => setMedicalNeeds(e.target.checked)}
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
@@ -194,7 +194,7 @@ const ShelterCheckInForm = React.forwardRef<HTMLDivElement, ShelterCheckInFormPr
                   <div className="flex items-center gap-3 p-3 border rounded-lg">
                     <EnhancedCheckbox
                       checked={accessibilityNeeds}
-                      onCheckedChange={checked => setAccessibilityNeeds(checked as boolean)}
+                      onChange={e => setAccessibilityNeeds(e.target.checked)}
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
@@ -282,7 +282,7 @@ const ShelterCheckInForm = React.forwardRef<HTMLDivElement, ShelterCheckInFormPr
                   </label>
                   <EnhancedCheckbox
                     checked={hasVehicle}
-                    onCheckedChange={checked => setHasVehicle(checked as boolean)}
+                    onChange={e => setHasVehicle(e.target.checked)}
                     label="I have a vehicle"
                   />
                 </div>
@@ -335,7 +335,7 @@ const ShelterCheckInForm = React.forwardRef<HTMLDivElement, ShelterCheckInFormPr
                       </Badge>
                       <EnhancedCheckbox
                         checked={hasPets}
-                        onCheckedChange={checked => setHasPets(checked as boolean)}
+                        onChange={e => setHasPets(e.target.checked)}
                         label="I have pets"
                       />
                     </div>

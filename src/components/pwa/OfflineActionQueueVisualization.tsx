@@ -54,8 +54,7 @@ interface ActionGroup {
 
 export function OfflineActionQueueVisualization() {
   const {
-    pendingActions,
-    failedActions,
+    metrics,
     isSyncing,
     syncProgress,
     actions,
@@ -66,9 +65,11 @@ export function OfflineActionQueueVisualization() {
     removeAction,
     clearSyncedActions
   } = useOfflineStore()
+  const pendingActions = metrics.pendingActions
+  const failedActions = metrics.failedActions
 
   const { announcePolite, announceAssertive } = useAriaAnnouncer()
-  const { prefersReducedMotion } = useReducedMotion()
+  const { isReduced: prefersReducedMotion } = useReducedMotion()
 
   const [expanded, setExpanded] = useState(false)
   const [selectedAction, setSelectedAction] = useState<string | null>(null)
@@ -196,8 +197,8 @@ export function OfflineActionQueueVisualization() {
 
   const filteredActions = getFilteredActions()
   const actionGroups = groupActionsByType(filteredActions)
-  const hasPending = pendingActions.length > 0
-  const hasFailed = failedActions.length > 0
+  const hasPending = pendingActions > 0
+  const hasFailed = failedActions > 0
 
   return (
     <div className="fixed bottom-4 right-4 z-50 max-w-sm">
@@ -317,8 +318,8 @@ export function OfflineActionQueueVisualization() {
                   className="flex-1"
                 >
                   {filterType.charAt(0).toUpperCase() + filterType.slice(1)}
-                  {filterType === 'pending' && ` (${pendingActions.length})`}
-                  {filterType === 'failed' && ` (${failedActions.length})`}
+                  {filterType === 'pending' && ` (${pendingActions})`}
+                  {filterType === 'failed' && ` (${failedActions})`}
                 </Button>
               ))}
             </div>
@@ -377,6 +378,7 @@ export function OfflineActionQueueVisualization() {
                               status={action.retryCount > 0 ? 'critical' : 'pending'}
                               size="sm"
                               animated={action.priority === 'critical'}
+                              label={action.retryCount > 0 ? 'Failed' : 'Pending'}
                             />
                             <div>
                               <p className="text-sm font-medium">
@@ -504,8 +506,8 @@ export function OfflineActionQueueVisualization() {
         <div aria-live="polite" aria-atomic="true">
           {isSyncing &&
             `Synchronization in progress: ${syncProgress.current} of ${syncProgress.total} actions completed`}
-          {hasPending && `You have ${pendingActions.length} pending actions`}
-          {hasFailed && `You have ${failedActions.length} failed actions`}
+          {hasPending && `You have ${pendingActions} pending actions`}
+          {hasFailed && `You have ${failedActions} failed actions`}
         </div>
       </ScreenReaderOnly>
     </div>

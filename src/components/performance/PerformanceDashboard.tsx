@@ -70,6 +70,7 @@ export function PerformanceDashboard({
 
       return () => clearInterval(interval)
     }
+    return undefined
   }, [autoRefresh, refreshInterval])
 
   // Check monitoring status

@@ -73,7 +73,7 @@ const EnhancedCheckbox = React.forwardRef<HTMLInputElement, EnhancedCheckboxProp
       message: string | null
     }>({ isValid: null, message: null })
 
-    const checkboxRef = React.useRef<HTMLInputElement>(null)
+    const checkboxRef = React.useRef<HTMLInputElement | null>(null)
     const generatedId = React.useId()
     const inputId = id || `checkbox-${generatedId}`
 
