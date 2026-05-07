@@ -502,7 +502,8 @@ class SecurityMonitor {
 
       for (const incident of incidents || []) {
         // Count by type
-        metrics.incidentsByType[incident.type as SecurityIncidentType] = (metrics.incidentsByType[incident.type as SecurityIncidentType] || 0) + 1
+        metrics.incidentsByType[incident.type as SecurityIncidentType] =
+          (metrics.incidentsByType[incident.type as SecurityIncidentType] || 0) + 1
 
         // Count by severity
         metrics.incidentsBySeverity[incident.severity as IncidentSeverity] =

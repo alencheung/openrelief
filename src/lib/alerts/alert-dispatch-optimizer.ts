@@ -236,7 +236,7 @@ class AlertDispatchOptimizer {
         id: alertId,
         deliveryAttempts: [],
         retryCount: 0,
-        maxRetries: this.getMaxRetries(alert.priority),
+        maxRetries: this.getMaxRetries(alert.priority)
       }
 
       // Add to appropriate priority queue
@@ -258,10 +258,13 @@ class AlertDispatchOptimizer {
         dispatchEndTime: performance.now(),
         latency,
         success: true,
-        deliveryMethod: (alert.channels[0] === DeliveryChannel.PUSH_NOTIFICATION ? 'push'
-          : alert.channels[0] === DeliveryChannel.EMAIL ? 'email'
-          : alert.channels[0] === DeliveryChannel.SMS ? 'sms'
-          : 'websocket') as 'push' | 'email' | 'sms' | 'websocket',
+        deliveryMethod: (alert.channels[0] === DeliveryChannel.PUSH_NOTIFICATION
+          ? 'push'
+          : alert.channels[0] === DeliveryChannel.EMAIL
+            ? 'email'
+            : alert.channels[0] === DeliveryChannel.SMS
+              ? 'sms'
+              : 'websocket') as 'push' | 'email' | 'sms' | 'websocket',
         retryCount: 0
       })
 
@@ -286,10 +289,13 @@ class AlertDispatchOptimizer {
         latency,
         success: false,
         errorType: (error as Error).message,
-        deliveryMethod: (alert.channels[0] === DeliveryChannel.PUSH_NOTIFICATION ? 'push'
-          : alert.channels[0] === DeliveryChannel.EMAIL ? 'email'
-          : alert.channels[0] === DeliveryChannel.SMS ? 'sms'
-          : 'websocket') as 'push' | 'email' | 'sms' | 'websocket',
+        deliveryMethod: (alert.channels[0] === DeliveryChannel.PUSH_NOTIFICATION
+          ? 'push'
+          : alert.channels[0] === DeliveryChannel.EMAIL
+            ? 'email'
+            : alert.channels[0] === DeliveryChannel.SMS
+              ? 'sms'
+              : 'websocket') as 'push' | 'email' | 'sms' | 'websocket',
         retryCount: 0
       })
 

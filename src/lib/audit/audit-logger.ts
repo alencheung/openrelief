@@ -72,89 +72,89 @@ export enum ComplianceFramework {
 
 // Enhanced audit log entry interface
 export interface AuditLogEntry {
-  id: string;
-  timestamp: Date;
-  eventType: AuditEventType;
-  severity: AuditSeverity;
-  userId?: string;
-  sessionId?: string;
-  ipAddress?: string;
-  userAgent?: string;
+  id: string
+  timestamp: Date
+  eventType: AuditEventType
+  severity: AuditSeverity
+  userId?: string
+  sessionId?: string
+  ipAddress?: string
+  userAgent?: string
 
   // Event details
-  action: string;
-  resource: string;
-  resourceId?: string;
+  action: string
+  resource: string
+  resourceId?: string
 
   // Data context
-  dataType?: string;
-  dataTypes?: string[];
-  dataSubjects?: number;
-  dataVolume?: number;
+  dataType?: string
+  dataTypes?: string[]
+  dataSubjects?: number
+  dataVolume?: number
 
   // Privacy and compliance
-  privacyImpact: 'low' | 'medium' | 'high';
-  legalBasis?: string;
-  complianceFrameworks?: ComplianceFramework[];
-  retentionPeriod?: number;
+  privacyImpact: 'low' | 'medium' | 'high'
+  legalBasis?: string
+  complianceFrameworks?: ComplianceFramework[]
+  retentionPeriod?: number
 
   // Security and integrity
-  previousHash?: string;
-  currentHash: string;
-  signature?: string;
+  previousHash?: string
+  currentHash: string
+  signature?: string
 
   // Metadata
-  metadata?: Record<string, any>;
-  tags?: string[];
+  metadata?: Record<string, any>
+  tags?: string[]
 
   // Processing information
-  processed: boolean;
-  archived: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  processed: boolean
+  archived: boolean
+  createdAt: Date
+  updatedAt: Date
 }
 
 // Audit log query options
 export interface AuditLogQuery {
-  userId?: string;
-  eventType?: AuditEventType;
-  severity?: AuditSeverity;
-  startDate?: Date;
-  endDate?: Date;
-  resource?: string;
-  dataType?: string;
-  complianceFramework?: ComplianceFramework;
-  tags?: string[];
-  limit?: number;
-  offset?: number;
-  orderBy?: 'timestamp' | 'severity' | 'eventType';
-  orderDirection?: 'asc' | 'desc';
+  userId?: string
+  eventType?: AuditEventType
+  severity?: AuditSeverity
+  startDate?: Date
+  endDate?: Date
+  resource?: string
+  dataType?: string
+  complianceFramework?: ComplianceFramework
+  tags?: string[]
+  limit?: number
+  offset?: number
+  orderBy?: 'timestamp' | 'severity' | 'eventType'
+  orderDirection?: 'asc' | 'desc'
 }
 
 // Audit statistics
 export interface AuditStatistics {
-  totalEvents: number;
-  eventsByType: Record<AuditEventType, number>;
-  eventsBySeverity: Record<AuditSeverity, number>;
-  eventsByUser: Record<string, number>;
-  complianceEvents: Record<ComplianceFramework, number>;
-  privacyImpacts: Record<'low' | 'medium' | 'high', number>;
+  totalEvents: number
+  eventsByType: Record<AuditEventType, number>
+  eventsBySeverity: Record<AuditSeverity, number>
+  eventsByUser: Record<string, number>
+  complianceEvents: Record<ComplianceFramework, number>
+  privacyImpacts: Record<'low' | 'medium' | 'high', number>
   timeRange: {
-    start: Date;
-    end: Date;
-  };
+    start: Date
+    end: Date
+  }
 }
 
 // Audit logger configuration
 export interface AuditLoggerConfig {
-  enableHashChaining: boolean;
-  enableDigitalSignatures: boolean;
-  retentionPeriod: number; // days
-  archivalThreshold: number; // days
-  compressionEnabled: boolean;
-  encryptionEnabled: boolean;
-  batchSize: number;
-  flushInterval: number; // milliseconds
+  enableHashChaining: boolean
+  enableDigitalSignatures: boolean
+  retentionPeriod: number // days
+  archivalThreshold: number // days
+  compressionEnabled: boolean
+  encryptionEnabled: boolean
+  batchSize: number
+  flushInterval: number // milliseconds
 }
 
 class AuditLogger {
@@ -186,7 +186,12 @@ class AuditLogger {
   /**
    * Log an audit event
    */
-  async logEvent(event: Omit<AuditLogEntry, 'id' | 'currentHash' | 'processed' | 'archived' | 'createdAt' | 'updatedAt'>): Promise<string> {
+  async logEvent(
+    event: Omit<
+      AuditLogEntry,
+      'id' | 'currentHash' | 'processed' | 'archived' | 'createdAt' | 'updatedAt'
+    >
+  ): Promise<string> {
     try {
       const entry: AuditLogEntry = {
         ...event,
@@ -195,7 +200,7 @@ class AuditLogger {
         processed: false,
         archived: false,
         createdAt: new Date(),
-        updatedAt: new Date(),
+        updatedAt: new Date()
       }
 
       // Calculate hash for integrity
@@ -221,9 +226,7 @@ class AuditLogger {
    */
   async queryLogs(query: AuditLogQuery): Promise<AuditLogEntry[]> {
     try {
-      let dbQuery = supabaseAdmin
-        .from('enhanced_audit_log')
-        .select('*')
+      let dbQuery = supabaseAdmin.from('enhanced_audit_log').select('*')
 
       // Apply filters
       if (query.userId) {
@@ -316,7 +319,8 @@ class AuditLogger {
         statistics.eventsByType[log.eventType] = (statistics.eventsByType[log.eventType] || 0) + 1
 
         // Count by severity
-        statistics.eventsBySeverity[log.severity] = (statistics.eventsBySeverity[log.severity] || 0) + 1
+        statistics.eventsBySeverity[log.severity] =
+          (statistics.eventsBySeverity[log.severity] || 0) + 1
 
         // Count by user
         if (log.userId) {
@@ -326,7 +330,8 @@ class AuditLogger {
         // Count compliance events
         if (log.complianceFrameworks) {
           log.complianceFrameworks.forEach(framework => {
-            statistics.complianceEvents[framework] = (statistics.complianceEvents[framework] || 0) + 1
+            statistics.complianceEvents[framework] =
+              (statistics.complianceEvents[framework] || 0) + 1
           })
         }
 
@@ -344,14 +349,17 @@ class AuditLogger {
   /**
    * Verify log integrity
    */
-  async verifyIntegrity(startDate?: Date, endDate?: Date): Promise<{
-    isValid: boolean;
+  async verifyIntegrity(
+    startDate?: Date,
+    endDate?: Date
+  ): Promise<{
+    isValid: boolean
     violations: Array<{
-      entryId: string;
-      expectedHash: string;
-      actualHash: string;
-      timestamp: Date;
-    }>;
+      entryId: string
+      expectedHash: string
+      actualHash: string
+      timestamp: Date
+    }>
   }> {
     try {
       const query: AuditLogQuery = {
@@ -363,10 +371,10 @@ class AuditLogger {
 
       const logs = await this.queryLogs(query)
       const violations: Array<{
-        entryId: string;
-        expectedHash: string;
-        actualHash: string;
-        timestamp: Date;
+        entryId: string
+        expectedHash: string
+        actualHash: string
+        timestamp: Date
       }> = []
 
       let previousHash = null
@@ -460,9 +468,7 @@ class AuditLogger {
       }))
 
       // Insert into database
-      const { error } = await supabaseAdmin
-        .from('enhanced_audit_log')
-        .insert(dbLogs)
+      const { error } = await supabaseAdmin.from('enhanced_audit_log').insert(dbLogs)
 
       if (error) {
         throw error
@@ -547,13 +553,11 @@ class AuditLogger {
    */
   private async savePreviousHash(): Promise<void> {
     try {
-      await supabaseAdmin
-        .from('audit_metadata')
-        .upsert({
-          key: 'last_hash',
-          previous_hash: this.previousHash,
-          updated_at: new Date().toISOString()
-        })
+      await supabaseAdmin.from('audit_metadata').upsert({
+        key: 'last_hash',
+        previous_hash: this.previousHash,
+        updated_at: new Date().toISOString()
+      })
     } catch (error) {
       console.error('Failed to save previous hash:', error)
     }
@@ -564,27 +568,40 @@ class AuditLogger {
    */
   private convertToCSV(logs: AuditLogEntry[]): string {
     const headers = [
-      'id', 'timestamp', 'event_type', 'severity', 'user_id',
-      'action', 'resource', 'privacy_impact', 'data_type',
-      'legal_basis', 'compliance_frameworks', 'tags'
+      'id',
+      'timestamp',
+      'event_type',
+      'severity',
+      'user_id',
+      'action',
+      'resource',
+      'privacy_impact',
+      'data_type',
+      'legal_basis',
+      'compliance_frameworks',
+      'tags'
     ]
 
     const csvRows = [
       headers.join(','),
-      ...logs.map(log => [
-        log.id,
-        log.timestamp.toISOString(),
-        log.eventType,
-        log.severity,
-        log.userId || '',
-        log.action,
-        log.resource,
-        log.privacyImpact,
-        log.dataType || '',
-        log.legalBasis || '',
-        log.complianceFrameworks?.join(';') || '',
-        log.tags?.join(';') || ''
-      ].map(field => `"${field}"`).join(','))
+      ...logs.map(log =>
+        [
+          log.id,
+          log.timestamp.toISOString(),
+          log.eventType,
+          log.severity,
+          log.userId || '',
+          log.action,
+          log.resource,
+          log.privacyImpact,
+          log.dataType || '',
+          log.legalBasis || '',
+          log.complianceFrameworks?.join(';') || '',
+          log.tags?.join(';') || ''
+        ]
+          .map(field => `"${field}"`)
+          .join(',')
+      )
     ]
 
     return csvRows.join('\n')
@@ -705,7 +722,10 @@ export const logSecurityIncident = async (
     privacyImpact: 'high',
     dataSubjects: affectedUsers?.length || 0,
     legalBasis: 'legal_obligation',
-    complianceFrameworks: [ComplianceFramework.GDPR, ComplianceFramework.CCPA] as ComplianceFramework[],
+    complianceFrameworks: [
+      ComplianceFramework.GDPR,
+      ComplianceFramework.CCPA
+    ] as ComplianceFramework[],
     metadata: { incidentType, description, affectedUsers, ...metadata }
   })
 }
