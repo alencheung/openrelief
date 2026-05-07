@@ -189,13 +189,13 @@ class AuditLogger {
   async logEvent(event: Omit<AuditLogEntry, 'id' | 'currentHash' | 'processed' | 'archived' | 'createdAt' | 'updatedAt'>): Promise<string> {
     try {
       const entry: AuditLogEntry = {
+        ...event,
         id: this.generateId(),
-        timestamp: new Date(),
+        currentHash: '',
         processed: false,
         archived: false,
         createdAt: new Date(),
         updatedAt: new Date(),
-        ...event
       }
 
       // Calculate hash for integrity
@@ -470,7 +470,7 @@ class AuditLogger {
 
       // Update previous hash
       if (logsToFlush.length > 0) {
-        this.previousHash = logsToFlush[logsToFlush.length - 1].currentHash
+        this.previousHash = logsToFlush[logsToFlush.length - 1]!.currentHash
         await this.savePreviousHash()
       }
 
@@ -656,6 +656,7 @@ export const logDataAccess = async (
   metadata?: Record<string, any>
 ) => {
   return auditLogger.logEvent({
+    timestamp: new Date(),
     eventType: AuditEventType.DATA_ACCESS,
     severity: AuditSeverity.LOW,
     userId,
@@ -664,7 +665,7 @@ export const logDataAccess = async (
     dataType,
     privacyImpact,
     legalBasis: 'user_consent',
-    complianceFrameworks: [ComplianceFramework.GDPR],
+    complianceFrameworks: [ComplianceFramework.GDPR] as ComplianceFramework[],
     metadata
   })
 }
@@ -675,6 +676,7 @@ export const logPrivacySettingsChange = async (
   privacyImpact: 'low' | 'medium' | 'high' = 'medium'
 ) => {
   return auditLogger.logEvent({
+    timestamp: new Date(),
     eventType: AuditEventType.PRIVACY_SETTINGS_CHANGE,
     severity: AuditSeverity.MEDIUM,
     userId,
@@ -682,7 +684,7 @@ export const logPrivacySettingsChange = async (
     resource: 'privacy_settings',
     privacyImpact,
     legalBasis: 'user_consent',
-    complianceFrameworks: [ComplianceFramework.GDPR],
+    complianceFrameworks: [ComplianceFramework.GDPR] as ComplianceFramework[],
     metadata: { changes }
   })
 }
@@ -695,6 +697,7 @@ export const logSecurityIncident = async (
   metadata?: Record<string, any>
 ) => {
   return auditLogger.logEvent({
+    timestamp: new Date(),
     eventType: AuditEventType.SECURITY_INCIDENT,
     severity,
     action: 'incident_detected',
@@ -702,7 +705,7 @@ export const logSecurityIncident = async (
     privacyImpact: 'high',
     dataSubjects: affectedUsers?.length || 0,
     legalBasis: 'legal_obligation',
-    complianceFrameworks: [ComplianceFramework.GDPR, ComplianceFramework.CCPA],
+    complianceFrameworks: [ComplianceFramework.GDPR, ComplianceFramework.CCPA] as ComplianceFramework[],
     metadata: { incidentType, description, affectedUsers, ...metadata }
   })
 }
@@ -714,6 +717,7 @@ export const logLegalRequest = async (
   metadata?: Record<string, any>
 ) => {
   return auditLogger.logEvent({
+    timestamp: new Date(),
     eventType: AuditEventType.LEGAL_REQUEST_RECEIVED,
     severity,
     userId,
@@ -721,7 +725,7 @@ export const logLegalRequest = async (
     resource: 'legal_system',
     privacyImpact: 'high',
     legalBasis: 'legal_obligation',
-    complianceFrameworks: [ComplianceFramework.GDPR],
+    complianceFrameworks: [ComplianceFramework.GDPR] as ComplianceFramework[],
     metadata: { requestType, ...metadata }
   })
 }

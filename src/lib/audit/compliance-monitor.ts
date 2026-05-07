@@ -278,12 +278,13 @@ class ComplianceMonitor {
     } catch (error) {
       console.error('Error running compliance checks:', error)
       await auditLogger.logEvent({
+        timestamp: new Date(),
         eventType: AuditEventType.SYSTEM_ERROR,
         severity: AuditSeverity.MEDIUM,
         action: 'compliance_check_error',
         resource: 'compliance_monitor',
         privacyImpact: 'low',
-        metadata: { error: error.message }
+        metadata: { error: (error as Error).message }
       })
     }
   }
@@ -373,7 +374,7 @@ class ComplianceMonitor {
           framework: rule.framework,
           severity: rule.severity,
           description: `${expiredRecords.length} records of type ${dataType} exceed retention period of ${maxRetentionDays} days`,
-          affectedResources: expiredRecords.map(r => `${dataType}:${r.id}`),
+          affectedResources: expiredRecords.map((r: any) => `${dataType}:${r.id}`),
           detectedAt: new Date(),
           status: 'active',
           metadata: {
@@ -466,7 +467,7 @@ class ComplianceMonitor {
     }
 
     // Check for IPs with excessive failed attempts
-    for (const [ip, count] of attemptsByIP.entries()) {
+    for (const [ip, count] of Array.from(attemptsByIP.entries())) {
       if (count >= maxFailedAttempts) {
         violations.push({
           id: `violation_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -519,7 +520,7 @@ class ComplianceMonitor {
         framework: rule.framework,
         severity: ViolationSeverity.HIGH,
         description: `${expiredConsents.length} consents have expired but are still marked as active`,
-        affectedUsers: [...new Set(expiredConsents.map(c => c.user_id))],
+        affectedUsers: Array.from(new Set(expiredConsents.map((c: any) => c.user_id as string))) as string[],
         detectedAt: new Date(),
         status: 'active',
         metadata: {
@@ -613,6 +614,7 @@ class ComplianceMonitor {
       this.violations.set(violation.id, violation)
 
       await auditLogger.logEvent({
+        timestamp: new Date(),
         eventType: AuditEventType.COMPLIANCE_CHECK,
         severity: this.mapViolationSeverityToAuditSeverity(violation.severity),
         action: 'violation_detected',
@@ -665,6 +667,7 @@ class ComplianceMonitor {
 
     // Log the alert
     await auditLogger.logEvent({
+      timestamp: new Date(),
       eventType: AuditEventType.SECURITY_INCIDENT,
       severity: AuditSeverity.CRITICAL,
       action: 'critical_violation_alert',
@@ -714,7 +717,7 @@ class ComplianceMonitor {
     }
 
     // Count violations by framework and severity
-    for (const violation of this.violations.values()) {
+    for (const violation of Array.from(this.violations.values())) {
       if (violation.status === 'active') {
         status.activeViolations++
 
@@ -846,6 +849,7 @@ class ComplianceMonitor {
       }
 
       await auditLogger.logEvent({
+        timestamp: new Date(),
         eventType: AuditEventType.COMPLIANCE_CHECK,
         severity: AuditSeverity.MEDIUM,
         userId,
@@ -889,6 +893,7 @@ class ComplianceMonitor {
       }
 
       await auditLogger.logEvent({
+        timestamp: new Date(),
         eventType: AuditEventType.COMPLIANCE_CHECK,
         severity: AuditSeverity.MEDIUM,
         userId,

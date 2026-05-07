@@ -122,7 +122,7 @@ export function useTouchGestures(
 
     touchesRef.current = event.touches
     const touch = event.touches[0]
-    const point = getTouchPoint(touch)
+    const point = touch ? getTouchPoint(touch) : null
 
     stateRef.current = {
       isActive: true,
@@ -139,14 +139,14 @@ export function useTouchGestures(
       const touch1 = event.touches[0]
       const touch2 = event.touches[1]
 
-      initialDistanceRef.current = calculateDistance(
+      initialDistanceRef.current = touch1 && touch2 ? calculateDistance(
         getTouchPoint(touch1),
         getTouchPoint(touch2)
-      )
-      initialAngleRef.current = calculateAngle(
+      ) : 0
+      initialAngleRef.current = touch1 && touch2 ? calculateAngle(
         getTouchPoint(touch1),
         getTouchPoint(touch2)
-      )
+      ) : 0
     }
 
     // Clear any existing long press timer
@@ -156,12 +156,14 @@ export function useTouchGestures(
 
     // Set long press timer
     longPressTimerRef.current = setTimeout(() => {
-      if (stateRef.current.isActive && event.touches.length === 1) {
+      if (stateRef.current.isActive && event.touches.length === 1 && point) {
         callbacks.onLongPress?.(point)
       }
     }, options.longPressDelay)
 
-    callbacks.onTouchStart?.(point)
+    if (point) {
+      callbacks.onTouchStart?.(point)
+    }
   }, [callbacks, getTouchPoint, calculateDistance, calculateAngle])
 
   const handleTouchMove = useCallback((event: TouchEvent) => {
@@ -181,6 +183,7 @@ export function useTouchGestures(
 
     touchesRef.current = event.touches
     const touch = event.touches[0]
+    if (!touch) return
     const currentPoint = getTouchPoint(touch)
     const currentTime = currentPoint.time
     const startTime = state.startPoint.time
@@ -210,6 +213,7 @@ export function useTouchGestures(
     if (event.touches.length === 2) {
       const touch1 = event.touches[0]
       const touch2 = event.touches[1]
+      if (!touch1 || !touch2) return
       const currentDistance = calculateDistance(
         getTouchPoint(touch1),
         getTouchPoint(touch2)
@@ -328,10 +332,10 @@ export function useTouchGestures(
 
   const ref = useCallback((element: HTMLElement | null) => {
     if (elementRef.current) {
-      elementRef.current.removeEventListener('touchstart', handleTouchStart, { passive: false })
-      elementRef.current.removeEventListener('touchmove', handleTouchMove, { passive: false })
-      elementRef.current.removeEventListener('touchend', handleTouchEnd, { passive: false })
-      elementRef.current.removeEventListener('touchcancel', handleTouchEnd, { passive: false })
+      elementRef.current.removeEventListener('touchstart', handleTouchStart, false)
+      elementRef.current.removeEventListener('touchmove', handleTouchMove, false)
+      elementRef.current.removeEventListener('touchend', handleTouchEnd, false)
+      elementRef.current.removeEventListener('touchcancel', handleTouchEnd, false)
     }
 
     elementRef.current = element
@@ -348,10 +352,10 @@ export function useTouchGestures(
   useEffect(() => {
     return () => {
       if (elementRef.current) {
-        elementRef.current.removeEventListener('touchstart', handleTouchStart, { passive: false })
-        elementRef.current.removeEventListener('touchmove', handleTouchMove, { passive: false })
-        elementRef.current.removeEventListener('touchend', handleTouchEnd, { passive: false })
-        elementRef.current.removeEventListener('touchcancel', handleTouchEnd, { passive: false })
+        elementRef.current.removeEventListener('touchstart', handleTouchStart, false)
+        elementRef.current.removeEventListener('touchmove', handleTouchMove, false)
+        elementRef.current.removeEventListener('touchend', handleTouchEnd, false)
+        elementRef.current.removeEventListener('touchcancel', handleTouchEnd, false)
       }
 
       if (longPressTimerRef.current) {

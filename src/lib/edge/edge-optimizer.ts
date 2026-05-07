@@ -397,7 +397,7 @@ class EdgeOptimizer {
           }
           return success
         } catch (error) {
-          errors.push(`Failed to invalidate ${edge.id}: ${error.message}`)
+          errors.push(`Failed to invalidate ${edge.id}: ${(error as Error).message}`)
           return false
         }
       })
@@ -435,7 +435,7 @@ class EdgeOptimizer {
         success: false,
         invalidatedLocations: [],
         executionTime: 0,
-        errors: [error.message]
+        errors: [(error as Error).message]
       }
     }
   }
@@ -483,7 +483,7 @@ class EdgeOptimizer {
         error: 'true'
       })
 
-      throw new Error(`Failed to collect edge metrics: ${error.message}`)
+      throw new Error(`Failed to collect edge metrics: ${(error as Error).message}`)
     }
   }
 
@@ -777,7 +777,7 @@ class EdgeOptimizer {
     const candidates: EdgeLocation[] = []
 
     // Get all healthy edge locations
-    for (const edge of this.edgeLocations.values()) {
+    for (const edge of Array.from(this.edgeLocations.values())) {
       if (edge.load.health === 'healthy' && edge.capabilities.cache) {
         candidates.push(edge)
       }
@@ -817,12 +817,12 @@ class EdgeOptimizer {
         return this.getPerformanceBasedEdge(candidates, clientLocation, request)
 
       default:
-        return candidates[0]
+        return candidates[0]!
     }
   }
 
   private getNearestEdge(candidates: EdgeLocation[], clientLocation: { lat: number; lng: number }): EdgeLocation {
-    let nearestEdge = candidates[0]
+    let nearestEdge = candidates[0]!
     let minDistance = Infinity
 
     for (const edge of candidates) {
@@ -837,7 +837,7 @@ class EdgeOptimizer {
   }
 
   private getLowestLatencyEdge(candidates: EdgeLocation[], clientLocation: { lat: number; lng: number }): EdgeLocation {
-    let bestEdge = candidates[0]
+    let bestEdge: EdgeLocation = candidates[0]!
     let minLatency = Infinity
 
     for (const edge of candidates) {
@@ -863,13 +863,13 @@ class EdgeOptimizer {
     let random = Math.random() * totalWeight
 
     for (let i = 0; i < candidates.length; i++) {
-      random -= this.loadBalancingWeights.get(candidates[i].id) || 1
+      random -= this.loadBalancingWeights.get(candidates[i]!.id) || 1
       if (random <= 0) {
-        return candidates[i]
+        return candidates[i]!
       }
     }
 
-    return candidates[0]
+    return candidates[0]!
   }
 
   private getHealthAwareEdge(candidates: EdgeLocation[]): EdgeLocation {
@@ -883,7 +883,7 @@ class EdgeOptimizer {
       return this.getLeastLoadedEdge(degradedEdges)
     }
 
-    return candidates[0]
+    return candidates[0]!
   }
 
   private getPerformanceBasedEdge(
@@ -905,7 +905,7 @@ class EdgeOptimizer {
 
     // Sort by score and return best
     scoredEdges.sort((a, b) => a.score - b.score)
-    return scoredEdges[0].edge
+    return scoredEdges[0]!.edge
   }
 
   private calculateDistance(
@@ -934,7 +934,7 @@ class EdgeOptimizer {
     const metrics = this.performanceMetrics.get(edgeId)
     if (metrics && metrics.length > 0) {
       const latest = metrics[metrics.length - 1]
-      return latest.latency.p95
+      return latest!.latency.p95
     }
 
     // Fallback to estimated latency based on distance
@@ -960,7 +960,7 @@ class EdgeOptimizer {
 
     const metrics = this.performanceMetrics.get(selectedEdge.id)
     const performanceScore = metrics && metrics.length > 1
-      ? 1.0 - (Math.abs(metrics[metrics.length - 1].latency.p95 - metrics[metrics.length - 2].latency.p95) / metrics[metrics.length - 2].latency.p95) : 0.8
+      ? 1.0 - (Math.abs(metrics[metrics.length - 1]!.latency.p95 - metrics[metrics.length - 2]!.latency.p95) / metrics[metrics.length - 2]!.latency.p95) : 0.8
 
     return (healthScore + performanceScore) / 2
   }
@@ -991,35 +991,35 @@ class EdgeOptimizer {
 
     if (healthyEdges.length === 0) {
       // Return any edge if none are healthy
-      return Array.from(this.edgeLocations.values())[0]
+      return Array.from(this.edgeLocations.values())[0]!
     }
 
     switch (fallbackStrategy) {
       case RoutingStrategy.NEAREST:
         // Return first healthy edge (simplified)
-        return healthyEdges[0]
+        return healthyEdges[0]!
       default:
-        return healthyEdges[0]
+        return healthyEdges[0]!
     }
   }
 
   private determineCacheLevel(resource: any): CacheLevel {
     switch (resource.type) {
       case 'static':
-        return this.cacheConfig.levels.find(level => level.name === 'edge') || this.cacheConfig.levels[0]
+        return this.cacheConfig.levels.find(level => level.name === 'edge') || this.cacheConfig.levels[0]!
       case 'api':
-        return this.cacheConfig.levels.find(level => level.name === 'edge') || this.cacheConfig.levels[0]
+        return this.cacheConfig.levels.find(level => level.name === 'edge') || this.cacheConfig.levels[0]!
       case 'emergency':
-        return this.cacheConfig.levels.find(level => level.name === 'browser') || this.cacheConfig.levels[0]
+        return this.cacheConfig.levels.find(level => level.name === 'browser') || this.cacheConfig.levels[0]!
       case 'user_data':
-        return this.cacheConfig.levels.find(level => level.name === 'regional') || this.cacheConfig.levels[0]
+        return this.cacheConfig.levels.find(level => level.name === 'regional') || this.cacheConfig.levels[0]!
       default:
-        return this.cacheConfig.levels[0]
+        return this.cacheConfig.levels[0]!
     }
   }
 
   private calculateTTL(resource: any, cacheLevel: CacheLevel): number {
-    const baseTTL = this.cacheConfig.maxAge[resource.type] || this.cacheConfig.defaultTTL
+    const baseTTL = this.cacheConfig.maxAge[resource.type as keyof typeof this.cacheConfig.maxAge] || this.cacheConfig.defaultTTL
 
     // Adjust TTL based on priority
     const priorityMultiplier = resource.priority === 'critical' ? 0.5
@@ -1157,7 +1157,7 @@ class EdgeOptimizer {
   }
 
   private async checkEdgeHealth(): Promise<void> {
-    for (const edge of this.edgeLocations.values()) {
+    for (const edge of Array.from(this.edgeLocations.values())) {
       try {
         // Simulate health check
         const isHealthy = await this.performHealthCheck(edge)
@@ -1192,7 +1192,7 @@ class EdgeOptimizer {
     const now = new Date()
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
 
-    for (const edge of this.edgeLocations.values()) {
+    for (const edge of Array.from(this.edgeLocations.values())) {
       const metrics = await this.collectEdgeMetrics(edge, {
         start: oneHourAgo,
         end: now

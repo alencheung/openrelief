@@ -8,7 +8,7 @@ export function initSentry() {
       tracesSampleRate: 0.1,
       replaysSessionSampleRate: 0.1,
       replaysOnErrorSampleRate: 1.0,
-      integrations: [new Sentry.BrowserTracing(), new Sentry.Replay()]
+      integrations: [Sentry.browserTracingIntegration(), Sentry.replayIntegration()]
     })
   }
 }

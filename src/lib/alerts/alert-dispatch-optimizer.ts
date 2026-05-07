@@ -232,11 +232,11 @@ class AlertDispatchOptimizer {
       const alertId = this.generateAlertId()
 
       const fullAlert: EmergencyAlert = {
+        ...alert,
         id: alertId,
         deliveryAttempts: [],
         retryCount: 0,
         maxRetries: this.getMaxRetries(alert.priority),
-        ...alert
       }
 
       // Add to appropriate priority queue
@@ -258,7 +258,10 @@ class AlertDispatchOptimizer {
         dispatchEndTime: performance.now(),
         latency,
         success: true,
-        deliveryMethod: alert.channels[0] || DeliveryChannel.IN_APP,
+        deliveryMethod: (alert.channels[0] === DeliveryChannel.PUSH_NOTIFICATION ? 'push'
+          : alert.channels[0] === DeliveryChannel.EMAIL ? 'email'
+          : alert.channels[0] === DeliveryChannel.SMS ? 'sms'
+          : 'websocket') as 'push' | 'email' | 'sms' | 'websocket',
         retryCount: 0
       })
 
@@ -282,8 +285,11 @@ class AlertDispatchOptimizer {
         dispatchEndTime: performance.now(),
         latency,
         success: false,
-        errorType: error.message,
-        deliveryMethod: alert.channels[0] || DeliveryChannel.IN_APP,
+        errorType: (error as Error).message,
+        deliveryMethod: (alert.channels[0] === DeliveryChannel.PUSH_NOTIFICATION ? 'push'
+          : alert.channels[0] === DeliveryChannel.EMAIL ? 'email'
+          : alert.channels[0] === DeliveryChannel.SMS ? 'sms'
+          : 'websocket') as 'push' | 'email' | 'sms' | 'websocket',
         retryCount: 0
       })
 
@@ -411,7 +417,7 @@ class AlertDispatchOptimizer {
     } catch (error) {
       const executionTime = performanceMonitor.endTimer(timerId, 'database', 'get_users_for_alert')
 
-      throw new Error(`Failed to get users for alert: ${error.message}`)
+      throw new Error(`Failed to get users for alert: ${(error as Error).message}`)
     }
   }
 
@@ -432,7 +438,7 @@ class AlertDispatchOptimizer {
         if (result.status === 'fulfilled') {
           attempts.push(result.value)
         } else {
-          attempts.push(this.createFailedAttempt(alert, channel, result.reason.message))
+          attempts.push(this.createFailedAttempt(alert, channel!, String(result.reason)))
         }
       })
     } else {
@@ -516,7 +522,7 @@ class AlertDispatchOptimizer {
       attempt.endTime = endTime
       attempt.latency = latency
       attempt.status = DeliveryStatus.FAILED
-      attempt.error = error.message
+      attempt.error = (error as Error).message
 
       this.recordChannelPerformance(channel, latency, false)
 
@@ -962,7 +968,7 @@ class AlertDispatchOptimizer {
       const executionTime = performanceMonitor.endTimer(timerId, 'alert', 'in_app_send')
 
       if (!success) {
-        throw new Error(`Failed to store in-app notification: ${error.message}`)
+        throw new Error(`Failed to store in-app notification: ${(error as Error).message}`)
       }
 
       return success

@@ -150,7 +150,7 @@ export const useTrustSystem = (userId?: string) => {
       if (error) {
         throw error
       }
-      return data?.map(confirmation => ({
+      return data?.map((confirmation: any) => ({
         eventId: confirmation.event_id,
         userId: confirmation.user_id,
         voteType: confirmation.confirmation_type as 'confirm' | 'dispute',

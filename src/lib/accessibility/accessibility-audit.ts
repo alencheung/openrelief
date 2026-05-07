@@ -244,7 +244,7 @@ const WCAG_GUIDELINES = {
         const tagName = element.tagName.toLowerCase()
 
         if (interactiveTags.includes(tagName)) {
-          return element.tabIndex >= 0 || element.tabIndex === -1
+          return (element as HTMLElement).tabIndex >= 0 || (element as HTMLElement).tabIndex === -1
         }
         return true
       }
@@ -491,7 +491,7 @@ export class AccessibilityAuditor {
   private async checkPerceivable(): Promise<void> {
     const elements = document.querySelectorAll('*')
 
-    for (const element of elements) {
+    for (const element of Array.from(elements)) {
       // Check 1.1.1 Non-text Content
       if (!WCAG_GUIDELINES.perceivable['1.1.1'].check(element)) {
         this.addIssue({
@@ -581,7 +581,7 @@ export class AccessibilityAuditor {
   private async checkOperable(): Promise<void> {
     const elements = document.querySelectorAll('*')
 
-    for (const element of elements) {
+    for (const element of Array.from(elements)) {
       // Check 2.1.1 Keyboard
       if (!WCAG_GUIDELINES.operable['2.1.1'].check(element)) {
         this.addIssue({
@@ -655,7 +655,7 @@ export class AccessibilityAuditor {
    */
   private async checkUnderstandable(): Promise<void> {
     // Check 3.1.1 Language of Page
-    if (!WCAG_GUIDELINES.understandable['3.1.1'].check(document.documentElement)) {
+    if (!WCAG_GUIDELINES.understandable['3.1.1'].check()) {
       this.addIssue({
         id: '3.1.1-' + Math.random().toString(36).substr(2, 9),
         guideline: '3.1 Understandable',
@@ -672,7 +672,7 @@ export class AccessibilityAuditor {
 
     // Check form elements for 3.3.2 Labels or Instructions
     const formElements = document.querySelectorAll('input, select, textarea')
-    for (const element of formElements) {
+    for (const element of Array.from(formElements)) {
       if (!WCAG_GUIDELINES.understandable['3.3.2'].check(element)) {
         this.addIssue({
           id: '3.3.2-' + Math.random().toString(36).substr(2, 9),
@@ -714,7 +714,7 @@ export class AccessibilityAuditor {
   private async checkRobust(): Promise<void> {
     const elements = document.querySelectorAll('*')
 
-    for (const element of elements) {
+    for (const element of Array.from(elements)) {
       // Check 4.1.2 Name, Role, Value
       if (!WCAG_GUIDELINES.robust['4.1.2'].check(element)) {
         this.addIssue({

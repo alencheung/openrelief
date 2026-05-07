@@ -17,7 +17,7 @@ import { createClient } from '@supabase/supabase-js'
 export interface PerformanceMetric {
   id: string
   timestamp: Date
-  type: 'api' | 'database' | 'frontend' | 'alert' | 'system' | 'user_experience'
+  type: 'api' | 'database' | 'frontend' | 'alert' | 'system' | 'user_experience' | 'edge'
   name: string
   value: number
   unit: 'ms' | 'bytes' | 'count' | 'percentage' | 'requests_per_second'

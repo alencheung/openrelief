@@ -64,7 +64,7 @@ export class AccessibilityTester {
     const allRules = [
       ...this.config.testRules.map(name => this.getRuleByName(name)),
       ...this.customRules
-    ].filter(Boolean)
+    ].filter((r): r is NonNullable<typeof r> => r != null)
 
     for (const rule of allRules) {
       if (rule.enabled && element.matches(rule.selector)) {
@@ -271,9 +271,9 @@ export class AccessibilityTester {
       const hex = color.slice(1)
       if (hex.length === 3) {
         return {
-          r: parseInt(hex[0] + hex[0], 16),
-          g: parseInt(hex[1] + hex[1], 16),
-          b: parseInt(hex[2] + hex[2], 16)
+          r: parseInt(hex[0]! + hex[0]!, 16),
+          g: parseInt(hex[1]! + hex[1]!, 16),
+          b: parseInt(hex[2]! + hex[2]!, 16)
         }
       } else {
         return {
@@ -288,9 +288,9 @@ export class AccessibilityTester {
     const rgbMatch = color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/)
     if (rgbMatch) {
       return {
-        r: parseInt(rgbMatch[1]),
-        g: parseInt(rgbMatch[2]),
-        b: parseInt(rgbMatch[3])
+        r: parseInt(rgbMatch[1]!),
+        g: parseInt(rgbMatch[2]!),
+        b: parseInt(rgbMatch[3]!)
       }
     }
 
@@ -320,7 +320,7 @@ export class AccessibilityTester {
     const violations: AccessibilityViolation[] = []
     const elements = document.querySelectorAll(rule.selector) as NodeListOf<HTMLElement>
 
-    for (const element of elements) {
+    for (const element of Array.from(elements)) {
       const violation = rule.test(element)
       if (violation) {
         violations.push(violation)

@@ -466,10 +466,10 @@ export class AccessibilityTestSuite {
     const styles = document.styleSheets
     let hasFocusStyles = false
 
-    for (const styleSheet of styles) {
+    for (const styleSheet of Array.from(styles)) {
       try {
         const rules = styleSheet.cssRules || styleSheet.rules
-        for (const rule of rules) {
+        for (const rule of Array.from(rules as ArrayLike<CSSRule>)) {
           if (rule.cssText.includes(':focus') || rule.cssText.includes(':focus-visible')) {
             hasFocusStyles = true
             break
@@ -506,7 +506,7 @@ export class AccessibilityTestSuite {
     // Simplified contrast test - would need proper implementation
     const textElements = document.querySelectorAll('p, h1, h2, h3, h4, h5, h6, span, div')
 
-    for (const element of textElements) {
+    for (const element of Array.from(textElements)) {
       const styles = window.getComputedStyle(element)
       const color = styles.color
       const backgroundColor = styles.backgroundColor
@@ -534,7 +534,7 @@ export class AccessibilityTestSuite {
     // Check if information is conveyed by more than just color
     const indicators = document.querySelectorAll('.emergency-marker, .status-indicator, .trust-indicator')
 
-    for (const indicator of indicators) {
+    for (const indicator of Array.from(indicators)) {
       const hasText = indicator.textContent && indicator.textContent.trim().length > 0
       const hasAriaLabel = indicator.getAttribute('aria-label')
       const hasAriaDescribedBy = indicator.getAttribute('aria-describedby')
@@ -550,7 +550,7 @@ export class AccessibilityTestSuite {
   private testModalFocusTrap(): boolean {
     const modals = document.querySelectorAll('[role="dialog"], [aria-modal="true"]')
 
-    for (const modal of modals) {
+    for (const modal of Array.from(modals)) {
       const hasFocusTrap = modal.getAttribute('data-focus-trap') === 'true'
                            || modal.querySelector('[data-focus-trap]') !== null
       if (!hasFocusTrap) {
@@ -577,10 +577,10 @@ export class AccessibilityTestSuite {
   private testAriaLabels(): boolean {
     const interactiveElements = document.querySelectorAll('button, input, select, textarea, a')
 
-    for (const element of interactiveElements) {
+    for (const element of Array.from(interactiveElements)) {
       const hasLabel = element.getAttribute('aria-label')
                        || element.getAttribute('aria-labelledby')
-                       || element.labels?.length > 0
+                       || ((element as HTMLElement as HTMLInputElement).labels?.length ?? 0) > 0
                        || (element.textContent && element.textContent.trim().length > 0)
 
       if (!hasLabel) {
@@ -611,10 +611,10 @@ export class AccessibilityTestSuite {
   private testFormAccessibility(): boolean {
     const formElements = document.querySelectorAll('input, select, textarea')
 
-    for (const element of formElements) {
+    for (const element of Array.from(formElements)) {
       const hasLabel = element.getAttribute('aria-label')
                        || element.getAttribute('aria-labelledby')
-                       || element.labels?.length > 0
+                       || ((element as HTMLElement as HTMLInputElement).labels?.length ?? 0) > 0
                        || element.closest('label') !== null
 
       if (!hasLabel) {

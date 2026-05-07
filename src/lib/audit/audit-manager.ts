@@ -201,6 +201,7 @@ class AuditTrailManager {
 
       // Log collection activity
       await auditLogger.logEvent({
+        timestamp: new Date(),
         eventType: AuditEventType.SYSTEM_ERROR,
         severity: AuditSeverity.LOW,
         action: 'audit_logs_collected',
@@ -369,14 +370,14 @@ class AuditTrailManager {
 
       for (const entry of entries || []) {
         // Count by source
-        const source = entry.metadata?.source || LogSource.APPLICATION
+        const source = entry.metadata?.source as LogSource || LogSource.APPLICATION
         summary.entriesBySource[source] = (summary.entriesBySource[source] || 0) + 1
 
         // Count by event type
-        summary.entriesByEventType[entry.event_type] = (summary.entriesByEventType[entry.event_type] || 0) + 1
+        summary.entriesByEventType[entry.event_type as AuditEventType] = (summary.entriesByEventType[entry.event_type as AuditEventType] || 0) + 1
 
         // Count by severity
-        summary.entriesBySeverity[entry.severity] = (summary.entriesBySeverity[entry.severity] || 0) + 1
+        summary.entriesBySeverity[entry.severity as AuditSeverity] = (summary.entriesBySeverity[entry.severity as AuditSeverity] || 0) + 1
 
         // Count by user
         if (entry.user_id) {
@@ -394,12 +395,12 @@ class AuditTrailManager {
         // Count compliance frameworks
         if (entry.compliance_frameworks) {
           for (const framework of entry.compliance_frameworks) {
-            summary.complianceFrameworkUsage[framework] = (summary.complianceFrameworkUsage[framework] || 0) + 1
+            summary.complianceFrameworkUsage[framework as ComplianceFramework] = (summary.complianceFrameworkUsage[framework as ComplianceFramework] || 0) + 1
           }
         }
 
         // Count by date and hour
-        const date = new Date(entry.timestamp).toISOString().split('T')[0]
+        const date = new Date(entry.timestamp).toISOString().split('T')[0]!
         dailyCounts.set(date, (dailyCounts.get(date) || 0) + 1)
 
         const hour = new Date(entry.timestamp).getHours()
@@ -527,6 +528,7 @@ class AuditTrailManager {
 
       // Log report generation
       await auditLogger.logEvent({
+        timestamp: new Date(),
         eventType: AuditEventType.SYSTEM_ERROR,
         severity: AuditSeverity.LOW,
         userId,
@@ -554,7 +556,7 @@ class AuditTrailManager {
    */
   async applyRetentionPolicies(): Promise<void> {
     try {
-      for (const policy of this.retentionPolicies.values()) {
+      for (const policy of Array.from(this.retentionPolicies.values())) {
         if (!policy.active) {
           continue
         }

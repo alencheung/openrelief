@@ -5,6 +5,8 @@
  * for ensuring text meets accessibility standards.
  */
 
+import { useState, useCallback, useEffect } from 'react'
+
 export interface ColorContrastResult {
 
   /**
@@ -140,9 +142,9 @@ export class ColorContrastValidator {
     }
 
     return {
-      r: parseInt(result[1], 16),
-      g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16)
+      r: parseInt(result[1]!, 16),
+      g: parseInt(result[2]!, 16),
+      b: parseInt(result[3]!, 16)
     }
   }
 
@@ -156,9 +158,9 @@ export class ColorContrastValidator {
     }
 
     return {
-      r: parseInt(result[1], 10),
-      g: parseInt(result[2], 10),
-      b: parseInt(result[3], 10)
+      r: parseInt(result[1]!, 10),
+      g: parseInt(result[2]!, 10),
+      b: parseInt(result[3]!, 10)
     }
   }
 
@@ -191,12 +193,15 @@ export class ColorContrastValidator {
    * Calculate relative luminance
    */
   private calculateRelativeLuminance(r: number, g: number, b: number): number {
-    const [rs, gs, bs] = [r, g, b].map(c => {
+    const transformed = [r, g, b].map(c => {
       c /= 255
       return c <= 0.03928
         ? c / 12.92
         : Math.pow((c + 0.055) / 1.055, 2.4)
     })
+    const rs = transformed[0]!
+    const gs = transformed[1]!
+    const bs = transformed[2]!
 
     return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs
   }
@@ -282,7 +287,7 @@ export class ColorContrastValidator {
     const contrastRatio = this.calculateContrastRatio(textLuminance, bgLuminance)
 
     // Determine font size category
-    const fontSizeCategory = fontSize >= this.options.largeTextThreshold || isBold
+    const fontSizeCategory = fontSize >= (this.options.largeTextThreshold ?? WCAG_CONTRAST.LARGE_TEXT_THRESHOLD) || isBold
       ? 'large'
       : 'normal'
 
@@ -370,7 +375,7 @@ export class ColorContrastValidator {
     const results: ColorContrastResult[] = []
     const textElements = document.querySelectorAll('p, h1, h2, h3, h4, h5, h6, span, div, td, th, li, a, button')
 
-    for (const element of textElements) {
+    for (const element of Array.from(textElements)) {
       const result = this.validateElementContrast(element as HTMLElement)
       if (result && !result.passesAA) {
         results.push(result)

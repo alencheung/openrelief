@@ -369,6 +369,8 @@ export const usePrivacy = (options: UsePrivacyOptions = {}) => {
         applyDifferentialPrivacy?: boolean
         applyAnonymization?: boolean
         precisionLevel?: number
+        userId?: string
+        enableLogging?: boolean
       } = {}
     ): PrivacyProtectedData<LocationData> => {
       const startTime = Date.now()
@@ -459,6 +461,8 @@ export const usePrivacy = (options: UsePrivacyOptions = {}) => {
         applyDifferentialPrivacy?: boolean
         clusterUsers?: boolean
         kAnonymityConfig?: KAnonymityConfig
+        userId?: string
+        enableLogging?: boolean
       } = {}
     ): PrivacyProtectedData<T[]> => {
       const startTime = Date.now()
@@ -493,7 +497,7 @@ export const usePrivacy = (options: UsePrivacyOptions = {}) => {
               // Add noise to numeric fields
               Object.keys(protectedRecord).forEach(key => {
                 if (typeof protectedRecord[key] === 'number') {
-                  protectedRecord[key] += (Math.random() - 0.5) * 0.1 // Small noise
+                  ;(protectedRecord as any)[key] += (Math.random() - 0.5) * 0.1 // Small noise
                 }
               })
 
@@ -838,10 +842,11 @@ export const usePrivacy = (options: UsePrivacyOptions = {}) => {
 
     const dataProcessingByType = recentLogs.reduce(
       (acc, log) => {
-        if (!acc[log.dataType]) {
-          acc[log.dataType] = 0
+        const dt = log.dataType || 'unknown'
+        if (!acc[dt]) {
+          acc[dt] = 0
         }
-        acc[log.dataType]++
+        acc[dt]++
         return acc
       },
       {} as Record<string, number>
@@ -849,10 +854,11 @@ export const usePrivacy = (options: UsePrivacyOptions = {}) => {
 
     const privacyImpacts = recentLogs.reduce(
       (acc, log) => {
-        if (!acc[log.privacyImpact]) {
-          acc[log.privacyImpact] = 0
+        const pi = log.privacyImpact || 'unknown'
+        if (!acc[pi]) {
+          acc[pi] = 0
         }
-        acc[log.privacyImpact]++
+        acc[pi]++
         return acc
       },
       {} as Record<string, number>
@@ -860,10 +866,11 @@ export const usePrivacy = (options: UsePrivacyOptions = {}) => {
 
     const legalRequestsByStatus = privacyContext.legalRequests.reduce(
       (acc, request) => {
-        if (!acc[request.status]) {
-          acc[request.status] = 0
+        const st = request.status || 'unknown'
+        if (!acc[st]) {
+          acc[st] = 0
         }
-        acc[request.status]++
+        acc[st]++
         return acc
       },
       {} as Record<string, number>
@@ -973,6 +980,7 @@ export const usePrivacy = (options: UsePrivacyOptions = {}) => {
 
       return () => clearInterval(interval)
     }
+    return undefined
   }, [privacyContext.settings.realTimeMonitoring, monitorPrivacyBudget])
 
   return {

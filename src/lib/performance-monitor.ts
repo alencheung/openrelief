@@ -130,7 +130,7 @@ interface PerformanceActions {
   recordSystemMetrics: (metrics: Partial<PerformanceMetrics>) => void
 
   // Alert management
-  addAlert: (alert: Omit<PerformanceAlert, 'id' | 'timestamp'>) => void
+  addAlert: (alert: Omit<PerformanceAlert, 'id' | 'timestamp' | 'resolved'>) => void
   resolveAlert: (alertId: string) => void
   clearAlerts: () => void
 
@@ -142,6 +142,13 @@ interface PerformanceActions {
   generateReport: (timeRange: '1h' | '24h' | '7d' | '30d') => PerformanceReport
   exportMetrics: (format: 'json' | 'csv') => string
   resetMetrics: () => void
+
+  // Internal methods
+  collectMetrics: () => void
+  optimizeQueries: () => Promise<number>
+  warmCache: () => Promise<number>
+  optimizeLoadBalancing: () => Promise<number>
+  optimizeConnectionPooling: () => Promise<number>
 }
 
 export interface PerformanceReport {
@@ -321,8 +328,8 @@ export const usePerformanceMonitor = create<PerformanceState & PerformanceAction
             metrics: {
               ...state.metrics,
               averageLatency: average,
-              p95Latency: p95,
-              p99Latency: p99,
+              p95Latency: p95 ?? 0,
+              p99Latency: p99 ?? 0,
               maxLatency: max,
               minLatency: min,
               regionalPerformance
@@ -410,7 +417,7 @@ export const usePerformanceMonitor = create<PerformanceState & PerformanceAction
           const { metrics, thresholds } = get()
 
           // Check resource thresholds
-          const alerts = []
+          const alerts: Array<Omit<PerformanceAlert, 'id' | 'timestamp' | 'resolved'>> = []
 
           if (systemMetrics.cpuUsage && systemMetrics.cpuUsage > thresholds.maxCpuUsage) {
             alerts.push({

@@ -138,6 +138,7 @@ export interface ProcessingStep {
   step: string;
   description: string;
   completed: boolean;
+  required?: boolean;
   completedAt?: Date;
   completedBy?: string;
   notes?: string;
@@ -408,6 +409,7 @@ class LegalRequestTracker {
 
       // Log request creation
       await auditLogger.logEvent({
+        timestamp: new Date(),
         eventType: AuditEventType.LEGAL_REQUEST_RECEIVED,
         severity: this.mapTypeToSeverity(type),
         action: 'legal_request_created',
@@ -482,6 +484,7 @@ class LegalRequestTracker {
 
       // Log status change
       await auditLogger.logEvent({
+        timestamp: new Date(),
         eventType: AuditEventType.LEGAL_REQUEST_PROCESSED,
         severity: AuditSeverity.MEDIUM,
         userId,
@@ -543,6 +546,7 @@ class LegalRequestTracker {
 
       // Log step completion
       await auditLogger.logEvent({
+        timestamp: new Date(),
         eventType: AuditEventType.LEGAL_REQUEST_PROCESSED,
         severity: AuditSeverity.LOW,
         userId,
@@ -652,6 +656,7 @@ class LegalRequestTracker {
 
       // Log compliance check
       await auditLogger.logEvent({
+        timestamp: new Date(),
         eventType: AuditEventType.COMPLIANCE_CHECK,
         severity: passed ? AuditSeverity.LOW : AuditSeverity.HIGH,
         userId,
@@ -661,7 +666,7 @@ class LegalRequestTracker {
         metadata: {
           requestId,
           checkId,
-          checkType,
+          checkType: check.checkType,
           passed,
           notes
         }
@@ -685,7 +690,7 @@ class LegalRequestTracker {
           requestId,
           LegalRequestStatus.REJECTED,
           userId,
-          `Required compliance check failed: ${checkType}`
+          `Required compliance check failed: ${check.checkType}`
         )
       }
     } catch (error) {
@@ -725,6 +730,7 @@ class LegalRequestTracker {
 
       // Log notification
       await auditLogger.logEvent({
+        timestamp: new Date(),
         eventType: AuditEventType.LEGAL_REQUEST_PROCESSED,
         severity: AuditSeverity.MEDIUM,
         userId,
@@ -785,6 +791,7 @@ class LegalRequestTracker {
 
       // Log appeal
       await auditLogger.logEvent({
+        timestamp: new Date(),
         eventType: AuditEventType.LEGAL_REQUEST_PROCESSED,
         severity: AuditSeverity.MEDIUM,
         userId,
@@ -859,19 +866,20 @@ class LegalRequestTracker {
       // Aggregate data
       for (const request of requests || []) {
         // Count by type
-        reportData.requestsByType[request.type] = (reportData.requestsByType[request.type] || 0) + 1
+        reportData.requestsByType[request.type as LegalRequestType] = (reportData.requestsByType[request.type as LegalRequestType] || 0) + 1
 
         // Count by source
-        reportData.requestsBySource[request.source_type] = (reportData.requestsBySource[request.source_type] || 0) + 1
+        const srcType = (request as any).source_type || (request as any).sourceType
+        reportData.requestsBySource[srcType as RequestSourceType] = (reportData.requestsBySource[srcType as RequestSourceType] || 0) + 1
 
         // Count by status
-        reportData.requestsByStatus[request.status] = (reportData.requestsByStatus[request.status] || 0) + 1
+        reportData.requestsByStatus[request.status as LegalRequestStatus] = (reportData.requestsByStatus[request.status as LegalRequestStatus] || 0) + 1
 
         // Count data subjects
-        reportData.dataSubjectsAffected += request.data_subjects?.length || 0
+        reportData.dataSubjectsAffected += (request as any).data_subjects?.length || 0
 
         // Count user notifications
-        if (request.user_notified) {
+        if ((request as any).user_notified) {
           reportData.userNotifications.sent++
         }
         reportData.userNotifications.sent += request.user_notification_attempts || 0
@@ -1104,7 +1112,7 @@ class LegalRequestTracker {
       const now = new Date()
       const warningThreshold = 3 * 24 * 60 * 60 * 1000 // 3 days
 
-      for (const request of this.activeRequests.values()) {
+      for (const request of Array.from(this.activeRequests.values())) {
         // Check response deadline
         const timeToDeadline = request.responseDeadline.getTime() - now.getTime()
 
@@ -1119,6 +1127,7 @@ class LegalRequestTracker {
         } else if (timeToDeadline <= warningThreshold && timeToDeadline > 0) {
           // Approaching deadline - send warning
           await auditLogger.logEvent({
+            timestamp: new Date(),
             eventType: AuditEventType.LEGAL_REQUEST_PROCESSED,
             severity: AuditSeverity.MEDIUM,
             action: 'deadline_warning',

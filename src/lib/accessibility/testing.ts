@@ -56,7 +56,7 @@ export const accessibilityTests: AccessibilityTest[] = [
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
       )
 
-      for (const el of interactiveElements) {
+      for (const el of Array.from(interactiveElements)) {
         if (el instanceof HTMLElement) {
           const tabIndex = el.tabIndex
           if (tabIndex < 0 || el.getAttribute('aria-hidden') === 'true') {
@@ -125,7 +125,7 @@ export const accessibilityTests: AccessibilityTest[] = [
         'button, input, select, textarea, [role="button"], [role="link"], [role="menuitem"]'
       )
 
-      for (const el of interactiveElements) {
+      for (const el of Array.from(interactiveElements)) {
         if (el instanceof HTMLElement) {
           const accessibleName = getAccessibleName(el)
 
@@ -153,7 +153,7 @@ export const accessibilityTests: AccessibilityTest[] = [
     test: (element: HTMLElement): AccessibilityTestResult => {
       const textElements = element.querySelectorAll('p, h1, h2, h3, h4, h5, h6, span, div, label')
 
-      for (const el of textElements) {
+      for (const el of Array.from(textElements)) {
         if (el instanceof HTMLElement && el.textContent?.trim()) {
           const style = window.getComputedStyle(el)
           const color = style.color
@@ -191,18 +191,20 @@ export const accessibilityTests: AccessibilityTest[] = [
       const headings = element.querySelectorAll('h1, h2, h3, h4, h5, h6')
       const levels: number[] = []
 
-      for (const heading of headings) {
+      for (const heading of Array.from(headings)) {
         const level = parseInt(heading.tagName.charAt(1))
         levels.push(level)
       }
 
       // Check for skipped heading levels
       for (let i = 1; i < levels.length; i++) {
-        if (levels[i] - levels[i - 1] > 1) {
+        const currentLevel = levels[i]!
+        const prevLevel = levels[i - 1]!
+        if (currentLevel - prevLevel > 1) {
           return {
             passed: false,
             element: headings[i] as HTMLElement,
-            message: `Skipped heading level from h${levels[i - 1]} to h${levels[i]}`,
+            message: `Skipped heading level from h${prevLevel} to h${currentLevel}`,
             suggestion: 'Use heading levels sequentially without skipping levels'
           }
         }
@@ -231,7 +233,7 @@ export const accessibilityTests: AccessibilityTest[] = [
     test: (element: HTMLElement): AccessibilityTestResult => {
       const images = element.querySelectorAll('img')
 
-      for (const img of images) {
+      for (const img of Array.from(images)) {
         const alt = img.getAttribute('alt')
         const role = img.getAttribute('role')
 
@@ -263,7 +265,7 @@ export const accessibilityTests: AccessibilityTest[] = [
     test: (element: HTMLElement): AccessibilityTestResult => {
       const inputs = element.querySelectorAll('input, select, textarea')
 
-      for (const input of inputs) {
+      for (const input of Array.from(inputs)) {
         if (input instanceof HTMLElement) {
           const type = input.getAttribute('type')
 
@@ -275,7 +277,7 @@ export const accessibilityTests: AccessibilityTest[] = [
           const hasLabel
             = input.getAttribute('aria-label')
             || input.getAttribute('aria-labelledby')
-            || input.labels?.length
+            || (input as HTMLInputElement).labels?.length
             || input.getAttribute('title')
 
           if (!hasLabel) {
@@ -302,7 +304,7 @@ export const accessibilityTests: AccessibilityTest[] = [
     test: (element: HTMLElement): AccessibilityTestResult => {
       const links = element.querySelectorAll('a[href]')
 
-      for (const link of links) {
+      for (const link of Array.from(links)) {
         if (link instanceof HTMLElement) {
           const text = link.textContent?.trim()
           const ariaLabel = link.getAttribute('aria-label')
@@ -351,9 +353,9 @@ function parseColor(color: string): { r: number; g: number; b: number } {
     const hex = color.slice(1)
     if (hex.length === 3) {
       return {
-        r: parseInt(hex[0] + hex[0], 16),
-        g: parseInt(hex[1] + hex[1], 16),
-        b: parseInt(hex[2] + hex[2], 16)
+        r: parseInt(hex[0]! + hex[0]!, 16),
+        g: parseInt(hex[1]! + hex[1]!, 16),
+        b: parseInt(hex[2]! + hex[2]!, 16)
       }
     } else {
       return {
@@ -368,9 +370,9 @@ function parseColor(color: string): { r: number; g: number; b: number } {
   const rgbMatch = color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/)
   if (rgbMatch) {
     return {
-      r: parseInt(rgbMatch[1]),
-      g: parseInt(rgbMatch[2]),
-      b: parseInt(rgbMatch[3])
+      r: parseInt(rgbMatch[1]!),
+      g: parseInt(rgbMatch[2]!),
+      b: parseInt(rgbMatch[3]!)
     }
   }
 
@@ -378,9 +380,9 @@ function parseColor(color: string): { r: number; g: number; b: number } {
   const rgbaMatch = color.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*[\d.]+\)/)
   if (rgbaMatch) {
     return {
-      r: parseInt(rgbaMatch[1]),
-      g: parseInt(rgbaMatch[2]),
-      b: parseInt(rgbaMatch[3])
+      r: parseInt(rgbaMatch[1]!),
+      g: parseInt(rgbaMatch[2]!),
+      b: parseInt(rgbaMatch[3]!)
     }
   }
 
@@ -428,8 +430,8 @@ function getAccessibleName(element: HTMLElement): string {
   }
 
   // Check for form labels
-  if (element.labels && element.labels.length > 0) {
-    return Array.from(element.labels).map(label => label.textContent || '').join(' ')
+  if ((element as HTMLInputElement).labels && (element as HTMLInputElement).labels!.length > 0) {
+    return Array.from((element as HTMLInputElement).labels!).map(label => label.textContent || '').join(' ')
   }
 
   // Check for alt text on images

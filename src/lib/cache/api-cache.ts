@@ -89,10 +89,12 @@ async function getRedisClient(): Promise<RedisClient | null> {
         }
       } else {
         try {
+          // @ts-expect-error ioredis is an optional dependency
           const IORedis = await import(/* webpackIgnore: true */ 'ioredis').then(
             m => m.default || m
           )
-          const redis = new IORedis(redisUrl)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const redis = new (IORedis as any)(redisUrl)
           redisClient = {
             get: key => redis.get(key),
             setex: (key, ttl, value) => redis.setex(key, ttl, value),

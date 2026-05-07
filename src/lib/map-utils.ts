@@ -132,7 +132,7 @@ export function getContainingGeofences(
 // Create a geofence buffer for visualization
 export function createGeofenceBuffer(geofence: Geofence): GeoJSON.Feature {
   const center = point([geofence.center.lng, geofence.center.lat])
-  const buffered = buffer(center, geofence.radius / 1000, { units: 'kilometers' })
+  const buffered = _buffer(center, geofence.radius / 1000, { units: 'kilometers' })
 
   return {
     ...buffered,

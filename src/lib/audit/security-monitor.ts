@@ -247,6 +247,7 @@ class SecurityMonitor {
 
       // Log the detection
       await auditLogger.logEvent({
+        timestamp: new Date(),
         eventType: AuditEventType.SECURITY_INCIDENT,
         severity: this.mapSeverityToAuditSeverity(severity),
         action: 'incident_detected',
@@ -361,6 +362,7 @@ class SecurityMonitor {
 
       // Log the status change
       await auditLogger.logEvent({
+        timestamp: new Date(),
         eventType: AuditEventType.SECURITY_INCIDENT,
         severity: AuditSeverity.MEDIUM,
         userId,
@@ -394,7 +396,6 @@ class SecurityMonitor {
         id: evidenceId,
         incidentId,
         timestamp: new Date(),
-        collectedBy,
         ...evidence
       }
 
@@ -501,11 +502,11 @@ class SecurityMonitor {
 
       for (const incident of incidents || []) {
         // Count by type
-        metrics.incidentsByType[incident.type] = (metrics.incidentsByType[incident.type] || 0) + 1
+        metrics.incidentsByType[incident.type as SecurityIncidentType] = (metrics.incidentsByType[incident.type as SecurityIncidentType] || 0) + 1
 
         // Count by severity
-        metrics.incidentsBySeverity[incident.severity] =
-          (metrics.incidentsBySeverity[incident.severity] || 0) + 1
+        metrics.incidentsBySeverity[incident.severity as IncidentSeverity] =
+          (metrics.incidentsBySeverity[incident.severity as IncidentSeverity] || 0) + 1
 
         // Count critical incidents
         if (incident.severity === IncidentSeverity.CRITICAL) {
@@ -552,7 +553,7 @@ class SecurityMonitor {
         .lte('timestamp', metrics.timeRange.end.toISOString())
 
       if (alerts && alerts.length > 0) {
-        const falsePositives = alerts.filter(alert => alert.false_positive).length
+        const falsePositives = alerts.filter((alert: any) => alert.false_positive).length
         metrics.falsePositiveRate = (falsePositives / alerts.length) * 100
       }
 
@@ -673,6 +674,7 @@ class SecurityMonitor {
       action: 'critical_incident_alert',
       resource: 'security_monitor',
       privacyImpact: 'high',
+      timestamp: new Date(),
       metadata: {
         incidentId: incident.id,
         title: incident.title,
@@ -861,7 +863,7 @@ class SecurityMonitor {
           attemptsByIP.set(ip, (attemptsByIP.get(ip) || 0) + 1)
         }
 
-        for (const [ip, count] of attemptsByIP.entries()) {
+        for (const [ip, count] of Array.from(attemptsByIP.entries())) {
           if (count >= 5) {
             await this.createAlert(
               SecurityIncidentType.SUSPICIOUS_LOGIN,
@@ -889,7 +891,7 @@ class SecurityMonitor {
           accessByUser.set(userId, (accessByUser.get(userId) || 0) + 1)
         }
 
-        for (const [userId, count] of accessByUser.entries()) {
+        for (const [userId, count] of Array.from(accessByUser.entries())) {
           if (count >= 100) {
             // Unusually high access
             await this.createAlert(
