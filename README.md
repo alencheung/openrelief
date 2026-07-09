@@ -1,496 +1,293 @@
-# OpenRelief
+<p align="center">
+  <img src="public/images/banner.svg" alt="OpenRelief — Offline-first emergency coordination platform" width="100%" />
+</p>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![License: AGPLv3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/openrelief/openrelief/ci.yml?branch=main)](https://github.com/openrelief/openrelief/actions)
-[![Coverage](https://img.shields.io/codecov/c/github/openrelief/openrelief)](https://codecov.io/gh/openrelief/openrelief)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
-[![Security](https://img.shields.io/badge/Security-Policy-green.svg)](SECURITY.md)
+<p align="center">
+  <strong>Open-source, offline-first emergency coordination platform.</strong><br/>
+  Connect victims with resources through a privacy-preserving, decentralized PWA.
+</p>
 
-**Open-source, offline-first emergency coordination platform.**
+<p align="center">
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg"/></a>
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5.7-blue.svg"/>
+  <img alt="Next.js" src="https://img.shields.io/badge/Next.js-15-black.svg"/>
+  <img alt="Supabase" src="https://img.shields.io/badge/Supabase-PostgreSQL+PostGIS-green.svg"/>
+  <a href="CONTRIBUTING.md"><img alt="PRs Welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg"/></a>
+  <a href="SECURITY.md"><img alt="Security Policy" src="https://img.shields.io/badge/Security-Policy-green.svg"/></a>
+</p>
 
-OpenRelief is a Progressive Web App for decentralized emergency coordination. It
-connects victims with resources via a privacy-preserving interface, addressing
-scaling bottlenecks through database-native filtering and mitigating alarm
-fatigue through intelligent relevance algorithms.
+<p align="center">
+  <a href="#-quick-start">Quick Start</a> ·
+  <a href="#-how-it-works">How It Works</a> ·
+  <a href="#-architecture">Architecture</a> ·
+  <a href="#-project-structure">Structure</a> ·
+  <a href="#-contributing">Contributing</a> ·
+  <a href="docs/">Docs</a>
+</p>
 
-## 🚀 Quick Start for Contributors
+---
 
-### Core Technologies
+OpenRelief is a **Progressive Web App** for decentralized emergency
+coordination. It connects victims with resources via a privacy-preserving
+interface, addressing scaling bottlenecks through database-native spatial
+filtering and mitigating alarm fatigue through intelligent consensus and
+trust algorithms.
 
-- **Frontend**: Next.js 15+ (App Router), TanStack Query, Zustand
-- **Maps**: MapLibre GL JS with OpenMapTiles
-- **Backend**: Supabase (PostgreSQL 15+ with PostGIS)
-- **Infrastructure**: Cloudflare Workers, Edge Functions
-- **PWA**: Service Workers with Background Sync
+> **Why?** During disasters, centralized systems fail and networks drop out.
+> OpenRelief is built to keep working when it matters most — offline-first,
+> trust-weighted, and geographically aware.
+
+## ✨ Key Features
+
+| Feature | What it does |
+| --- | --- |
+| 🔴 **Emergency Reporting** | One-tap reporting with type, severity, and automatic geolocation |
+| 🗺️ **Live Map** | MapLibre GL map with real-time incident markers and resource overlays |
+| 📴 **Offline-First PWA** | Service Worker caches the app; reports queue and sync when back online |
+| 🤝 **Trust & Reputation** | Weighted trust scores resist Sybil attacks and false reporting |
+| 🗳️ **Consensus Engine** | Cross-confirms incidents from multiple sources to cut alarm fatigue |
+| 📍 **Geofenced Dispatch** | PostGIS spatial queries route alerts to nearby responders in <100ms |
+| 🔔 **Push Notifications** | Web Push (VAPID) with iOS background-silent delivery |
+| 🔒 **Privacy-First** | Row-Level Security, data export, and GDPR-aligned controls |
+
+## 🚀 Quick Start
 
 ### Prerequisites
 
-```bash
-# Node.js 18+ required
-node --version
+- **Node.js 18+** (Node 20 LTS recommended)
+- **npm 8+**
+- **Supabase CLI** (for local database): `npm install -g supabase`
+- **Docker** (required by `supabase start` for local Postgres + PostGIS)
 
-# Supabase CLI for local development
-npm install -g supabase
-
-# Git for version control
-git --version
-```
-
-### Local Development Setup
+### Launch in 5 Steps
 
 ```bash
-# Fork and clone the repository
-git clone https://github.com/your-username/openrelief.git
+# 1. Clone the repository
+git clone https://github.com/openrelief/openrelief.git
 cd openrelief
 
-# Install dependencies
+# 2. Install dependencies
 npm install
 
-# Start local Supabase
+# 3. Start local Supabase (PostgreSQL + PostGIS + Auth)
 supabase start
 
-# Run development server
+# 4. Configure environment variables
+cp .env.example .env.local
+#    → Fill in the Supabase URL + keys from `supabase status`
+
+# 5. Run the development server
 npm run dev
 ```
 
-## 📋 Project Structure
+Open **[http://localhost:3000](http://localhost:3000)** and you're live. 🎉
+
+<details>
+<summary><b>🖥️ Watch the terminal launch in action</b></summary>
+
+<p align="center">
+  <img src="public/images/launch-demo.gif" alt="Animated GIF: cloning, installing, and running OpenRelief in the terminal" width="100%" />
+</p>
+
+> To regenerate this GIF locally: `bash scripts/make-launch-gif.sh`
+> (requires `ffmpeg`).
+
+</details>
+
+<details>
+<summary><b>📸 See the app</b></summary>
+
+<table>
+  <tr>
+    <td width="60%"><img src="public/screenshots/desktop-1.png" alt="OpenRelief desktop view"/></td>
+    <td width="40%"><img src="public/screenshots/mobile-1.png" alt="OpenRelief mobile view"/></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Desktop — report & map</sub></td>
+    <td align="center"><sub>Mobile — offline-ready PWA</sub></td>
+  </tr>
+</table>
+
+</details>
+
+### Available Scripts
+
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start Next.js dev server |
+| `npm run build` | Production build |
+| `npm run start` | Start production server |
+| `npm run lint` | Run ESLint |
+| `npm run type-check` | TypeScript type check (`tsc --noEmit`) |
+| `npm test` | Run Jest unit/integration tests |
+| `npm run test:e2e:playwright` | Run Playwright E2E tests |
+| `npm run test:coverage` | Coverage report |
+| `npm run db:migrate` | Push Supabase migrations |
+| `npm run db:seed` | Seed local database |
+| `npm run format` | Format with Prettier |
+
+See [`AGENTS.md`](AGENTS.md) for the full command reference.
+
+## 🧭 How It Works
+
+<p align="center">
+  <img src="public/images/how-it-works.svg" alt="Five-step flow: Report → Validate → Geo-dispatch → Consensus → Respond" width="100%" />
+</p>
+
+1. **Report** — A victim (or bystander) opens the PWA and taps "Report",
+   selecting an emergency type. Their geolocation is attached automatically.
+   This works **offline**: the report queues in the Service Worker.
+2. **Validate** — When connectivity returns, the request hits the edge
+   (Next.js middleware / Cloudflare Workers). Rate limiting, input validation,
+   and the reporter's trust score gate the submission to resist Sybil attacks.
+3. **Geo-dispatch** — Supabase PostGIS runs a spatial proximity query to find
+   responders and resources near the incident — typically **under 100ms**.
+4. **Consensus** — The consensus engine cross-checks whether other reports
+   describe the same incident, raising confidence and suppressing duplicate
+   alarms (mitigating **alarm fatigue**).
+5. **Respond** — Verified alerts push to nearby responders via Web Push and
+   appear instantly on the live map through Supabase Realtime.
+
+## 🏗️ Architecture
+
+<p align="center">
+  <img src="public/images/architecture.svg" alt="OpenRelief three-tier architecture: Client PWA → Edge → Supabase data layer" width="100%" />
+</p>
+
+OpenRelief is a **three-tier** system:
+
+- **① Client (PWA)** — Next.js 15 App Router + React 18 + Zustand. A Service
+  Worker provides offline caching and background sync. TanStack Query handles
+  server state; Zustand manages local/realtime state (`emergencyStore`,
+  `trustStore`, `locationStore`, `offlineStore`).
+- **② Edge** — Next.js middleware plus optional Cloudflare Workers enforce
+  security headers, Redis-backed rate limiting, input validation, Supabase
+  auth sessions, Web Push delivery, and Sentry monitoring.
+- **③ Data (Supabase)** — PostgreSQL 15 with **PostGIS** powers spatial
+  queries and geofencing. Row-Level Security (RLS) governs data access. The
+  **Trust Engine** scores reporter reputation; the **Consensus Engine**
+  corroborates incidents. Supabase **Realtime** streams live map updates.
+
+### Tech Stack
+
+| Layer | Technology |
+| --- | --- |
+| Framework | Next.js 15 (App Router), React 18 |
+| Language | TypeScript (strict mode) |
+| Database / Auth | Supabase (PostgreSQL, PostGIS, Auth, RLS, Realtime) |
+| State | Zustand (persist + subscribeWithSelector) |
+| Data Fetching | TanStack Query v5 |
+| Styling | Tailwind CSS + CVA + Radix UI |
+| Maps | MapLibre GL + Leaflet |
+| Spatial | Turf.js + geolib |
+| Edge Functions | Cloudflare Workers |
+| Monitoring | Sentry (client/server/edge) |
+| Rate Limiting | Upstash Redis |
+| Validation | Zod + custom validators |
+
+## 📁 Project Structure
 
 ```
 openrelief/
-├── docs/                    # Documentation
 ├── src/
-│   ├── app/                 # Next.js App Router
-│   ├── components/          # Reusable UI components
-│   ├── lib/                 # Utility functions
-│   ├── hooks/               # Custom React hooks
-│   ├── store/               # Zustand state management
-│   └── types/               # TypeScript definitions
-├── supabase/                # Database schema and migrations
-├── public/                  # Static assets
+│   ├── app/                 # Next.js App Router (pages + API routes)
+│   ├── components/          # UI, map, trust, emergency, providers...
+│   ├── hooks/               # Custom React hooks (queries, mutations)
+│   ├── store/               # Zustand state stores
+│   ├── lib/                 # Supabase client, security, monitoring, utils
+│   ├── edge/                # Cloudflare Workers
+│   ├── types/               # TypeScript definitions
+│   └── middleware.ts        # Security, rate limiting, validation
+├── supabase/                # Migrations, config, seed data
+├── public/                  # Static assets, PWA icons, service worker
+├── docs/                    # Comprehensive documentation
 ├── tests/                   # Test suites
-└── .github/                 # GitHub workflows and templates
+├── scripts/                 # Build/test/utility scripts
+└── .github/                 # CI workflows, PR template, code owners
 ```
 
-## 🎯 Critical Contribution Areas
-
-### 1. Frontend Development (High Priority)
-
-**Skills Needed**: React/Next.js, TypeScript, PWA, MapLibre GL JS
-
-**Critical Tasks**:
-
-- PWA service worker optimization
-- MapLibre integration and performance
-- Responsive design for mobile devices
-- Offline functionality implementation
-
-**Getting Started**:
+## 🧪 Testing
 
 ```bash
-# Frontend development server
-npm run dev
-
-# Run frontend tests
-npm run test:frontend
-
-# Type checking
-npm run type-check
+npm test                      # All Jest unit/integration tests
+npm run test:coverage         # Coverage report
+npm run test:e2e:playwright   # E2E tests (Playwright)
+npm run test:lighthouse       # Lighthouse CI performance audit
 ```
 
-### 2. Database & Backend (Critical)
+The project targets **>80% coverage** on critical components and **<100ms**
+alert dispatch latency. See [`docs/testing/`](docs/testing/) for details.
 
-**Skills Needed**: PostgreSQL, PostGIS, Supabase, Database Optimization
+## 🔐 Environment Variables
 
-**Critical Tasks**:
+Copy `.env.example` to `.env.local` and fill in your keys. **Required** for
+the app to boot:
 
-- PostGIS spatial query optimization
-- Database schema implementation
-- Row Level Security (RLS) policies
-- Database triggers and functions
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | ✅ | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | Supabase anonymous (public) key |
+| `SUPABASE_SERVICE_ROLE_KEY` | ✅ | Server-side service role key |
 
-**Getting Started**:
+Optional variables (Redis, Sentry, VAPID push, MapTiler, etc.) are documented
+in [`.env.example`](.env.example). Run `supabase status` to find your local
+keys during development.
 
-```bash
-# Database migrations
-supabase db push
+## 🤝 Contributing
 
-# Run database tests
-npm run test:database
+Contributions are welcome! This is an open-source project built by the
+community.
 
-# Reset local database
-supabase db reset
-```
+1. **Fork** the repository and create a branch from `main`
+2. **Install** deps: `npm install`
+3. **Develop** — run `npm run dev`, `npm run lint`, `npm run type-check`
+4. **Test** — add/Update tests; ensure `npm test` passes
+5. **Commit** — pre-commit hooks (Husky + lint-staged) auto-format your code
+6. **Open a PR** — describe your changes using the [PR template](.github/pull_request_template.md)
 
-### 3. DevOps & Infrastructure (High Priority)
+Read the full [**Contributing Guide**](CONTRIBUTING.md) and
+[**Code of Conduct**](CODE_OF_CONDUCT.md).
 
-**Skills Needed**: Cloudflare Workers, CI/CD, Supabase Edge Functions
+<details>
+<summary><b>🎯 Priority contribution areas</b></summary>
 
-**Critical Tasks**:
+- **Frontend/PWA** — Service Worker optimization, MapLibre performance, offline sync
+- **Database** — PostGIS spatial query tuning, RLS policies, triggers
+- **Security/Privacy** — Trust algorithm, Sybil prevention, GDPR tooling
+- **DevOps** — CI/CD, edge function deployment, monitoring
+- **Mobile** — iOS background processing, push delivery
 
-- Edge function deployment
-- CI/CD pipeline optimization
-- Performance monitoring setup
-- Security configuration
+</details>
 
-**Getting Started**:
+## 📚 Documentation
 
-```bash
-# Deploy edge functions
-supabase functions deploy
-
-# Run infrastructure tests
-npm run test:infrastructure
-```
-
-### 4. Mobile & PWA Optimization (Medium Priority)
-
-**Skills Needed**: PWA, iOS/Android development, Service Workers
-
-**Critical Tasks**:
-
-- iOS background processing
-- Silent push notifications
-- Offline sync mechanisms
-- App store deployment
-
-### 5. Security & Privacy (Critical)
-
-**Skills Needed**: Security auditing, GDPR compliance, Authentication
-
-**Critical Tasks**:
-
-- Trust algorithm implementation
-- Sybil attack prevention
-- Privacy-preserving features
-- Security testing
-
-## 🔧 Development Workflow
-
-### 1. Issue Triage
-
-- **Critical**: Security vulnerabilities, blocking bugs
-- **High**: Core functionality issues, performance problems
-- **Medium**: Feature enhancements, documentation
-- **Low**: Minor improvements, code cleanup
-
-### 2. Branch Strategy
-
-```bash
-# Main branches
-main          # Production-ready code
-develop       # Integration branch
-feature/*     # Feature development
-hotfix/*      # Critical bug fixes
-release/*     # Release preparation
-```
-
-### 3. Pull Request Process
-
-1. Fork the repository
-2. Create feature branch from `develop`
-3. Implement changes with tests
-4. Ensure all tests pass
-5. Submit PR with detailed description
-6. Code review and merge
-
-### 4. Testing Requirements
-
-```bash
-# Run all tests
-npm run test
-
-# Coverage report
-npm run test:coverage
-
-# E2E tests
-npm run test:e2e
-
-# Performance tests
-npm run test:performance
-```
-
-## 🚦 Project Phases & Current Focus
-
-### Phase 1: Foundation (Weeks 1-6) - **ACTIVE**
-
-- [x] Repository structure and CI/CD
-- [ ] Database schema implementation
-- [ ] Next.js PWA setup
-- [ ] MapLibre integration
-
-**Current Critical Needs**:
-
-- PostgreSQL/PostGIS expertise for spatial queries
-- Frontend developers for PWA implementation
-- Security specialists for authentication
-
-### Phase 2: Trust System (Weeks 7-12)
-
-- [ ] Trust score algorithm implementation
-- [ ] Consensus engine development
-- [ ] Sybil attack prevention
-
-**Upcoming Needs**:
-
-- Data science expertise for trust algorithms
-- Backend developers for consensus logic
-
-### Phase 3: Alert Optimization (Weeks 13-18)
-
-- [ ] PostGIS performance optimization
-- [ ] Edge function deployment
-- [ ] iOS background processing
-
-### Phase 4: Resilience (Weeks 19-24)
-
-- [ ] Offline mesh networking
-- [ ] LoRaWAN integration
-- [ ] Performance scaling
-
-## 🛠️ Core Resource Requirements
-
-### Essential Development Tools
-
-- **IDE**: VS Code with recommended extensions
-- **Database**: Supabase CLI for local development
-- **Testing**: Jest, Cypress, Playwright
-- **Version Control**: Git with GitHub
-- **Communication**: Discord/Slack for team coordination
-
-### Critical Expertise Areas
-
-#### 1. Spatial Database Specialists (URGENT)
-
-**Required Skills**:
-
-- PostgreSQL 15+ with PostGIS 3.3+
-- Spatial indexing and query optimization
-- Database performance tuning
-- Geographic data types and functions
-
-**Contribution Focus**:
-
-- Implementing spatial queries for alert dispatch
-- Optimizing database performance for 50K+ users
-- Database schema design and migrations
-
-#### 2. Frontend/PWA Developers (HIGH PRIORITY)
-
-**Required Skills**:
-
-- Next.js 15+ with App Router
-- Progressive Web App development
-- MapLibre GL JS or similar mapping libraries
-- TypeScript and modern JavaScript
-
-**Contribution Focus**:
-
-- PWA service worker implementation
-- Map integration and performance
-- Mobile-responsive design
-- Offline functionality
-
-#### 3. Security & Privacy Experts (CRITICAL)
-
-**Required Skills**:
-
-- Authentication and authorization systems
-- GDPR compliance and data privacy
-- Security auditing and penetration testing
-- Cryptography and secure communication
-
-**Contribution Focus**:
-
-- Trust algorithm implementation
-- Sybil attack prevention mechanisms
-- Privacy-preserving features
-- Security testing and validation
-
-#### 4. DevOps/Infrastructure Engineers (HIGH PRIORITY)
-
-**Required Skills**:
-
-- Cloudflare Workers and Edge Functions
-- Supabase configuration and optimization
-- CI/CD pipeline development
-- Performance monitoring and logging
-
-**Contribution Focus**:
-
-- Edge function deployment
-- Infrastructure automation
-- Performance monitoring setup
-- Security configuration
-
-### Nice-to-Have Expertise
-
-#### 1. Mobile Development
-
-- iOS background processing experience
-- Android service worker knowledge
-- App store deployment processes
-
-#### 2. Data Science
-
-- Trust algorithm design
-- Machine learning for behavior analysis
-- Statistical modeling for consensus
-
-#### 3. GIS Specialists
-
-- Geographic information systems
-- Spatial data analysis
-- Mapping and visualization expertise
-
-## 📊 Contribution Guidelines
-
-### Code Standards
-
-```typescript
-// Example component structure
-import { useState, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
-
-export const EmergencyMap = () => {
-  // Component implementation
-}
-```
-
-### Testing Requirements
-
-- Unit tests for all functions
-- Integration tests for critical paths
-- E2E tests for user workflows
-- Performance tests for database queries
-
-### Documentation Standards
-
-- README for all major components
-- API documentation for backend services
-- Inline comments for complex logic
-- Architecture decision records (ADRs)
-
-## 🤝 Community Guidelines
-
-### Code of Conduct
-
-- Respectful and inclusive communication
-- Constructive feedback and collaboration
-- Focus on technical merit and community benefit
-- Zero tolerance for harassment or discrimination
-
-### Contribution Recognition
-
-- Contributor list in README
-- Feature credits in release notes
-- Community spotlight in blog posts
-- Merit-based maintainer roles
-
-## 📚 Learning Resources
-
-### Technical Documentation
-
-- [Supabase Documentation](https://supabase.com/docs)
-- [Next.js Documentation](https://nextjs.org/docs)
-- [MapLibre GL JS](https://maplibre.org/maplibre-gl-js-docs/)
-- [PostGIS Documentation](https://postgis.net/docs/)
-
-### Project-Specific Resources
-
-- [Architecture Decision Records](docs/adr/)
-- [Database Schema Documentation](docs/database/)
-- [API Reference](docs/api/)
-- [Deployment Guide](docs/deployment/)
+- [Architecture deep-dive](docs/architecture/)
+- [API reference](docs/api/)
+- [Database schema](docs/database/)
+- [Deployment guide](docs/deployment/)
+- [Security policy](SECURITY.md)
+- [Getting started](docs/getting-started/)
 
 ## 🆘 Getting Help
 
-### Community Channels
+- **Issues**: [Report bugs or request features](https://github.com/openrelief/openrelief/issues)
+- **Discussions**: [Ask questions](https://github.com/openrelief/openrelief/discussions)
+- **Good first issues**: [Start here](https://github.com/openrelief/openrelief/labels/good%20first%20issue)
 
-- **Discord**: Join our Discord server (link to be added)
-- **GitHub Discussions**:
-  [Ask questions](https://github.com/openrelief/openrelief/discussions)
-- **Issues**:
-  [Report bugs or request features](https://github.com/openrelief/openrelief/issues)
+## 📈 Roadmap
 
-### Contributor Support
+- [x] **Foundation** — Repository, Next.js PWA, MapLibre, DB schema
+- [x] **Trust System** — Trust scores, consensus engine, Sybil resistance
+- [x] **Alert Optimization** — PostGIS tuning, edge functions, iOS background
+- [ ] **Resilience** — Offline mesh networking, LoRaWAN integration
 
-- **New Contributors**: Start with
-  [good first issues](https://github.com/openrelief/openrelief/labels/good%20first%20issue)
-- **Documentation**: [Contributing guide](CONTRIBUTING.md)
-- **Technical Questions**: Use GitHub Discussions for general questions
+## 📄 License
 
-## 🏆 Recognition Program
-
-### Contributor Tiers
-
-- **Contributor**: 1+ merged PRs
-- **Active Contributor**: 5+ merged PRs
-- **Core Contributor**: 10+ merged PRs + community involvement
-- **Maintainer**: Core contributor + ongoing maintenance
-
-### Special Recognition
-
-- **Security Champion**: Critical security contributions
-- **Performance Hero**: Significant performance improvements
-- **Documentation Master**: Comprehensive documentation updates
-- **Community Leader**: Outstanding community support
-
-## 📈 Project Metrics
-
-### Development Goals
-
-- **Code Coverage**: >80% for critical components
-- **Performance**: <100ms alert dispatch latency
-- **Accessibility**: WCAG 2.1 AA compliance
-- **Security**: Zero critical vulnerabilities
-
-### Community Goals
-
-- **Contributors**: 50+ active contributors
-- **Languages**: Multi-language support
-- **Deployments**: Multiple regional instances
-- **Impact**: Measurable emergency response improvements
-
-## 🔮 Future Roadmap
-
-### Short-term (3 months)
-
-- Complete Phase 1 foundation
-- Establish core contributor team
-- Deploy initial MVP for testing
-- Gather community feedback
-
-### Medium-term (6 months)
-
-- Complete Phase 2 trust system
-- Expand contributor base
-- Multi-language support
-- Performance optimization
-
-### Long-term (12 months)
-
-- Complete all development phases
-- Global deployment network
-- Advanced offline capabilities
-- Hardware integration
+OpenRelief is licensed under the [**MIT License**](LICENSE).
 
 ---
 
-## 🚀 Ready to Contribute?
-
-1. **Star the repository** to show your support
-2. **Fork and clone** to start development
-3. **Join our Discord** for community discussion
-4. **Pick an issue** to work on
-5. **Submit your first PR** and become a contributor!
-
-**Every contribution matters - whether it's code, documentation, testing, or
-community support. Together, we can build a platform that saves lives during
-emergencies.**
-
----
-
-_OpenRelief is licensed under both MIT and AGPLv3. Choose the license that best
-fits your use case. For commercial use, please consider supporting the project
-through sponsorship or partnership._
+<p align="center">
+  <sub>Built with ❤️ for resilient communities. Every contribution helps save lives during emergencies.</sub><br/>
+  <a href="#top">↑ Back to top</a>
+</p>

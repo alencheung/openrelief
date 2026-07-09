@@ -1,0 +1,146 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 680" width="1100" height="680" role="img" aria-label="OpenRelief architecture diagram">
+  <defs>
+    <linearGradient id="client" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e3a8a"/><stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#9a3412"/><stop offset="100%" stop-color="#7c2d12"/>
+    </linearGradient>
+    <linearGradient id="data" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#065f46"/><stop offset="100%" stop-color="#064e3b"/>
+    </linearGradient>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#64748b"/>
+    </marker>
+    <marker id="arrR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#ef4444"/>
+    </marker>
+  </defs>
+
+  <rect width="1100" height="680" fill="#0f172a"/>
+
+  <!-- Title -->
+  <text x="550" y="38" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="24" font-weight="700" fill="#f1f5f9">OpenRelief — System Architecture</text>
+  <text x="550" y="62" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="14" fill="#94a3b8">How an emergency report flows from a citizen to responders</text>
+
+  <!-- ============ TIER 1: CLIENT ============ -->
+  <g transform="translate(40,90)">
+    <rect x="0" y="0" width="1020" height="150" rx="14" fill="none" stroke="#1e3a8a" stroke-width="1.5" stroke-dasharray="6 5" opacity="0.7"/>
+    <text x="16" y="24" font-family="'Segoe UI',system-ui,sans-serif" font-size="13" font-weight="700" fill="#60a5fa" letter-spacing="1">① CLIENT · PWA (Browser / Mobile)</text>
+
+    <!-- Victim device -->
+    <g transform="translate(40,44)">
+      <rect x="0" y="0" width="180" height="86" rx="10" fill="url(#client)" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="90" y="30" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="15" font-weight="700" fill="#fff">👤 Victim / Citizen</text>
+      <text x="90" y="52" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#bfdbfe">Report emergency</text>
+      <text x="90" y="70" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#bfdbfe">+ geolocation</text>
+    </g>
+
+    <!-- Responder device -->
+    <g transform="translate(270,44)">
+      <rect x="0" y="0" width="180" height="86" rx="10" fill="url(#client)" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="90" y="30" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="15" font-weight="700" fill="#fff">🚑 Responder</text>
+      <text x="90" y="52" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#bfdbfe">Accept / resolve</text>
+      <text x="90" y="70" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#bfdbfe">View live map</text>
+    </g>
+
+    <!-- Service worker -->
+    <g transform="translate(500,44)">
+      <rect x="0" y="0" width="200" height="86" rx="10" fill="#0b1120" stroke="#22c55e" stroke-width="1.5"/>
+      <text x="100" y="30" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="15" font-weight="700" fill="#fff">⚙️ Service Worker</text>
+      <text x="100" y="52" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#86efac">Offline cache</text>
+      <text x="100" y="70" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#86efac">Background sync</text>
+    </g>
+
+    <!-- Zustand -->
+    <g transform="translate(740,44)">
+      <rect x="0" y="0" width="240" height="86" rx="10" fill="#0b1120" stroke="#a855f7" stroke-width="1.5"/>
+      <text x="120" y="30" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="15" font-weight="700" fill="#fff">App State (Zustand)</text>
+      <text x="120" y="52" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#d8b4fe">emergencyStore · trustStore</text>
+      <text x="120" y="70" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#d8b4fe">locationStore · offlineStore</text>
+    </g>
+  </g>
+
+  <!-- arrows client -> edge -->
+  <line x1="300" y1="244" x2="300" y2="300" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="800" y1="244" x2="800" y2="300" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="312" y="278" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#94a3b8">HTTPS / Realtime WS</text>
+
+  <!-- ============ TIER 2: EDGE ============ -->
+  <g transform="translate(40,266)">
+    <rect x="0" y="0" width="1020" height="150" rx="14" fill="none" stroke="#9a3412" stroke-width="1.5" stroke-dasharray="6 5" opacity="0.7"/>
+    <text x="16" y="24" font-family="'Segoe UI',system-ui,sans-serif" font-size="13" font-weight="700" fill="#fb923c" letter-spacing="1">② EDGE · Next.js Middleware + Cloudflare Workers</text>
+
+    <g transform="translate(40,44)">
+      <rect x="0" y="0" width="200" height="86" rx="10" fill="url(#edge)" stroke="#f97316" stroke-width="1.5"/>
+      <text x="100" y="30" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="15" font-weight="700" fill="#fff">🛡️ Security Middleware</text>
+      <text x="100" y="52" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#fed7aa">Rate limiting (Redis)</text>
+      <text x="100" y="70" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#fed7aa">Input validation · CSP</text>
+    </g>
+
+    <g transform="translate(290,44)">
+      <rect x="0" y="0" width="200" height="86" rx="10" fill="url(#edge)" stroke="#f97316" stroke-width="1.5"/>
+      <text x="100" y="30" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="15" font-weight="700" fill="#fff">🔑 Auth Layer</text>
+      <text x="100" y="52" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#fed7aa">Supabase sessions</text>
+      <text x="100" y="70" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#fed7aa">RLS enforcement</text>
+    </g>
+
+    <g transform="translate(540,44)">
+      <rect x="0" y="0" width="200" height="86" rx="10" fill="url(#edge)" stroke="#f97316" stroke-width="1.5"/>
+      <text x="100" y="30" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="15" font-weight="700" fill="#fff">🔔 Push Service</text>
+      <text x="100" y="52" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#fed7aa">Web Push (VAPID)</text>
+      <text x="100" y="70" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#fed7aa">iOS background</text>
+    </g>
+
+    <g transform="translate(790,44)">
+      <rect x="0" y="0" width="190" height="86" rx="10" fill="url(#edge)" stroke="#f97316" stroke-width="1.5"/>
+      <text x="95" y="30" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="15" font-weight="700" fill="#fff">📈 Monitoring</text>
+      <text x="95" y="52" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#fed7aa">Sentry · Perf</text>
+      <text x="95" y="70" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#fed7aa">Audit logging</text>
+    </g>
+  </g>
+
+  <!-- arrows edge -> data -->
+  <line x1="300" y1="420" x2="300" y2="476" stroke="#ef4444" stroke-width="2.5" marker-end="url(#arrR)"/>
+  <line x1="640" y1="420" x2="640" y2="476" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="885" y1="420" x2="885" y2="476" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="312" y="454" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#fca5a5" font-weight="600">validated write</text>
+
+  <!-- ============ TIER 3: DATA ============ -->
+  <g transform="translate(40,442)">
+    <rect x="0" y="0" width="1020" height="150" rx="14" fill="none" stroke="#065f46" stroke-width="1.5" stroke-dasharray="6 5" opacity="0.7"/>
+    <text x="16" y="24" font-family="'Segoe UI',system-ui,sans-serif" font-size="13" font-weight="700" fill="#34d399" letter-spacing="1">③ DATA · Supabase (PostgreSQL + PostGIS + Realtime)</text>
+
+    <g transform="translate(40,44)">
+      <rect x="0" y="0" width="230" height="86" rx="10" fill="url(#data)" stroke="#10b981" stroke-width="1.5"/>
+      <text x="115" y="30" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="15" font-weight="700" fill="#fff">🗺️ PostGIS Spatial</text>
+      <text x="115" y="52" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#a7f3d0">Geofenced alerts</text>
+      <text x="115" y="70" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#a7f3d0">Proximity dispatch</text>
+    </g>
+
+    <g transform="translate(310,44)">
+      <rect x="0" y="0" width="220" height="86" rx="10" fill="url(#data)" stroke="#10b981" stroke-width="1.5"/>
+      <text x="110" y="30" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="15" font-weight="700" fill="#fff">🤝 Trust Engine</text>
+      <text x="110" y="52" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#a7f3d0">Reputation scoring</text>
+      <text x="110" y="70" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#a7f3d0">Sybil resistance</text>
+    </g>
+
+    <g transform="translate(570,44)">
+      <rect x="0" y="0" width="200" height="86" rx="10" fill="url(#data)" stroke="#10b981" stroke-width="1.5"/>
+      <text x="100" y="30" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="15" font-weight="700" fill="#fff">🗳️ Consensus</text>
+      <text x="100" y="52" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#a7f3d0">Multi-source verify</text>
+      <text x="100" y="70" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#a7f3d0">Alarm-fatigue filter</text>
+    </g>
+
+    <g transform="translate(810,44)">
+      <rect x="0" y="0" width="170" height="86" rx="10" fill="url(#data)" stroke="#10b981" stroke-width="1.5"/>
+      <text x="85" y="30" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="15" font-weight="700" fill="#fff">⚡ Realtime</text>
+      <text x="85" y="52" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#a7f3d0">Live updates</text>
+      <text x="85" y="70" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#a7f3d0">Subscriptions</text>
+    </g>
+  </g>
+
+  <!-- Feedback loop arrow -->
+  <path d="M920 528 Q 1060 528 1060 165 Q 1060 87 980 87" fill="none" stroke="#22c55e" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arr)"/>
+  <text x="1072" y="350" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#86efac" font-weight="600" transform="rotate(90 1072 350)">realtime push back to clients</text>
+</svg>
