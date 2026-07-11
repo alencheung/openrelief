@@ -220,7 +220,7 @@ export async function verifySupabaseJwt(token: string): Promise<JwtPayload | nul
     valid = await crypto.subtle.verify(
       'RSASSA-PKCS1-v1_5',
       cryptoKey,
-      signature,
+      signature.buffer as ArrayBuffer,
       signingInput
     )
   } catch {

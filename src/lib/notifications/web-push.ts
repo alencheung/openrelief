@@ -209,7 +209,7 @@ export async function sendWebPush(
         'Content-Type': 'application/octet-stream',
         TTL: '2419200'
       },
-      body: payload
+      body: new Uint8Array(payload)
     })
 
     const expired = response.status === 404 || response.status === 410

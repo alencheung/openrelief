@@ -31,7 +31,7 @@ async function globalSetup(config: FullConfig) {
   // top-level `use.baseURL`).
   const baseURL =
     config.projects[0]?.use?.baseURL ||
-    (config.use as { baseURL?: string })?.baseURL ||
+    (config as { use?: { baseURL?: string } }).use?.baseURL ||
     'http://localhost:3000';
 
   console.log(`[global-setup] Probing app at ${baseURL}...`);
