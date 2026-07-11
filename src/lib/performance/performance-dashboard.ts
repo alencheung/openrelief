@@ -73,9 +73,9 @@ export {
   getAlertsToEscalate,
   getEscalationChannels,
   processAlert,
-  sendAlertToChannel,
-  ThresholdAlertRequest
+  sendAlertToChannel
 } from './dashboard-alerting'
+export type { ThresholdAlertRequest } from './dashboard-alerting'
 export {
   exportAsCSV,
   exportAsJSON,
