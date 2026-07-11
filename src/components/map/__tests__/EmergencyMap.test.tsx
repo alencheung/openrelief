@@ -1,7 +1,6 @@
 import React from 'react'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
 import EmergencyMap from '../EmergencyMap'
 import {
   createTestUtils,
@@ -181,7 +180,7 @@ jest.mock('@/components/mobile/MobileMapControls', () => ({
   MobileMapControls: jest.fn(() => <div data-testid="mobile-controls">Mobile Controls</div>)
 }))
 
-// Mock the store hooks so vi.mocked(useEmergencyStore).mockReturnValue(...)
+// Mock the store hooks so jest.mocked(useEmergencyStore).mockReturnValue(...)
 // controls their return values per-test.
 jest.mock('@/store/emergencyStore', () => ({
   useEmergencyStore: jest.fn()
@@ -246,10 +245,10 @@ describe('EmergencyMap', () => {
   ]
 
   beforeEach(() => {
-    vi.clearAllMocks()
+    jest.clearAllMocks()
 
     // Mock store hooks
-    vi.mocked(useEmergencyStore).mockReturnValue({
+    jest.mocked(useEmergencyStore).mockReturnValue({
       events: mockEmergencyEvents,
       filteredEvents: mockEmergencyEvents,
       mapState: {
@@ -261,7 +260,7 @@ describe('EmergencyMap', () => {
       setSelectedEventOnMap: mockSetSelectedEventOnMap
     } as any)
 
-    vi.mocked(useLocationStore).mockReturnValue({
+    jest.mocked(useLocationStore).mockReturnValue({
       currentLocation: mockLocation,
       isTracking: true,
       geofences: mockGeofences,
@@ -272,7 +271,7 @@ describe('EmergencyMap', () => {
   })
 
   afterEach(() => {
-    vi.restoreAllMocks()
+    jest.restoreAllMocks()
   })
 
   it('renders map container correctly', () => {
@@ -349,7 +348,7 @@ describe('EmergencyMap', () => {
     await user.click(centerButton)
 
     // Should announce location centering
-    const { announcePolite } = vi
+    const { announcePolite } = jest
       .mocked(require('@/hooks/accessibility').useAriaAnnouncer())
       .mockReturnValue({
         announcePolite: jest.fn(),
@@ -366,7 +365,7 @@ describe('EmergencyMap', () => {
     const heatmapButton = screen.getByRole('button', { name: /toggle heatmap/i })
     await user.click(heatmapButton)
 
-    const { announcePolite } = vi
+    const { announcePolite } = jest
       .mocked(require('@/hooks/accessibility').useAriaAnnouncer())
       .mockReturnValue({
         announcePolite: jest.fn(),
@@ -405,8 +404,8 @@ describe('EmergencyMap', () => {
       })
     ]
 
-    vi.mocked(useEmergencyStore).mockReturnValue({
-      ...vi.mocked(useEmergencyStore).mockReturnValue,
+    jest.mocked(useEmergencyStore).mockReturnValue({
+      ...jest.mocked(useEmergencyStore).mockReturnValue,
       events: newEvents,
       filteredEvents: newEvents
     } as any)
@@ -426,8 +425,8 @@ describe('EmergencyMap', () => {
       lng: -73.9851
     })
 
-    vi.mocked(useLocationStore).mockReturnValue({
-      ...vi.mocked(useLocationStore).mockReturnValue,
+    jest.mocked(useLocationStore).mockReturnValue({
+      ...jest.mocked(useLocationStore).mockReturnValue,
       currentLocation: newLocation
     } as any)
 
@@ -437,7 +436,7 @@ describe('EmergencyMap', () => {
   })
 
   it('handles keyboard navigation', () => {
-    const { registerShortcut } = vi
+    const { registerShortcut } = jest
       .mocked(require('@/hooks/accessibility').useKeyboardNavigation())
       .mockReturnValue({
         registerShortcut: jest.fn(),
@@ -577,7 +576,7 @@ describe('EmergencyMap', () => {
   })
 
   it('handles reduced motion preference', () => {
-    vi.mocked(require('@/hooks/accessibility').useReducedMotion).mockReturnValue({
+    jest.mocked(require('@/hooks/accessibility').useReducedMotion).mockReturnValue({
       prefersReducedMotion: true
     })
 
@@ -587,7 +586,7 @@ describe('EmergencyMap', () => {
   })
 
   it('handles mobile view', () => {
-    vi.mocked(require('@/hooks/useMobileDetection').useMobileDetection).mockReturnValue({
+    jest.mocked(require('@/hooks/useMobileDetection').useMobileDetection).mockReturnValue({
       isMobile: true,
       isTouch: true
     })
@@ -598,7 +597,7 @@ describe('EmergencyMap', () => {
   })
 
   it('handles touch gestures', () => {
-    vi.mocked(require('@/hooks/useMobileDetection').useMobileDetection).mockReturnValue({
+    jest.mocked(require('@/hooks/useMobileDetection').useMobileDetection).mockReturnValue({
       isMobile: true,
       isTouch: true
     })
@@ -615,12 +614,12 @@ describe('EmergencyMap', () => {
     unmount()
 
     // Map should be cleaned up
-    expect(vi.mocked(require('maplibre-gl').default.Map)).toHaveBeenCalled()
+    expect(jest.mocked(require('maplibre-gl').default.Map)).toHaveBeenCalled()
   })
 
   it('handles error states gracefully', () => {
     // Mock error in map initialization
-    vi.mocked(require('maplibre-gl').default.Map).mockImplementation(() => {
+    jest.mocked(require('maplibre-gl').default.Map).mockImplementation(() => {
       throw new Error('Map initialization failed')
     })
 
@@ -631,7 +630,7 @@ describe('EmergencyMap', () => {
   })
 
   it('handles accessibility announcements', () => {
-    const { announcePolite } = vi
+    const { announcePolite } = jest
       .mocked(require('@/hooks/accessibility').useAriaAnnouncer())
       .mockReturnValue({
         announcePolite: jest.fn(),

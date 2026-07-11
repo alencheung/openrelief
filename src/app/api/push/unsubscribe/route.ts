@@ -10,9 +10,20 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { withAPISecurity, API_SECURITY_CONFIGS } from '@/lib/security/api-security'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { z } from 'zod'
 
 // push_subscriptions is not yet modelled in Database types; cast to untyped.
 type SSRClient = SupabaseClient
+
+// Validation schema for unsubscribe requests. `endpoint` is the Web Push
+// subscription endpoint URL; cap its length to avoid abuse.
+const unsubscribeSchema = z.object({
+  endpoint: z
+    .string()
+    .trim()
+    .min(1, 'Endpoint required')
+    .max(2048, 'Endpoint too long')
+})
 
 export const POST = withAPISecurity(API_SECURITY_CONFIGS.user)(
   async (request: NextRequest, context) => {
@@ -22,11 +33,17 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.user)(
       }
 
       const body = await request.json()
-      const { endpoint } = body as { endpoint?: string }
-
-      if (!endpoint || typeof endpoint !== 'string') {
-        return NextResponse.json({ error: 'Endpoint required' }, { status: 400 })
+      const parsed = unsubscribeSchema.safeParse(body)
+      if (!parsed.success) {
+        const fieldErrors = parsed.error.flatten().fieldErrors
+        const firstMessage =
+          (fieldErrors.endpoint?.[0]) || 'Invalid request body'
+        return NextResponse.json(
+          { error: firstMessage, details: parsed.error.flatten() },
+          { status: 400 }
+        )
       }
+      const { endpoint } = parsed.data
 
       const supabase = (await createClient()) as SSRClient
 

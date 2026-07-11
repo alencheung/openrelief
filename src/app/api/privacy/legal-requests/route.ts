@@ -11,6 +11,31 @@ import { createClient } from '@/lib/supabase/server'
 import { withAPISecurity, API_SECURITY_CONFIGS } from '@/lib/security/api-security'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { LegalRequest } from '@/hooks/usePrivacy'
+import { z } from 'zod'
+
+// Validation schema for POST /api/privacy/legal-requests. Mirrors the
+// previously hand-rolled type/length checks.
+const legalRequestCreateSchema = z.object({
+  type: z.enum(['data_access', 'deletion', 'correction', 'portability', 'objection']),
+  title: z
+    .string()
+    .trim()
+    .min(3, 'title must be between 3 and 200 characters')
+    .max(200, 'title must be between 3 and 200 characters'),
+  description: z
+    .string()
+    .trim()
+    .min(10, 'description must be between 10 and 2000 characters')
+    .max(2000, 'description must be between 10 and 2000 characters')
+})
+
+// Validation schema for PUT /api/privacy/legal-requests. Users may only
+// appeal (set status to 'appealed') or amend the description.
+const legalRequestUpdateSchema = z.object({
+  requestId: z.string().min(1, 'Missing required field: requestId'),
+  status: z.literal('appealed').optional(),
+  description: z.string().trim().min(1).max(2000).optional()
+})
 
 // SSR client cast to untyped form: user_legal_requests / privacy_audit_log are
 // not yet modelled in Database types. RLS scopes all access to the caller.
@@ -134,37 +159,17 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.user)(
       }
 
       const body = await request.json()
-      const { type, title, description } = body as {
-        type?: string
-        title?: string
-        description?: string
-      }
-
-      if (!type || !ALLOWED_TYPES.includes(type as RequestType)) {
+      const parsed = legalRequestCreateSchema.safeParse(body)
+      if (!parsed.success) {
+        const firstIssue = parsed.error.issues[0]
+        const message = firstIssue?.message || 'Invalid request body'
         return NextResponse.json(
-          { error: `type must be one of: ${ALLOWED_TYPES.join(', ')}` },
-          { status: 400 }
-        )
-      }
-      if (!title || typeof title !== 'string' || title.trim().length < 3 || title.length > 200) {
-        return NextResponse.json(
-          { error: 'title must be between 3 and 200 characters' },
-          { status: 400 }
-        )
-      }
-      if (
-        !description ||
-        typeof description !== 'string' ||
-        description.trim().length < 10 ||
-        description.length > 2000
-      ) {
-        return NextResponse.json(
-          { error: 'description must be between 10 and 2000 characters' },
+          { error: message, details: parsed.error.flatten() },
           { status: 400 }
         )
       }
 
-      const requestType = type as RequestType
+      const { type: requestType, title, description } = parsed.data
       const now = new Date()
       const responseDeadline = new Date(
         now.getTime() + RESPONSE_DEADLINE_DAYS[requestType] * 24 * 60 * 60 * 1000
@@ -242,15 +247,17 @@ export const PUT = withAPISecurity(API_SECURITY_CONFIGS.user)(
       }
 
       const body = await request.json()
-      const { requestId, status, description } = body as {
-        requestId?: string
-        status?: string
-        description?: string
+      const parsed = legalRequestUpdateSchema.safeParse(body)
+      if (!parsed.success) {
+        const firstIssue = parsed.error.issues[0]
+        const message = firstIssue?.message || 'Invalid request body'
+        return NextResponse.json(
+          { error: message, details: parsed.error.flatten() },
+          { status: 400 }
+        )
       }
 
-      if (!requestId) {
-        return NextResponse.json({ error: 'Missing required field: requestId' }, { status: 400 })
-      }
+      const { requestId, status, description } = parsed.data
 
       // Users may only appeal (set status to 'appealed') or amend description.
       const patch: Record<string, unknown> = {}

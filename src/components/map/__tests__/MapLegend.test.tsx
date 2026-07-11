@@ -1,7 +1,6 @@
 import React from 'react'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
 import MapLegend from '../MapLegend'
 import { createTestUtils } from '@/test-utils'
 
@@ -59,11 +58,11 @@ describe('MapLegend', () => {
   const defaultProps = {}
 
   beforeEach(() => {
-    vi.clearAllMocks()
+    jest.clearAllMocks()
   })
 
   afterEach(() => {
-    vi.restoreAllMocks()
+    jest.restoreAllMocks()
   })
 
   it('renders map legend with default props', () => {

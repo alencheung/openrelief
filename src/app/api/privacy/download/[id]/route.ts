@@ -9,6 +9,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { z } from 'zod'
+
+// Export id must be a non-empty UUID-like string. We accept the standard UUID
+// shape but stay lenient about variant/case so the generated request ids from
+// crypto.randomUUID() and any future id scheme keep working.
+const exportIdParamSchema = z.object({
+  id: z
+    .string()
+    .trim()
+    .min(1, 'Export id is required')
+    .max(100, 'Export id is too long')
+    .regex(/^[A-Za-z0-9_-]+$/, 'Export id contains invalid characters')
+})
 
 // SSR client cast to untyped form: data_export_requests is not yet modelled in
 // Database types. RLS scopes access to the caller.
@@ -27,7 +40,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params
+    const resolvedParams = await params
+    const paramsResult = exportIdParamSchema.safeParse(resolvedParams)
+    if (!paramsResult.success) {
+      return NextResponse.json(
+        { error: 'Invalid request body', details: paramsResult.error.flatten() },
+        { status: 400 }
+      )
+    }
+    const { id } = paramsResult.data
     if (!id) {
       return NextResponse.json({ error: 'Export id is required' }, { status: 400 })
     }

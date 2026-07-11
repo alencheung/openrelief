@@ -4,6 +4,12 @@
  * Returns the active emergency type categories. These are non-sensitive
  * reference data; anonymous read is permitted (matches the RLS policy on
  * emergency_types). No auth required.
+ *
+ * INTENTIONALLY PUBLIC: This endpoint exposes only static emergency type
+ * definitions (id/name/slug/description/icon/color/default_radius). It is
+ * used by the client to populate category pickers before sign-in, so it
+ * must remain unauthenticated. No user-specific or sensitive data is
+ * returned. Do not add write handlers here without adding auth first.
  */
 
 import { NextResponse } from 'next/server'

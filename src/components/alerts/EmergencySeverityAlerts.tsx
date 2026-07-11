@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-// @ts-nocheck
 'use client'
 
 import React, { useState, useEffect, useMemo } from 'react'
@@ -220,6 +218,7 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
           'Fire emergency severity upgraded from medium to high due to multiple confirmations.',
         timestamp: Date.now() - 120000,
         priority: 'high',
+        requiresAction: false,
         acknowledged: true,
         dismissed: false,
         read: true,
@@ -245,6 +244,7 @@ export function EmergencySeverityAlerts({ className }: EmergencySeverityAlertsPr
           'Experiencing high latency in emergency alert dispatch. Some alerts may be delayed.',
         timestamp: Date.now() - 300000,
         priority: 'medium',
+        requiresAction: false,
         acknowledged: false,
         dismissed: false,
         read: false,

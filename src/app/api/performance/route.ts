@@ -8,6 +8,7 @@
 
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { NextRequest, NextResponse } from 'next/server'
+import { timingSafeEqual } from 'crypto'
 
 // Lazy accessors: these performance/testing modules reference browser-only
 // globals (window/document) and Supabase env vars at module-load time, which
@@ -138,17 +139,39 @@ function createAPIResponse<T>(
   } as PerformanceAPIResponse<T>
 }
 
-// Validate API key
-function validateAPIKey(request: NextRequest): boolean {
-  const apiKey = request.headers.get('x-api-key')
+// Constant-time string comparison. Returns false when lengths differ without
+// leaking which side mismatched. Both inputs are encoded as UTF-8 buffers.
+function safeCompare(a: string, b: string): boolean {
+  const aBuf = Buffer.from(a, 'utf8')
+  const bBuf = Buffer.from(b, 'utf8')
+  if (aBuf.length !== bBuf.length) {
+    timingSafeEqual(bBuf, bBuf)
+    return false
+  }
+  return timingSafeEqual(aBuf, bBuf)
+}
+
+// Validate API key against PERFORMANCE_API_KEY. Fails closed: if the key is
+// not configured the endpoint reports 503 (service misconfigured) rather than
+// granting access. Comparison is constant-time to avoid timing oracle attacks.
+type ApiKeyResult = { ok: true } | { ok: false; status: number; message: string }
+function checkAPIKey(request: NextRequest): ApiKeyResult {
   const validKey = process.env.PERFORMANCE_API_KEY
 
-  // In development, skip validation
-  if (process.env.NODE_ENV === 'development') {
-    return true
+  if (!validKey) {
+    return {
+      ok: false,
+      status: 503,
+      message: 'Performance API is not configured (PERFORMANCE_API_KEY missing)'
+    }
   }
 
-  return apiKey === validKey
+  const apiKey = request.headers.get('x-api-key')
+  if (!apiKey || !safeCompare(apiKey, validKey)) {
+    return { ok: false, status: 401, message: 'Invalid API key' }
+  }
+
+  return { ok: true }
 }
 
 // Parse request body
@@ -167,10 +190,12 @@ export async function GET(request: NextRequest): Promise<NextResponse<Performanc
 
   try {
     // Validate API key
-    if (!validateAPIKey(request)) {
-      return NextResponse.json(createAPIResponse(false, null, 'Invalid API key', requestId), {
-        status: 401
-      })
+    const apiKeyResult = checkAPIKey(request)
+    if (!apiKeyResult.ok) {
+      return NextResponse.json(
+        createAPIResponse(false, null, apiKeyResult.message, requestId),
+        { status: apiKeyResult.status }
+      )
     }
 
     const { searchParams } = new URL(request.url)
@@ -288,10 +313,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<Performan
 
   try {
     // Validate API key
-    if (!validateAPIKey(request)) {
-      return NextResponse.json(createAPIResponse(false, null, 'Invalid API key', requestId), {
-        status: 401
-      })
+    const apiKeyResult = checkAPIKey(request)
+    if (!apiKeyResult.ok) {
+      return NextResponse.json(
+        createAPIResponse(false, null, apiKeyResult.message, requestId),
+        { status: apiKeyResult.status }
+      )
     }
 
     const { searchParams } = new URL(request.url)
@@ -389,10 +416,12 @@ export async function PUT(request: NextRequest): Promise<NextResponse<Performanc
 
   try {
     // Validate API key
-    if (!validateAPIKey(request)) {
-      return NextResponse.json(createAPIResponse(false, null, 'Invalid API key', requestId), {
-        status: 401
-      })
+    const apiKeyResult = checkAPIKey(request)
+    if (!apiKeyResult.ok) {
+      return NextResponse.json(
+        createAPIResponse(false, null, apiKeyResult.message, requestId),
+        { status: apiKeyResult.status }
+      )
     }
 
     const { searchParams } = new URL(request.url)
@@ -446,10 +475,12 @@ export async function DELETE(request: NextRequest): Promise<NextResponse<Perform
 
   try {
     // Validate API key
-    if (!validateAPIKey(request)) {
-      return NextResponse.json(createAPIResponse(false, null, 'Invalid API key', requestId), {
-        status: 401
-      })
+    const apiKeyResult = checkAPIKey(request)
+    if (!apiKeyResult.ok) {
+      return NextResponse.json(
+        createAPIResponse(false, null, apiKeyResult.message, requestId),
+        { status: apiKeyResult.status }
+      )
     }
 
     const { searchParams } = new URL(request.url)
@@ -826,4 +857,4 @@ function convertToCSV(data: any): string {
 }
 
 // Export for testing
-export { generateRequestId, createAPIResponse, validateAPIKey, parseRequestBody }
+export { generateRequestId, createAPIResponse, checkAPIKey, parseRequestBody }

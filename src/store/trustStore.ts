@@ -2,6 +2,18 @@ import { create } from 'zustand'
 import { persist, subscribeWithSelector } from 'zustand/middleware'
 
 // Types
+//
+// NOTE: a second `TrustScore` / `TrustFactors` pair exists in
+// `src/lib/security/trust-integration.ts` (the server-side trust engine).
+// These two pairs are INTENTIONALLY distinct and are NOT interchangeable:
+//  - THIS file's types model the CLIENT-SIDE Zustand cache
+//    (`useTrustStore`): `TrustScore.score` / `previousScore`, and
+//    `TrustFactors` uses numeric `expertiseAreas: number[]`.
+//  - The engine's types (in trust-integration.ts) model the SERVER-SIDE
+//    domain: `TrustScore.overall` + `reputation` + `confidence`, and
+//    `TrustFactors` includes `consistencyScore` + string `expertiseAreas`.
+// These store types are re-exported through `@/store` and consumed by UI
+// selectors, so they cannot be silently swapped for the engine types.
 export interface TrustScore {
   userId: string
   score: number

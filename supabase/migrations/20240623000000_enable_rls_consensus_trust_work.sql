@@ -39,6 +39,8 @@ ALTER TABLE trust_recompute_work ENABLE ROW LEVEL SECURITY;
 -- ---------------------------------------------------------------------------
 
 -- Only service role can manage consensus work items
+-- DROP first for idempotency: Postgres has no CREATE POLICY IF NOT EXISTS.
+DROP POLICY IF EXISTS "Service role can manage consensus work" ON consensus_work;
 CREATE POLICY "Service role can manage consensus work" ON consensus_work
     FOR ALL USING (
         current_setting('app.current_role', true) = 'service_role' OR
@@ -46,6 +48,8 @@ CREATE POLICY "Service role can manage consensus work" ON consensus_work
     );
 
 -- Only service role can manage trust recompute work items
+-- DROP first for idempotency: Postgres has no CREATE POLICY IF NOT EXISTS.
+DROP POLICY IF EXISTS "Service role can manage trust recompute work" ON trust_recompute_work;
 CREATE POLICY "Service role can manage trust recompute work" ON trust_recompute_work
     FOR ALL USING (
         current_setting('app.current_role', true) = 'service_role' OR

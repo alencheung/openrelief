@@ -1,7 +1,6 @@
 import React from 'react'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
 import EmergencyReportInterface from '../EmergencyReportInterface'
 import { createTestUtils, createMockLocation } from '@/test-utils'
 
@@ -203,11 +202,11 @@ describe('EmergencyReportInterface', () => {
   }
 
   beforeEach(() => {
-    vi.clearAllMocks()
+    jest.clearAllMocks()
   })
 
   afterEach(() => {
-    vi.restoreAllMocks()
+    jest.restoreAllMocks()
   })
 
   it('renders nothing when not open', () => {
@@ -741,7 +740,7 @@ describe('EmergencyReportInterface', () => {
       value: false
     })
 
-    const { addAction } = vi.mocked(require('@/store').useOfflineStore()).mockReturnValue({
+    const { addAction } = jest.mocked(require('@/store').useOfflineStore()).mockReturnValue({
       addAction: jest.fn()
     })
 
@@ -848,7 +847,7 @@ describe('EmergencyReportInterface', () => {
 
   it('announces step changes', async () => {
     const user = userEvent.setup()
-    const { announcePolite } = vi
+    const { announcePolite } = jest
       .mocked(require('@/hooks/accessibility').useAriaAnnouncer())
       .mockReturnValue({
         announcePolite: jest.fn(),
@@ -883,7 +882,7 @@ describe('EmergencyReportInterface', () => {
     await user.click(submitButton)
 
     // Should show validation error
-    const { announceAssertive } = vi
+    const { announceAssertive } = jest
       .mocked(require('@/hooks/accessibility').useAriaAnnouncer())
       .mockReturnValue({
         announcePolite: jest.fn(),

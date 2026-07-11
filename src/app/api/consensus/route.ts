@@ -3,6 +3,22 @@ import { createClient } from '@supabase/supabase-js'
 import { withAPISecurity, API_SECURITY_CONFIGS } from '@/lib/security/api-security'
 import { securityMonitor } from '@/lib/audit/security-monitor'
 import { trustScoreManager } from '@/lib/security/trust-integration'
+import { z } from 'zod'
+
+// Validation schema for a consensus vote (confirm/dispute) on an event.
+const consensusVoteSchema = z.object({
+  event_id: z.string().min(1, 'Event ID is required').max(100),
+  confirmation_type: z.enum(['confirm', 'dispute'], {
+    errorMap: () => ({ message: 'Confirmation type must be "confirm" or "dispute"' })
+  }),
+  location: z
+    .object({
+      latitude: z.number().min(-90).max(90),
+      longitude: z.number().min(-180).max(180)
+    })
+    .nullable()
+    .optional()
+})
 
 // Build-safe Supabase client: returns a real client when env vars are present,
 // otherwise a minimal stub so module-load during the Next.js build page-data
@@ -134,21 +150,14 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
 ) => {
   try {
     const body = await request.json()
-    const { event_id, confirmation_type, location } = body
-
-    if (!event_id || !confirmation_type) {
+    const parsed = consensusVoteSchema.safeParse(body)
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Event ID and confirmation type are required' },
+        { error: 'Invalid request body', details: parsed.error.flatten() },
         { status: 400 }
       )
     }
-
-    if (!['confirm', 'dispute'].includes(confirmation_type)) {
-      return NextResponse.json(
-        { error: 'Confirmation type must be "confirm" or "dispute"' },
-        { status: 400 }
-      )
-    }
+    const { event_id, confirmation_type, location } = parsed.data
 
     if (!context.userId) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })

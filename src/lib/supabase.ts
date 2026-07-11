@@ -29,7 +29,25 @@ export const supabase = shouldUseMockClient
       }
     })
 
-// Service role client for server-side operations
+// ---------------------------------------------------------------------------
+// SERVER-ONLY: supabaseAdmin (service-role client)
+// ---------------------------------------------------------------------------
+// This client uses SUPABASE_SERVICE_ROLE_KEY and BYPASSES Row-Level Security.
+// It MUST NEVER be imported into a Client Component ('use client') or any code
+// that ships to the browser. Leaking the service-role key would grant full
+// admin access to the database.
+//
+// Browser code should use the `supabase` (anon) client exported above.
+// Server Components / Route Handlers should use createClient() from
+// '@/lib/supabase/server'. Prefer createAdminClient() from
+// '@/lib/supabase/server' for new server-side admin work so this shared
+// singleton can eventually be retired.
+//
+// NOTE: We intentionally do NOT add `import 'server-only'` here because this
+// file also exports the browser-safe `supabase` anon client. TODO(security):
+// extract supabaseAdmin into its own module guarded by `import 'server-only'`
+// so the bundler fails the build on accidental client imports. Not done in
+// this pass to avoid breaking existing imports of `supabase`.
 export const supabaseAdmin = shouldUseMockClient
   ? createMockSupabaseClient()
   : createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY || '', {
