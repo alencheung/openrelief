@@ -382,8 +382,11 @@ const nextConfig = {
   poweredByHeader: false,
   generateEtags: false,
 
-  // Output configuration for PWA
-  output: 'standalone',
+  // Output configuration for PWA.
+  // 'standalone' bundles a self-contained server for Docker/self-hosted targets.
+  // Netlify deploys via @netlify/plugin-nextjs, which expects the default output
+  // mode — so defer to the default there to avoid broken SSR/API routes.
+  output: process.env.NETLIFY ? undefined : 'standalone',
 
   // Enable static optimization
   trailingSlash: false
