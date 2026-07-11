@@ -114,7 +114,23 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
       )
     }
 
-    const sanitizedData = validationResult.sanitizedData as Record<string, string>
+    const sanitizedData = validationResult.sanitizedData as {
+      status?: string
+      type_id?: string
+      limit?: string
+      offset?: string
+      radius?: string
+      center_lat?: string
+      center_lng?: string
+      title?: string
+      description?: string
+      severity?: string
+      type?: string
+      latitude?: string
+      longitude?: string
+      location_accuracy?: string
+      [key: string]: string | undefined
+    }
 
     const cacheKey = generateCacheKey('emergency', {
       status: sanitizedData.status,
@@ -294,7 +310,16 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (
       )
     }
 
-    const sanitizedData = validationResult.sanitizedData
+    const sanitizedData = validationResult.sanitizedData as {
+      type_id?: string
+      title?: string
+      description?: string
+      severity?: string
+      trust_weight?: number
+      location?: { latitude: number; longitude: number; address?: string }
+      metadata?: Record<string, unknown>
+      [key: string]: unknown
+    }
 
     // Use the authenticated caller as the reporter ??never trust a reporter_id
     // supplied in the request body (that allowed impersonation). The emergency
@@ -481,7 +506,7 @@ export const PUT = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
       )
     }
 
-    const sanitizedData = validationResult.sanitizedData
+    const sanitizedData = validationResult.sanitizedData as Record<string, unknown>
 
     // Build update object
     const updates: Record<string, unknown> = {
