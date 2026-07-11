@@ -8,7 +8,7 @@
  */
 
 import { createHash } from 'crypto'
-import { securityMonitor } from '@/lib/audit/security-monitor'
+import { securityMonitor, SecurityIncidentType, IncidentSeverity } from '@/lib/audit/security-monitor'
 import { supabaseAdmin } from '@/lib/supabase'
 
 // Sybil attack detection interfaces
@@ -112,7 +112,7 @@ export interface SybilFlag {
   type: SybilFlagType
   severity: 'low' | 'medium' | 'high' | 'critical'
   description: string
-  evidence: any
+  evidence: Record<string, unknown>
   detectedAt: Date
   confidence: number
 }
@@ -128,6 +128,57 @@ export enum SybilFlagType {
   AUTOMATED_BEHAVIOR = 'automated_behavior',
   NETWORK_ISOLATION = 'network_isolation',
   TEMPORAL_CORRELATION = 'temporal_correlation'
+}
+
+/**
+ * Row shapes for the Supabase tables read by this engine. These describe only
+ * the columns the code below actually accesses; they are intentionally narrow
+ * rather than mirroring the full generated `Database` types so that field
+ * accesses stay auditable.
+ */
+interface UserProfileRow {
+  user_id: string
+  trust_score: number
+  created_at: string
+  updated_at: string
+  last_activity?: string
+  last_known_location?: string | null
+  status?: string
+}
+
+interface AuditLogRow {
+  action: string
+  timestamp: string
+}
+
+interface EventConfirmationRow {
+  event_id: string
+  confirmation_type: string
+  created_at: string
+  trust_weight?: number
+}
+
+interface EmergencyEventRow {
+  status: string
+  severity: string
+}
+
+/** An activity-log entry reduced to the two fields used for timing analysis. */
+interface TimedAction {
+  action: string
+  timestamp: number
+}
+
+/**
+ * Result of a coordinated-attack detection sub-scan. Used as the shared return
+ * shape of detectAccountCreationBurst / detectCoordinatedVoting / etc.
+ */
+interface CoordinatedAttackResult {
+  detected: boolean
+  attackType: string
+  involvedUsers: string[]
+  confidence: number
+  evidence: Record<string, unknown>[]
 }
 
 // Detection thresholds and configuration
@@ -296,7 +347,7 @@ export class SybilPreventionEngine {
       // Detect Sybil flags
       const flags = await this.detectSybilFlags({
         userId,
-        userData,
+        userData: userData as UserProfileRow,
         activityPattern,
         networkConnections,
         votingHistory,
@@ -343,7 +394,7 @@ export class SybilPreventionEngine {
     attackType: string
     involvedUsers: string[]
     confidence: number
-    evidence: any[]
+    evidence: Record<string, unknown>[]
   }> {
     const attacks = []
 
@@ -482,7 +533,7 @@ export class SybilPreventionEngine {
     }
   }
 
-  private async getUserActivityHistory(userId: string): Promise<any[]> {
+  private async getUserActivityHistory(userId: string): Promise<AuditLogRow[]> {
     const { data, error } = await supabaseAdmin
       .from('audit_log')
       .select('*')
@@ -493,10 +544,10 @@ export class SybilPreventionEngine {
     if (error) {
       throw error
     }
-    return data || []
+    return (data || []) as AuditLogRow[]
   }
 
-  private analyzeActivityPattern(activityHistory: any[]): ActivityPattern {
+  private analyzeActivityPattern(activityHistory: AuditLogRow[]): ActivityPattern {
     const actions = activityHistory.map(log => ({
       action: log.action,
       timestamp: new Date(log.timestamp).getTime()
@@ -566,11 +617,11 @@ export class SybilPreventionEngine {
       throw error
     }
 
-    return ((data as any[]) || []).map((connection: any) => ({
+    return ((data as EventConfirmationRow[] | null) || []).map((connection) => ({
       connectedUserId: connection.event_id, // Simplified - would need proper relation
-      connectionType: connection.confirmation_type as any,
+      connectionType: connection.confirmation_type as NetworkConnection['connectionType'],
       timestamp: new Date(connection.created_at),
-      trustWeight: connection.trust_weight,
+      trustWeight: connection.trust_weight ?? 0,
       reciprocity: false // Would need additional analysis
     }))
   }
@@ -586,10 +637,10 @@ export class SybilPreventionEngine {
       throw error
     }
 
-    const votes = (data as any[]) || []
+    const votes = (data as EventConfirmationRow[] | null) || []
     const totalVotes = votes.length
-    const confirmVotes = votes.filter((v: any) => v.confirmation_type === 'confirm').length
-    const disputeVotes = votes.filter((v: any) => v.confirmation_type === 'dispute').length
+    const confirmVotes = votes.filter((v) => v.confirmation_type === 'confirm').length
+    const disputeVotes = votes.filter((v) => v.confirmation_type === 'dispute').length
 
     // Calculate consensus alignment (simplified)
     const consensusAlignment = 0.5 // Would need actual consensus data
@@ -628,14 +679,14 @@ export class SybilPreventionEngine {
       throw error
     }
 
-    const reports = (data as any[]) || []
+    const reports = (data as EmergencyEventRow[] | null) || []
     const totalReports = reports.length
-    const confirmedReports = reports.filter((r: any) => r.status === 'resolved').length
-    const disputedReports = reports.filter((r: any) => r.status === 'disputed').length
+    const confirmedReports = reports.filter((r) => r.status === 'resolved').length
+    const disputedReports = reports.filter((r) => r.status === 'disputed').length
 
     // Calculate average severity
-    const severities = reports.map((r: any) => this.severityToNumber(r.severity))
-    const averageSeverity = severities.reduce((sum: number, s: number) => sum + s, 0) / severities.length || 0
+    const severities = reports.map((r) => this.severityToNumber(r.severity))
+    const averageSeverity = severities.reduce((sum, s) => sum + s, 0) / severities.length || 0
 
     // Detect report clusters
     const reportClusters = await this.detectReportClusters(userId, reports)
@@ -664,9 +715,9 @@ export class SybilPreventionEngine {
       throw error
     }
 
-    const locations = (data as any[]) || []
-    return locations.map((loc: any) => {
-      const coords = this.parseLocation(loc.last_known_location)
+    const locations = (data as Pick<UserProfileRow, 'last_known_location' | 'updated_at'>[] | null) || []
+    return locations.map((loc) => {
+      const coords = this.parseLocation(loc.last_known_location ?? '')
       return {
         latitude: coords.lat,
         longitude: coords.lng,
@@ -733,7 +784,7 @@ export class SybilPreventionEngine {
 
   private async detectSybilFlags(profile: {
     userId: string
-    userData: any
+    userData: UserProfileRow
     activityPattern: ActivityPattern
     networkConnections: NetworkConnection[]
     votingHistory: VotingHistory
@@ -790,13 +841,7 @@ export class SybilPreventionEngine {
     return flags
   }
 
-  private async detectAccountCreationBurst(): Promise<{
-    detected: boolean
-    attackType: string
-    involvedUsers: string[]
-    confidence: number
-    evidence: any[]
-  }> {
+  private async detectAccountCreationBurst(): Promise<CoordinatedAttackResult> {
     const { data, error } = await supabaseAdmin
       .from('user_profiles')
       .select('*')
@@ -806,11 +851,11 @@ export class SybilPreventionEngine {
       throw error
     }
 
-    const recentUsers = (data as any[]) || []
+    const recentUsers = (data as UserProfileRow[] | null) || []
 
     // Check for account creation burst
     if (recentUsers.length > DETECTION_CONFIG.accountCreation.maxAccountsPerHour) {
-      const suspiciousUsers = recentUsers.filter((user: any) =>
+      const suspiciousUsers = recentUsers.filter((user) =>
         user.trust_score < DETECTION_CONFIG.accountCreation.suspiciousTrustScoreThreshold
       )
 
@@ -818,7 +863,7 @@ export class SybilPreventionEngine {
         return {
           detected: true,
           attackType: 'Account Creation Burst',
-          involvedUsers: suspiciousUsers.map((u: any) => u.user_id),
+          involvedUsers: suspiciousUsers.map((u) => u.user_id),
           confidence: 0.8,
           evidence: [
             {
@@ -841,13 +886,7 @@ export class SybilPreventionEngine {
     }
   }
 
-  private async detectCoordinatedVoting(): Promise<{
-    detected: boolean
-    attackType: string
-    involvedUsers: string[]
-    confidence: number
-    evidence: any[]
-  }> {
+  private async detectCoordinatedVoting(): Promise<CoordinatedAttackResult> {
     // This would analyze voting patterns across multiple users
     // Simplified implementation for demonstration
 
@@ -860,13 +899,7 @@ export class SybilPreventionEngine {
     }
   }
 
-  private async detectClusteredReporting(): Promise<{
-    detected: boolean
-    attackType: string
-    involvedUsers: string[]
-    confidence: number
-    evidence: any[]
-  }> {
+  private async detectClusteredReporting(): Promise<CoordinatedAttackResult> {
     // This would analyze geographic clustering of reports
     // Simplified implementation for demonstration
 
@@ -879,13 +912,7 @@ export class SybilPreventionEngine {
     }
   }
 
-  private async detectCircularEndorsements(): Promise<{
-    detected: boolean
-    attackType: string
-    involvedUsers: string[]
-    confidence: number
-    evidence: any[]
-  }> {
+  private async detectCircularEndorsements(): Promise<CoordinatedAttackResult> {
     // This would detect circular endorsement patterns
     // Simplified implementation for demonstration
 
@@ -901,8 +928,8 @@ export class SybilPreventionEngine {
   private async handleHighRiskUser(profile: UserBehaviorProfile): Promise<void> {
     // Log security incident
     await securityMonitor.createAlert(
-      'malicious_activity' as any,
-      'high' as any,
+      SecurityIncidentType.MALICIOUS_ACTIVITY,
+      IncidentSeverity.HIGH,
       `High-risk user detected: ${profile.userId}`,
       `Risk score: ${profile.riskScore}, Flags: ${profile.flags.length}`,
       'sybil_prevention'
@@ -922,18 +949,18 @@ export class SybilPreventionEngine {
     attackType: string
     involvedUsers: string[]
     confidence: number
-    evidence: any[]
+    evidence: Record<string, unknown>[]
   }): Promise<void> {
     // Log security incident
     await securityMonitor.detectIncident(
-      'malicious_activity' as any,
-      'high' as any,
+      SecurityIncidentType.MALICIOUS_ACTIVITY,
+      IncidentSeverity.HIGH,
       `Coordinated attack detected: ${attack.attackType}`,
       `${attack.involvedUsers.length} users involved, Confidence: ${attack.confidence}`,
       {
         attackVector: attack.attackType,
         affectedUsers: attack.involvedUsers,
-        indicators: attack.evidence.map((e: any) => JSON.stringify(e))
+        indicators: attack.evidence.map((e) => JSON.stringify(e))
       }
     )
 
@@ -1000,7 +1027,7 @@ export class SybilPreventionEngine {
     return recommendations
   }
 
-  private detectBurstActivity(actions: any[]): number {
+  private detectBurstActivity(actions: TimedAction[]): number {
     // Count actions in short time windows
     let maxBurst = 0
     const windowSize = 5 * 60 * 1000 // 5 minutes
@@ -1034,7 +1061,7 @@ export class SybilPreventionEngine {
     return coefficientOfVariation < 0.1
   }
 
-  private detectAutomatedBehavior(actions: any[], timeBetweenActions: number[]): boolean {
+  private detectAutomatedBehavior(actions: TimedAction[], timeBetweenActions: number[]): boolean {
     // Multiple indicators of automated behavior
     const consistentTiming = this.checkConsistentTiming(timeBetweenActions)
     const burstActivity = this.detectBurstActivity(actions) > DETECTION_CONFIG.behavior.burstActivityThreshold
@@ -1080,22 +1107,22 @@ export class SybilPreventionEngine {
     return mostCommon
   }
 
-  private async detectVotingClusters(userId: string, votes: any[]): Promise<VotingCluster[]> {
+  private async detectVotingClusters(userId: string, votes: EventConfirmationRow[]): Promise<VotingCluster[]> {
     // Simplified implementation
     return []
   }
 
-  private analyzeVotingTimingPatterns(votes: any[]): TimingPattern[] {
+  private analyzeVotingTimingPatterns(votes: EventConfirmationRow[]): TimingPattern[] {
     // Simplified implementation
     return []
   }
 
-  private async detectReportClusters(userId: string, reports: any[]): Promise<ReportCluster[]> {
+  private async detectReportClusters(userId: string, reports: EmergencyEventRow[]): Promise<ReportCluster[]> {
     // Simplified implementation
     return []
   }
 
-  private async analyzeLocationProximity(userId: string, reports: any[]): Promise<LocationProximity[]> {
+  private async analyzeLocationProximity(userId: string, reports: EmergencyEventRow[]): Promise<LocationProximity[]> {
     // Simplified implementation
     return []
   }

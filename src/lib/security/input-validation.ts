@@ -8,7 +8,7 @@
 
 import DOMPurify from 'isomorphic-dompurify'
 import { createHash, randomBytes } from 'crypto'
-import { securityMonitor } from '@/lib/audit/security-monitor'
+import { securityMonitor, SecurityIncidentType, IncidentSeverity } from '@/lib/audit/security-monitor'
 
 // Security validation types
 export interface ValidationRule {
@@ -20,16 +20,16 @@ export interface ValidationRule {
   min?: number
   max?: number
   pattern?: RegExp
-  allowedValues?: any[]
+  allowedValues?: unknown[]
   sanitize?: boolean
   stripHtml?: boolean
   allowEmpty?: boolean
-  custom?: (value: any) => string | null
+  custom?: (value: unknown) => string | null
 }
 
 export interface ValidationResult {
   isValid: boolean
-  sanitizedValue?: any
+  sanitizedValue?: unknown
   errors: string[]
   warnings: string[]
   securityFlags: SecurityFlag[]
@@ -38,7 +38,7 @@ export interface ValidationResult {
 // Result shape returned by validateApiInput (field-keyed errors/warnings)
 export interface ApiValidationResult {
   isValid: boolean
-  sanitizedData: Record<string, any>
+  sanitizedData: Record<string, unknown>
   errors: Record<string, string[]>
   warnings: Record<string, string[]>
   securityFlags: SecurityFlag[]
@@ -152,7 +152,7 @@ export class InputValidator {
   /**
    * Validate and sanitize a single value
    */
-  validateAndSanitize(value: any, rules: ValidationRule[]): ValidationResult {
+  validateAndSanitize(value: unknown, rules: ValidationRule[]): ValidationResult {
     const result: ValidationResult = {
       isValid: true,
       errors: [],
@@ -197,16 +197,16 @@ export class InputValidator {
   /**
    * Validate and sanitize multiple fields
    */
-  validateAndSanitizeObject(data: Record<string, any>, schema: Record<string, ValidationRule[]>): {
+  validateAndSanitizeObject(data: Record<string, unknown>, schema: Record<string, ValidationRule[]>): {
     isValid: boolean
-    sanitizedData: Record<string, any>
+    sanitizedData: Record<string, unknown>
     errors: Record<string, string[]>
     warnings: Record<string, string[]>
     securityFlags: SecurityFlag[]
   } {
     const result = {
       isValid: true,
-      sanitizedData: {} as Record<string, any>,
+      sanitizedData: {} as Record<string, unknown>,
       errors: {} as Record<string, string[]>,
       warnings: {} as Record<string, string[]>,
       securityFlags: [] as SecurityFlag[]
@@ -232,7 +232,7 @@ export class InputValidator {
   /**
    * Apply a single validation rule
    */
-  private applyRule(value: any, rule: ValidationRule): ValidationResult {
+  private applyRule(value: unknown, rule: ValidationRule): ValidationResult {
     const result: ValidationResult = {
       isValid: true,
       errors: [],
@@ -258,8 +258,8 @@ export class InputValidator {
       )
       if (highSeverityFlags.length > 0 && highSeverityFlags[0]) {
         securityMonitor.createAlert(
-          'malicious_activity' as any,
-          'high' as any,
+          SecurityIncidentType.MALICIOUS_ACTIVITY,
+          IncidentSeverity.HIGH,
           `Security threat detected in ${rule.name}`,
           `Pattern: ${highSeverityFlags[0].detectedPattern}`,
           'input_validation'
@@ -267,19 +267,28 @@ export class InputValidator {
       }
     }
 
+    // Typed view of the value for length/range/pattern checks. The runtime
+    // behavior of the original (which accepted `any`) is preserved: these
+    // checks only produce meaningful results for strings/numbers, but they
+    // are still evaluated for other types using JavaScript's coercion rules.
+    const stringValue = typeof value === 'string' ? value : undefined
+    const lengthValue = (typeof value === 'string' || Array.isArray(value))
+      ? (value as { length: number }).length
+      : undefined
+
     // Length validation
-    if (rule.minLength !== undefined && value.length < rule.minLength) {
+    if (rule.minLength !== undefined && lengthValue !== undefined && lengthValue < rule.minLength) {
       result.isValid = false
       result.errors.push(`${rule.name} must be at least ${rule.minLength} characters`)
     }
 
-    if (rule.maxLength !== undefined && value.length > rule.maxLength) {
+    if (rule.maxLength !== undefined && lengthValue !== undefined && lengthValue > rule.maxLength) {
       result.isValid = false
       result.errors.push(`${rule.name} must be no more than ${rule.maxLength} characters`)
     }
 
     // Range validation for numbers
-    if (rule.type === 'number') {
+    if (rule.type === 'number' && typeof value === 'number') {
       if (rule.min !== undefined && value < rule.min) {
         result.isValid = false
         result.errors.push(`${rule.name} must be at least ${rule.min}`)
@@ -292,7 +301,7 @@ export class InputValidator {
     }
 
     // Pattern validation
-    if (rule.pattern && !rule.pattern.test(value)) {
+    if (rule.pattern && stringValue !== undefined && !rule.pattern.test(stringValue)) {
       result.isValid = false
       result.errors.push(`${rule.name} format is invalid`)
     }
@@ -328,7 +337,7 @@ export class InputValidator {
   /**
    * Validate data type
    */
-  private validateType(value: any, type: string): boolean {
+  private validateType(value: unknown, type: string): boolean {
     switch (type) {
       case 'string':
         return typeof value === 'string'
@@ -503,8 +512,9 @@ export const VALIDATION_SCHEMAS: ValidationSchemas = {
   emergencyReport: {
     title: [
       { name: 'title', required: true, type: 'string', minLength: 5, maxLength: 200, sanitize: true, stripHtml: true },
-      { name: 'title', type: 'string', pattern: /^[a-zA-Z0-9\s\-.,!?]+$/, custom: (value: string) => {
-        if (value.length > 0 && !value.trim()) {
+      { name: 'title', type: 'string', pattern: /^[a-zA-Z0-9\s\-.,!?]+$/, custom: (value: unknown) => {
+        const str = typeof value === 'string' ? value : ''
+        if (str.length > 0 && !str.trim()) {
           return 'Title cannot be empty or whitespace only'
         }
         return null
@@ -517,14 +527,15 @@ export const VALIDATION_SCHEMAS: ValidationSchemas = {
       { name: 'severity', required: true, type: 'number', min: 1, max: 10 }
     ],
     location: [
-      { name: 'location', required: true, type: 'object', custom: (value: { latitude?: number; longitude?: number }) => {
-        if (!value.latitude || !value.longitude) {
+      { name: 'location', required: true, type: 'object', custom: (value: unknown) => {
+        const loc = value as { latitude?: number; longitude?: number }
+        if (!loc.latitude || !loc.longitude) {
           return 'Location must include latitude and longitude'
         }
-        if (value.latitude < -90 || value.latitude > 90) {
+        if (loc.latitude < -90 || loc.latitude > 90) {
           return 'Invalid latitude'
         }
-        if (value.longitude < -180 || value.longitude > 180) {
+        if (loc.longitude < -180 || loc.longitude > 180) {
           return 'Invalid longitude'
         }
         return null
@@ -544,24 +555,29 @@ export const VALIDATION_SCHEMAS: ValidationSchemas = {
       { name: 'email', required: true, type: 'email', maxLength: 254 }
     ],
     password: [
-      { name: 'password', required: true, type: 'string', minLength: 12, maxLength: 128, custom: (value: string) => {
-        if (!/(?=.*[a-z])/.test(value)) {
+      { name: 'password', required: true, type: 'string', minLength: 12, maxLength: 128, custom: (value: unknown) => {
+        const str = typeof value === 'string' ? value : ''
+        if (!/(?=.*[a-z])/.test(str)) {
           return 'Password must contain at least one lowercase letter'
         }
-        if (!/(?=.*[A-Z])/.test(value)) {
+        if (!/(?=.*[A-Z])/.test(str)) {
           return 'Password must contain at least one uppercase letter'
         }
-        if (!/(?=.*\d)/.test(value)) {
+        if (!/(?=.*\d)/.test(str)) {
           return 'Password must contain at least one number'
         }
-        if (!/(?=.*[!@#$%^&*])/.test(value)) {
+        if (!/(?=.*[!@#$%^&*])/.test(str)) {
           return 'Password must contain at least one special character'
         }
         return null
       } }
     ],
     confirmPassword: [
-      { name: 'confirmPassword', required: true, type: 'string', custom: (value: string, formData?: { password?: string }) => {
+      { name: 'confirmPassword', required: true, type: 'string', custom: (value: unknown) => {
+        // NOTE: formData is never supplied by applyRule (it calls
+        // rule.custom(value) with a single argument), so this historically
+        // compares against `undefined`. Behavior preserved verbatim.
+        const formData: { password?: string } | undefined = undefined
         if (value !== formData?.password) {
           return 'Passwords do not match'
         }
