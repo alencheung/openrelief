@@ -316,7 +316,7 @@ export const useVictimCheckIns = () =>
   }))
 
 export const useVictimActions = () =>
-  useVictimStore(state => ({
+  useVictimStore((state: VictimState & VictimActions) => ({
     setVictims: state.setVictims,
     addVictim: state.addVictim,
     updateVictim: state.updateVictim,
@@ -332,7 +332,7 @@ export const useVictimActions = () =>
   }))
 
 export const useOfflineVictimActions = () =>
-  useVictimStore(state => ({
+  useVictimStore((state: VictimState & VictimActions) => ({
     offlineActions: state.offlineActions,
     addOfflineAction: state.addOfflineAction,
     removeOfflineAction: state.removeOfflineAction,

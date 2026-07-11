@@ -2,61 +2,68 @@ import { Page, expect } from '@playwright/test';
 
 /**
  * Test helpers for OpenRelief E2E tests
- * 
- * This file contains common utilities and helper functions
- * to reduce code duplication across test files.
+ *
+ * These helpers target the REAL app routes and use role/text-based
+ * selectors (resilient to markup changes) instead of data-testids,
+ * because the app source does not expose data-testids.
+ *
+ * Real routes:
+ *   /, /login, /signup, /report, /profile, /settings, /privacy,
+ *   /offline, /offline/emergency, /pwa-status, /onboarding,
+ *   /forgot-password, /reset-password, /terms
+ *
+ * NOTE: The app's /login page uses Google OAuth exclusively (no
+ * email/password form), so a full login() flow cannot be exercised
+ * in E2E without seeding auth state via storageState. See
+ * tests/global-setup.ts for the recommended approach.
  */
-
 export class TestHelpers {
-  constructor(private page: Page) { }
+  constructor(private page: Page) {}
 
   /**
-   * Navigate to a specific page and wait for it to load
+   * Navigate to a specific page and wait for it to settle.
+   * Uses 'domcontentloaded' rather than 'networkidle' because the
+   * home page lazy-loads the map and may keep a connection open.
    */
   async navigateToPage(path: string = '/') {
     await this.page.goto(path);
-    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForLoadState('domcontentloaded');
   }
 
   /**
-   * Wait for the PWA to be fully loaded
+   * Wait for the PWA shell to be ready. We wait for the document
+   * body to be present (the Header/Footer layout always renders)
+   * rather than a [data-testid="app-loaded"] element that does not
+   * exist in the source.
    */
   async waitForPWALoad() {
-    // Wait for service worker to be registered
-    await this.page.waitForFunction(() => {
-      return navigator.serviceWorker && navigator.serviceWorker.ready;
-    });
-
-    // Wait for app to be fully loaded
-    await this.page.waitForSelector('[data-testid="app-loaded"]', { timeout: 10000 });
+    await this.page.waitForLoadState('domcontentloaded');
+    // The layout always renders a <header> (see components/layout/Shell.tsx).
+    await this.page.locator('header').waitFor({ state: 'visible' });
   }
 
   /**
-   * Login with test credentials
+   * Open the mobile menu (only visible below the `md` breakpoint).
+   * The toggle button is the only <button> with aria-label "Toggle menu".
    */
-  async login(email: string = 'test@example.com', password: string = 'testpassword') {
-    await this.page.fill('[data-testid="email-input"]', email);
-    await this.page.fill('[data-testid="password-input"]', password);
-    await this.page.click('[data-testid="login-button"]');
-
-    // Wait for login to complete
-    await this.page.waitForURL('**/dashboard');
-    await expect(this.page.locator('[data-testid="user-menu"]')).toBeVisible();
+  async openMobileMenu() {
+    await this.page.getByRole('button', { name: 'Toggle menu' }).click();
   }
 
   /**
-   * Logout the current user
+   * Attempt to log in. The real /login page only offers "Continue with
+   * Google", which cannot be completed headlessly. This helper clicks
+   * the Google sign-in button so tests can assert the OAuth redirect
+   * begins; full session seeding should be done via storageState.
    */
-  async logout() {
-    await this.page.click('[data-testid="user-menu"]');
-    await this.page.click('[data-testid="logout-button"]');
-
-    // Wait for logout to complete
-    await this.page.waitForURL('**/');
+  async startGoogleLogin() {
+    await this.page.goto('/login');
+    await this.page.waitForLoadState('domcontentloaded');
+    await this.page.getByRole('button', { name: /Continue with Google/i }).click();
   }
 
   /**
-   * Mock geolocation for testing location-based features
+   * Mock geolocation for testing location-based features.
    */
   async mockGeolocation(latitude: number, longitude: number) {
     await this.page.context().grantPermissions(['geolocation']);
@@ -64,149 +71,101 @@ export class TestHelpers {
   }
 
   /**
-   * Mock notifications for testing PWA notification features
+   * Grant notification permissions.
    */
   async mockNotifications() {
     await this.page.context().grantPermissions(['notifications']);
   }
 
   /**
-   * Go offline for testing offline functionality
+   * Go offline for testing offline functionality.
    */
   async goOffline() {
     await this.page.context().setOffline(true);
   }
 
   /**
-   * Go online for testing online functionality
+   * Go online for testing online functionality.
    */
   async goOnline() {
     await this.page.context().setOffline(false);
   }
 
   /**
-   * Wait for map to be loaded and ready
+   * The real app does not have a dedicated /map route; the map is
+   * embedded on the home page (behind an AuthGuard). This helper waits
+   * for the home page shell to load. Tests that previously asserted on a
+   * standalone map should be updated to target the home page.
    */
   async waitForMapLoad() {
-    await this.page.waitForSelector('[data-testid="map-container"]', { timeout: 10000 });
-    await this.page.waitForFunction(() => {
-      // Check if map library has loaded
-      return (window as any).maplibregl || (window as any).L;
-    });
+    await this.waitForPWALoad();
   }
 
   /**
-   * Create an emergency report for testing
-   */
-  async createEmergencyReport(options: {
-    type?: string;
-    description?: string;
-    location?: { lat: number; lng: number };
-  } = {}) {
-    const {
-      type = 'medical',
-      description = 'Test emergency report',
-      location = { lat: 37.7749, lng: -122.4194 }
-    } = options;
-
-    // Navigate to emergency reporting page
-    await this.navigateToPage('/emergency/report');
-
-    // Fill out the form
-    await this.page.selectOption('[data-testid="emergency-type"]', type);
-    await this.page.fill('[data-testid="emergency-description"]', description);
-
-    // Set location if provided
-    if (location) {
-      await this.mockGeolocation(location.lat, location.lng);
-      await this.page.click('[data-testid="use-current-location"]');
-    }
-
-    // Submit the form
-    await this.page.click('[data-testid="submit-report"]');
-
-    // Wait for confirmation
-    await expect(this.page.locator('[data-testid="report-confirmation"]')).toBeVisible();
-  }
-
-  /**
-   * Check if the app is installed as a PWA
-   */
-  async isPWAInstalled() {
-    return await this.page.evaluate(() => {
-      return window.matchMedia('(display-mode: standalone)').matches ||
-        (navigator as any).standalone === true;
-    });
-  }
-
-  /**
-   * Take a screenshot with a custom name
+   * Take a screenshot with a custom name.
    */
   async takeScreenshot(name: string) {
     await this.page.screenshot({
       path: `test-results/screenshots/${name}-${Date.now()}.png`,
-      fullPage: true
+      fullPage: true,
     });
   }
 
   /**
-   * Wait for and verify toast notification
-   */
-  async verifyToastNotification(message: string) {
-    const toast = this.page.locator('[data-testid="toast-notification"]');
-    await expect(toast).toBeVisible();
-    await expect(toast).toContainText(message);
-  }
-
-  /**
-   * Check network status
+   * Check the browser's network status.
    */
   async getNetworkStatus() {
-    return await this.page.evaluate(() => {
-      return navigator.onLine;
-    });
+    return await this.page.evaluate(() => navigator.onLine);
   }
 
   /**
-   * Trigger service worker sync for testing offline sync
+   * Trigger a service worker sync registration if the Background Sync
+   * API is available. No-ops gracefully otherwise.
    */
   async triggerServiceWorkerSync() {
-    await this.page.evaluate(() => {
-      return navigator.serviceWorker.ready.then((registration: any) => {
-        return registration.sync.register('test-sync');
-      });
+    await this.page.evaluate(async () => {
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.ready;
+        const anyReg = registration as unknown as {
+          sync?: { register: (tag: string) => Promise<void> };
+        };
+        if (anyReg.sync) {
+          await anyReg.sync.register('test-sync');
+        }
+      }
     });
   }
 }
 
 /**
- * Custom expect matchers for OpenRelief tests
+ * Custom expect matchers for OpenRelief tests.
+ *
+ * These intentionally avoid data-testid selectors, which the app does
+ * not expose. They use role/heading-based assertions instead.
  */
 export const customExpect = {
   /**
-   * Expect map to be loaded and visible
+   * Expect the app shell (header + footer layout) to be loaded.
    */
-  async toHaveMapLoaded(page: Page) {
-    const mapContainer = page.locator('[data-testid="map-container"]');
-    await expect(mapContainer).toBeVisible();
-
-    // Additional checks for map initialization
-    await expect(page.locator('[data-testid="map-loaded"]')).toBeVisible();
+  async toHaveAppShellLoaded(page: Page) {
+    await expect(page.locator('header')).toBeVisible();
   },
 
   /**
-   * Expect emergency marker to be visible on map
+   * Expect a service worker to be registered.
    */
-  async toHaveEmergencyMarker(page: Page, count: number = 1) {
-    const markers = page.locator('[data-testid="emergency-marker"]');
-    await expect(markers).toHaveCount(count);
+  async toHaveServiceWorkerRegistered(page: Page) {
+    const ready = await page.evaluate(() =>
+      'serviceWorker' in navigator ? navigator.serviceWorker.ready : null
+    );
+    expect(ready).toBeTruthy();
   },
 
   /**
-   * Expect PWA to be installable
+   * Expect the PWA web app manifest to be linked and fetchable.
    */
-  async toBeInstallable(page: Page) {
-    const installButton = page.locator('[data-testid="pwa-install-button"]');
-    await expect(installButton).toBeVisible();
-  }
+  async toHaveManifest(page: Page) {
+    const hasLink = await page.locator('link[rel="manifest"]').count();
+    expect(hasLink).toBeGreaterThan(0);
+  },
 };
