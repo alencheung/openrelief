@@ -11,7 +11,7 @@ import {
   trustScoreManager,
   updateTrustScoreFromAction as updateTrustScoreFromActionCore
 } from './trust-integration'
-import { securityMonitor } from '@/lib/audit/security-monitor'
+import { securityMonitor, SecurityIncidentType, IncidentSeverity } from '@/lib/audit/security-monitor'
 import { verifySupabaseJwt } from '@/lib/auth/jwt-verify'
 
 // Trust-based security interfaces
@@ -91,8 +91,8 @@ export async function trustSecurityMiddleware(
     if (!permissionCheck.allowed) {
       // Log permission denied
       await securityMonitor.createAlert(
-        'trust_permission_denied' as any,
-        'medium' as any,
+        'trust_permission_denied' as SecurityIncidentType,
+        IncidentSeverity.MEDIUM,
         `Trust-based permission denied for user ${userId}`,
         `Action: ${action}, Reason: ${permissionCheck.reason}`,
         'trust_system',
@@ -147,8 +147,8 @@ export async function trustSecurityMiddleware(
 
       if (!attackResistance.allowed) {
         await securityMonitor.createAlert(
-          'trust_attack_blocked' as any,
-          'high' as any,
+          'trust_attack_blocked' as SecurityIncidentType,
+          IncidentSeverity.HIGH,
           `Trust-based attack resistance triggered for user ${userId}`,
           `Action: ${action}, Resistance: ${resistance}`,
           'trust_system',
@@ -269,8 +269,8 @@ export async function trustBasedRateLimitMiddleware(
 
       // Log rate limit exceeded
       await securityMonitor.createAlert(
-        'trust_rate_limit_exceeded' as any,
-        'low' as any,
+        'trust_rate_limit_exceeded' as SecurityIncidentType,
+        IncidentSeverity.LOW,
         `Trust-based rate limit exceeded for user ${context.userId}`,
         `Trust weight: ${context.trustWeight}, Current usage: ${currentUsage}`,
         'trust_system',
@@ -320,8 +320,8 @@ export async function trustBasedRateLimitMiddleware(
 
     // Fail secure - allow request but log error
     await securityMonitor.createAlert(
-      'trust_rate_limit_error' as any,
-      'medium' as any,
+      'trust_rate_limit_error' as SecurityIncidentType,
+      IncidentSeverity.MEDIUM,
       'Error in trust-based rate limiting',
       error instanceof Error ? error.message : 'Unknown error',
       'trust_system'
@@ -338,12 +338,12 @@ export async function trustBasedRateLimitMiddleware(
  * Trust-based content filtering middleware
  */
 export async function trustBasedContentFilter(
-  content: any,
+  content: unknown,
   context: TrustSecurityContext
 ): Promise<{
   allowed: boolean
   filtered: boolean
-  filteredContent?: any
+  filteredContent?: unknown
   reason?: string
 }> {
   try {
@@ -375,8 +375,8 @@ export async function trustBasedContentFilter(
 
     if (filtered) {
       await securityMonitor.createAlert(
-        'trust_content_filtered' as any,
-        'low' as any,
+        'trust_content_filtered' as SecurityIncidentType,
+        IncidentSeverity.LOW,
         `Content filtered based on trust for user ${context.userId}`,
         `Trust weight: ${trustWeight}, Reason: ${reason}`,
         'trust_system',
@@ -436,7 +436,7 @@ export async function trustBasedContentFilter(
 export async function updateTrustScoreFromAction(
   userId: string,
   action: 'report' | 'confirm' | 'dispute' | 'endorse' | 'moderate',
-  context: any,
+  context: Record<string, unknown>,
   outcome: 'success' | 'failure' | 'partial'
 ): Promise<{
   updated: boolean
@@ -469,8 +469,8 @@ export async function updateTrustScoreFromAction(
     // local implementation so middleware callers keep the same telemetry).
     if (Math.abs(result.change) > 0.05) {
       await securityMonitor.createAlert(
-        'trust_score_significant_change' as any,
-        'low' as any,
+        'trust_score_significant_change' as SecurityIncidentType,
+        IncidentSeverity.LOW,
         `Significant trust score change for user ${userId}`,
         `Previous: ${result.previousScore}, New: ${result.newScore}, Change: ${result.change}`,
         'trust_system',
@@ -498,8 +498,8 @@ export async function updateTrustScoreFromAction(
     console.error('Error updating trust score:', error)
 
     await securityMonitor.createAlert(
-      'trust_score_update_error' as any,
-      'medium' as any,
+      'trust_score_update_error' as SecurityIncidentType,
+      IncidentSeverity.MEDIUM,
       `Error updating trust score for user ${userId}`,
       error instanceof Error ? error.message : 'Unknown error',
       'trust_system',
@@ -663,7 +663,7 @@ function determineActionFromRequest(request: NextRequest): string {
   return 'read'
 }
 
-async function extractRequestData(request: NextRequest): Promise<any> {
+async function extractRequestData(request: NextRequest): Promise<Record<string, unknown>> {
   try {
     if (request.method === 'GET') {
       const { searchParams } = new URL(request.url)
@@ -671,7 +671,7 @@ async function extractRequestData(request: NextRequest): Promise<any> {
     }
 
     if (request.method === 'POST' || request.method === 'PUT') {
-      return await request.json()
+      return await request.json() as Record<string, unknown>
     }
 
     return {}
@@ -693,7 +693,7 @@ async function getCurrentRateLimitUsage(userId: string, ip: string): Promise<num
   return 0
 }
 
-function applyStrictContentFilter(content: any): any {
+function applyStrictContentFilter(content: unknown): unknown {
   // Apply strict content filtering for low trust users
   if (typeof content === 'string') {
     // Remove potentially harmful content
@@ -705,8 +705,8 @@ function applyStrictContentFilter(content: any): any {
 
   if (typeof content === 'object' && content !== null) {
     // Filter object properties
-    const filtered: any = {}
-    for (const [key, value] of Object.entries(content)) {
+    const filtered: Record<string, unknown> = {}
+    for (const [key, value] of Object.entries(content as Record<string, unknown>)) {
       if (typeof value === 'string') {
         filtered[key] = applyStrictContentFilter(value)
       } else {
@@ -719,7 +719,7 @@ function applyStrictContentFilter(content: any): any {
   return content
 }
 
-function applyModerateContentFilter(content: any): any {
+function applyModerateContentFilter(content: unknown): unknown {
   // Apply moderate content filtering for medium trust users
   if (typeof content === 'string') {
     // Remove obviously harmful content
@@ -728,8 +728,8 @@ function applyModerateContentFilter(content: any): any {
 
   if (typeof content === 'object' && content !== null) {
     // Filter object properties
-    const filtered: any = {}
-    for (const [key, value] of Object.entries(content)) {
+    const filtered: Record<string, unknown> = {}
+    for (const [key, value] of Object.entries(content as Record<string, unknown>)) {
       if (typeof value === 'string') {
         filtered[key] = applyModerateContentFilter(value)
       } else {

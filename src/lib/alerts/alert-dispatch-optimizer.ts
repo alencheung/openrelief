@@ -7,167 +7,56 @@
  * - Connection pooling and caching
  * - Real-time performance monitoring
  * - Fallback and retry mechanisms
+ *
+ * The implementation has been split across focused modules:
+ * - `dispatch-types.ts` — shared enums, interfaces, and type aliases
+ * - `dispatch-helpers.ts` — pure utilities (validation, backoff, priority/TTL maps, IDs)
+ * - `dispatch-strategy.ts` — per-channel delivery and routing
+ * - `dispatch-batching.ts` — FCM batch processing
+ *
+ * This file re-exports everything above and retains the singleton orchestrator
+ * class so existing imports from `@/lib/alerts/alert-dispatch-optimizer` keep working.
  */
 
 import { performanceMonitor } from '../performance/performance-monitor'
 import { queryOptimizer } from '../database/query-optimizer'
 import { createClient } from '@supabase/supabase-js'
-import { FCMBatcher, fcmBatcher, buildFcmV1Message } from '../notifications/fcm-batcher'
 
-const ALLOWED_EXTERNAL_DOMAINS = [
-  'api.sendgrid.net',
-  'api.twilio.com',
-  'api.pushover.net',
-  'fcm.googleapis.com',
-  'api.telegram.org'
-]
+import {
+  AlertPriority,
+  DeliveryChannel,
+  DeliveryStatus,
+  EmergencyAlert,
+  QueueConfig,
+  DispatchMetrics,
+  type AlertInput,
+  type BatchDispatchResult,
+  type DispatchResult,
+  type FCMBatchResult,
+  type FCMSingleNotification,
+  type GetUsersForAlertResult,
+  type SpatialFilter,
+  type UserFilters
+} from './dispatch-types'
+import {
+  GET_USERS_FOR_ALERT_SQL,
+  computeLatencyPercentiles,
+  createDefaultQueueConfig,
+  createEmergencyQueueConfig,
+  createInitialMetrics,
+  estimateDeliveryTime,
+  generateAlertId,
+  getMaxRetries,
+  getRetryDelay,
+  mapUserRowToAlertUser,
+  rollAverage
+} from './dispatch-helpers'
+import { AlertDeliveryStrategy } from './dispatch-strategy'
+import { AlertBatchProcessor } from './dispatch-batching'
 
-function validateExternalUrl(url: string | undefined): { valid: boolean; error?: string } {
-  if (!url) {
-    return { valid: false, error: 'URL is not configured' }
-  }
-  try {
-    const parsed = new URL(url)
-    if (!ALLOWED_EXTERNAL_DOMAINS.includes(parsed.hostname)) {
-      return {
-        valid: false,
-        error: `Domain ${parsed.hostname} not in allowed list`
-      }
-    }
-    return { valid: true }
-  } catch {
-    return { valid: false, error: 'Invalid URL format' }
-  }
-}
-
-// Alert delivery channels
-export enum DeliveryChannel {
-  PUSH_NOTIFICATION = 'push_notification',
-  EMAIL = 'email',
-  SMS = 'sms',
-  WEBSOCKET = 'websocket',
-  IN_APP = 'in_app'
-}
-
-// Alert priority levels
-export enum AlertPriority {
-  CRITICAL = 'critical', // Life-threatening emergencies
-  HIGH = 'high', // Serious emergencies
-  MEDIUM = 'medium', // Moderate emergencies
-  LOW = 'low' // Informational alerts
-}
-
-// Alert delivery status
-export enum DeliveryStatus {
-  PENDING = 'pending',
-  PROCESSING = 'processing',
-  SENT = 'sent',
-  DELIVERED = 'delivered',
-  FAILED = 'failed',
-  RETRYING = 'retrying'
-}
-
-// FCM batch configuration
-const FCM_BATCH_SIZE = 1000
-const FCM_MAX_RETRIES = 3
-const FCM_BASE_DELAY_MS = 1000
-const FCM_MAX_DELAY_MS = 30000
-
-// FCM batch result types
-export interface FCMBatchResult {
-  successCount: number
-  failureCount: number
-  failedTokens: string[]
-  invalidTokens: string[]
-}
-
-export interface FCMSingleNotification {
-  tokenId: string
-  userId: string
-  title: string
-  message: string
-  data: Record<string, unknown>
-  priority: AlertPriority
-}
-
-export interface FCMBatchPayload {
-  tokens: string[]
-  notification: {
-    title: string
-    body: string
-    priority: string
-    ttl: number
-  }
-  data: Record<string, unknown>
-  android: {
-    priority: string
-    ttl: number
-  }
-  apns: {
-    headers: {
-      'apns-priority': string
-      'apns-expiration': string
-    }
-  }
-}
-
-// Alert interface
-export interface EmergencyAlert {
-  id: string
-  eventId: string
-  userId: string
-  type: string
-  title: string
-  message: string
-  priority: AlertPriority
-  channels: DeliveryChannel[]
-  data: Record<string, any>
-  createdAt: Date
-  expiresAt?: Date
-  retryCount: number
-  maxRetries: number
-  deliveryAttempts: DeliveryAttempt[]
-}
-
-// Delivery attempt interface
-export interface DeliveryAttempt {
-  id: string
-  alertId: string
-  channel: DeliveryChannel
-  status: DeliveryStatus
-  startTime: number
-  endTime?: number
-  latency?: number
-  error?: string
-  retryCount: number
-}
-
-// Queue configuration
-interface QueueConfig {
-  maxSize: number
-  batchSize: number
-  batchTimeout: number
-  priorityLevels: number
-  concurrencyPerPriority: number
-}
-
-// Performance metrics
-interface DispatchMetrics {
-  totalAlerts: number
-  successfulDeliveries: number
-  failedDeliveries: number
-  averageLatency: number
-  p95Latency: number
-  p99Latency: number
-  channelPerformance: Record<
-    DeliveryChannel,
-    {
-      total: number
-      success: number
-      avgLatency: number
-    }
-  >
-}
+// Re-export the public type/interface/enum surface for backward compatibility.
+// All existing imports from `@/lib/alerts/alert-dispatch-optimizer` keep working.
+export * from './dispatch-types'
 
 class AlertDispatchOptimizer {
   private static instance: AlertDispatchOptimizer
@@ -192,24 +81,18 @@ class AlertDispatchOptimizer {
     return this._supabase
   }
 
-  private constructor() {
-    this.config = {
-      maxSize: 10000,
-      batchSize: 50,
-      batchTimeout: 100, // ms
-      priorityLevels: 4,
-      concurrencyPerPriority: 10
-    }
+  private readonly delivery: AlertDeliveryStrategy
+  private readonly batching: AlertBatchProcessor
 
-    this.metrics = {
-      totalAlerts: 0,
-      successfulDeliveries: 0,
-      failedDeliveries: 0,
-      averageLatency: 0,
-      p95Latency: 0,
-      p99Latency: 0,
-      channelPerformance: {} as Record<DeliveryChannel, any>
-    }
+  private constructor() {
+    this.config = createDefaultQueueConfig()
+    this.metrics = createInitialMetrics()
+
+    this.delivery = new AlertDeliveryStrategy(
+      () => this.supabase,
+      (channel, latency, success) => this.recordChannelPerformance(channel, latency, success)
+    )
+    this.batching = new AlertBatchProcessor(() => this.supabase)
 
     this.initializeQueues()
     this.initializeDeliveryWorkers()
@@ -225,41 +108,30 @@ class AlertDispatchOptimizer {
   }
 
   /**
-   * Dispatch emergency alert with <100ms latency target
+   * Dispatch emergency alert with <100ms latency target.
    */
-  async dispatchAlert(
-    alert: Omit<EmergencyAlert, 'id' | 'deliveryAttempts' | 'retryCount'>
-  ): Promise<{
-    success: boolean
-    alertId: string
-    estimatedDeliveryTime: number
-    latency: number
-  }> {
+  async dispatchAlert(alert: AlertInput): Promise<DispatchResult> {
     const startTime = performance.now()
 
     try {
-      // Generate alert ID
-      const alertId = this.generateAlertId()
+      const alertId = generateAlertId()
 
       const fullAlert: EmergencyAlert = {
         ...alert,
         id: alertId,
         deliveryAttempts: [],
         retryCount: 0,
-        maxRetries: this.getMaxRetries(alert.priority)
+        maxRetries: getMaxRetries(alert.priority)
       }
 
-      // Add to appropriate priority queue
       this.addToQueue(fullAlert)
 
-      // Start processing immediately for critical alerts
       if (alert.priority === AlertPriority.CRITICAL) {
         await this.processAlertImmediately(fullAlert)
       }
 
       const latency = performance.now() - startTime
 
-      // Record dispatch metrics
       performanceMonitor.recordAlertDispatch({
         alertId,
         userId: alert.userId,
@@ -268,23 +140,16 @@ class AlertDispatchOptimizer {
         dispatchEndTime: performance.now(),
         latency,
         success: true,
-        deliveryMethod: (alert.channels[0] === DeliveryChannel.PUSH_NOTIFICATION
-          ? 'push'
-          : alert.channels[0] === DeliveryChannel.EMAIL
-            ? 'email'
-            : alert.channels[0] === DeliveryChannel.SMS
-              ? 'sms'
-              : 'websocket') as 'push' | 'email' | 'sms' | 'websocket',
+        deliveryMethod: this.resolveDeliveryMethod(alert.channels[0]),
         retryCount: 0
       })
 
-      // Update metrics
       this.updateMetrics(latency, true)
 
       return {
         success: true,
         alertId,
-        estimatedDeliveryTime: this.estimateDeliveryTime(alert.priority),
+        estimatedDeliveryTime: estimateDeliveryTime(alert.priority),
         latency
       }
     } catch (error) {
@@ -299,13 +164,7 @@ class AlertDispatchOptimizer {
         latency,
         success: false,
         errorType: (error as Error).message,
-        deliveryMethod: (alert.channels[0] === DeliveryChannel.PUSH_NOTIFICATION
-          ? 'push'
-          : alert.channels[0] === DeliveryChannel.EMAIL
-            ? 'email'
-            : alert.channels[0] === DeliveryChannel.SMS
-              ? 'sms'
-              : 'websocket') as 'push' | 'email' | 'sms' | 'websocket',
+        deliveryMethod: this.resolveDeliveryMethod(alert.channels[0]),
         retryCount: 0
       })
 
@@ -321,25 +180,17 @@ class AlertDispatchOptimizer {
   }
 
   /**
-   * Batch dispatch multiple alerts
+   * Batch dispatch multiple alerts.
    */
-  async dispatchBatchAlerts(
-    alerts: Omit<EmergencyAlert, 'id' | 'deliveryAttempts' | 'retryCount'>[]
-  ): Promise<{
-    successful: number
-    failed: number
-    averageLatency: number
-    results: Array<{ success: boolean; alertId: string; latency: number }>
-  }> {
+  async dispatchBatchAlerts(alerts: AlertInput[]): Promise<BatchDispatchResult> {
     const startTime = performance.now()
-    const results = []
+    const results: DispatchResult[] = []
 
     for (const alert of alerts) {
       const result = await this.dispatchAlert(alert)
       results.push(result)
     }
 
-    const totalLatency = performance.now() - startTime
     const successful = results.filter(r => r.success).length
     const failed = results.length - successful
     const averageLatency = results.reduce((sum, r) => sum + r.latency, 0) / results.length
@@ -353,720 +204,58 @@ class AlertDispatchOptimizer {
   }
 
   /**
-   * Get users for emergency alert (optimized)
+   * Get users for emergency alert (optimized spatial query).
    */
   async getUsersForAlert(
     eventId: string,
-    spatialFilter: {
-      lat: number
-      lng: number
-      radiusMeters: number
-    },
-    filters?: {
-      trustScore?: number
-      maxDistance?: number
-      notificationPreferences?: Record<string, any>
-    }
-  ): Promise<{
-    users: Array<{
-      userId: string
-      fcmToken?: string
-      email?: string
-      phone?: string
-      distance: number
-      trustScore: number
-      preferredChannels: DeliveryChannel[]
-    }>
-    count: number
-    executionTime: number
-  }> {
+    spatialFilter: SpatialFilter,
+    filters?: UserFilters
+  ): Promise<GetUsersForAlertResult> {
     const timerId = performanceMonitor.startTimer('get_users_for_alert', {
       event_id: eventId
     })
 
     try {
-      // Use optimized spatial query
       const result = await queryOptimizer.executeSpatialQuery(
-        `
-          SELECT 
-            up.user_id,
-            up.fcm_token,
-            up.email,
-            up.phone,
-            up.trust_score,
-            up.notification_preferences,
-            ST_Distance(
-              up.last_known_location::geography,
-              ST_MakePoint($1, $2)::geography
-            ) as distance
-          FROM user_profiles up
-          WHERE ST_DWithin(
-            up.last_known_location::geography,
-            ST_MakePoint($1, $2)::geography,
-            $3
-          )
-          AND up.trust_score >= COALESCE($4, 0.3)
-          ORDER BY distance
-          LIMIT $5
-        `,
+        GET_USERS_FOR_ALERT_SQL,
         spatialFilter,
         [filters?.trustScore, filters?.maxDistance]
       )
 
       const executionTime = performanceMonitor.endTimer(timerId, 'database', 'get_users_for_alert')
+      const users = (result.data || []).map(mapUserRowToAlertUser)
 
-      const users = (result.data || []).map((user: any) => ({
-        userId: user.user_id,
-        fcmToken: user.fcm_token,
-        email: user.email,
-        phone: user.phone,
-        distance: user.distance,
-        trustScore: user.trust_score,
-        preferredChannels: this.getPreferredChannels(user.notification_preferences)
-      }))
-
-      return {
-        users,
-        count: users.length,
-        executionTime
-      }
+      return { users, count: users.length, executionTime }
     } catch (error) {
-      const executionTime = performanceMonitor.endTimer(timerId, 'database', 'get_users_for_alert')
-
+      performanceMonitor.endTimer(timerId, 'database', 'get_users_for_alert')
       throw new Error(`Failed to get users for alert: ${(error as Error).message}`)
     }
   }
 
-  /**
-   * Send alert to specific channels
-   */
-  private async sendToChannels(alert: EmergencyAlert): Promise<DeliveryAttempt[]> {
-    const attempts: DeliveryAttempt[] = []
+  // Delegated batch push notifications.
+  async batchPushNotifications(
+    notifications: FCMSingleNotification[]
+  ): Promise<FCMBatchResult> {
+    return this.batching.batchPushNotifications(notifications)
+  }
 
-    // Process channels in parallel for critical alerts
-    if (alert.priority === AlertPriority.CRITICAL) {
-      const channelPromises = alert.channels.map(channel => this.sendToChannel(alert, channel))
-
-      const results = await Promise.allSettled(channelPromises)
-
-      results.forEach((result, index) => {
-        const channel = alert.channels[index]
-        if (result.status === 'fulfilled') {
-          attempts.push(result.value)
-        } else {
-          attempts.push(this.createFailedAttempt(alert, channel!, String(result.reason)))
-        }
-      })
-    } else {
-      // Process channels sequentially for non-critical alerts
-      for (const channel of alert.channels) {
-        const attempt = await this.sendToChannel(alert, channel)
-        attempts.push(attempt)
-      }
+  async sendBatchPushNotifications(
+    users: Array<{ userId: string; fcmToken?: string }>,
+    alert: {
+      title: string
+      message: string
+      eventId: string
+      type: string
+      priority: AlertPriority
+      data: Record<string, unknown>
     }
-
-    return attempts
+  ): Promise<FCMBatchResult> {
+    return this.batching.sendBatchPushNotifications(users, alert)
   }
 
   /**
-   * Send alert to specific channel
+   * Queue processing and alert lifecycle.
    */
-  private async sendToChannel(
-    alert: EmergencyAlert,
-    channel: DeliveryChannel
-  ): Promise<DeliveryAttempt> {
-    const startTime = performance.now()
-    const attemptId = this.generateAttemptId()
-
-    const attempt: DeliveryAttempt = {
-      id: attemptId,
-      alertId: alert.id,
-      channel,
-      status: DeliveryStatus.PROCESSING,
-      startTime,
-      retryCount: alert.retryCount
-    }
-
-    try {
-      let success = false
-      let error: string | undefined
-
-      switch (channel) {
-        case DeliveryChannel.PUSH_NOTIFICATION:
-          success = await this.sendPushNotification(alert)
-          break
-
-        case DeliveryChannel.EMAIL:
-          success = await this.sendEmail(alert)
-          break
-
-        case DeliveryChannel.SMS:
-          success = await this.sendSMS(alert)
-          break
-
-        case DeliveryChannel.WEBSOCKET:
-          success = await this.sendWebSocket(alert)
-          break
-
-        case DeliveryChannel.IN_APP:
-          success = await this.sendInApp(alert)
-          break
-
-        default:
-          throw new Error(`Unknown delivery channel: ${channel}`)
-      }
-
-      const endTime = performance.now()
-      const latency = endTime - startTime
-
-      attempt.endTime = endTime
-      attempt.latency = latency
-      attempt.status = success ? DeliveryStatus.SENT : DeliveryStatus.FAILED
-
-      if (!success) {
-        attempt.error = error || 'Delivery failed'
-      }
-
-      // Record channel performance
-      this.recordChannelPerformance(channel, latency, success)
-
-      return attempt
-    } catch (error) {
-      const endTime = performance.now()
-      const latency = endTime - startTime
-
-      attempt.endTime = endTime
-      attempt.latency = latency
-      attempt.status = DeliveryStatus.FAILED
-      attempt.error = (error as Error).message
-
-      this.recordChannelPerformance(channel, latency, false)
-
-      return attempt
-    }
-  }
-
-  /**
-   * Send push notification (single - for backward compatibility)
-   */
-  private async sendPushNotification(alert: EmergencyAlert): Promise<boolean> {
-    const timerId = performanceMonitor.startTimer('push_notification_send', {
-      alert_id: alert.id
-    })
-
-    try {
-      const { data: user } = await this.supabase
-        .from('user_profiles')
-        .select('fcm_token')
-        .eq('user_id', alert.userId)
-        .single()
-
-      if (!user?.fcm_token) {
-        throw new Error('No FCM token for user')
-      }
-
-      const notification = {
-        title: alert.title,
-        body: alert.message,
-        priority: this.getFCMPriority(alert.priority),
-        ttl: this.getTTL(alert.priority)
-      }
-
-      const data = {
-        alertId: alert.id,
-        eventId: alert.eventId,
-        type: alert.type,
-        priority: alert.priority,
-        ...alert.data
-      }
-
-      const batcher = new FCMBatcher()
-      batcher.addToken(user.fcm_token, notification, data, alert.priority)
-      const results = await batcher.flush()
-
-      const result = results[0]
-      const success = result ? result.successCount > 0 : false
-
-      performanceMonitor.endTimer(timerId, 'alert', 'push_notification_send')
-
-      return success
-    } catch (error) {
-      performanceMonitor.endTimer(timerId, 'alert', 'push_notification_send')
-      throw error
-    }
-  }
-
-  /**
-   * Chunk array into batches of specified size
-   */
-  private chunkArray<T>(array: T[], size: number): T[][] {
-    const chunks: T[][] = []
-    for (let i = 0; i < array.length; i += size) {
-      chunks.push(array.slice(i, i + size))
-    }
-    return chunks
-  }
-
-  /**
-   * Sleep utility for exponential backoff
-   */
-  private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms))
-  }
-
-  /**
-   * Calculate exponential backoff delay with jitter
-   */
-  private calculateBackoffDelay(retryCount: number): number {
-    const delay = Math.min(FCM_BASE_DELAY_MS * Math.pow(2, retryCount), FCM_MAX_DELAY_MS)
-    return delay + Math.random() * 500
-  }
-
-  /**
-   * Send a single FCM batch request with retry logic.
-   *
-   * Migrated from the deprecated legacy endpoint to FCM HTTP v1. The v1 API
-   * accepts one message per request, so we fan out per device token and
-   * synthesize a legacy-shaped response body so the caller's results parsing
-   * (processFCMResponse-style handling in batchPushNotifications) keeps working
-   * unchanged. OAuth2 access token + project id are read from env; if either
-   * is missing we log a clear error rather than silently falling back to the
-   * removed legacy endpoint.
-   */
-  private async sendFCMBatchWithRetry(
-    payload: FCMBatchPayload,
-    retryCount = 0
-  ): Promise<{ success: boolean; response?: Response; shouldRetry: boolean }> {
-    try {
-      const projectId = process.env.FCM_PROJECT_ID
-      const accessToken = process.env.FCM_ACCESS_TOKEN
-      if (!projectId || !accessToken) {
-        console.error(
-          'FCM HTTP v1 not configured: set FCM_PROJECT_ID and FCM_ACCESS_TOKEN ' +
-            '(access token must be refreshed externally)'
-        )
-        return { success: false, shouldRetry: false }
-      }
-
-      const endpoint = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`
-      const tokens = payload.tokens
-      // payload.data.priority holds the AlertPriority enum value; fall back to
-      // MEDIUM if absent so buildFcmV1Message gets a valid priority.
-      const alertPriority = (payload.data.priority as AlertPriority) ?? AlertPriority.MEDIUM
-
-      const perTokenResults = await Promise.all(
-        tokens.map(async token => {
-          try {
-            const response = await fetch(endpoint, {
-              method: 'POST',
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify(
-                buildFcmV1Message(token, payload.notification, payload.data, alertPriority)
-              )
-            })
-            if (response.status === 429) {
-              return { token, status: 429, error: 'THROTTLED' }
-            }
-            if (!response.ok) {
-              let errorMsg = `HTTP_${response.status}`
-              try {
-                const errBody = await response.json()
-                if (errBody?.error?.details?.[0]?.errorCode === 'UNREGISTERED') {
-                  errorMsg = 'NotRegistered'
-                } else if (errBody?.error?.status === 'INVALID_ARGUMENT') {
-                  errorMsg = 'InvalidRegistration'
-                }
-              } catch {
-                // keep generic error
-              }
-              return { token, status: response.status, error: errorMsg }
-            }
-            const body = await response.json().catch(() => ({}))
-            return { token, status: 200, messageId: body?.name ?? `${token}:${Date.now()}` }
-          } catch (error) {
-            return {
-              token,
-              status: 0,
-              error: error instanceof Error ? error.message : 'fetch_error'
-            }
-          }
-        })
-      )
-
-      const throttled = perTokenResults.some(r => r.status === 429)
-      if (throttled) {
-        if (retryCount < FCM_MAX_RETRIES) {
-          return { success: false, shouldRetry: true }
-        }
-        return { success: false, shouldRetry: false }
-      }
-
-      const syntheticBody = {
-        success: perTokenResults.filter(r => r.status === 200).length,
-        failure: perTokenResults.filter(r => r.status !== 200).length,
-        results: perTokenResults.map(r =>
-          r.status === 200 ? { message_id: r.messageId } : { error: r.error }
-        )
-      }
-      const response = new Response(JSON.stringify(syntheticBody), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      })
-      return { success: true, response, shouldRetry: false }
-    } catch {
-      if (retryCount < FCM_MAX_RETRIES) {
-        return { success: false, shouldRetry: true }
-      }
-      return { success: false, shouldRetry: false }
-    }
-  }
-
-  /**
-   * Batch push notifications - sends up to 1000 tokens per FCM request
-   * This reduces 500K individual API calls to ~500 batched calls
-   */
-  async batchPushNotifications(notifications: FCMSingleNotification[]): Promise<FCMBatchResult> {
-    const timerId = performanceMonitor.startTimer('batch_push_notification_send', {
-      notification_count: notifications.length.toString()
-    })
-
-    const result: FCMBatchResult = {
-      successCount: 0,
-      failureCount: 0,
-      failedTokens: [],
-      invalidTokens: []
-    }
-
-    if (notifications.length === 0) {
-      return result
-    }
-
-    try {
-      const tokensWithNotifications = notifications.filter(n => n.tokenId)
-      const tokens = tokensWithNotifications.map(n => n.tokenId)
-
-      if (tokens.length === 0) {
-        return result
-      }
-
-      const firstNotification = tokensWithNotifications[0]
-      if (!firstNotification) {
-        return result
-      }
-
-      const batchPayload: Omit<FCMBatchPayload, 'tokens'> = {
-        notification: {
-          title: firstNotification.title,
-          body: firstNotification.message,
-          priority: this.getFCMPriority(firstNotification.priority),
-          ttl: this.getTTL(firstNotification.priority)
-        },
-        data: {
-          eventId: firstNotification.data.eventId as string,
-          type: firstNotification.data.type as string,
-          priority: firstNotification.priority,
-          ...firstNotification.data
-        },
-        android: {
-          priority: this.getFCMPriority(firstNotification.priority),
-          ttl: this.getTTL(firstNotification.priority)
-        },
-        apns: {
-          headers: {
-            'apns-priority': this.getAPNSPriority(firstNotification.priority),
-            'apns-expiration': this.getAPNSExpiration(firstNotification.priority)
-          }
-        }
-      }
-
-      const tokenBatches = this.chunkArray(tokens, FCM_BATCH_SIZE)
-
-      const batchPromises = tokenBatches.map(async batchTokens => {
-        let retryCount = 0
-
-        while (retryCount <= FCM_MAX_RETRIES) {
-          const payload: FCMBatchPayload = {
-            tokens: batchTokens,
-            ...batchPayload
-          }
-
-          const batchResult = await this.sendFCMBatchWithRetry(payload, retryCount)
-
-          if (batchResult.shouldRetry) {
-            retryCount++
-            const delay = this.calculateBackoffDelay(retryCount)
-            await this.sleep(delay)
-            continue
-          }
-
-          if (!batchResult.success || !batchResult.response) {
-            result.failureCount += batchTokens.length
-            result.failedTokens.push(...batchTokens)
-            return
-          }
-
-          try {
-            const responseData = await batchResult.response.json()
-            const fcmResults = responseData.results as
-              | Array<{
-                  message_id?: string
-                  error?: string
-                }>
-              | undefined
-
-            if (fcmResults) {
-              fcmResults.forEach((fcmResult, index) => {
-                const token = batchTokens[index]
-                if (!token) {
-                  return
-                }
-
-                if (fcmResult.message_id) {
-                  result.successCount++
-                } else if (fcmResult.error) {
-                  result.failureCount++
-                  result.failedTokens.push(token)
-
-                  const isInvalidToken =
-                    fcmResult.error === 'InvalidRegistration' || fcmResult.error === 'NotRegistered'
-                  if (isInvalidToken) {
-                    result.invalidTokens.push(token)
-                  }
-                }
-              })
-            } else {
-              result.successCount += batchTokens.length
-            }
-          } catch {
-            result.successCount += batchTokens.length
-          }
-
-          return
-        }
-
-        result.failureCount += batchTokens.length
-        result.failedTokens.push(...batchTokens)
-      })
-
-      await Promise.all(batchPromises)
-
-      if (result.invalidTokens.length > 0) {
-        await this.logInvalidTokens(result.invalidTokens)
-      }
-
-      performanceMonitor.endTimer(timerId, 'alert', 'batch_push_notification_send')
-
-      return result
-    } catch (error) {
-      performanceMonitor.endTimer(timerId, 'alert', 'batch_push_notification_send')
-      result.failureCount = notifications.length
-      result.failedTokens = notifications.map(n => n.tokenId)
-      return result
-    }
-  }
-
-  /**
-   * Log invalid tokens for cleanup
-   */
-  private async logInvalidTokens(tokens: string[]): Promise<void> {
-    try {
-      await this.supabase.from('invalid_fcm_tokens').insert(
-        tokens.map(token => ({
-          token,
-          detected_at: new Date().toISOString(),
-          cleanup_status: 'pending'
-        }))
-      )
-    } catch {
-      console.error('Failed to log invalid tokens for cleanup')
-    }
-  }
-
-  /**
-   * Send email notification
-   */
-  private async sendEmail(alert: EmergencyAlert): Promise<boolean> {
-    const timerId = performanceMonitor.startTimer('email_send', {
-      alert_id: alert.id
-    })
-
-    try {
-      // Get user's email
-      const { data: user } = await this.supabase
-        .from('user_profiles')
-        .select('email')
-        .eq('user_id', alert.userId)
-        .single()
-
-      if (!user?.email) {
-        throw new Error('No email for user')
-      }
-
-      // Send via optimized email service
-      const serviceUrl = process.env.EMAIL_SERVICE_URL
-      const validation = validateExternalUrl(serviceUrl)
-      if (!validation.valid) {
-        throw new Error(`Invalid email service URL: ${validation.error}`)
-      }
-      const response = await fetch(`${serviceUrl}/send`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${process.env.EMAIL_SERVICE_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          to: user.email,
-          subject: alert.title,
-          html: this.generateEmailTemplate(alert),
-          priority: this.getEmailPriority(alert.priority),
-          headers: {
-            'X-Priority': this.getEmailPriority(alert.priority),
-            'X-Alert-ID': alert.id,
-            'X-Alert-Priority': alert.priority
-          }
-        })
-      })
-
-      const success = response.ok
-      const executionTime = performanceMonitor.endTimer(timerId, 'alert', 'email_send')
-
-      if (!success) {
-        throw new Error(`Email service failed: ${response.statusText}`)
-      }
-
-      return success
-    } catch (error) {
-      performanceMonitor.endTimer(timerId, 'alert', 'email_send')
-      throw error
-    }
-  }
-
-  /**
-   * Send SMS notification
-   */
-  private async sendSMS(alert: EmergencyAlert): Promise<boolean> {
-    const timerId = performanceMonitor.startTimer('sms_send', {
-      alert_id: alert.id
-    })
-
-    try {
-      // Get user's phone
-      const { data: user } = await this.supabase
-        .from('user_profiles')
-        .select('phone')
-        .eq('user_id', alert.userId)
-        .single()
-
-      if (!user?.phone) {
-        throw new Error('No phone number for user')
-      }
-
-      // Send via optimized SMS service
-      const smsServiceUrl = process.env.SMS_SERVICE_URL
-      const smsValidation = validateExternalUrl(smsServiceUrl)
-      if (!smsValidation.valid) {
-        throw new Error(`Invalid SMS service URL: ${smsValidation.error}`)
-      }
-      const response = await fetch(`${smsServiceUrl}/send`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${process.env.SMS_SERVICE_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          to: user.phone,
-          message: `${alert.title}: ${alert.message}`,
-          priority: this.getSMSPriority(alert.priority)
-        })
-      })
-
-      const success = response.ok
-      const executionTime = performanceMonitor.endTimer(timerId, 'alert', 'sms_send')
-
-      if (!success) {
-        throw new Error(`SMS service failed: ${response.statusText}`)
-      }
-
-      return success
-    } catch (error) {
-      performanceMonitor.endTimer(timerId, 'alert', 'sms_send')
-      throw error
-    }
-  }
-
-  /**
-   * Send WebSocket notification
-   */
-  private async sendWebSocket(alert: EmergencyAlert): Promise<boolean> {
-    const timerId = performanceMonitor.startTimer('websocket_send', {
-      alert_id: alert.id
-    })
-
-    try {
-      // Send via WebSocket connection pool
-      const success = await this.sendViaWebSocketPool(alert.userId, {
-        type: 'emergency_alert',
-        alertId: alert.id,
-        eventId: alert.eventId,
-        title: alert.title,
-        message: alert.message,
-        priority: alert.priority,
-        data: alert.data,
-        timestamp: new Date().toISOString()
-      })
-
-      const executionTime = performanceMonitor.endTimer(timerId, 'alert', 'websocket_send')
-      return success
-    } catch (error) {
-      performanceMonitor.endTimer(timerId, 'alert', 'websocket_send')
-      throw error
-    }
-  }
-
-  /**
-   * Send in-app notification
-   */
-  private async sendInApp(alert: EmergencyAlert): Promise<boolean> {
-    const timerId = performanceMonitor.startTimer('in_app_send', {
-      alert_id: alert.id
-    })
-
-    try {
-      // Store in database for in-app retrieval
-      const { error } = await this.supabase.from('user_notifications').insert({
-        user_id: alert.userId,
-        alert_id: alert.id,
-        event_id: alert.eventId,
-        type: alert.type,
-        title: alert.title,
-        message: alert.message,
-        priority: alert.priority,
-        data: alert.data,
-        read: false,
-        created_at: new Date().toISOString()
-      })
-
-      const success = !error
-      const executionTime = performanceMonitor.endTimer(timerId, 'alert', 'in_app_send')
-
-      if (!success) {
-        throw new Error(`Failed to store in-app notification: ${(error as Error).message}`)
-      }
-
-      return success
-    } catch (error) {
-      performanceMonitor.endTimer(timerId, 'alert', 'in_app_send')
-      throw error
-    }
-  }
-
-  /**
-   * Private helper methods
-   */
-
   private initializeQueues(): void {
     this.alertQueues.set(AlertPriority.CRITICAL, [])
     this.alertQueues.set(AlertPriority.HIGH, [])
@@ -1075,7 +264,6 @@ class AlertDispatchOptimizer {
   }
 
   private initializeDeliveryWorkers(): void {
-    // Initialize worker pools for each channel
     Object.values(DeliveryChannel).forEach(channel => {
       this.deliveryWorkers.set(channel, [])
       this.connectionPools.set(channel, [])
@@ -1083,10 +271,9 @@ class AlertDispatchOptimizer {
   }
 
   private startQueueProcessors(): void {
-    // Process each priority queue
     Object.values(AlertPriority).forEach(priority => {
       setInterval(() => {
-        this.processQueue(priority)
+        void this.processQueue(priority)
       }, this.config.batchTimeout)
     })
   }
@@ -1097,10 +284,7 @@ class AlertDispatchOptimizer {
       return
     }
 
-    // Get batch of alerts to process
     const batch = queue.splice(0, this.config.batchSize)
-
-    // Process batch in parallel
     const processingPromises = batch.map(alert => this.processAlert(alert))
 
     await Promise.allSettled(processingPromises)
@@ -1114,10 +298,9 @@ class AlertDispatchOptimizer {
     this.processingAlerts.set(alert.id, alert)
 
     try {
-      const attempts = await this.sendToChannels(alert)
+      const attempts = await this.delivery.sendToChannels(alert)
       alert.deliveryAttempts.push(...attempts)
 
-      // Check if any delivery was successful
       const hasSuccessfulDelivery = attempts.some(
         attempt =>
           attempt.status === DeliveryStatus.SENT || attempt.status === DeliveryStatus.DELIVERED
@@ -1129,7 +312,7 @@ class AlertDispatchOptimizer {
         alert.retryCount++
         setTimeout(() => {
           this.addToQueue(alert)
-        }, this.getRetryDelay(alert.retryCount))
+        }, getRetryDelay(alert.retryCount))
       } else {
         await this.markAlertFailed(alert.id)
       }
@@ -1141,7 +324,6 @@ class AlertDispatchOptimizer {
   }
 
   private async processAlertImmediately(alert: EmergencyAlert): Promise<void> {
-    // Bypass queue for immediate processing
     await this.processAlert(alert)
   }
 
@@ -1150,9 +332,7 @@ class AlertDispatchOptimizer {
     if (queue) {
       queue.push(alert)
 
-      // Check queue size limit
       if (queue.length > this.config.maxSize) {
-        // Remove oldest low priority alerts
         const lowPriorityQueue = this.alertQueues.get(AlertPriority.LOW)
         if (lowPriorityQueue && lowPriorityQueue.length > 0) {
           lowPriorityQueue.shift()
@@ -1181,260 +361,68 @@ class AlertDispatchOptimizer {
       .eq('id', alertId)
   }
 
-  private createFailedAttempt(
-    alert: EmergencyAlert,
-    channel: DeliveryChannel,
-    error: string
-  ): DeliveryAttempt {
-    return {
-      id: this.generateAttemptId(),
-      alertId: alert.id,
-      channel,
-      status: DeliveryStatus.FAILED,
-      startTime: performance.now(),
-      endTime: performance.now(),
-      latency: 0,
-      error,
-      retryCount: alert.retryCount
-    }
+  private resolveDeliveryMethod(
+    channel: DeliveryChannel | undefined
+  ): 'push' | 'email' | 'sms' | 'websocket' {
+    return (channel === DeliveryChannel.PUSH_NOTIFICATION
+      ? 'push'
+      : channel === DeliveryChannel.EMAIL
+        ? 'email'
+        : channel === DeliveryChannel.SMS
+          ? 'sms'
+          : 'websocket') as 'push' | 'email' | 'sms' | 'websocket'
   }
 
-  private async sendViaWebSocketPool(userId: string, data: any): Promise<boolean> {
-    // Implementation would use WebSocket connection pool
-    // For now, return true as placeholder
-    return true
-  }
-
-  private getPreferredChannels(preferences: Record<string, any>): DeliveryChannel[] {
-    if (!preferences) {
-      return [DeliveryChannel.IN_APP, DeliveryChannel.PUSH_NOTIFICATION]
-    }
-
-    const channels: DeliveryChannel[] = []
-
-    if (preferences.push_notifications) {
-      channels.push(DeliveryChannel.PUSH_NOTIFICATION)
-    }
-    if (preferences.email_notifications) {
-      channels.push(DeliveryChannel.EMAIL)
-    }
-    if (preferences.sms_notifications) {
-      channels.push(DeliveryChannel.SMS)
-    }
-    if (preferences.websocket_notifications) {
-      channels.push(DeliveryChannel.WEBSOCKET)
-    }
-
-    if (channels.length === 0) {
-      channels.push(DeliveryChannel.IN_APP)
-    }
-
-    return channels
-  }
-
-  private getMaxRetries(priority: AlertPriority): number {
-    switch (priority) {
-      case AlertPriority.CRITICAL:
-        return 5
-      case AlertPriority.HIGH:
-        return 3
-      case AlertPriority.MEDIUM:
-        return 2
-      case AlertPriority.LOW:
-        return 1
-      default:
-        return 2
-    }
-  }
-
-  private getRetryDelay(retryCount: number): number {
-    // Exponential backoff with jitter
-    const baseDelay = 1000 // 1 second
-    const maxDelay = 30000 // 30 seconds
-    const delay = Math.min(baseDelay * Math.pow(2, retryCount), maxDelay)
-    return delay + Math.random() * 1000 // Add jitter
-  }
-
-  private estimateDeliveryTime(priority: AlertPriority): number {
-    switch (priority) {
-      case AlertPriority.CRITICAL:
-        return 100 // <100ms target
-      case AlertPriority.HIGH:
-        return 500
-      case AlertPriority.MEDIUM:
-        return 2000
-      case AlertPriority.LOW:
-        return 5000
-      default:
-        return 2000
-    }
-  }
-
-  private getFCMPriority(priority: AlertPriority): string {
-    switch (priority) {
-      case AlertPriority.CRITICAL:
-        return 'high'
-      case AlertPriority.HIGH:
-        return 'high'
-      case AlertPriority.MEDIUM:
-        return 'normal'
-      case AlertPriority.LOW:
-        return 'normal'
-      default:
-        return 'normal'
-    }
-  }
-
-  private getAPNSPriority(priority: AlertPriority): string {
-    switch (priority) {
-      case AlertPriority.CRITICAL:
-        return '10'
-      case AlertPriority.HIGH:
-        return '10'
-      case AlertPriority.MEDIUM:
-        return '5'
-      case AlertPriority.LOW:
-        return '5'
-      default:
-        return '5'
-    }
-  }
-
-  private getEmailPriority(priority: AlertPriority): string {
-    switch (priority) {
-      case AlertPriority.CRITICAL:
-        return '1'
-      case AlertPriority.HIGH:
-        return '2'
-      case AlertPriority.MEDIUM:
-        return '3'
-      case AlertPriority.LOW:
-        return '5'
-      default:
-        return '3'
-    }
-  }
-
-  private getSMSPriority(priority: AlertPriority): string {
-    switch (priority) {
-      case AlertPriority.CRITICAL:
-        return 'urgent'
-      case AlertPriority.HIGH:
-        return 'high'
-      case AlertPriority.MEDIUM:
-        return 'normal'
-      case AlertPriority.LOW:
-        return 'low'
-      default:
-        return 'normal'
-    }
-  }
-
-  private getTTL(priority: AlertPriority): number {
-    // Time to live in seconds
-    switch (priority) {
-      case AlertPriority.CRITICAL:
-        return 3600 // 1 hour
-      case AlertPriority.HIGH:
-        return 7200 // 2 hours
-      case AlertPriority.MEDIUM:
-        return 86400 // 24 hours
-      case AlertPriority.LOW:
-        return 604800 // 7 days
-      default:
-        return 86400
-    }
-  }
-
-  private getAPNSExpiration(priority: AlertPriority): string {
-    const ttl = this.getTTL(priority)
-    const expirationDate = new Date(Date.now() + ttl * 1000)
-    return expirationDate.toISOString()
-  }
-
-  private generateEmailTemplate(alert: EmergencyAlert): string {
-    return `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background-color: #dc2626; color: white; padding: 20px; text-align: center;">
-          <h1 style="margin: 0; font-size: 24px;">Emergency Alert</h1>
-        </div>
-        <div style="padding: 20px; background-color: #f9f9f9;">
-          <h2 style="color: #dc2626; margin-top: 0;">${alert.title}</h2>
-          <p style="font-size: 16px; line-height: 1.5;">${alert.message}</p>
-          <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; margin: 20px 0; border-radius: 5px;">
-            <strong>Priority:</strong> ${alert.priority.toUpperCase()}
-          </div>
-        </div>
-        <div style="background-color: #f8f9fa; padding: 15px; text-align: center; font-size: 12px; color: #666;">
-          <p>This is an automated emergency alert from OpenRelief.</p>
-        </div>
-      </div>
-    `
-  }
-
+  /**
+   * Metrics recording.
+   */
   private recordChannelPerformance(
     channel: DeliveryChannel,
     latency: number,
     success: boolean
   ): void {
     if (!this.metrics.channelPerformance[channel]) {
-      this.metrics.channelPerformance[channel] = {
-        total: 0,
-        success: 0,
-        avgLatency: 0
-      }
+      this.metrics.channelPerformance[channel] = { total: 0, success: 0, avgLatency: 0 }
     }
-
     const perf = this.metrics.channelPerformance[channel]
     perf.total++
     if (success) {
       perf.success++
     }
-
-    // Update average latency
-    const totalLatency = perf.avgLatency * (perf.total - 1) + latency
-    perf.avgLatency = totalLatency / perf.total
+    perf.avgLatency = rollAverage(perf.avgLatency, latency, perf.total)
   }
 
   private updateMetrics(latency: number, success: boolean): void {
     this.metrics.totalAlerts++
-
     if (success) {
       this.metrics.successfulDeliveries++
     } else {
       this.metrics.failedDeliveries++
     }
-
-    // Update average latency
-    const totalLatency = this.metrics.averageLatency * (this.metrics.totalAlerts - 1) + latency
-    this.metrics.averageLatency = totalLatency / this.metrics.totalAlerts
+    this.metrics.averageLatency = rollAverage(
+      this.metrics.averageLatency,
+      latency,
+      this.metrics.totalAlerts
+    )
   }
 
   private startMetricsCollection(): void {
-    // Collect and report metrics every minute
-    setInterval(async () => {
-      await this.reportMetrics()
+    setInterval(() => {
+      void this.reportMetrics()
     }, 60 * 1000)
   }
 
   private async reportMetrics(): Promise<void> {
-    // Calculate percentiles
-    const recentAlerts = Array.from(this.processingAlerts.values())
+    const recentLatencies = Array.from(this.processingAlerts.values())
       .filter(alert => alert.deliveryAttempts.length > 0)
       .flatMap(alert => alert.deliveryAttempts)
       .filter(attempt => attempt.latency !== undefined)
       .map(attempt => attempt.latency!)
 
-    if (recentAlerts.length > 0) {
-      recentAlerts.sort((a, b) => a - b)
-      const p95Index = Math.floor(recentAlerts.length * 0.95)
-      const p99Index = Math.floor(recentAlerts.length * 0.99)
+    const { p95, p99 } = computeLatencyPercentiles(recentLatencies)
+    this.metrics.p95Latency = p95
+    this.metrics.p99Latency = p99
 
-      this.metrics.p95Latency = recentAlerts[p95Index] || 0
-      this.metrics.p99Latency = recentAlerts[p99Index] || 0
-    }
-
-    // Report to performance monitor
     performanceMonitor.recordMetric({
       type: 'alert',
       name: 'alert_dispatch_metrics',
@@ -1446,18 +434,10 @@ class AlertDispatchOptimizer {
           (this.metrics.successfulDeliveries / this.metrics.totalAlerts) *
           100
         ).toString(),
-        p95_latency: this.metrics.p95Latency.toString(),
-        p99_latency: this.metrics.p99Latency.toString()
+        p95_latency: p95.toString(),
+        p99_latency: p99.toString()
       }
     })
-  }
-
-  private generateAlertId(): string {
-    return `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-  }
-
-  private generateAttemptId(): string {
-    return `attempt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   }
 
   /**
@@ -1485,93 +465,13 @@ class AlertDispatchOptimizer {
   }
 
   async optimizeForEmergencyMode(): Promise<void> {
-    // Increase batch size and reduce timeout for emergency mode
-    this.config.batchSize = 100
-    this.config.batchTimeout = 50
-    this.config.concurrencyPerPriority = 20
-
+    this.config = createEmergencyQueueConfig()
     console.log('[AlertDispatchOptimizer] Emergency mode activated - optimized for high throughput')
   }
 
   async resetToNormalMode(): Promise<void> {
-    this.config.batchSize = 50
-    this.config.batchTimeout = 100
-    this.config.concurrencyPerPriority = 10
-
+    this.config = createDefaultQueueConfig()
     console.log('[AlertDispatchOptimizer] Normal mode restored')
-  }
-
-  async sendBatchPushNotifications(
-    users: Array<{ userId: string; fcmToken?: string }>,
-    alert: {
-      title: string
-      message: string
-      eventId: string
-      type: string
-      priority: AlertPriority
-      data: Record<string, unknown>
-    }
-  ): Promise<FCMBatchResult> {
-    const timerId = performanceMonitor.startTimer('batch_push_to_users', {
-      user_count: users.length.toString()
-    })
-
-    const result: FCMBatchResult = {
-      successCount: 0,
-      failureCount: 0,
-      failedTokens: [],
-      invalidTokens: []
-    }
-
-    try {
-      const usersWithTokens = users.filter(u => u.fcmToken)
-      if (usersWithTokens.length === 0) {
-        return result
-      }
-
-      const batcher = new FCMBatcher()
-
-      const notification = {
-        title: alert.title,
-        body: alert.message,
-        priority: this.getFCMPriority(alert.priority),
-        ttl: this.getTTL(alert.priority)
-      }
-
-      const data = {
-        eventId: alert.eventId,
-        type: alert.type,
-        priority: alert.priority,
-        ...alert.data
-      }
-
-      for (const user of usersWithTokens) {
-        if (user.fcmToken) {
-          batcher.addToken(user.fcmToken, notification, data, alert.priority)
-        }
-      }
-
-      const batchResults = await batcher.flush()
-
-      for (const batchResult of batchResults) {
-        result.successCount += batchResult.successCount
-        result.failureCount += batchResult.failureCount
-        result.failedTokens.push(...batchResult.failedTokens)
-        result.invalidTokens.push(...batchResult.invalidTokens)
-      }
-
-      if (result.invalidTokens.length > 0) {
-        await this.logInvalidTokens(result.invalidTokens)
-      }
-
-      performanceMonitor.endTimer(timerId, 'alert', 'batch_push_to_users')
-
-      return result
-    } catch (error) {
-      performanceMonitor.endTimer(timerId, 'alert', 'batch_push_to_users')
-      result.failureCount = users.length
-      return result
-    }
   }
 }
 
