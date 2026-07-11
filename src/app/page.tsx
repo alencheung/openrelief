@@ -13,15 +13,15 @@ export const metadata: Metadata = {
 // and live data. Force dynamic rendering rather than static prerendering.
 export const dynamic = 'force-dynamic'
 
-// Lazy-load EmergencyMap so the large maplibre-gl dependency (~24 MB) is only
-// fetched on the client when this section actually mounts, keeping it out of
-// the server bundle and off the critical path for first paint. Imported as
-// `nextDynamic` (not `dynamic`) to avoid clashing with the Next.js route
-// segment config `export const dynamic` above.
+// Lazy-load EmergencyMap so the large maplibre-gl dependency (~24 MB) is
+// code-split into a separate chunk rather than bundled with the home page.
+// Note: ssr: false is not allowed in Server Components (Next.js 15), so the
+// map SSRs a lightweight shell; the heavy maplibre-gl init runs client-side.
+// Imported as `nextDynamic` (not `dynamic`) to avoid clashing with the Next.js
+// route segment config `export const dynamic` above.
 const EmergencyMap = nextDynamic(
   () => import('@/components/map/EmergencyMap').then(m => m.default),
   {
-    ssr: false,
     loading: () => <div className="h-[400px] animate-pulse bg-gray-100 rounded-lg" />
   }
 )
