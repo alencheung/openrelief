@@ -198,8 +198,8 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
                 data: [],
                 pagination: {
                   total: 0,
-                  limit: parseInt(sanitizedData.limit, 10),
-                  offset: parseInt(sanitizedData.offset, 10),
+                  limit: parseInt(sanitizedData.limit!, 10),
+                  offset: parseInt(sanitizedData.offset!, 10),
                   hasMore: false
                 }
               }
@@ -214,8 +214,8 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
 
         if (sanitizedData.offset) {
           query = query.range(
-            parseInt(sanitizedData.offset, 10),
-            parseInt(sanitizedData.offset, 10) + parseInt(sanitizedData.limit, 10) - 1
+            parseInt(sanitizedData.offset!, 10),
+            parseInt(sanitizedData.offset, 10) + parseInt(sanitizedData.limit!, 10) - 1
           )
         }
 
@@ -229,10 +229,10 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
           data,
           pagination: {
             total: count || 0,
-            limit: parseInt(sanitizedData.limit, 10),
-            offset: parseInt(sanitizedData.offset, 10),
+            limit: parseInt(sanitizedData.limit!, 10),
+            offset: parseInt(sanitizedData.offset!, 10),
             hasMore:
-              (count || 0) > parseInt(sanitizedData.offset, 10) + parseInt(sanitizedData.limit, 10)
+              (count || 0) > parseInt(sanitizedData.offset!, 10) + parseInt(sanitizedData.limit!, 10)
           }
         }
       },
@@ -366,11 +366,11 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (
     const { data, error } = await getSupabase()
       .from('emergency_events')
       .insert({
-        type_id: parseInt(sanitizedData.type_id, 10),
-        title: sanitizedData.title.trim(),
-        description: sanitizedData.description.trim(),
-        location: `POINT(${sanitizedData.location.longitude} ${sanitizedData.location.latitude})`,
-        location_address: sanitizedData.location.address,
+        type_id: parseInt(sanitizedData.type_id!, 10),
+        title: sanitizedData.title!.trim(),
+        description: sanitizedData.description!.trim(),
+        location: `POINT(${sanitizedData.location!.longitude} ${sanitizedData.location!.latitude})`,
+        location_address: sanitizedData.location!.address,
         severity: Math.min(Math.max(Number(sanitizedData.severity) || 3, 1), 5),
         reporter_id: reporterId,
         status: 'pending',
