@@ -1,7 +1,6 @@
 import React from 'react'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { ProximityAlertsDisplay, ProximityAlert } from '../ProximityAlertsDisplay'
 import { createTestUtils } from '@/test-utils'
 
@@ -124,13 +123,13 @@ describe('ProximityAlertsDisplay', () => {
   }
 
   beforeEach(() => {
-    vi.clearAllMocks()
-    vi.useFakeTimers()
+    jest.clearAllMocks()
+    jest.useFakeTimers()
   })
 
   afterEach(() => {
-    vi.restoreAllMocks()
-    vi.useRealTimers()
+    jest.restoreAllMocks()
+    jest.useRealTimers()
   })
 
   it('renders proximity alerts display with alerts', () => {
@@ -380,7 +379,7 @@ describe('ProximityAlertsDisplay', () => {
     expect(screen.getByText(/building fire/i)).toBeInTheDocument()
 
     // Fast-forward time
-    vi.advanceTimersByTime(2000)
+    jest.advanceTimersByTime(2000)
 
     // Should auto-dismiss old alerts (this is simplified - real implementation would check timestamp)
     expect(screen.getByText(/building fire/i)).toBeInTheDocument()

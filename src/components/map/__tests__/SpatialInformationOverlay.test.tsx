@@ -1,7 +1,6 @@
 import React from 'react'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
 import SpatialInformationOverlay from '../SpatialInformationOverlay'
 import { createTestUtils } from '@/test-utils'
 
@@ -57,11 +56,11 @@ describe('SpatialInformationOverlay', () => {
   }
 
   beforeEach(() => {
-    vi.clearAllMocks()
+    jest.clearAllMocks()
   })
 
   afterEach(() => {
-    vi.restoreAllMocks()
+    jest.restoreAllMocks()
   })
 
   it('renders spatial information overlay', () => {

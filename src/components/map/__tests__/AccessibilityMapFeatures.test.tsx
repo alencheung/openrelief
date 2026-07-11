@@ -1,7 +1,6 @@
 import React from 'react'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
 import AccessibilityMapFeatures from '../AccessibilityMapFeatures'
 import { createTestUtils } from '@/test-utils'
 
@@ -81,11 +80,11 @@ describe('AccessibilityMapFeatures', () => {
   }
 
   beforeEach(() => {
-    vi.clearAllMocks()
+    jest.clearAllMocks()
   })
 
   afterEach(() => {
-    vi.restoreAllMocks()
+    jest.restoreAllMocks()
   })
 
   it('renders accessibility controls when showControls is true', () => {
@@ -536,7 +535,7 @@ describe('AccessibilityMapFeatures', () => {
   })
 
   it('cleans up keyboard event listeners on unmount', () => {
-    const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener')
+    const removeEventListenerSpy = jest.spyOn(window, 'removeEventListener')
 
     const { unmount } = renderWithProviders(<AccessibilityMapFeatures {...defaultProps} />)
 

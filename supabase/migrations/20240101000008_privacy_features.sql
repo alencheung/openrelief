@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS privacy_settings (
 -- require the per-data-type schema below. DROP and recreate to make this
 -- definition authoritative, regardless of migration sort order.
 DROP TABLE IF EXISTS privacy_budget CASCADE;
-CREATE TABLE privacy_budget (
+CREATE TABLE IF NOT EXISTS privacy_budget (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   data_type TEXT NOT NULL,

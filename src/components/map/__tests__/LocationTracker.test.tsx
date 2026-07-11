@@ -1,7 +1,6 @@
 import React from 'react'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
 import LocationTracker from '../LocationTracker'
 import { createTestUtils, createMockLocation, createMockEmergencyEvent } from '@/test-utils'
 
@@ -74,7 +73,7 @@ describe('LocationTracker', () => {
   const defaultProps = {}
 
   beforeEach(() => {
-    vi.clearAllMocks()
+    jest.clearAllMocks()
 
     // Reset geolocation mock
     mockGeolocation.getCurrentPosition.mockClear()
@@ -83,7 +82,7 @@ describe('LocationTracker', () => {
   })
 
   afterEach(() => {
-    vi.restoreAllMocks()
+    jest.restoreAllMocks()
   })
 
   it('renders location tracker component', () => {
@@ -96,7 +95,7 @@ describe('LocationTracker', () => {
   it('displays current location when available', () => {
     const mockLocation = createMockLocation({ lat: 40.7128, lng: -74.006 })
 
-    vi.mocked(require('@/store').useLocationStore).mockReturnValue({
+    jest.mocked(require('@/store').useLocationStore).mockReturnValue({
       currentLocation: mockLocation,
       setCurrentLocation: jest.fn(),
       startTracking: jest.fn(),
@@ -118,7 +117,7 @@ describe('LocationTracker', () => {
   })
 
   it('shows tracking status when active', () => {
-    vi.mocked(require('@/store').useLocationStore).mockReturnValue({
+    jest.mocked(require('@/store').useLocationStore).mockReturnValue({
       currentLocation: createMockLocation({ lat: 40.7128, lng: -74.006 }),
       setCurrentLocation: jest.fn(),
       startTracking: jest.fn(),
@@ -154,7 +153,7 @@ describe('LocationTracker', () => {
     const startTracking = jest.fn()
     const requestLocationPermission = jest.fn(() => Promise.resolve({ granted: true }))
 
-    vi.mocked(require('@/store').useLocationStore).mockReturnValue({
+    jest.mocked(require('@/store').useLocationStore).mockReturnValue({
       currentLocation: createMockLocation({ lat: 40.7128, lng: -74.006 }),
       setCurrentLocation: jest.fn(),
       startTracking,
@@ -195,7 +194,7 @@ describe('LocationTracker', () => {
     const user = userEvent.setup()
     const stopTracking = jest.fn()
 
-    vi.mocked(require('@/store').useLocationStore).mockReturnValue({
+    jest.mocked(require('@/store').useLocationStore).mockReturnValue({
       currentLocation: createMockLocation({ lat: 40.7128, lng: -74.006 }),
       setCurrentLocation: jest.fn(),
       startTracking: jest.fn(),
@@ -244,7 +243,7 @@ describe('LocationTracker', () => {
   it('displays accuracy information', () => {
     const mockLocation = createMockLocation({ lat: 40.7128, lng: -74.006, accuracy: 15 })
 
-    vi.mocked(require('@/store').useLocationStore).mockReturnValue({
+    jest.mocked(require('@/store').useLocationStore).mockReturnValue({
       currentLocation: mockLocation,
       setCurrentLocation: jest.fn(),
       startTracking: jest.fn(),
@@ -269,7 +268,7 @@ describe('LocationTracker', () => {
   it('displays speed when available', () => {
     const mockLocation = createMockLocation({ lat: 40.7128, lng: -74.006, speed: 5 })
 
-    vi.mocked(require('@/store').useLocationStore).mockReturnValue({
+    jest.mocked(require('@/store').useLocationStore).mockReturnValue({
       currentLocation: mockLocation,
       setCurrentLocation: jest.fn(),
       startTracking: jest.fn(),
@@ -293,7 +292,7 @@ describe('LocationTracker', () => {
   it('displays heading when available', () => {
     const mockLocation = createMockLocation({ lat: 40.7128, lng: -74.006, heading: 45 })
 
-    vi.mocked(require('@/store').useLocationStore).mockReturnValue({
+    jest.mocked(require('@/store').useLocationStore).mockReturnValue({
       currentLocation: mockLocation,
       setCurrentLocation: jest.fn(),
       startTracking: jest.fn(),
@@ -318,7 +317,7 @@ describe('LocationTracker', () => {
     const user = userEvent.setup()
     const requestLocationPermission = jest.fn(() => Promise.resolve({ granted: false }))
 
-    vi.mocked(require('@/store').useLocationStore).mockReturnValue({
+    jest.mocked(require('@/store').useLocationStore).mockReturnValue({
       currentLocation: null,
       setCurrentLocation: jest.fn(),
       startTracking: jest.fn(),
@@ -357,7 +356,7 @@ describe('LocationTracker', () => {
       }
     ]
 
-    vi.mocked(require('@/store').useLocationStore).mockReturnValue({
+    jest.mocked(require('@/store').useLocationStore).mockReturnValue({
       currentLocation: createMockLocation({ lat: 40.7128, lng: -74.006 }),
       setCurrentLocation: jest.fn(),
       startTracking: jest.fn(),
@@ -395,7 +394,7 @@ describe('LocationTracker', () => {
       }
     ]
 
-    vi.mocked(require('@/store').useLocationStore).mockReturnValue({
+    jest.mocked(require('@/store').useLocationStore).mockReturnValue({
       currentLocation: createMockLocation({ lat: 40.7128, lng: -74.006 }),
       setCurrentLocation: jest.fn(),
       startTracking: jest.fn(),
@@ -429,7 +428,7 @@ describe('LocationTracker', () => {
   })
 
   it('shows privacy indicators when anonymized', () => {
-    vi.mocked(require('@/hooks/usePrivacy').usePrivacy).mockReturnValue({
+    jest.mocked(require('@/hooks/usePrivacy').usePrivacy).mockReturnValue({
       protectLocationData: jest.fn((data, options) => ({
         data: options?.applyAnonymization ? { lat: 40.7, lng: -74.0 } : data,
         isAnonymized: options?.applyAnonymization || false,
@@ -454,7 +453,7 @@ describe('LocationTracker', () => {
   })
 
   it('shows privacy budget usage', () => {
-    vi.mocked(require('@/hooks/usePrivacy').usePrivacy).mockReturnValue({
+    jest.mocked(require('@/hooks/usePrivacy').usePrivacy).mockReturnValue({
       protectLocationData: jest.fn((data, options) => ({
         data: options?.applyAnonymization ? { lat: 40.7, lng: -74.0 } : data,
         isAnonymized: options?.applyAnonymization || false,
@@ -478,7 +477,7 @@ describe('LocationTracker', () => {
   })
 
   it('disables tracking when location sharing is disabled', () => {
-    vi.mocked(require('@/hooks/usePrivacy').usePrivacy).mockReturnValue({
+    jest.mocked(require('@/hooks/usePrivacy').usePrivacy).mockReturnValue({
       protectLocationData: jest.fn((data, options) => ({
         data: options?.applyAnonymization ? { lat: 40.7, lng: -74.0 } : data,
         isAnonymized: options?.applyAnonymization || false,
@@ -529,7 +528,7 @@ describe('LocationTracker', () => {
     // Simulate location update
     const mockLocation = createMockLocation({ lat: 40.7128, lng: -74.006 })
 
-    vi.mocked(require('@/store').useLocationStore).mockReturnValue({
+    jest.mocked(require('@/store').useLocationStore).mockReturnValue({
       currentLocation: mockLocation,
       setCurrentLocation: jest.fn(),
       startTracking: jest.fn(),
@@ -545,7 +544,7 @@ describe('LocationTracker', () => {
     })
 
     // Trigger location update
-    const { setCurrentLocation: _setCurrentLocation } = vi
+    const { setCurrentLocation: _setCurrentLocation } = jest
       .mocked(require('@/store').useLocationStore())
       .mockReturnValue({
         currentLocation: mockLocation,
@@ -580,7 +579,7 @@ describe('LocationTracker', () => {
     const user = userEvent.setup()
     const requestLocationPermission = jest.fn(() => Promise.resolve({ granted: true }))
 
-    vi.mocked(require('@/store').useLocationStore).mockReturnValue({
+    jest.mocked(require('@/store').useLocationStore).mockReturnValue({
       currentLocation: createMockLocation({ lat: 40.7128, lng: -74.006 }),
       setCurrentLocation: jest.fn(),
       startTracking: jest.fn(),
@@ -630,14 +629,14 @@ describe('LocationTracker', () => {
       })
     ]
 
-    vi.mocked(require('@/store').useEmergencyStore).mockReturnValue({
+    jest.mocked(require('@/store').useEmergencyStore).mockReturnValue({
       events: mockEvents,
       filteredEvents: mockEvents
     })
 
     const addProximityAlert = jest.fn()
 
-    vi.mocked(require('@/store').useLocationStore).mockReturnValue({
+    jest.mocked(require('@/store').useLocationStore).mockReturnValue({
       // Very close to emergency
       currentLocation: createMockLocation({ lat: 40.7129, lng: -74.0061 }),
       setCurrentLocation: jest.fn(),

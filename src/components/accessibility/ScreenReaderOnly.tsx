@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-// @ts-nocheck
 'use client'
 
 import { forwardRef } from 'react'
@@ -27,7 +25,7 @@ export interface ScreenReaderOnlyProps {
   live?: 'off' | 'polite' | 'assertive'
 
   /**
-   * Whether content should be atomic (read as a whole)
+   * Whether to make content atomic (read as a whole)
    */
   atomic?: boolean
 
@@ -44,12 +42,17 @@ export interface ScreenReaderOnlyProps {
   /**
    * Custom tag name
    */
-  as?: keyof JSX.IntrinsicElements
+  as?: React.ElementType
 
   /**
    * Additional ARIA attributes
    */
   aria?: Record<string, string | boolean>
+
+  /**
+   * Allow passthrough of host attributes (id, role, data-*, etc.)
+   */
+  [key: string]: any
 }
 
 /**

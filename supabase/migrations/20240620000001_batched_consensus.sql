@@ -111,11 +111,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- DROP first for idempotency: Postgres has no CREATE TRIGGER IF NOT EXISTS.
+DROP TRIGGER IF EXISTS consensus_work_enqueue ON event_confirmations;
 CREATE TRIGGER consensus_work_enqueue
     AFTER INSERT OR DELETE ON event_confirmations
     REFERENCING NEW TABLE AS new_rows OLD TABLE AS old_rows
     FOR EACH STATEMENT EXECUTE FUNCTION enqueue_consensus_work();
 
+DROP TRIGGER IF EXISTS update_user_activity_confirmations_stmt ON event_confirmations;
 CREATE TRIGGER update_user_activity_confirmations_stmt
     AFTER INSERT ON event_confirmations
     REFERENCING NEW TABLE AS new_rows

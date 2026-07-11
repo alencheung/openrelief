@@ -1,6 +1,5 @@
 import React from 'react'
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { ResponsiveMapContainer, useResponsive, responsiveUtils } from '../ResponsiveMapContainer'
 import { createTestUtils } from '@/test-utils'
 
@@ -19,11 +18,11 @@ describe('ResponsiveMapContainer', () => {
   }
 
   beforeEach(() => {
-    vi.clearAllMocks()
+    jest.clearAllMocks()
   })
 
   afterEach(() => {
-    vi.restoreAllMocks()
+    jest.restoreAllMocks()
   })
 
   it('renders container with children', () => {
@@ -86,7 +85,7 @@ describe('ResponsiveMapContainer', () => {
       clientHeight: 800
     }
 
-    vi.mocked(global.ResizeObserver).mockImplementation(callback => ({
+    jest.mocked(global.ResizeObserver).mockImplementation(callback => ({
       observe: jest.fn(element => {
         // Simulate mobile dimensions
         Object.defineProperty(element, 'clientWidth', { value: 500, configurable: true })
@@ -120,7 +119,7 @@ describe('ResponsiveMapContainer', () => {
 
   it('detects tablet breakpoint', async () => {
     // Mock container width to simulate tablet
-    vi.mocked(global.ResizeObserver).mockImplementation(callback => ({
+    jest.mocked(global.ResizeObserver).mockImplementation(callback => ({
       observe: jest.fn(element => {
         // Simulate tablet dimensions
         Object.defineProperty(element, 'clientWidth', { value: 900, configurable: true })
@@ -154,7 +153,7 @@ describe('ResponsiveMapContainer', () => {
 
   it('detects portrait orientation', async () => {
     // Mock container height > width to simulate portrait
-    vi.mocked(global.ResizeObserver).mockImplementation(callback => ({
+    jest.mocked(global.ResizeObserver).mockImplementation(callback => ({
       observe: jest.fn(element => {
         // Simulate portrait dimensions
         Object.defineProperty(element, 'clientWidth', { value: 800, configurable: true })
@@ -189,7 +188,7 @@ describe('ResponsiveMapContainer', () => {
   it('calls onBreakpointChange callback', async () => {
     const onBreakpointChange = jest.fn()
 
-    vi.mocked(global.ResizeObserver).mockImplementation(callback => ({
+    jest.mocked(global.ResizeObserver).mockImplementation(callback => ({
       observe: jest.fn(element => {
         // Simulate mobile dimensions
         Object.defineProperty(element, 'clientWidth', { value: 500, configurable: true })
@@ -212,7 +211,7 @@ describe('ResponsiveMapContainer', () => {
   it('calls onOrientationChange callback', async () => {
     const onOrientationChange = jest.fn()
 
-    vi.mocked(global.ResizeObserver).mockImplementation(callback => ({
+    jest.mocked(global.ResizeObserver).mockImplementation(callback => ({
       observe: jest.fn(element => {
         // Simulate portrait dimensions
         Object.defineProperty(element, 'clientWidth', { value: 800, configurable: true })
@@ -249,7 +248,7 @@ describe('ResponsiveMapContainer', () => {
   })
 
   it('applies responsive styles based on breakpoint', async () => {
-    vi.mocked(global.ResizeObserver).mockImplementation(callback => ({
+    jest.mocked(global.ResizeObserver).mockImplementation(callback => ({
       observe: jest.fn(element => {
         // Simulate mobile dimensions
         Object.defineProperty(element, 'clientWidth', { value: 500, configurable: true })
@@ -291,7 +290,7 @@ describe('ResponsiveMapContainer', () => {
   })
 
   it('throws error when useResponsive is used outside provider', () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
     const TestChild = () => {
       useResponsive()
@@ -310,12 +309,12 @@ describe('ResponsiveMapContainer', () => {
 
     unmount()
 
-    const mockObserver = vi.mocked(global.ResizeObserver).mock.results[0].value
+    const mockObserver = jest.mocked(global.ResizeObserver).mock.results[0].value
     expect(mockObserver.disconnect).toHaveBeenCalled()
   })
 
   it('cleans up orientation change listener on unmount', () => {
-    const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener')
+    const removeEventListenerSpy = jest.spyOn(window, 'removeEventListener')
 
     const { unmount } = renderWithProviders(<ResponsiveMapContainer {...defaultProps} />)
 

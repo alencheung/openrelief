@@ -7,7 +7,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { trustScoreManager } from './trust-integration'
+import {
+  trustScoreManager,
+  updateTrustScoreFromAction as updateTrustScoreFromActionCore
+} from './trust-integration'
 import { securityMonitor } from '@/lib/audit/security-monitor'
 import { verifySupabaseJwt } from '@/lib/auth/jwt-verify'
 
@@ -410,6 +413,25 @@ export async function trustBasedContentFilter(
 
 /**
  * Update trust score based on user action
+ *
+ * Middleware-layer wrapper around the canonical
+ * `updateTrustScoreFromAction` in `./trust-integration`. The canonical
+ * implementation owns the trust-engine logic (it wraps
+ * `trustScoreManager.calculateTrustScore` and returns the full result
+ * including `factors`). This wrapper preserves this module's legacy
+ * `outcome` parameter ('success' | 'failure' | 'partial') — which has no
+ * counterpart in the canonical signature — by translating it into the
+ * action/context the engine expects ('failure' maps to the engine's
+ * 'penalty' action) and by adapting the return shape to this module's
+ * historical `{ updated, ... }` contract. The significant-change alert
+ * logging that lived in the previous local reimplementation is preserved
+ * here so existing behavior is unchanged for any middleware caller.
+ *
+ * NOTE: the two modules previously exported same-named functions with
+ * incompatible signatures and silently divergent behavior. New code should
+ * import `updateTrustScoreFromAction` directly from
+ * `./trust-integration`; this wrapper exists for backward compatibility
+ * with the middleware-layer's `outcome`-aware contract.
  */
 export async function updateTrustScoreFromAction(
   userId: string,
@@ -423,17 +445,28 @@ export async function updateTrustScoreFromAction(
   change?: number
 }> {
   try {
-    // Calculate trust score impact based on action and outcome
-    let adjustedAction: 'report' | 'confirm' | 'dispute' | 'endorse' | 'moderate' | 'penalty' = action
-    if (outcome === 'failure') {
-      adjustedAction = 'penalty'
-    } else if (outcome === 'partial') {
-      adjustedAction = action // Use action with reduced impact
-    }
+    // Translate the middleware-layer `outcome` into the action the
+    // canonical engine expects. The canonical `calculateTrustScore`
+    // models a negative outcome as the 'penalty' action; 'partial' falls
+    // through to the original action (the engine applies its own impact).
+    const adjustedAction:
+      | 'report'
+      | 'confirm'
+      | 'dispute'
+      | 'endorse'
+      | 'moderate'
+      | 'penalty' = outcome === 'failure' ? 'penalty' : action
 
-    const result = await trustScoreManager.calculateTrustScore(userId, adjustedAction, context)
+    const result = await updateTrustScoreFromActionCore(userId, adjustedAction, {
+      ...context,
+      // Pass the original outcome through as context so downstream factor
+      // updates / auditing can distinguish a real 'dispute' action from a
+      // 'penalty' synthesized from a failed action.
+      outcome
+    })
 
-    // Log significant trust score changes
+    // Log significant trust score changes (preserved from the previous
+    // local implementation so middleware callers keep the same telemetry).
     if (Math.abs(result.change) > 0.05) {
       await securityMonitor.createAlert(
         'trust_score_significant_change' as any,

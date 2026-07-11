@@ -12,6 +12,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { z } from 'zod'
+
+// Validation schema for PATCH /api/emergency/[id]. All fields are optional
+// (partial update). Mirrors the previously hand-rolled checks so behavior is
+// preserved. NOTE: src/app/api/emergency/route.ts validates its create/update
+// bodies via the legacy inputValidator (VALIDATION_SCHEMAS), not Zod, so there
+// is no existing Zod schema to import — defining one here.
+const emergencyPatchSchema = z
+  .object({
+    description: z.string().max(2000, 'description too long (max 2000 chars)').optional(),
+    severity: z.number().int().min(1, 'severity must be an integer 1-5').max(5, 'severity must be an integer 1-5').optional(),
+    radius_meters: z
+      .number()
+      .positive('radius_meters must be a positive number up to 100000')
+      .max(100000, 'radius_meters must be a positive number up to 100000')
+      .optional(),
+    status: z
+      .enum(['pending', 'active', 'resolved', 'closed', 'cancelled'])
+      .optional()
+  })
+  .strict()
+  .refine(data => Object.keys(data).length > 0, {
+    message: 'No updatable fields provided'
+  })
 
 // emergency_events is typed in Database, but cast for safety against drift.
 type SSRClient = SupabaseClient
@@ -114,45 +138,21 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const patch: Record<string, unknown> = {}
-
-    if (typeof body.description === 'string') {
-      if (body.description.length > 2000) {
-        return NextResponse.json({ error: 'description too long (max 2000 chars)' }, { status: 400 })
+    const parsed = emergencyPatchSchema.safeParse(body)
+    if (!parsed.success) {
+      const firstIssue = parsed.error.issues[0]
+      const message = firstIssue?.message || 'Invalid request body'
+      // Preserve the existing single-error response shape while surfacing
+      // the full detail set for debugging.
+      if (parsed.error.issues.some(i => i.message === 'No updatable fields provided')) {
+        return NextResponse.json({ error: 'No updatable fields provided' }, { status: 400 })
       }
-      patch.description = body.description
+      return NextResponse.json(
+        { error: message, details: parsed.error.flatten() },
+        { status: 400 }
+      )
     }
-    if (body.severity !== undefined) {
-      const sev = Number(body.severity)
-      if (!Number.isInteger(sev) || sev < 1 || sev > 5) {
-        return NextResponse.json({ error: 'severity must be an integer 1-5' }, { status: 400 })
-      }
-      patch.severity = sev
-    }
-    if (body.radius_meters !== undefined) {
-      const r = Number(body.radius_meters)
-      if (!Number.isFinite(r) || r <= 0 || r > 100000) {
-        return NextResponse.json(
-          { error: 'radius_meters must be a positive number up to 100000' },
-          { status: 400 }
-        )
-      }
-      patch.radius_meters = r
-    }
-    if (typeof body.status === 'string') {
-      const allowed = ['pending', 'active', 'resolved', 'closed', 'cancelled']
-      if (!allowed.includes(body.status)) {
-        return NextResponse.json(
-          { error: `status must be one of: ${allowed.join(', ')}` },
-          { status: 400 }
-        )
-      }
-      patch.status = body.status
-    }
-
-    if (Object.keys(patch).length === 0) {
-      return NextResponse.json({ error: 'No updatable fields provided' }, { status: 400 })
-    }
+    const patch: Record<string, unknown> = { ...parsed.data }
 
     const { data, error } = await supabase
       .from('emergency_events')

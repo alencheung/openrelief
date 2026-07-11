@@ -12,6 +12,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { timingSafeEqual } from 'crypto'
 import { supabaseAdmin } from '@/lib/supabase'
 import { broadcastWebPush, isWebPushConfigured, type PushSubscription } from '@/lib/notifications/web-push'
 
@@ -20,6 +21,20 @@ export const maxDuration = 60
 
 function unauthorized(): NextResponse {
   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+}
+
+// Constant-time string comparison. Returns false when lengths differ without
+// leaking which side mismatched. Both inputs are encoded as UTF-8 buffers.
+function safeCompare(a: string, b: string): boolean {
+  const aBuf = Buffer.from(a, 'utf8')
+  const bBuf = Buffer.from(b, 'utf8')
+  if (aBuf.length !== bBuf.length) {
+    // Compare b against itself to keep the timing roughly constant, then
+    // return false. Avoids short-circuiting on length mismatch.
+    timingSafeEqual(bBuf, bBuf)
+    return false
+  }
+  return timingSafeEqual(aBuf, bBuf)
 }
 
 export async function POST(request: NextRequest) {
@@ -31,11 +46,11 @@ export async function POST(request: NextRequest) {
     console.error('notifications/dispatch: INTERNAL_CRON_KEY is not set')
     return NextResponse.json(
       { error: 'Dispatch is not configured (INTERNAL_CRON_KEY missing)' },
-      { status: 500 }
+      { status: 503 }
     )
   }
-  const provided = request.headers.get('x-internal-key')
-  if (!provided || provided !== cronKey) {
+  const provided = request.headers.get('x-api-key')
+  if (!provided || !safeCompare(provided, cronKey)) {
     return unauthorized()
   }
 

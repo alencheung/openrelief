@@ -1,3 +1,13 @@
+/**
+ * Health check endpoint.
+ *
+ * INTENTIONALLY PUBLIC: Load balancers, uptime probes, and orchestrators
+ * (Vercel/Kubernetes/etc.) call this without credentials to determine
+ * service availability. It returns no sensitive data — only process
+ * uptime, environment, and version. Authentication here would break
+ * health probes and cause false-negative outages. Do not add auth.
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(_request: NextRequest) {

@@ -12,6 +12,20 @@ import { securityMonitor } from '@/lib/audit/security-monitor'
 import { supabaseAdmin } from '@/lib/supabase'
 
 // Trust score interfaces
+//
+// NOTE: there is a second `TrustScore` / `TrustFactors` pair in
+// `src/store/trustStore.ts`. The two are INTENTIONALLY distinct models and
+// are NOT interchangeable:
+//  - This file's types model the SERVER-SIDE trust domain used by the trust
+//    engine (`trustScoreManager`): `TrustScore.overall` + `reputation` +
+//    `confidence`, and `TrustFactors` includes `consistencyScore`.
+//  - The store's types model the CLIENT-SIDE Zustand cache
+//    (`useTrustStore`): `TrustScore.score` / `previousScore`, and
+//    `TrustFactors` uses numeric `expertiseAreas: number[]`.
+// Merging them would break either the engine or the UI selectors that read
+// `score`/`previousScore`. If you need the engine type in a new module,
+// import it from here; if you need the store/cache type, import it from
+// `@/store`.
 export interface TrustScore {
   userId: string
   overall: number
@@ -940,10 +954,16 @@ export const trustScoreManager = new TrustScoreManager()
  * Update trust score from a user action
  *
  * This is a convenience function that wraps the TrustScoreManager's calculateTrustScore method.
+ *
+ * The `action` union includes `'penalty'` (which `calculateTrustScore` already
+ * accepts and maps to a negative impact via `getActionImpact`) so that the
+ * middleware-layer wrapper in `./trust-middleware` can translate a failed
+ * action outcome into a penalty through this canonical entry point instead of
+ * reimplementing the calculation.
  */
 export async function updateTrustScoreFromAction(
   userId: string,
-  action: 'report' | 'confirm' | 'dispute' | 'endorse' | 'moderate',
+  action: 'report' | 'confirm' | 'dispute' | 'endorse' | 'moderate' | 'penalty',
   context: any
 ): Promise<{
   newScore: number

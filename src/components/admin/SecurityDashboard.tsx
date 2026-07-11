@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-// @ts-nocheck
 /**
  * Security Dashboard for Administrators
  *
@@ -11,11 +9,21 @@ import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Progress } from '@/components/ui/progress'
+import { Progress } from '@/components/ui/Progress'
 import { Shield, AlertTriangle, Users, Activity, Lock, Eye, Database } from 'lucide-react'
 import { apiGetJson, apiSendJson } from '@/lib/api/api-client'
+
+// Tabs/Alert primitives are not yet provided under @/components/ui. Typed as
+// any locally so this dashboard compiles and renders; swap for the real
+// components once they are added to the UI layer.
+type AnyComp = React.ComponentType<React.HTMLAttributes<HTMLElement> & { [key: string]: any }>
+const Tabs: AnyComp = ((props: any) => <div {...props} />) as any
+const TabsContent: AnyComp = ((props: any) => <div {...props} />) as any
+const TabsList: AnyComp = ((props: any) => <div {...props} />) as any
+const TabsTrigger: AnyComp = ((props: any) => <button {...props} />) as any
+const Alert: AnyComp = ((props: any) => <div {...props} />) as any
+const AlertDescription: AnyComp = ((props: any) => <div {...props} />) as any
+const AlertTitle: AnyComp = ((props: any) => <h5 {...props} />) as any
 
 // Security dashboard interfaces
 interface SecurityMetrics {
@@ -119,11 +127,11 @@ export default function SecurityDashboard() {
       // hangs on a stalled downstream).
       const [metricsResponse, alertsResponse, trustResponse, statusResponse, activityResponse] =
         await Promise.all([
-          apiGetJson('/api/admin/security/metrics'),
-          apiGetJson('/api/admin/security/alerts'),
-          apiGetJson('/api/admin/security/trust-metrics'),
-          apiGetJson('/api/admin/security/system-status'),
-          apiGetJson('/api/admin/security/suspicious-activity')
+          apiGetJson<{ data: SecurityMetrics }>('/api/admin/security/metrics'),
+          apiGetJson<{ data: SecurityAlert[] }>('/api/admin/security/alerts'),
+          apiGetJson<{ data: TrustMetrics }>('/api/admin/security/trust-metrics'),
+          apiGetJson<{ data: SystemStatus }>('/api/admin/security/system-status'),
+          apiGetJson<{ data: SuspiciousActivity[] }>('/api/admin/security/suspicious-activity')
         ])
 
       setMetrics(metricsResponse.data)
@@ -184,7 +192,7 @@ export default function SecurityDashboard() {
     }
   }
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string | undefined) => {
     switch (status) {
       case 'operational':
         return 'text-green-600'

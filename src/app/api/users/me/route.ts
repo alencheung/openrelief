@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { z } from 'zod'
 
 type SSRClient = SupabaseClient
 
@@ -24,6 +25,26 @@ const EDITABLE_FIELDS = new Set([
 ])
 
 const ALLOWED_PRIVACY_LEVELS = new Set(['basic', 'standard', 'enhanced', 'maximum'])
+
+// Validation schema for PATCH /api/users/me. All fields are optional (partial
+// update). The EDITABLE_FIELDS allowlist is still enforced separately below so
+// the explicit per-field error messages are preserved.
+const profilePatchSchema = z
+  .object({
+    display_name: z.string().max(200, 'display_name too long (max 200 chars)').optional(),
+    avatar_url: z.string().max(200, 'avatar_url too long (max 200 chars)').optional(),
+    notification_preferences: z
+      .record(z.unknown())
+      .optional(),
+    privacy_settings: z
+      .record(z.unknown())
+      .optional(),
+    privacy_level: z.enum(['basic', 'standard', 'enhanced', 'maximum']).optional()
+  })
+  .strict()
+  .refine(data => Object.keys(data).length > 0, {
+    message: 'No updatable fields provided'
+  })
 
 async function requireUser(supabase: SSRClient): Promise<string | NextResponse> {
   const {
@@ -78,46 +99,35 @@ export async function PATCH(request: NextRequest) {
     const userId = authResult
 
     const body = await request.json()
-    if (!body || typeof body !== 'object') {
-      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
-    }
 
-    const patch: Record<string, unknown> = {}
-    for (const [key, value] of Object.entries(body)) {
-      if (!EDITABLE_FIELDS.has(key)) {
-        return NextResponse.json(
-          { error: `Field '${key}' is not user-editable` },
-          { status: 400 }
-        )
-      }
-      // Type checks for known fields.
-      if (key === 'display_name' || key === 'avatar_url') {
-        if (typeof value !== 'string') {
-          return NextResponse.json({ error: `${key} must be a string` }, { status: 400 })
-        }
-        if (value.length > 200) {
-          return NextResponse.json({ error: `${key} too long (max 200 chars)` }, { status: 400 })
-        }
-      }
-      if (key === 'notification_preferences' || key === 'privacy_settings') {
-        if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-          return NextResponse.json({ error: `${key} must be an object` }, { status: 400 })
-        }
-      }
-      if (key === 'privacy_level') {
-        if (typeof value !== 'string' || !ALLOWED_PRIVACY_LEVELS.has(value)) {
+    // First, reject any non-editable fields with the explicit message the UI
+    // depends on, before running the strict Zod schema (which would produce a
+    // generic "unrecognized key" error instead).
+    if (body && typeof body === 'object') {
+      for (const key of Object.keys(body)) {
+        if (!EDITABLE_FIELDS.has(key)) {
           return NextResponse.json(
-            { error: `privacy_level must be one of: ${[...ALLOWED_PRIVACY_LEVELS].join(', ')}` },
+            { error: `Field '${key}' is not user-editable` },
             { status: 400 }
           )
         }
       }
-      patch[key] = value
     }
 
-    if (Object.keys(patch).length === 0) {
-      return NextResponse.json({ error: 'No updatable fields provided' }, { status: 400 })
+    const parsed = profilePatchSchema.safeParse(body)
+    if (!parsed.success) {
+      const firstIssue = parsed.error.issues[0]
+      const message = firstIssue?.message || 'Invalid request body'
+      if (parsed.error.issues.some(i => i.message === 'No updatable fields provided')) {
+        return NextResponse.json({ error: 'No updatable fields provided' }, { status: 400 })
+      }
+      return NextResponse.json(
+        { error: message, details: parsed.error.flatten() },
+        { status: 400 }
+      )
     }
+
+    const patch: Record<string, unknown> = { ...parsed.data }
 
     const { data, error } = await supabase
       .from('user_profiles')
