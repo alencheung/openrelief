@@ -175,31 +175,35 @@ jest.mock('maplibre-gl', () => ({
   ScaleControl: jest.fn()
 }))
 
-// Mock Leaflet
-jest.mock('leaflet', () => ({
-  map: jest.fn(() => ({
-    setView: jest.fn(),
-    addLayer: jest.fn(),
-    removeLayer: jest.fn(),
-    on: jest.fn(),
-    off: jest.fn(),
-    invalidateSize: jest.fn()
-  })),
-  tileLayer: jest.fn(() => ({
-    addTo: jest.fn()
-  })),
-  marker: jest.fn(() => ({
-    addTo: jest.fn(),
-    bindPopup: jest.fn()
-  })),
-  popup: jest.fn(() => ({
-    setLatLng: jest.fn(),
-    setContent: jest.fn(),
-    openOn: jest.fn()
-  })),
-  icon: jest.fn(),
-  divIcon: jest.fn()
-}))
+// Mock Leaflet (virtual — package was removed from deps, but legacy code may still reference it)
+jest.mock(
+  'leaflet',
+  () => ({
+    map: jest.fn(() => ({
+      setView: jest.fn(),
+      addLayer: jest.fn(),
+      removeLayer: jest.fn(),
+      on: jest.fn(),
+      off: jest.fn(),
+      invalidateSize: jest.fn()
+    })),
+    tileLayer: jest.fn(() => ({
+      addTo: jest.fn()
+    })),
+    marker: jest.fn(() => ({
+      addTo: jest.fn(),
+      bindPopup: jest.fn()
+    })),
+    popup: jest.fn(() => ({
+      setLatLng: jest.fn(),
+      setContent: jest.fn(),
+      openOn: jest.fn()
+    })),
+    icon: jest.fn(),
+    divIcon: jest.fn()
+  }),
+  { virtual: true }
+)
 
 // Mock Supabase
 jest.mock('@supabase/supabase-js', () => ({
