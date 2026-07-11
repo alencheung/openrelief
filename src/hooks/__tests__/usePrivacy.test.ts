@@ -45,8 +45,8 @@ jest.mock('@/lib/privacy/anonymization', () => ({
 }))
 
 jest.mock('@/lib/privacy/cryptography', () => ({
-  encryptUserData: jest.fn(),
-  decryptUserData: jest.fn(),
+  encryptUserData: jest.fn(async (userId, data, key) => ({ algorithm: 'aes-256-gcm', iv: Buffer.from('iv'), ciphertext: Buffer.from(JSON.stringify(data)), authTag: Buffer.from('tag'), keyId: 'mock', userId })),
+  decryptUserData: jest.fn(async (userId, encryptedData) => JSON.parse(encryptedData.ciphertext.toString())),
   createHashDigest: jest.fn(),
   generateSessionToken: jest.fn(),
   verifySessionToken: jest.fn()
@@ -84,7 +84,7 @@ describe('usePrivacy Hook', () => {
     it('should initialize with default privacy context', () => {
       const { result } = renderHook(() => usePrivacy())
 
-      expect(result.current.privacyContext.privacyLevel).toBe('high')
+      expect(result.current.privacyContext.privacyLevel).toBe('maximum')
       expect(result.current.privacyContext.isPrivacyEnabled).toBe(true)
       expect(result.current.privacyContext.granularPermissions).toEqual([])
       expect(result.current.privacyContext.privacyZones).toEqual([])
@@ -545,7 +545,10 @@ describe('usePrivacy Hook', () => {
         description: 'I would like to access all my personal data.'
       }
 
-      const requestId = result.current.createLegalRequest(newRequest)
+      let requestId;
+      act(() => {
+        requestId = result.current.createLegalRequest(newRequest)
+      })
 
       expect(requestId).toBeTruthy()
       expect(result.current.privacyContext.legalRequests).toHaveLength(1)
@@ -561,7 +564,10 @@ describe('usePrivacy Hook', () => {
         description: 'I would like to access all my personal data.'
       }
 
-      const requestId = result.current.createLegalRequest(newRequest)
+      let requestId;
+      act(() => {
+        requestId = result.current.createLegalRequest(newRequest)
+      })
 
       // Then update it
       act(() => {

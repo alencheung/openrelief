@@ -5,7 +5,15 @@
  * secure key management, and identity verification using cryptographic hashes.
  */
 
-import { createHash, randomBytes, createCipheriv, createDecipheriv, scrypt } from 'crypto'
+import {
+  createHash,
+  randomBytes,
+  createCipheriv,
+  createDecipheriv,
+  scrypt,
+  type CipherGCM,
+  type DecipherGCM
+} from 'crypto'
 
 // Configuration for cryptographic operations
 export interface CryptoConfig {
@@ -102,7 +110,7 @@ export function encryptData(
   config: CryptoConfig = DEFAULT_CRYPTO_CONFIG
 ): EncryptedData {
   const iv = randomBytes(config.ivLength)
-  const cipher = createCipheriv(config.algorithm, key, iv)
+  const cipher = createCipheriv(config.algorithm, key, iv) as CipherGCM
 
   let encrypted = cipher.update(data, 'utf8', 'base64')
   encrypted += cipher.final('base64')
@@ -131,7 +139,7 @@ export function decryptData(
   const iv = Buffer.from(encryptedData.iv, 'base64')
   const tag = Buffer.from(encryptedData.tag, 'base64')
 
-  const decipher = createDecipheriv(encryptedData.algorithm, key, iv)
+  const decipher = createDecipheriv(encryptedData.algorithm, key, iv) as DecipherGCM
   decipher.setAuthTag(tag)
 
   let decrypted = decipher.update(encryptedData.data, 'base64', 'utf8')
@@ -160,7 +168,7 @@ export async function storeUserKey(
   const derivedKey = await deriveKey(masterKey.toString('base64'), salt)
 
   // Encrypt the user key
-  const cipher = createCipheriv(DEFAULT_CRYPTO_CONFIG.algorithm, derivedKey, iv)
+  const cipher = createCipheriv(DEFAULT_CRYPTO_CONFIG.algorithm, derivedKey, iv) as CipherGCM
   let encryptedKey = cipher.update(key.toString('base64'), 'utf8', 'base64')
   encryptedKey += cipher.final('base64')
 

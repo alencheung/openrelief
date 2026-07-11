@@ -11,8 +11,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { authSecurityManager } from './auth-security'
-import { inputValidator, validateApiInput, ValidationResult } from './input-validation'
+import {
+  inputValidator,
+  validateApiInput,
+  ApiValidationResult,
+  SecurityFlag
+} from './input-validation'
 import { sybilPreventionEngine } from './sybil-prevention'
 import {
   securityMonitor,
@@ -20,6 +24,7 @@ import {
   IncidentSeverity
 } from '@/lib/audit/security-monitor'
 import { supabaseAdmin } from '@/lib/supabase'
+import { createClient as createSSRClient } from '@/lib/supabase/server'
 
 // API Security configuration
 interface APISecurityConfig {
@@ -44,6 +49,7 @@ interface SecurityContext {
   sessionId?: string
   trustScore?: number
   riskLevel?: 'low' | 'medium' | 'high' | 'critical'
+  role?: string
   permissions: string[]
   deviceTrusted: boolean
   mfaVerified: boolean
@@ -62,7 +68,7 @@ interface APISecurityResult {
   allowed: boolean
   response?: NextResponse
   securityContext?: SecurityContext
-  validationResult?: ValidationResult
+  validationResult?: ApiValidationResult
   securityFlags?: string[]
 }
 
@@ -193,11 +199,16 @@ export class APISecurityManager {
       }
     }
 
-    // Check role-based access
-    if (config.allowedRoles && securityContext.permissions.length > 0) {
-      const hasRequiredRole = config.allowedRoles.some(role =>
-        securityContext.permissions.includes(role)
-      )
+    // Check role-based access. Matches when the user's role OR any of their
+    // permissions is in config.allowedRoles. If allowedRoles is set and the
+    // user has no qualifying role, deny (fail closed).
+    if (config.allowedRoles && config.allowedRoles.length > 0) {
+      const hasRequiredRole =
+        (securityContext.role
+          ? config.allowedRoles.includes(securityContext.role)
+          : false) ||
+        (securityContext.permissions.length > 0 &&
+          config.allowedRoles.some(r => securityContext.permissions.includes(r)))
 
       if (!hasRequiredRole) {
         return {
@@ -212,11 +223,11 @@ export class APISecurityManager {
     }
 
     // Validate input if schema provided
-    let validationResult: ValidationResult | undefined
+    let validationResult: ApiValidationResult | undefined
     if (config.inputSchema) {
       validationResult = await validateApiInput(config.inputSchema)(request)
 
-      if (!validationResult.isValid) {
+      if (validationResult && !validationResult.isValid) {
         await this.logInputValidationFailure(request, validationResult)
         return {
           allowed: false,
@@ -248,81 +259,96 @@ export class APISecurityManager {
       allowed: true,
       securityContext,
       validationResult,
-      securityFlags: validationResult?.securityFlags.map(flag => flag.type) || []
+      securityFlags:
+        validationResult?.securityFlags.map((flag: SecurityFlag) => flag.type) || []
     }
   }
 
   /**
    * Authenticate request
+   *
+   * Validates the caller's Supabase session by reading the auth cookies set by
+   * the browser client (or a Bearer access token) via the Supabase SSR client's
+   * `getUser()`, which verifies the JWT signature server-side. This replaced a
+   * Redis-backed session lookup that was never populated by the login flow and
+   * therefore rejected every authenticated request.
    */
   private async authenticateRequest(request: NextRequest): Promise<{
     allowed: boolean
     response?: NextResponse
     securityContext?: SecurityContext
   }> {
-    // Get session token from headers or cookies
-    const sessionToken =
-      request.headers.get('authorization')?.replace('Bearer ', '') ||
-      request.cookies.get('session-token')?.value
+    const ipAddress = this.getClientIP(request)
+    const userAgent = request.headers.get('user-agent') || 'unknown'
 
-    if (!sessionToken) {
+    // Prefer the SSR cookie-bound client (the normal browser path). The Bearer
+    // token fallback covers non-browser callers (e.g. tests, edge workers).
+    let user: { id: string } | null = null
+    let usingSSRClient = true
+    try {
+      const ssr = await createSSRClient()
+      const {
+        data: { user: ssrUser }
+      } = await ssr.auth.getUser()
+      user = ssrUser
+    } catch {
+      // SSR client requires the Next.js cookies() context (Route Handlers).
+      // In contexts where it can't be built (e.g. some test harnesses), fall
+      // back to verifying a Bearer token directly against Supabase.
+      usingSSRClient = false
+    }
+
+    if (!user && !usingSSRClient) {
+      const bearer = request.headers.get('authorization')?.replace('Bearer ', '')
+      if (bearer) {
+        const {
+          data: { user: bearerUser }
+        } = await (supabaseAdmin as import('@supabase/supabase-js').SupabaseClient).auth.getUser(
+          bearer
+        )
+        user = bearerUser
+      }
+    }
+
+    if (!user) {
       return {
         allowed: false,
         response: this.createErrorResponse('Authentication required', 401, 'auth_required')
       }
     }
 
-    // Validate session
-    const sessionValidation = await authSecurityManager.validateSession(sessionToken, {
-      ipAddress: this.getClientIP(request),
-      userAgent: request.headers.get('user-agent') || 'unknown'
-    })
+    const userId = user.id
 
-    if (!sessionValidation.valid) {
-      if (sessionValidation.requiresReauth) {
-        return {
-          allowed: false,
-          response: this.createErrorResponse('Re-authentication required', 401, 'reauth_required')
-        }
-      }
-
-      return {
-        allowed: false,
-        response: this.createErrorResponse('Invalid session', 401, 'invalid_session')
-      }
-    }
-
-    const session = sessionValidation.session!
-
-    // Get user permissions and trust score
-    const { data: userProfile, error } = await supabaseAdmin
+    // Load the user's profile for trust score / role / permissions. A profile
+    // may not exist yet for freshly signed-up users (before the onboarding
+    // trigger is applied); in that case fall back to safe defaults rather than
+    // rejecting.
+    const { data: userProfile } = await supabaseAdmin
       .from('user_profiles')
       .select('trust_score, role, permissions')
-      .eq('user_id', session.userId)
-      .single()
+      .eq('user_id', userId)
+      .maybeSingle()
 
-    if (error || !userProfile) {
-      return {
-        allowed: false,
-        response: this.createErrorResponse('User profile not found', 404, 'user_not_found')
-      }
-    }
+    const trustScore = userProfile?.trust_score ?? 0.1
+    const role =
+      (userProfile as { role?: string } | null)?.role ?? 'citizen'
+    const profilePermissions =
+      (userProfile as { permissions?: string[] } | null)?.permissions ?? []
+    // Treat the user's role as an implicit permission so `allowedRoles`
+    // checks (e.g. ['admin', 'moderator']) match by role.
+    const permissions = Array.from(new Set([role, ...profilePermissions]))
 
     const securityContext: SecurityContext = {
       authenticated: true,
-      userId: session.userId,
-      sessionId: session.sessionId,
-      trustScore: userProfile.trust_score,
-      permissions: userProfile.permissions || [],
-      deviceTrusted: session.trustLevel === 'high',
-      mfaVerified: session.mfaVerified,
-      ipAddress: session.ipAddress,
-      userAgent: session.userAgent
-    }
-
-    // Check for security flags in session
-    if (session.securityFlags.length > 0) {
-      await this.handleSessionSecurityFlags(session, securityContext)
+      userId,
+      sessionId: `ssr-${userId}`,
+      trustScore,
+      role,
+      permissions,
+      deviceTrusted: true,
+      mfaVerified: false,
+      ipAddress,
+      userAgent
     }
 
     return {
@@ -426,54 +452,13 @@ export class APISecurityManager {
     }
   }
 
-  /**
-   * Handle session security flags
-   */
-  private async handleSessionSecurityFlags(
-    session: any,
-    securityContext: SecurityContext
-  ): Promise<void> {
-    for (const flag of session.securityFlags) {
-      switch (flag.type) {
-        case 'ip_change':
-          await securityMonitor.createAlert(
-            SecurityIncidentType.SUSPICIOUS_LOGIN,
-            IncidentSeverity.MEDIUM,
-            `IP address changed for user ${securityContext.userId}`,
-            `Previous: ${session.ipAddress}, Current: ${securityContext.ipAddress}`,
-            'api_security'
-          )
-          break
-
-        case 'device_change':
-          await securityMonitor.createAlert(
-            SecurityIncidentType.SUSPICIOUS_LOGIN,
-            IncidentSeverity.HIGH,
-            `Device changed for user ${securityContext.userId}`,
-            `Session: ${securityContext.sessionId}`,
-            'api_security'
-          )
-          break
-
-        case 'concurrent_sessions':
-          await securityMonitor.createAlert(
-            SecurityIncidentType.SUSPICIOUS_ACTIVITY,
-            IncidentSeverity.MEDIUM,
-            `Concurrent sessions detected for user ${securityContext.userId}`,
-            `Session: ${securityContext.sessionId}`,
-            'api_security'
-          )
-          break
-      }
-    }
-  }
 
   /**
    * Log input validation failures
    */
   private async logInputValidationFailure(
     request: NextRequest,
-    validationResult: ValidationResult
+    validationResult: ApiValidationResult
   ): Promise<void> {
     await securityMonitor.createAlert(
       SecurityIncidentType.MALICIOUS_ACTIVITY,
@@ -482,10 +467,11 @@ export class APISecurityManager {
       `Security flags: ${validationResult.securityFlags.map(f => f.type).join(', ')}`,
       'api_security',
       {
-        url: request.url,
-        method: request.method,
-        errors: validationResult.errors,
-        securityFlags: validationResult.securityFlags
+        metadata: {
+          url: request.url,
+          method: request.method,
+          indicators: validationResult.securityFlags.map(f => f.type)
+        }
       }
     )
   }
@@ -498,26 +484,26 @@ export class APISecurityManager {
     securityContext: SecurityContext,
     config: APISecurityConfig
   ): Promise<void> {
-    const auditData = {
-      url: request.url,
-      method: request.method,
-      userId: securityContext.userId,
-      sessionId: securityContext.sessionId,
-      ipAddress: securityContext.ipAddress,
-      userAgent: securityContext.userAgent,
-      authenticated: securityContext.authenticated,
-      trustScore: securityContext.trustScore,
-      riskLevel: securityContext.riskLevel,
-      timestamp: new Date().toISOString()
-    }
-
     await securityMonitor.createAlert(
       SecurityIncidentType.API_ACCESS,
       (config.auditLevel as IncidentSeverity) || IncidentSeverity.MEDIUM,
       'API access logged',
       `${request.method} ${request.url}`,
       'api_security',
-      auditData
+      {
+        userId: securityContext.userId,
+        ipAddress: securityContext.ipAddress,
+        userAgent: securityContext.userAgent,
+        metadata: {
+          url: request.url,
+          method: request.method,
+          sessionId: securityContext.sessionId,
+          authenticated: securityContext.authenticated,
+          trustScore: securityContext.trustScore,
+          riskLevel: securityContext.riskLevel,
+          timestamp: new Date().toISOString()
+        }
+      }
     )
   }
 
@@ -602,7 +588,7 @@ export class APISecurityManager {
     const cfConnectingIP = request.headers.get('cf-connecting-ip')
 
     if (forwardedFor) {
-      return forwardedFor.split(',')[0].trim()
+      return (forwardedFor.split(',')[0] || '').trim()
     }
     if (realIP) {
       return realIP
@@ -611,7 +597,7 @@ export class APISecurityManager {
       return cfConnectingIP
     }
 
-    return request.ip || 'unknown'
+    return 'unknown'
   }
 }
 
@@ -675,7 +661,10 @@ export const API_SECURITY_CONFIGS: Record<string, APISecurityConfig> = {
   // Emergency endpoints
   emergency: {
     requireAuth: true,
-    requireMFA: true,
+    // MFA is not yet implemented in the app (no enrollment UI / verification
+    // path). Requiring it here would block every emergency report with 401
+    // mfa_required. Re-enable once MFA enrollment is shipped.
+    requireMFA: false,
     minTrustScore: 0.3,
     rateLimitTier: 'emergency',
     validateSybil: true,

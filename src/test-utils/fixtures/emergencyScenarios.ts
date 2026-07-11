@@ -90,6 +90,10 @@ export interface User {
 export interface TrustScore {
   userId: string
   overall: number
+  // Mirror of `overall` so the trust store (which reads `.score`) and the
+  // domain fixtures (which read `.overall`) both resolve a value.
+  score?: number
+  previousScore?: number
   components: {
     reliability: number
     accuracy: number
@@ -483,6 +487,8 @@ export const trustScoreData = {
   highTrust: {
     userId: 'user-paramedic-001',
     overall: 0.92,
+    score: 0.92,
+    previousScore: 0.90,
     components: {
       reliability: 0.95,
       accuracy: 0.90,
@@ -514,6 +520,8 @@ export const trustScoreData = {
   mediumTrust: {
     userId: 'user-citizen-001',
     overall: 0.78,
+    score: 0.78,
+    previousScore: 0.75,
     components: {
       reliability: 0.80,
       accuracy: 0.75,
@@ -588,9 +596,12 @@ export const createUser = (overrides: Partial<User> = {}): User => {
 }
 
 export const createTrustScore = (overrides: Partial<TrustScore> = {}): TrustScore => {
+  const overall = overrides.overall ?? 0.8
   return {
     userId: `user-${Date.now()}`,
-    overall: 0.8,
+    overall,
+    score: overrides.score ?? overall,
+    previousScore: overrides.previousScore ?? overall,
     components: {
       reliability: 0.8,
       accuracy: 0.8,
@@ -607,7 +618,8 @@ export const createTrustScore = (overrides: Partial<TrustScore> = {}): TrustScor
       communityEndorsements: 0,
       verifiedSkills: 0
     },
-    ...overrides
+    ...overrides,
+    score: overrides.score ?? overall
   }
 }
 

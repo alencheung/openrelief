@@ -67,13 +67,18 @@ export class PoolManager {
   private constructor(config: Partial<PoolConfig> = {}, queryTimeout: number = 10000) {
     this.config = { ...DEFAULT_POOL_CONFIG, ...config }
     this.queryTimeout = queryTimeout
-    this.supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-    this.supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+    this.supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+    this.supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
-    this.initializeReplicaConfig()
-    this.initializePools()
-    this.startMaintenance()
-    this.startHealthChecks()
+    // Defer pool/replica initialization when Supabase env vars are absent
+    // (e.g. during the Next.js build's page-data collection). Creating clients
+    // with empty URLs throws and aborts the build.
+    if (this.supabaseUrl && this.supabaseKey) {
+      this.initializeReplicaConfig()
+      this.initializePools()
+      this.startMaintenance()
+      this.startHealthChecks()
+    }
   }
 
   static getInstance(config?: Partial<PoolConfig>, queryTimeout?: number): PoolManager {

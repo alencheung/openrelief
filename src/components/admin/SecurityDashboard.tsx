@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Progress } from '@/components/ui/progress'
 import { Shield, AlertTriangle, Users, Activity, Lock, Eye, Database } from 'lucide-react'
+import { apiGetJson, apiSendJson } from '@/lib/api/api-client'
 
 // Security dashboard interfaces
 interface SecurityMetrics {
@@ -113,14 +114,16 @@ export default function SecurityDashboard() {
     try {
       setLoading(true)
 
-      // Fetch all security data in parallel
+      // Fetch all security data in parallel. Routes through apiGetJson so each
+      // call gets the shared circuit breaker + default timeout (no unbounded
+      // hangs on a stalled downstream).
       const [metricsResponse, alertsResponse, trustResponse, statusResponse, activityResponse] =
         await Promise.all([
-          fetch('/api/admin/security/metrics').then(r => r.json()),
-          fetch('/api/admin/security/alerts').then(r => r.json()),
-          fetch('/api/admin/security/trust-metrics').then(r => r.json()),
-          fetch('/api/admin/security/system-status').then(r => r.json()),
-          fetch('/api/admin/security/suspicious-activity').then(r => r.json())
+          apiGetJson('/api/admin/security/metrics'),
+          apiGetJson('/api/admin/security/alerts'),
+          apiGetJson('/api/admin/security/trust-metrics'),
+          apiGetJson('/api/admin/security/system-status'),
+          apiGetJson('/api/admin/security/suspicious-activity')
         ])
 
       setMetrics(metricsResponse.data)
@@ -137,11 +140,11 @@ export default function SecurityDashboard() {
 
   const handleEmergencyModeToggle = async () => {
     try {
-      const response = await fetch('/api/admin/security/emergency-mode', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enabled: !emergencyMode })
-      })
+      const response = await apiSendJson<{ ok?: boolean }>(
+        '/api/admin/security/emergency-mode',
+        'POST',
+        { enabled: !emergencyMode }
+      )
 
       if (response.ok) {
         setEmergencyMode(!emergencyMode)
@@ -153,11 +156,11 @@ export default function SecurityDashboard() {
 
   const handleAlertAction = async (alertId: string, action: string) => {
     try {
-      await fetch(`/api/admin/security/alerts/${alertId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action })
-      })
+      await apiSendJson(
+        `/api/admin/security/alerts/${alertId}`,
+        'POST',
+        { action }
+      )
 
       // Refresh alerts
       fetchSecurityData()

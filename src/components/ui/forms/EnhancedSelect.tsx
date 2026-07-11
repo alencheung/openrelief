@@ -36,9 +36,7 @@ export interface SelectOption {
 }
 
 export interface EnhancedSelectProps
-  extends
-    Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'onChange' | 'size'>,
-    VariantProps<typeof enhancedSelectVariants> {
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'>, VariantProps<typeof enhancedSelectVariants> {
   options: SelectOption[]
   label?: string
   helperText?: string
@@ -60,6 +58,7 @@ export interface EnhancedSelectProps
   groupBy?: (option: SelectOption) => string
   renderOption?: (option: SelectOption, isSelected: boolean) => React.ReactNode
   renderValue?: (selectedOptions: SelectOption[]) => React.ReactNode
+  disabled?: boolean
 }
 
 const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
@@ -250,7 +249,7 @@ const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
     const currentVariant = getVariant()
 
     return (
-      <div ref={selectRef} className="relative w-full">
+      <div ref={selectRef} className="relative w-full" {...props}>
         {/* Floating Label */}
         {label && floatingLabel && (
           <label
@@ -291,6 +290,7 @@ const EnhancedSelect = React.forwardRef<HTMLDivElement, EnhancedSelectProps>(
         {/* Select Trigger */}
         <div
           id={inputId}
+          aria-label={label}
           className={cn(
             enhancedSelectVariants({ variant: currentVariant, size }),
             'flex items-center justify-between cursor-pointer',

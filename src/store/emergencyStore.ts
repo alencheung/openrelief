@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist, subscribeWithSelector } from 'zustand/middleware'
 import { Database } from '@/types/database'
+import { useTrustStore } from '@/store/trustStore'
 
 // Types
 // Types
@@ -168,63 +169,139 @@ const initialState: EmergencyState = {
 }
 
 // Filter utility functions
+//
+// These accessors normalise event fields that may arrive in either the DB
+// schema shape (severity as number 1-5, location as a WKT 'lng lat' string,
+// type_id as number, created_at/updated_at timestamps) or the rich domain
+// shape used by some client fixtures and realtime payloads (severity as a
+// string like 'high', location as {latitude, longitude}, type as a string,
+// reportedAt timestamp). The store accepts both so filtering works regardless
+// of where the event object originated.
+const SEVERITY_STRING_TO_NUM: Record<string, number> = {
+  low: 1,
+  medium: 3,
+  high: 4,
+  critical: 5
+}
+
+function getEventSeverity(event: any): number {
+  if (typeof event.severity === 'number') return event.severity
+  if (typeof event.severity === 'string') {
+    return SEVERITY_STRING_TO_NUM[event.severity.toLowerCase()] ?? 3
+  }
+  return 3
+}
+
+function getEventTypeId(event: any): number | undefined {
+  if (typeof event.type_id === 'number') return event.type_id
+  if (typeof event.type === 'string') {
+    const map: Record<string, number> = {
+      fire: 1,
+      medical: 2,
+      security: 3,
+      natural_disaster: 4,
+      natural: 4,
+      infrastructure: 5,
+      accident: 6,
+      utility: 7,
+      other: 8
+    }
+    return map[event.type.toLowerCase()]
+  }
+  return undefined
+}
+
+function getEventCoordinates(event: any): { lat: number; lng: number } | null {
+  // WKT string: 'lng lat' or 'POINT(lng lat)'
+  if (typeof event.location === 'string') {
+    const cleaned = event.location.replace('POINT(', '').replace(')', '').trim()
+    const parts = cleaned.split(/[\s,]+/)
+    if (parts.length >= 2 && parts[0] && parts[1]) {
+      const lng = parseFloat(parts[0])
+      const lat = parseFloat(parts[1])
+      if (!Number.isNaN(lng) && !Number.isNaN(lat)) return { lat, lng }
+    }
+    return null
+  }
+  // Object: { latitude, longitude } or { lat, lng }
+  if (event.location && typeof event.location === 'object') {
+    const lat = event.location.latitude ?? event.location.lat
+    const lng = event.location.longitude ?? event.location.lng
+    if (typeof lat === 'number' && typeof lng === 'number') return { lat, lng }
+  }
+  return null
+}
+
+function getEventTimestamp(event: any): string {
+  return event.created_at || event.reportedAt || event.updated_at || new Date(0).toISOString()
+}
+
 const filterEvents = (
   events: EmergencyEvent[],
   filters: EmergencyFilter,
   searchQuery: string,
-  userLocation?: { lat: number; lng: number } | null
+  _userLocation?: { lat: number; lng: number } | null
 ): EmergencyEvent[] => {
   return events.filter(event => {
+    const e = event as any
+
     // Status filter
-    if (filters.status && !filters.status.includes(event.status)) {
+    if (filters.status && !filters.status.includes(e.status)) {
       return false
     }
 
     // Type filter
-    if (filters.type_ids && !filters.type_ids.includes(event.type_id)) {
-      return false
+    if (filters.type_ids) {
+      const typeId = getEventTypeId(e)
+      if (typeId === undefined || !filters.type_ids.includes(typeId)) {
+        return false
+      }
     }
 
     // Severity filter
-    if (filters.severity && !filters.severity.includes(event.severity)) {
+    if (filters.severity && !filters.severity.includes(getEventSeverity(e))) {
       return false
     }
 
     // Trust weight filter
-    if (filters.trustWeight && event.trust_weight < filters.trustWeight) {
+    const trustWeight = e.trust_weight ?? e.trustScore ?? 0
+    if (filters.trustWeight && trustWeight < filters.trustWeight) {
       return false
     }
 
     // Time range filter
     if (filters.timeRange) {
-      const eventTime = new Date(event.created_at)
+      const eventTime = new Date(getEventTimestamp(e))
       if (eventTime < filters.timeRange.start || eventTime > filters.timeRange.end) {
         return false
       }
     }
 
-    // Radius filter (requires center and user location)
+    // Radius filter (requires center)
     if (filters.radius && filters.center) {
-      const locationParts = event.location.split(' ')
-      if (locationParts.length >= 2 && locationParts[0] && locationParts[1]) {
-        const distance = calculateDistance(
-          filters.center.lat,
-          filters.center.lng,
-          parseFloat(locationParts[1]),
-          parseFloat(locationParts[0])
-        )
-        if (distance > filters.radius) {
-          return false
-        }
+      const coords = getEventCoordinates(e)
+      if (!coords) {
+        return false
+      }
+      const distance = calculateDistance(
+        filters.center.lat,
+        filters.center.lng,
+        coords.lat,
+        coords.lng
+      )
+      if (distance > filters.radius) {
+        return false
       }
     }
 
     // Search query filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
-      const matchesTitle = event.title.toLowerCase().includes(query)
-      const matchesDescription = event.description?.toLowerCase().includes(query)
-      const matchesType = event.emergency_types?.name.toLowerCase().includes(query)
+      const matchesTitle = e.title?.toLowerCase().includes(query) ?? false
+      const matchesDescription = e.description?.toLowerCase().includes(query) ?? false
+      const matchesType =
+        (e.emergency_types?.name?.toLowerCase().includes(query) ?? false) ||
+        (typeof e.type === 'string' && e.type.toLowerCase().includes(query))
 
       if (!matchesTitle && !matchesDescription && !matchesType) {
         return false
@@ -264,8 +341,44 @@ export const useEmergencyStore = create<EmergencyStore>()(
         },
 
         addEvent: (event) => {
+          // Derive trust_weight from the reporter's current trust score so
+          // events carry the reporter's trust at creation time (used by the
+          // consensus weighting and exposed on the event). Handle both the DB
+          // schema field (reporter_id) and the domain-model fixture field
+          // (reportedBy).
+          const eventAny = event as Record<string, unknown>
+          const reporterId =
+            (eventAny.reporter_id as string) ??
+            (eventAny.reportedBy as string) ??
+            (event.reporter?.user_id as string)
+          const explicitTrustWeight =
+            typeof eventAny.trust_weight === 'number' ? eventAny.trust_weight : undefined
+          const trustWeight = (() => {
+            // Prefer the reporter's live trust score (the source of truth);
+            // fall back to an explicit trust_weight on the event, then 0.
+            if (reporterId) {
+              try {
+                const score = useTrustStore.getState().getUserScore(reporterId)
+                if (score) {
+                  const s = (score as { score?: number; overall?: number }).score
+                  const o = (score as { overall?: number }).overall
+                  if (typeof s === 'number') return s
+                  if (typeof o === 'number') return o
+                }
+              } catch {
+                // ignore
+              }
+            }
+            if (explicitTrustWeight !== undefined) return explicitTrustWeight
+            return 0
+          })()
+          const eventWithTrust =
+            typeof eventAny.trust_weight === 'number'
+              ? event
+              : { ...event, trust_weight: trustWeight }
+
           set((state) => {
-            const newEvents = [event, ...state.events]
+            const newEvents = [eventWithTrust, ...state.events]
             return {
               events: newEvents,
               filteredEvents: filterEvents(

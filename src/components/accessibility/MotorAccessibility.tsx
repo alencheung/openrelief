@@ -177,8 +177,7 @@ export function MotorAccessibility({
       // Announce setting change
       announcePolite(`${key.replace(/([A-Z])/g, ' $1').toLowerCase()} set to ${value}`)
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [settings, announcePolite, onSettingsChange]
+        [settings, announcePolite, onSettingsChange]
   )
 
   /**
@@ -365,8 +364,7 @@ export function MotorAccessibility({
       // Start scanning process
       startScanning()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isScanning, announcePolite])
+      }, [isScanning, announcePolite])
 
   /**
    * Start scanning process

@@ -19,7 +19,13 @@ CREATE TABLE IF NOT EXISTS privacy_settings (
 );
 
 -- Create privacy budget table
-CREATE TABLE IF NOT EXISTS privacy_budget (
+-- NOTE: An earlier migration (20231205_enhanced_audit_system.sql) created a
+-- privacy_budget table with a different (user_id PK, single-budget) schema.
+-- This migration's functions consume_privacy_budget / reset_privacy_budgets
+-- require the per-data-type schema below. DROP and recreate to make this
+-- definition authoritative, regardless of migration sort order.
+DROP TABLE IF EXISTS privacy_budget CASCADE;
+CREATE TABLE privacy_budget (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   data_type TEXT NOT NULL,
@@ -297,10 +303,10 @@ BEGIN
       IF user_data ? 'latitude' AND user_data ? 'longitude' THEN
         -- Apply privacy grid
         user_data := jsonb_set(
-          jsonb_set(user_data, '{latitude}', 
-            (SELECT apply_privacy_grid((user_data->>'latitude')::decimal, (user_data->>'longitude')::decimal, 2.0).latitude)),
+          jsonb_set(user_data, '{latitude}',
+            (SELECT create_privacy_grid((user_data->>'latitude')::decimal, (user_data->>'longitude')::decimal, 2.0).latitude)),
           '{longitude}',
-          (SELECT apply_privacy_grid((user_data->>'latitude')::decimal, (user_data->>'longitude')::decimal, 2.0).longitude)
+          (SELECT create_privacy_grid((user_data->>'latitude')::decimal, (user_data->>'longitude')::decimal, 2.0).longitude)
         );
       END IF;
     WHEN 'maximum' THEN
@@ -340,6 +346,10 @@ CREATE TRIGGER update_privacy_settings_updated_at
 BEFORE UPDATE ON privacy_settings
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+-- NOTE: 20231205_enhanced_audit_system.sql also creates this trigger against the
+-- OLD privacy_budget schema. After the DROP TABLE ... CASCADE above, only this
+-- version remains. DROP first for full idempotency on re-runs.
+DROP TRIGGER IF EXISTS update_privacy_budget_updated_at ON privacy_budget;
 CREATE TRIGGER update_privacy_budget_updated_at
 BEFORE UPDATE ON privacy_budget
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
@@ -403,13 +413,13 @@ CREATE POLICY "Users can insert own encrypted data" ON encrypted_user_data
 
 -- Create views for privacy analytics (aggregated, anonymized data)
 CREATE OR REPLACE VIEW privacy_analytics_location AS
-SELECT 
-  create_privacy_grid(latitude, longitude, 5.0).latitude as grid_lat,
-  create_privacy_grid(latitude, longitude, 5.0).longitude as grid_lng,
+SELECT
+  create_privacy_grid(ST_Y(last_known_location::geometry), ST_X(last_known_location::geometry), 5.0).latitude as grid_lat,
+  create_privacy_grid(ST_Y(last_known_location::geometry), ST_X(last_known_location::geometry), 5.0).longitude as grid_lng,
   COUNT(*) as user_count,
   AVG(trust_score) as avg_trust_score
 FROM user_profiles
-WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+WHERE last_known_location IS NOT NULL
 GROUP BY grid_lat, grid_lng
 HAVING COUNT(*) >= 5; -- k-anonymity threshold
 

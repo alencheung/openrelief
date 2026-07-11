@@ -64,7 +64,7 @@ export class AccessibilityTester {
     const allRules = [
       ...this.config.testRules.map(name => this.getRuleByName(name)),
       ...this.customRules
-    ].filter((r): r is NonNullable<typeof r> => r != null)
+    ].filter((r): r is NonNullable<typeof r> => r !== null && r !== undefined)
 
     for (const rule of allRules) {
       if (rule.enabled && element.matches(rule.selector)) {

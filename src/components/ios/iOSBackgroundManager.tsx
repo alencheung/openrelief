@@ -73,6 +73,7 @@ export function IOSBackgroundManager({ className }: IOSBackgroundManagerProps) {
   const handleInitialize = async () => {
     const success = await initialize()
     if (!success) {
+      // Initialization failed; nothing to do — callers fall back to web strategies.
     }
   }
 

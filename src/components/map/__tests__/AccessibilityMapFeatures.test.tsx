@@ -9,16 +9,16 @@ import { createTestUtils } from '@/test-utils'
 Object.defineProperty(window, 'speechSynthesis', {
   writable: true,
   value: {
-    speak: vi.fn(),
-    cancel: vi.fn(),
-    pause: vi.fn(),
-    resume: vi.fn(),
-    getVoices: vi.fn(() => [])
+    speak: jest.fn(),
+    cancel: jest.fn(),
+    pause: jest.fn(),
+    resume: jest.fn(),
+    getVoices: jest.fn(() => [])
   }
 })
 
 // Mock map configuration
-vi.mock('@/lib/map-config', () => ({
+jest.mock('@/lib/map-config', () => ({
   mapConfiguration: {
     style: {
       layers: [
@@ -30,7 +30,7 @@ vi.mock('@/lib/map-config', () => ({
 }))
 
 // Mock UI components
-vi.mock('@/components/ui', () => ({
+jest.mock('@/components/ui', () => ({
   Icon: ({ name, size, variant, className }: any) => (
     <div
       data-testid="icon"
@@ -77,7 +77,7 @@ describe('AccessibilityMapFeatures', () => {
 
   const defaultProps = {
     settings: defaultSettings,
-    onSettingsChange: vi.fn()
+    onSettingsChange: jest.fn()
   }
 
   beforeEach(() => {
@@ -150,7 +150,7 @@ describe('AccessibilityMapFeatures', () => {
 
   it('toggles screen reader setting', async () => {
     const user = userEvent.setup()
-    const onSettingsChange = vi.fn()
+    const onSettingsChange = jest.fn()
 
     renderWithProviders(
       <AccessibilityMapFeatures {...defaultProps} onSettingsChange={onSettingsChange} />
@@ -164,7 +164,7 @@ describe('AccessibilityMapFeatures', () => {
 
   it('toggles high contrast mode', async () => {
     const user = userEvent.setup()
-    const onSettingsChange = vi.fn()
+    const onSettingsChange = jest.fn()
 
     renderWithProviders(
       <AccessibilityMapFeatures {...defaultProps} onSettingsChange={onSettingsChange} />
@@ -178,7 +178,7 @@ describe('AccessibilityMapFeatures', () => {
 
   it('toggles reduced motion setting', async () => {
     const user = userEvent.setup()
-    const onSettingsChange = vi.fn()
+    const onSettingsChange = jest.fn()
 
     renderWithProviders(
       <AccessibilityMapFeatures {...defaultProps} onSettingsChange={onSettingsChange} />
@@ -192,7 +192,7 @@ describe('AccessibilityMapFeatures', () => {
 
   it('toggles large text mode', async () => {
     const user = userEvent.setup()
-    const onSettingsChange = vi.fn()
+    const onSettingsChange = jest.fn()
 
     renderWithProviders(
       <AccessibilityMapFeatures {...defaultProps} onSettingsChange={onSettingsChange} />
@@ -206,7 +206,7 @@ describe('AccessibilityMapFeatures', () => {
 
   it('toggles keyboard navigation setting', async () => {
     const user = userEvent.setup()
-    const onSettingsChange = vi.fn()
+    const onSettingsChange = jest.fn()
 
     renderWithProviders(
       <AccessibilityMapFeatures {...defaultProps} onSettingsChange={onSettingsChange} />
@@ -220,7 +220,7 @@ describe('AccessibilityMapFeatures', () => {
 
   it('toggles audio announcements setting', async () => {
     const user = userEvent.setup()
-    const onSettingsChange = vi.fn()
+    const onSettingsChange = jest.fn()
 
     renderWithProviders(
       <AccessibilityMapFeatures {...defaultProps} onSettingsChange={onSettingsChange} />
@@ -299,7 +299,7 @@ describe('AccessibilityMapFeatures', () => {
 
   it('handles keyboard shortcuts', async () => {
     const user = userEvent.setup()
-    const onSettingsChange = vi.fn()
+    const onSettingsChange = jest.fn()
 
     renderWithProviders(
       <AccessibilityMapFeatures {...defaultProps} onSettingsChange={onSettingsChange} />
@@ -398,10 +398,10 @@ describe('AccessibilityMapFeatures', () => {
 
   it('applies high contrast map style when enabled', () => {
     const mockMapInstance = {
-      getCanvas: vi.fn(() => ({ setAttribute: vi.fn() })),
-      setStyle: vi.fn(),
-      on: vi.fn(),
-      off: vi.fn()
+      getCanvas: jest.fn(() => ({ setAttribute: jest.fn() })),
+      setStyle: jest.fn(),
+      on: jest.fn(),
+      off: jest.fn()
     }
 
     const settings = {
@@ -435,10 +435,10 @@ describe('AccessibilityMapFeatures', () => {
 
   it('enhances map canvas accessibility when keyboard navigation is enabled', () => {
     const mockMapInstance = {
-      getCanvas: vi.fn(() => ({ setAttribute: vi.fn() })),
-      setStyle: vi.fn(),
-      on: vi.fn(),
-      off: vi.fn()
+      getCanvas: jest.fn(() => ({ setAttribute: jest.fn() })),
+      setStyle: jest.fn(),
+      on: jest.fn(),
+      off: jest.fn()
     }
 
     const settings = {
@@ -462,12 +462,12 @@ describe('AccessibilityMapFeatures', () => {
 
   it('sets up map event listeners when audio announcements are enabled', () => {
     const mockMapInstance = {
-      getCanvas: vi.fn(() => ({ setAttribute: vi.fn() })),
-      setStyle: vi.fn(),
-      on: vi.fn(),
-      off: vi.fn(),
-      getCenter: vi.fn(() => ({ lat: 40.7128, lng: -74.006 })),
-      getZoom: vi.fn(() => 10)
+      getCanvas: jest.fn(() => ({ setAttribute: jest.fn() })),
+      setStyle: jest.fn(),
+      on: jest.fn(),
+      off: jest.fn(),
+      getCenter: jest.fn(() => ({ lat: 40.7128, lng: -74.006 })),
+      getZoom: jest.fn(() => 10)
     }
 
     const settings = {
@@ -489,12 +489,12 @@ describe('AccessibilityMapFeatures', () => {
 
   it('cleans up map event listeners on unmount', () => {
     const mockMapInstance = {
-      getCanvas: vi.fn(() => ({ setAttribute: vi.fn() })),
-      setStyle: vi.fn(),
-      on: vi.fn(),
-      off: vi.fn(),
-      getCenter: vi.fn(() => ({ lat: 40.7128, lng: -74.006 })),
-      getZoom: vi.fn(() => 10)
+      getCanvas: jest.fn(() => ({ setAttribute: jest.fn() })),
+      setStyle: jest.fn(),
+      on: jest.fn(),
+      off: jest.fn(),
+      getCenter: jest.fn(() => ({ lat: 40.7128, lng: -74.006 })),
+      getZoom: jest.fn(() => 10)
     }
 
     const settings = {
@@ -607,14 +607,14 @@ describe('AccessibilityMapFeatures', () => {
 
   it('prevents default behavior for handled keyboard shortcuts', async () => {
     const _user = userEvent.setup()
-    const preventDefaultSpy = vi.fn()
+    const preventDefaultSpy = jest.fn()
 
     // Mock event with preventDefault
     const mockEvent = {
       key: 'h',
       ctrlKey: true,
       preventDefault: preventDefaultSpy,
-      stopPropagation: vi.fn()
+      stopPropagation: jest.fn()
     }
 
     renderWithProviders(<AccessibilityMapFeatures {...defaultProps} />)

@@ -69,6 +69,18 @@ export default function LoginPage() {
                 Privacy Policy
               </a>
             </p>
+            <p className="mt-4 text-sm text-gray-600">
+              Need to reset your password?{' '}
+              <a href="/forgot-password" className="text-red-600 hover:underline">
+                Forgot password
+              </a>
+            </p>
+            <p className="mt-2 text-sm text-gray-600">
+              Don&apos;t have an account?{' '}
+              <a href="/signup" className="text-red-600 hover:underline">
+                Sign up
+              </a>
+            </p>
           </div>
         </div>
 

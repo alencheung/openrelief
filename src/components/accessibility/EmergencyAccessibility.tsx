@@ -151,8 +151,7 @@ export function EmergencyAccessibility({
       // Announce setting change
       announcePolite(`${key.replace(/([A-Z])/g, ' $1').toLowerCase()} set to ${value}`)
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [settings, announcePolite, onSettingsChange]
+        [settings, announcePolite, onSettingsChange]
   )
 
   /**
@@ -271,8 +270,7 @@ export function EmergencyAccessibility({
         recognition.start()
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [settings.voiceControl, announcePolite]
+        [settings.voiceControl, announcePolite]
   )
 
   /**
@@ -414,8 +412,7 @@ export function EmergencyAccessibility({
     } else {
       announcePolite('Emergency mode deactivated')
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isEmergencyMode, announceAssertive, announcePolite])
+      }, [isEmergencyMode, announceAssertive, announcePolite])
 
   if (!isEmergencyMode) {
     return null

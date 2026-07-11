@@ -1,21 +1,23 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-// @ts-nocheck
 /**
  * Privacy Settings API Endpoint
  *
- * This endpoint handles GET and POST requests for privacy settings,
- * allowing users to retrieve and update their privacy preferences.
+ * Reads and updates the requesting user's privacy_settings row. All access is
+ * logged to privacy_audit_log for GDPR transparency. Uses the RLS-bound SSR
+ * client so users can only read/write their own row.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from '@/lib/auth'
-import { PrivacySettings } from '@/hooks/usePrivacy'
+import { createClient } from '@/lib/supabase/server'
+import { withAPISecurity, API_SECURITY_CONFIGS } from '@/lib/security/api-security'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { PrivacySettings } from '@/hooks/usePrivacy'
 
-// Mock database for privacy settings
-// In a real implementation, this would be replaced with actual database calls
-const privacySettingsDB = new Map<string, PrivacySettings>()
+// The SSR client is typed against the (partial) Database types; several
+// privacy tables are not yet modelled there, so cast to the untyped client
+// for these handlers. Safe because RLS scopes all access to the caller.
+type SSRClient = SupabaseClient
 
-// Default privacy settings
+// Default privacy settings (returned when no row exists yet).
 const defaultPrivacySettings: PrivacySettings = {
   locationSharing: true,
   locationPrecision: 3,
@@ -35,303 +37,242 @@ const defaultPrivacySettings: PrivacySettings = {
   realTimeMonitoring: true
 }
 
-// GET handler - retrieve privacy settings
-export async function GET(_request: NextRequest) {
-  try {
-    // Get user session
-    const session = await getServerSession()
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-    }
-
-    // Get user's privacy settings from database
-    let settings = privacySettingsDB.get(session.user.id)
-
-    // If no settings exist, return default settings
-    if (!settings) {
-      settings = defaultPrivacySettings
-      // Save default settings for the user
-      privacySettingsDB.set(session.user.id, settings)
-    }
-
-    // Log the access for transparency
-    await logPrivacyAccess(session.user.id, 'settings_retrieval', 'privacy_settings')
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        settings,
-        lastUpdated: new Date().toISOString(),
-        version: '1.0'
-      }
-    })
-  } catch (error) {
-    console.error('Error retrieving privacy settings:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+// Maps the snake_case DB row to the camelCase PrivacySettings interface.
+function rowToSettings(row: Record<string, unknown>): PrivacySettings {
+  return {
+    locationSharing: row.location_sharing as boolean,
+    locationPrecision: row.location_precision as number,
+    dataRetentionDays: row.data_retention_days as number,
+    anonymizeData: row.anonymize_data as boolean,
+    differentialPrivacy: row.differential_privacy as boolean,
+    kAnonymity: row.k_anonymity as boolean,
+    endToEndEncryption: row.end_to_end_encryption as boolean,
+    emergencyDataSharing: row.emergency_data_sharing as boolean,
+    researchParticipation: row.research_participation as boolean,
+    thirdPartyAnalytics: row.third_party_analytics as boolean,
+    automatedDataCleanup: row.automated_data_cleanup as boolean,
+    privacyBudgetAlerts: row.privacy_budget_alerts as boolean,
+    legalNotifications: row.legal_notifications as boolean,
+    dataProcessingPurposes: row.data_processing_purposes as string[],
+    consentManagement: row.consent_management as boolean,
+    realTimeMonitoring: row.real_time_monitoring as boolean
   }
 }
+
+// Maps the camelCase PrivacySettings to the DB row (partial updates allowed).
+function settingsToRow(settings: Partial<PrivacySettings>): Record<string, unknown> {
+  const row: Record<string, unknown> = {}
+  if (settings.locationSharing !== undefined) row.location_sharing = settings.locationSharing
+  if (settings.locationPrecision !== undefined) row.location_precision = settings.locationPrecision
+  if (settings.dataRetentionDays !== undefined) row.data_retention_days = settings.dataRetentionDays
+  if (settings.anonymizeData !== undefined) row.anonymize_data = settings.anonymizeData
+  if (settings.differentialPrivacy !== undefined) {
+    row.differential_privacy = settings.differentialPrivacy
+  }
+  if (settings.kAnonymity !== undefined) row.k_anonymity = settings.kAnonymity
+  if (settings.endToEndEncryption !== undefined) {
+    row.end_to_end_encryption = settings.endToEndEncryption
+  }
+  if (settings.emergencyDataSharing !== undefined) {
+    row.emergency_data_sharing = settings.emergencyDataSharing
+  }
+  if (settings.researchParticipation !== undefined) {
+    row.research_participation = settings.researchParticipation
+  }
+  if (settings.thirdPartyAnalytics !== undefined) {
+    row.third_party_analytics = settings.thirdPartyAnalytics
+  }
+  if (settings.automatedDataCleanup !== undefined) {
+    row.automated_data_cleanup = settings.automatedDataCleanup
+  }
+  if (settings.privacyBudgetAlerts !== undefined) {
+    row.privacy_budget_alerts = settings.privacyBudgetAlerts
+  }
+  if (settings.legalNotifications !== undefined) {
+    row.legal_notifications = settings.legalNotifications
+  }
+  if (settings.dataProcessingPurposes !== undefined) {
+    row.data_processing_purposes = settings.dataProcessingPurposes
+  }
+  if (settings.consentManagement !== undefined) {
+    row.consent_management = settings.consentManagement
+  }
+  if (settings.realTimeMonitoring !== undefined) {
+    row.real_time_monitoring = settings.realTimeMonitoring
+  }
+  return row
+}
+
+// GET handler - retrieve privacy settings
+export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(
+  async (_request: NextRequest, context) => {
+    try {
+      if (!context.userId) {
+        return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+      }
+
+      const supabase = (await createClient()) as SSRClient
+
+      const { data, error } = await supabase
+        .from('privacy_settings')
+        .select('*')
+        .eq('user_id', context.userId)
+        .maybeSingle()
+
+      if (error) {
+        console.error('Error fetching privacy settings:', error)
+        return NextResponse.json({ error: 'Failed to fetch settings' }, { status: 500 })
+      }
+
+      const settings = data ? rowToSettings(data) : defaultPrivacySettings
+      const lastUpdated = data ? (data.updated_at as string) : new Date().toISOString()
+
+      await logPrivacyAccess(supabase, context.userId, 'settings_retrieval', 'privacy_settings')
+
+      return NextResponse.json({
+        success: true,
+        data: { settings, lastUpdated, version: '1.0' }
+      })
+    } catch (error) {
+      console.error('Error retrieving privacy settings:', error)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
+  }
+)
 
 // POST handler - update privacy settings
-export async function POST(request: NextRequest) {
-  try {
-    // Get user session
-    const session = await getServerSession()
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-    }
-
-    // Parse request body
-    const body = await request.json()
-    const { settings } = body
-
-    // Validate settings
-    if (!settings || typeof settings !== 'object') {
-      return NextResponse.json({ error: 'Invalid settings format' }, { status: 400 })
-    }
-
-    // Validate individual settings
-    const validationError = validatePrivacySettings(settings)
-    if (validationError) {
-      return NextResponse.json({ error: validationError }, { status: 400 })
-    }
-
-    // Get current settings for comparison
-    const currentSettings = privacySettingsDB.get(session.user.id) || defaultPrivacySettings
-
-    // Merge with current settings (only update provided fields)
-    const updatedSettings: PrivacySettings = {
-      ...currentSettings,
-      ...settings
-    }
-
-    // Save to database
-    privacySettingsDB.set(session.user.id, updatedSettings)
-
-    // Log the update for transparency
-    await logPrivacyAccess(session.user.id, 'settings_update', 'privacy_settings', {
-      previousSettings: currentSettings,
-      updatedSettings: updatedSettings,
-      changedFields: Object.keys(settings)
-    })
-
-    // Trigger privacy impact assessment if significant changes
-    if (hasSignificantChanges(currentSettings, updatedSettings)) {
-      await triggerPrivacyImpactAssessment(session.user.id, updatedSettings)
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        settings: updatedSettings,
-        lastUpdated: new Date().toISOString(),
-        message: 'Privacy settings updated successfully'
+export const POST = withAPISecurity(API_SECURITY_CONFIGS.user)(
+  async (request: NextRequest, context) => {
+    try {
+      if (!context.userId) {
+        return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
       }
-    })
-  } catch (error) {
-    console.error('Error updating privacy settings:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
 
-// Validate privacy settings
-function validatePrivacySettings(settings: any): string | null {
-  // Check required fields
-  const requiredFields: (keyof PrivacySettings)[] = [
-    'locationSharing',
-    'locationPrecision',
-    'dataRetentionDays',
-    'anonymizeData',
-    'differentialPrivacy',
-    'kAnonymity',
-    'endToEndEncryption',
-    'emergencyDataSharing'
-  ]
+      const body = await request.json()
+      const { settings } = body as { settings?: Partial<PrivacySettings> }
 
-  for (const field of requiredFields) {
-    if (settings[field] === undefined) {
-      return `Missing required field: ${field}`
+      if (!settings || typeof settings !== 'object') {
+        return NextResponse.json({ error: 'Invalid settings format' }, { status: 400 })
+      }
+
+      const validationError = validatePrivacySettings(settings)
+      if (validationError) {
+        return NextResponse.json({ error: validationError }, { status: 400 })
+      }
+
+      const supabase = (await createClient()) as SSRClient
+
+      // Fetch current settings for comparison + merge.
+      const { data: currentRow } = await supabase
+        .from('privacy_settings')
+        .select('*')
+        .eq('user_id', context.userId)
+        .maybeSingle()
+
+      const currentSettings = currentRow ? rowToSettings(currentRow) : defaultPrivacySettings
+      const merged: PrivacySettings = { ...currentSettings, ...settings }
+      const rowPatch = { ...settingsToRow(defaultPrivacySettings), ...settingsToRow(merged) }
+
+      // Upsert the merged settings.
+      const { data: saved, error: saveError } = await supabase
+        .from('privacy_settings')
+        .upsert({ user_id: context.userId, ...rowPatch }, { onConflict: 'user_id' })
+        .select('*')
+        .single()
+
+      if (saveError) {
+        console.error('Error saving privacy settings:', saveError)
+        return NextResponse.json({ error: 'Failed to save settings' }, { status: 500 })
+      }
+
+      await logPrivacyAccess(supabase, context.userId, 'settings_update', 'privacy_settings', {
+        changedFields: Object.keys(settings),
+        previousSettings: currentSettings,
+        updatedSettings: merged
+      })
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          settings: rowToSettings(saved),
+          lastUpdated: saved.updated_at,
+          message: 'Privacy settings updated successfully'
+        }
+      })
+    } catch (error) {
+      console.error('Error updating privacy settings:', error)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
   }
+)
 
-  // Validate field types and values
-  if (typeof settings.locationSharing !== 'boolean') {
+// Validate privacy settings (partial updates allowed)
+function validatePrivacySettings(settings: Partial<PrivacySettings>): string | null {
+  if (settings.locationSharing !== undefined && typeof settings.locationSharing !== 'boolean') {
     return 'locationSharing must be a boolean'
   }
-
   if (
-    typeof settings.locationPrecision !== 'number' ||
-    settings.locationPrecision < 1 ||
-    settings.locationPrecision > 5
+    settings.locationPrecision !== undefined &&
+    (typeof settings.locationPrecision !== 'number' ||
+      settings.locationPrecision < 1 ||
+      settings.locationPrecision > 5)
   ) {
     return 'locationPrecision must be a number between 1 and 5'
   }
-
   if (
-    typeof settings.dataRetentionDays !== 'number' ||
-    settings.dataRetentionDays < 7 ||
-    settings.dataRetentionDays > 365
+    settings.dataRetentionDays !== undefined &&
+    (typeof settings.dataRetentionDays !== 'number' ||
+      settings.dataRetentionDays < 7 ||
+      settings.dataRetentionDays > 365)
   ) {
     return 'dataRetentionDays must be a number between 7 and 365'
   }
-
-  if (typeof settings.anonymizeData !== 'boolean') {
-    return 'anonymizeData must be a boolean'
-  }
-
-  if (typeof settings.differentialPrivacy !== 'boolean') {
-    return 'differentialPrivacy must be a boolean'
-  }
-
-  if (typeof settings.kAnonymity !== 'boolean') {
-    return 'kAnonymity must be a boolean'
-  }
-
-  if (typeof settings.endToEndEncryption !== 'boolean') {
-    return 'endToEndEncryption must be a boolean'
-  }
-
-  if (typeof settings.emergencyDataSharing !== 'boolean') {
-    return 'emergencyDataSharing must be a boolean'
-  }
-
-  // Validate optional fields if present
-  if (
-    settings.researchParticipation !== undefined &&
-    typeof settings.researchParticipation !== 'boolean'
-  ) {
-    return 'researchParticipation must be a boolean'
-  }
-
-  if (
-    settings.thirdPartyAnalytics !== undefined &&
-    typeof settings.thirdPartyAnalytics !== 'boolean'
-  ) {
-    return 'thirdPartyAnalytics must be a boolean'
-  }
-
-  if (
-    settings.automatedDataCleanup !== undefined &&
-    typeof settings.automatedDataCleanup !== 'boolean'
-  ) {
-    return 'automatedDataCleanup must be a boolean'
-  }
-
-  if (
-    settings.privacyBudgetAlerts !== undefined &&
-    typeof settings.privacyBudgetAlerts !== 'boolean'
-  ) {
-    return 'privacyBudgetAlerts must be a boolean'
-  }
-
-  if (
-    settings.legalNotifications !== undefined &&
-    typeof settings.legalNotifications !== 'boolean'
-  ) {
-    return 'legalNotifications must be a boolean'
-  }
-
-  if (settings.consentManagement !== undefined && typeof settings.consentManagement !== 'boolean') {
-    return 'consentManagement must be a boolean'
-  }
-
-  if (
-    settings.realTimeMonitoring !== undefined &&
-    typeof settings.realTimeMonitoring !== 'boolean'
-  ) {
-    return 'realTimeMonitoring must be a boolean'
-  }
-
-  if (
-    settings.dataProcessingPurposes !== undefined &&
-    (!Array.isArray(settings.dataProcessingPurposes) ||
-      !settings.dataProcessingPurposes.every((p: any) => typeof p === 'string'))
-  ) {
-    return 'dataProcessingPurposes must be an array of strings'
-  }
-
-  return null
-}
-
-// Check if settings have significant changes that require impact assessment
-function hasSignificantChanges(current: PrivacySettings, updated: PrivacySettings): boolean {
-  const significantFields = [
+  for (const field of [
     'anonymizeData',
     'differentialPrivacy',
     'kAnonymity',
     'endToEndEncryption',
-    'dataRetentionDays'
-  ]
-
-  return significantFields.some(field => current[field] !== updated[field])
+    'emergencyDataSharing',
+    'researchParticipation',
+    'thirdPartyAnalytics',
+    'automatedDataCleanup',
+    'privacyBudgetAlerts',
+    'legalNotifications',
+    'consentManagement',
+    'realTimeMonitoring'
+  ] as (keyof PrivacySettings)[]) {
+    if (settings[field] !== undefined && typeof settings[field] !== 'boolean') {
+      return `${field} must be a boolean`
+    }
+  }
+  if (
+    settings.dataProcessingPurposes !== undefined &&
+    (!Array.isArray(settings.dataProcessingPurposes) ||
+      !settings.dataProcessingPurposes.every(p => typeof p === 'string'))
+  ) {
+    return 'dataProcessingPurposes must be an array of strings'
+  }
+  return null
 }
 
-// Log privacy access for transparency
+// Log privacy access to the privacy_audit_log table for transparency/compliance.
 async function logPrivacyAccess(
+  supabase: SSRClient,
   userId: string,
   action: string,
   dataType: string,
-  metadata?: any
+  metadata?: Record<string, unknown>
 ): Promise<void> {
-  // In a real implementation, this would log to a secure audit database
-  const logEntry = {
-    id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    timestamp: new Date(),
-    userId,
+  const { error } = await supabase.from('privacy_audit_log').insert({
+    user_id: userId,
     action,
-    dataType,
-    privacyImpact: action === 'settings_update' ? 'medium' : 'low',
-    legalBasis: 'user_consent',
-    retentionPeriod: 365,
-    automatedDecision: false,
-    dataSubjects: 1,
-    // In real implementation, this would be the actual IP
-    ipAddress: 'server',
-    userAgent: 'api_server',
-    metadata
+    data_type: dataType,
+    privacy_budget_used: 0,
+    metadata: metadata ?? null,
+    user_agent: 'api_server'
+  })
+  if (error) {
+    // Logging is best-effort; never fail the request because of it.
+    console.error('Failed to write privacy_audit_log:', error)
   }
-
-  // eslint-disable-next-line no-console
-  console.log('Privacy access logged:', logEntry)
-
-  // In a real implementation, save to audit database
-  // await saveToAuditDatabase(logEntry)
-}
-
-// Trigger privacy impact assessment
-async function triggerPrivacyImpactAssessment(
-  userId: string,
-  settings: PrivacySettings
-): Promise<void> {
-  // In a real implementation, this would trigger an automated assessment
-  // eslint-disable-next-line no-console
-  console.log('Privacy impact assessment triggered for user:', userId, settings)
-
-  // Calculate privacy score based on settings
-  const enabledFeatures = [
-    settings.anonymizeData,
-    settings.differentialPrivacy,
-    settings.kAnonymity,
-    settings.endToEndEncryption
-  ].filter(Boolean).length
-
-  const privacyLevel = getPrivacyLevel(enabledFeatures)
-
-  // In a real implementation, save assessment results to database
-  // eslint-disable-next-line no-console
-  console.log(`Privacy level for user ${userId}: ${privacyLevel}`)
-}
-
-function getPrivacyLevel(enabledFeatures: number): string {
-  if (enabledFeatures === 4) {
-    return 'maximum'
-  }
-  if (enabledFeatures === 3) {
-    return 'high'
-  }
-  if (enabledFeatures === 2) {
-    return 'medium'
-  }
-  return 'basic'
 }

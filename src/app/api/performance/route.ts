@@ -7,12 +7,37 @@
  */
 
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
-import { performanceIntegration } from '@/lib/performance/performance-integration'
-import { performanceDashboard } from '@/lib/performance/performance-dashboard'
-import { loadTestingFramework } from '@/lib/testing/load-testing-framework'
-import { performanceRegressionTesting } from '@/lib/testing/performance-regression-testing'
+
+// Lazy accessors: these performance/testing modules reference browser-only
+// globals (window/document) and Supabase env vars at module-load time, which
+// throws during the Next.js build's page-data collection. Deferring the
+// require() to first request keeps the build green.
+let _performanceIntegration: any, _performanceDashboard: any, _loadTestingFramework: any, _performanceRegressionTesting: any
+function getPerformanceIntegration() {
+  if (!_performanceIntegration) {
+    _performanceIntegration = require('@/lib/performance/performance-integration').performanceIntegration
+  }
+  return _performanceIntegration
+}
+function getPerformanceDashboard() {
+  if (!_performanceDashboard) {
+    _performanceDashboard = require('@/lib/performance/performance-dashboard').performanceDashboard
+  }
+  return _performanceDashboard
+}
+function getLoadTestingFramework() {
+  if (!_loadTestingFramework) {
+    _loadTestingFramework = require('@/lib/testing/load-testing-framework').loadTestingFramework
+  }
+  return _loadTestingFramework
+}
+function getPerformanceRegressionTesting() {
+  if (!_performanceRegressionTesting) {
+    _performanceRegressionTesting = require('@/lib/testing/performance-regression-testing').performanceRegressionTesting
+  }
+  return _performanceRegressionTesting
+}
 
 // API response types
 export interface PerformanceAPIResponse<T = any> {
@@ -160,7 +185,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<Performanc
 
     switch (endpoint) {
       case 'status':
-        data = performanceIntegration.getStatus()
+        data = getPerformanceIntegration().getStatus()
         break
 
       case 'metrics':
@@ -180,28 +205,28 @@ export async function GET(request: NextRequest): Promise<NextResponse<Performanc
 
       case 'alerts':
         data = {
-          active: performanceDashboard.getActiveAlerts(),
-          history: performanceDashboard.getAlertHistory(100)
+          active: getPerformanceDashboard().getActiveAlerts(),
+          history: getPerformanceDashboard().getAlertHistory(100)
         }
         break
 
       case 'tests':
         data = {
-          active: loadTestingFramework.getActiveTests(),
-          history: (loadTestingFramework as any).getTestHistory(50),
-          regression: (performanceRegressionTesting as any).getTestHistory(20)
+          active: getLoadTestingFramework().getActiveTests(),
+          history: (getLoadTestingFramework() as any).getTestHistory(50),
+          regression: (getPerformanceRegressionTesting() as any).getTestHistory(20)
         }
         break
 
       case 'optimizations':
         data = {
-          history: performanceIntegration.getOptimizationHistory(50),
-          active: performanceIntegration.getStatus().optimizations
+          history: getPerformanceIntegration().getOptimizationHistory(50),
+          active: getPerformanceIntegration().getStatus().optimizations
         }
         break
 
       case 'dashboard':
-        data = performanceDashboard.getData()
+        data = getPerformanceDashboard().getData()
         break
 
       case 'widget':
@@ -212,14 +237,14 @@ export async function GET(request: NextRequest): Promise<NextResponse<Performanc
             { status: 400 }
           )
         }
-        data = performanceDashboard.getWidgetData(widgetId)
+        data = getPerformanceDashboard().getWidgetData(widgetId)
         break
 
       case 'emergency':
         // Would be populated from actual configuration
         // Would be populated from actual history
         data = {
-          active: performanceIntegration.getStatus().emergencyMode,
+          active: getPerformanceIntegration().getStatus().emergencyMode,
           triggers: [],
           history: []
         }
@@ -251,7 +276,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<Performanc
   } catch (error) {
     console.error('[PerformanceAPI] GET error:', error)
     return NextResponse.json(
-      createAPIResponse(false, null, `Internal server error: ${error.message}`, requestId),
+      createAPIResponse(false, null, 'Internal server error', requestId),
       { status: 500 }
     )
   }
@@ -352,7 +377,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<Performan
   } catch (error) {
     console.error('[PerformanceAPI] POST error:', error)
     return NextResponse.json(
-      createAPIResponse(false, null, `Internal server error: ${error.message}`, requestId),
+      createAPIResponse(false, null, 'Internal server error', requestId),
       { status: 500 }
     )
   }
@@ -409,7 +434,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse<Performanc
   } catch (error) {
     console.error('[PerformanceAPI] PUT error:', error)
     return NextResponse.json(
-      createAPIResponse(false, null, `Internal server error: ${error.message}`, requestId),
+      createAPIResponse(false, null, 'Internal server error', requestId),
       { status: 500 }
     )
   }
@@ -435,7 +460,7 @@ export async function DELETE(request: NextRequest): Promise<NextResponse<Perform
 
     switch (resource) {
       case 'cache':
-        data = await handleCacheClear(resourceId)
+        data = await handleCacheClear(resourceId ?? undefined)
         break
 
       case 'alerts':
@@ -469,7 +494,7 @@ export async function DELETE(request: NextRequest): Promise<NextResponse<Perform
   } catch (error) {
     console.error('[PerformanceAPI] DELETE error:', error)
     return NextResponse.json(
-      createAPIResponse(false, null, `Internal server error: ${error.message}`, requestId),
+      createAPIResponse(false, null, 'Internal server error', requestId),
       { status: 500 }
     )
   }
@@ -478,7 +503,7 @@ export async function DELETE(request: NextRequest): Promise<NextResponse<Perform
 // Helper functions for handling different actions
 
 async function getPerformanceMetrics(request: PerformanceMetricsRequest): Promise<any> {
-  const dashboardData = performanceDashboard.getData()
+  const dashboardData = getPerformanceDashboard().getData()
 
   // Filter by time range if specified
   if (request.timeRange) {
@@ -516,7 +541,7 @@ async function getPerformanceMetrics(request: PerformanceMetricsRequest): Promis
 async function handleEmergencyModeAction(request: EmergencyModeRequest): Promise<any> {
   switch (request.action) {
     case 'activate':
-      await performanceIntegration.activateEmergencyMode(request.reason)
+      await getPerformanceIntegration().activateEmergencyMode(request.reason)
       return {
         action: 'activated',
         reason: request.reason,
@@ -524,7 +549,7 @@ async function handleEmergencyModeAction(request: EmergencyModeRequest): Promise
       }
 
     case 'deactivate':
-      await performanceIntegration.deactivateEmergencyMode(request.reason)
+      await getPerformanceIntegration().deactivateEmergencyMode(request.reason)
       return {
         action: 'deactivated',
         reason: request.reason,
@@ -532,7 +557,7 @@ async function handleEmergencyModeAction(request: EmergencyModeRequest): Promise
       }
 
     case 'status':
-      const status = performanceIntegration.getStatus()
+      const status = getPerformanceIntegration().getStatus()
       return {
         emergencyMode: status.emergencyMode,
         timestamp: new Date().toISOString()
@@ -549,10 +574,10 @@ async function handlePerformanceTestAction(request: PerformanceTestRequest): Pro
 
     // Run 50K concurrency test
     if (request.emergency || (request.concurrency && request.concurrency >= 50000)) {
-      testId = await loadTestingFramework.execute50KConcurrencyTest()
+      testId = await getLoadTestingFramework().execute50KConcurrencyTest()
     } else {
       // Run custom test
-      testId = await performanceIntegration.runPerformanceTest(request.scenario)
+      testId = await getPerformanceIntegration().runPerformanceTest(request.scenario)
     }
 
     return {
@@ -564,13 +589,13 @@ async function handlePerformanceTestAction(request: PerformanceTestRequest): Pro
       timestamp: new Date().toISOString()
     }
   } catch (error) {
-    throw new Error(`Failed to start performance test: ${error.message}`)
+    throw new Error(`Failed to start performance test: ${(error instanceof Error ? error.message : String(error))}`)
   }
 }
 
 async function handleOptimizationAction(request: OptimizationRequest): Promise<any> {
   try {
-    await performanceIntegration.applyOptimization(request.strategy)
+    await getPerformanceIntegration().applyOptimization(request.strategy)
 
     return {
       strategy: request.strategy,
@@ -579,7 +604,7 @@ async function handleOptimizationAction(request: OptimizationRequest): Promise<a
       timestamp: new Date().toISOString()
     }
   } catch (error) {
-    throw new Error(`Failed to apply optimization: ${error.message}`)
+    throw new Error(`Failed to apply optimization: ${(error instanceof Error ? error.message : String(error))}`)
   }
 }
 
@@ -587,15 +612,15 @@ async function handleAlertManagementAction(request: AlertManagementRequest): Pro
   switch (request.action) {
     case 'list':
       return {
-        active: performanceDashboard.getActiveAlerts(),
-        history: performanceDashboard.getAlertHistory(100)
+        active: getPerformanceDashboard().getActiveAlerts(),
+        history: getPerformanceDashboard().getAlertHistory(100)
       }
 
     case 'acknowledge':
       if (!request.alertId || !request.acknowledgedBy) {
         throw new Error('Alert ID and acknowledgedBy are required')
       }
-      await performanceDashboard.acknowledgeAlert(request.alertId, request.acknowledgedBy)
+      await getPerformanceDashboard().acknowledgeAlert(request.alertId, request.acknowledgedBy)
       return {
         alertId: request.alertId,
         action: 'acknowledged',
@@ -607,7 +632,7 @@ async function handleAlertManagementAction(request: AlertManagementRequest): Pro
       if (!request.alertId || !request.resolvedBy || !request.resolution) {
         throw new Error('Alert ID, resolvedBy, and resolution are required')
       }
-      await performanceDashboard.resolveAlert(
+      await getPerformanceDashboard().resolveAlert(
         request.alertId,
         request.resolvedBy,
         request.resolution
@@ -624,7 +649,7 @@ async function handleAlertManagementAction(request: AlertManagementRequest): Pro
       if (!request.alertData) {
         throw new Error('Alert data is required')
       }
-      const alertId = await performanceDashboard.createAlert(request.alertData)
+      const alertId = await getPerformanceDashboard().createAlert(request.alertData)
       return {
         alertId,
         action: 'created',
@@ -639,7 +664,7 @@ async function handleAlertManagementAction(request: AlertManagementRequest): Pro
 
 async function handleReportGenerationAction(request: ReportRequest): Promise<any> {
   try {
-    const report = await performanceIntegration.generateReport(request.type)
+    const report = await getPerformanceIntegration().generateReport(request.type)
 
     // Handle different formats
     if (request.format === 'pdf' || request.format === 'html') {
@@ -661,13 +686,13 @@ async function handleReportGenerationAction(request: ReportRequest): Promise<any
       timestamp: new Date().toISOString()
     }
   } catch (error) {
-    throw new Error(`Failed to generate report: ${error.message}`)
+    throw new Error(`Failed to generate report: ${(error instanceof Error ? error.message : String(error))}`)
   }
 }
 
 async function handleConfigurationUpdateAction(request: ConfigurationUpdateRequest): Promise<any> {
   try {
-    performanceIntegration.updateConfig({
+    getPerformanceIntegration().updateConfig({
       [request.component]: request.config
     })
 
@@ -678,14 +703,14 @@ async function handleConfigurationUpdateAction(request: ConfigurationUpdateReque
       timestamp: new Date().toISOString()
     }
   } catch (error) {
-    throw new Error(`Failed to update configuration: ${error.message}`)
+    throw new Error(`Failed to update configuration: ${(error instanceof Error ? error.message : String(error))}`)
   }
 }
 
 async function handleBaselineUpdate(baselineData: any): Promise<any> {
   try {
     const version = baselineData.version || `v${Date.now()}`
-    await performanceRegressionTesting.updateBaseline(version, baselineData)
+    await getPerformanceRegressionTesting().updateBaseline(version, baselineData)
 
     return {
       version,
@@ -693,14 +718,14 @@ async function handleBaselineUpdate(baselineData: any): Promise<any> {
       timestamp: new Date().toISOString()
     }
   } catch (error) {
-    throw new Error(`Failed to update baseline: ${error.message}`)
+    throw new Error(`Failed to update baseline: ${(error instanceof Error ? error.message : String(error))}`)
   }
 }
 
 async function handleThresholdsUpdate(thresholdsData: any): Promise<any> {
   try {
     // Update thresholds in configuration
-    performanceIntegration.updateConfig({
+    getPerformanceIntegration().updateConfig({
       alerting: {
         thresholds: thresholdsData
       }
@@ -712,7 +737,7 @@ async function handleThresholdsUpdate(thresholdsData: any): Promise<any> {
       timestamp: new Date().toISOString()
     }
   } catch (error) {
-    throw new Error(`Failed to update thresholds: ${error.message}`)
+    throw new Error(`Failed to update thresholds: ${(error instanceof Error ? error.message : String(error))}`)
   }
 }
 
@@ -737,13 +762,13 @@ async function handleCacheClear(cacheId?: string): Promise<any> {
       }
     }
   } catch (error) {
-    throw new Error(`Failed to clear cache: ${error.message}`)
+    throw new Error(`Failed to clear cache: ${(error instanceof Error ? error.message : String(error))}`)
   }
 }
 
 async function handleAlertDelete(alertId: string): Promise<any> {
   try {
-    await performanceDashboard.resolveAlert(alertId, 'system', 'Deleted via API')
+    await getPerformanceDashboard().resolveAlert(alertId, 'system', 'Deleted via API')
 
     return {
       alertId,
@@ -751,13 +776,13 @@ async function handleAlertDelete(alertId: string): Promise<any> {
       timestamp: new Date().toISOString()
     }
   } catch (error) {
-    throw new Error(`Failed to delete alert: ${error.message}`)
+    throw new Error(`Failed to delete alert: ${(error instanceof Error ? error.message : String(error))}`)
   }
 }
 
 async function handleTestStop(testId: string): Promise<any> {
   try {
-    const results = await loadTestingFramework.stopLoadTest(testId)
+    const results = await getLoadTestingFramework().stopLoadTest(testId)
 
     return {
       testId,
@@ -766,15 +791,15 @@ async function handleTestStop(testId: string): Promise<any> {
       timestamp: new Date().toISOString()
     }
   } catch (error) {
-    throw new Error(`Failed to stop test: ${error.message}`)
+    throw new Error(`Failed to stop test: ${(error instanceof Error ? error.message : String(error))}`)
   }
 }
 
 async function getSystemHealth(): Promise<any> {
-  const status = performanceIntegration.getStatus()
+  const status = getPerformanceIntegration().getStatus()
 
   return {
-    overall: status.components.every(c => c.healthy) ? 'healthy' : 'degraded',
+    overall: status.components.every((c: { healthy: boolean }) => c.healthy) ? 'healthy' : 'degraded',
     components: status.components,
     uptime: status.metrics.uptime,
     emergencyMode: status.emergencyMode,

@@ -1,9 +1,32 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
+// CORS allowlist. Replace the wildcard origin with an env-var-driven list so
+// only trusted OpenRelief origins can drive this push-dispatching function.
+const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') ||
+  'https://openrelief.org,https://staging.openrelief.org')
+  .split(',')
+  .filter(Boolean)
+
+function getCorsOrigin(req: Request): string | null {
+  const origin = req.headers.get('Origin')
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    return origin
+  }
+  return null
+}
+
+function buildCorsHeaders(req: Request): Record<string, string> {
+  const origin = getCorsOrigin(req)
+  const headers: Record<string, string> = {
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
+  }
+  // Only reflect the origin when it is allowlisted; otherwise omit the header
+  // entirely so the browser blocks the cross-origin response.
+  if (origin) {
+    headers['Access-Control-Allow-Origin'] = origin
+  }
+  return headers
 }
 
 const FCM_BATCH_SIZE = 1000
@@ -170,6 +193,63 @@ async function getUsersForAlert(
   return data ?? []
 }
 
+// FCM HTTP v1 configuration. The deprecated legacy endpoint
+// (https://fcm.googleapis.com/fcm/send with `key=<serverKey>`) was removed in
+// June 2024; we now target the v1 endpoint with an OAuth2 access token. The
+// token is short-lived and must be minted/refreshed by external infra (e.g. a
+// secret rotator) and exposed via FCM_ACCESS_TOKEN. FCM_SERVER_KEY references
+// are intentionally removed.
+function getFcmV1Config(): { projectId: string; accessToken: string } {
+  const projectId = Deno.env.get('FCM_PROJECT_ID')
+  const accessToken = Deno.env.get('FCM_ACCESS_TOKEN')
+  if (!projectId || !accessToken) {
+    throw new Error(
+      'FCM HTTP v1 not configured: set FCM_PROJECT_ID and FCM_ACCESS_TOKEN ' +
+        '(access token must be refreshed externally)'
+    )
+  }
+  return { projectId, accessToken }
+}
+
+function buildFcmV1Message(
+  token: string,
+  title: string,
+  body: string,
+  data: Record<string, unknown>,
+  priority: string
+): Record<string, unknown> {
+  const ttl = priority === 'high' ? 3600 : 86400
+  return {
+    message: {
+      token,
+      notification: {
+        title,
+        body
+      },
+      data: {
+        priority,
+        ...Object.fromEntries(
+          Object.entries(data).map(([k, v]) => [k, typeof v === 'string' ? v : JSON.stringify(v)])
+        )
+      },
+      android: {
+        priority,
+        ttl: `${ttl}s`
+      },
+      apns: {
+        headers: {
+          'apns-priority': priority === 'high' ? '10' : '5',
+          'apns-expiration': new Date(Date.now() + ttl * 1000).toISOString()
+        }
+      }
+    }
+  }
+}
+
+// Send a batch of device tokens using FCM HTTP v1. The v1 API only accepts a
+// single message per request, so we fan out per-token and synthesize a legacy-
+// style Response whose body is shaped like `{ results: [...] }` so the
+// existing processFCMBatchResponse handling remains unchanged.
 async function sendFCMBatchRequest(
   tokens: string[],
   title: string,
@@ -177,45 +257,55 @@ async function sendFCMBatchRequest(
   data: Record<string, unknown>,
   priority: string
 ): Promise<Response> {
-  const serverKey = Deno.env.get('FCM_SERVER_KEY')
+  const { projectId, accessToken } = getFcmV1Config()
+  const endpoint = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`
 
-  if (!serverKey) {
-    throw new Error('FCM_SERVER_KEY is not configured')
-  }
-
-  const ttl = priority === 'high' ? 3600 : 86400
-
-  const payload = {
-    registration_ids: tokens,
-    notification: {
-      title,
-      body: message,
-      priority,
-      ttl
-    },
-    data: {
-      priority,
-      ...data
-    },
-    android: {
-      priority,
-      ttl
-    },
-    apns: {
-      headers: {
-        'apns-priority': priority === 'high' ? '10' : '5',
-        'apns-expiration': new Date(Date.now() + ttl * 1000).toISOString()
+  const results = await Promise.all(
+    tokens.map(async token => {
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(buildFcmV1Message(token, title, message, data, priority))
+        })
+        if (response.status === 429) {
+          return { token, status: 429, error: 'THROTTLED' }
+        }
+        if (!response.ok) {
+          let errorMsg = `HTTP_${response.status}`
+          try {
+            const errBody = await response.json()
+            if (errBody?.error?.details?.[0]?.errorCode === 'UNREGISTERED') {
+              errorMsg = 'NotRegistered'
+            } else if (errBody?.error?.status === 'INVALID_ARGUMENT') {
+              errorMsg = 'InvalidRegistration'
+            }
+          } catch {
+            // ignore parse failure; keep generic error
+          }
+          return { token, status: response.status, error: errorMsg }
+        }
+        return { token, status: 200, messageId: crypto.randomUUID() }
+      } catch (error) {
+        return { token, status: 0, error: error instanceof Error ? error.message : 'fetch_error' }
       }
-    }
+    })
+  )
+
+  const syntheticBody = {
+    success: results.filter(r => r.status === 200).length,
+    failure: results.filter(r => r.status !== 200).length,
+    results: results.map(r => (r.status === 200 ? { message_id: r.messageId } : { error: r.error }))
   }
 
-  return fetch('https://fcm.googleapis.com/fcm/send', {
-    method: 'POST',
-    headers: {
-      Authorization: `key=${serverKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(payload)
+  // Treat any throttled request as a 429 so the retry/backoff path engages.
+  const overallStatus = results.some(r => r.status === 429) ? 429 : 200
+  return new Response(JSON.stringify(syntheticBody), {
+    status: overallStatus,
+    headers: { 'Content-Type': 'application/json' }
   })
 }
 
@@ -357,7 +447,7 @@ async function sendBatchPushNotifications(
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: buildCorsHeaders(req) })
   }
 
   try {
@@ -367,7 +457,7 @@ Deno.serve(async (req: Request) => {
     if (!event_id) {
       return new Response(JSON.stringify({ error: 'event_id is required' }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...buildCorsHeaders(req), 'Content-Type': 'application/json' }
       })
     }
 
@@ -376,14 +466,14 @@ Deno.serve(async (req: Request) => {
     if (!event) {
       return new Response(JSON.stringify({ error: 'Event not found' }), {
         status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...buildCorsHeaders(req), 'Content-Type': 'application/json' }
       })
     }
 
     if (event.status !== 'active' && type === 'status_change') {
       return new Response(JSON.stringify({ message: 'Event is not active, skipping dispatch' }), {
         status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...buildCorsHeaders(req), 'Content-Type': 'application/json' }
       })
     }
 
@@ -393,7 +483,7 @@ Deno.serve(async (req: Request) => {
     if (users.length === 0) {
       return new Response(JSON.stringify({ message: 'No users to notify' }), {
         status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...buildCorsHeaders(req), 'Content-Type': 'application/json' }
       })
     }
 
@@ -458,7 +548,7 @@ Deno.serve(async (req: Request) => {
       }),
       {
         status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...buildCorsHeaders(req), 'Content-Type': 'application/json' }
       }
     )
   } catch (error) {
@@ -469,7 +559,7 @@ Deno.serve(async (req: Request) => {
       }),
       {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...buildCorsHeaders(req), 'Content-Type': 'application/json' }
       }
     )
   }

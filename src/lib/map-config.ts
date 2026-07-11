@@ -26,11 +26,13 @@ export interface EmergencyLayerConfig {
   maxzoom?: number
 }
 
-// OpenMapTiles style URL for emergency operations
-// FIXED: Use environment variable for API key with fallback for development
+// OpenMapTiles style URL for emergency operations.
+// When a MapTiler key is configured, use the hosted vector style. Without a
+// key we fall back to a free OpenStreetMap raster style (the previous
+// 'FallbackKeyForDevelopment' placeholder 403'd, leaving the map blank).
 export const OPENMAPTILES_URL = process.env.NEXT_PUBLIC_MAPTILER_API_KEY
   ? `https://api.maptiler.com/maps/streets-v2/style.json?key=${process.env.NEXT_PUBLIC_MAPTILER_API_KEY}`
-  : 'https://api.maptiler.com/maps/streets-v2/style.json?key=FallbackKeyForDevelopment'
+  : 'https://demotiles.maplibre.org/style.json'
 
 // Emergency-optimized map style configuration
 export const emergencyMapStyle = {
@@ -42,10 +44,11 @@ export const emergencyMapStyle = {
   sources: {
     openmaptiles: {
       type: 'vector',
-      // FIXED: Use environment variable for API key with fallback
+      // Use the MapTiler tilejson when a key is present; otherwise point at the
+      // free MapLibre demo tiles so the map renders without a paid key.
       url: process.env.NEXT_PUBLIC_MAPTILER_API_KEY
         ? `https://api.maptiler.com/tiles/v3/tiles.json?key=${process.env.NEXT_PUBLIC_MAPTILER_API_KEY}`
-        : 'https://api.maptiler.com/tiles/v3/tiles.json?key=FallbackKeyForDevelopment',
+        : 'https://demotiles.maplibre.org/tiles.json',
       attribution: '© OpenMapTiles © OpenStreetMap contributors'
     },
     'emergency-events': {

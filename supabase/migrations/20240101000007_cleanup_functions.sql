@@ -201,16 +201,16 @@ BEGIN
     ANALYZE audit_log;
     ANALYZE system_metrics;
     
-    -- Reindex frequently used indexes
-    REINDEX INDEX CONCURRENTLY idx_emergency_events_location;
-    REINDEX INDEX CONCURRENTLY idx_user_profiles_location;
-    REINDEX INDEX CONCURRENTLY idx_notifications_status;
-    REINDEX INDEX CONCURRENTLY idx_confirmations_event;
-    
-    -- Vacuum analyze large tables
-    VACUUM ANALYZE emergency_events;
-    VACUUM ANALYZE audit_log;
-    VACUUM ANALYZE notification_queue;
+    -- NOTE: REINDEX INDEX CONCURRENTLY and VACUUM ANALYZE cannot run inside a
+    -- PL/pgSQL function (they cannot execute within a transaction block).
+    -- These must be run as scheduled maintenance via pg_cron or an external job:
+    --   REINDEX INDEX CONCURRENTLY idx_emergency_events_location;
+    --   REINDEX INDEX CONCURRENTLY idx_user_profiles_location;
+    --   REINDEX INDEX CONCURRENTLY idx_notifications_status;
+    --   REINDEX INDEX CONCURRENTLY idx_confirmations_event;
+    --   VACUUM ANALYZE emergency_events;
+    --   VACUUM ANALYZE audit_log;
+    --   VACUUM ANALYZE notification_queue;
     
     -- Log optimization
     INSERT INTO system_metrics (

@@ -52,11 +52,27 @@ export interface TriggerCondition {
   duration: number // milliseconds
 }
 
+// Priority thresholds (warning/critical pairs per metric category)
+export interface PriorityThresholds {
+  apiResponseTime: { warning: number; critical: number }
+  databaseQueryTime: { warning: number; critical: number }
+  alertDispatchLatency: { warning: number; critical: number }
+  errorRate: { warning: number; critical: number }
+  throughput: { warning: number; critical: number }
+  availability: { warning: number; critical: number }
+  resourceUtilization: {
+    cpu: { warning: number; critical: number }
+    memory: { warning: number; critical: number }
+    disk: { warning: number; critical: number }
+    network: { warning: number; critical: number }
+  }
+}
+
 // Priority level
 export interface PriorityLevel {
   level: number
   name: string
-  thresholds: PerformanceThresholds
+  thresholds: PriorityThresholds
   optimizations: string[]
   alerting: {
     enabled: boolean
@@ -369,8 +385,15 @@ class PerformanceIntegration {
   private constructor() {
     this.config = this.getDefaultConfig()
     this.status = this.initializeStatus()
-    this.initializeComponents()
-    this.startIntegration()
+    // Defer component initialization and integration startup when running
+    // outside the browser (e.g. during the Next.js build's page-data
+    // collection). The frontend optimizer and monitor touch browser-only
+    // globals (document/window) and require Supabase env vars, which are
+    // absent at build time. They initialize lazily on first request instead.
+    if (typeof window !== 'undefined') {
+      this.initializeComponents()
+      this.startIntegration()
+    }
   }
 
   static getInstance(): PerformanceIntegration {
@@ -497,7 +520,7 @@ class PerformanceIntegration {
       }
 
       // Run load test
-      const loadTestId = await loadTestingFramework.execute50KConcurrencyTest()
+      const loadTest = await loadTestingFramework.execute50KConcurrencyTest()
 
       // Run regression test
       const regressionResults = await performanceRegressionTesting.executeCIDPerformanceTest()
@@ -507,7 +530,7 @@ class PerformanceIntegration {
 
       console.log(`[PerformanceIntegration] Performance test completed: ${testScenario}`)
 
-      return loadTestId
+      return loadTest.testId
     } catch (error) {
       console.error('[PerformanceIntegration] Performance test failed:', error)
       throw error
@@ -525,7 +548,7 @@ class PerformanceIntegration {
       }
 
       // Check conditions
-      if (!this.checkOptimizationConditions(strategy.conditions)) {
+      if (!(await this.checkOptimizationConditions(strategy.conditions))) {
         throw new Error(`Optimization conditions not met for: ${strategyName}`)
       }
 
@@ -1253,7 +1276,7 @@ class PerformanceIntegration {
           }
         } catch (error) {
           healthy = false
-          errors.push(error.message)
+          errors.push(error instanceof Error ? error.message : String(error))
         }
 
         components.push({
@@ -1279,7 +1302,7 @@ class PerformanceIntegration {
           continue
         }
 
-        const shouldApply = this.checkOptimizationConditions(strategy.conditions)
+        const shouldApply = await this.checkOptimizationConditions(strategy.conditions)
         if (shouldApply) {
           await this.applyOptimization(strategy.name)
         }
@@ -1289,10 +1312,10 @@ class PerformanceIntegration {
     }
   }
 
-  private checkOptimizationConditions(conditions: StrategyCondition[]): boolean {
+  private async checkOptimizationConditions(conditions: StrategyCondition[]): Promise<boolean> {
     // Check if all conditions are met
     for (const condition of conditions) {
-      const currentValue = this.getMetricValue(condition.metric)
+      const currentValue = await this.getMetricValue(condition.metric)
       if (currentValue === null) {
         return false
       }
@@ -1380,7 +1403,9 @@ class PerformanceIntegration {
 
     const now = new Date()
     const scheduleTime = this.config.testing.schedule.time
-    const [hours, minutes] = scheduleTime.split(':').map(Number)
+    const [hoursStr, minutesStr] = scheduleTime.split(':')
+    const hours = Number(hoursStr ?? 0)
+    const minutes = Number(minutesStr ?? 0)
 
     const scheduledTime = new Date(now)
     scheduledTime.setHours(hours, minutes, 0, 0)
@@ -1409,7 +1434,9 @@ class PerformanceIntegration {
 
     const now = new Date()
     const scheduleTime = this.config.reporting.schedule.time
-    const [hours, minutes] = scheduleTime.split(':').map(Number)
+    const [hoursStr, minutesStr] = scheduleTime.split(':')
+    const hours = Number(hoursStr ?? 0)
+    const minutes = Number(minutesStr ?? 0)
 
     const scheduledTime = new Date(now)
     scheduledTime.setHours(hours, minutes, 0, 0)

@@ -10,7 +10,7 @@ import { performanceMonitor } from './performance-monitor'
 import { queryOptimizer } from '../database/query-optimizer'
 import { alertDispatchOptimizer } from '../alerts/alert-dispatch-optimizer'
 import { edgeOptimizer } from '../edge/edge-optimizer'
-import { loadTestingFramework } from '../testing/load-testing-framework'
+import { loadTestingFramework, LoadTestMetrics } from '../testing/load-testing-framework'
 import { performanceRegressionTesting } from '../testing/performance-regression-testing'
 
 // Dashboard configuration
@@ -329,9 +329,12 @@ class PerformanceDashboard {
   private constructor() {
     this.config = this.getDefaultConfig()
     this.data = this.initializeData()
-    this.initializeWidgets()
-    this.startDataCollection()
-    this.startAlertProcessing()
+    // Defer server/browser-dependent startup outside the browser (build-time).
+    if (typeof window !== 'undefined') {
+      this.initializeWidgets()
+      this.startDataCollection()
+      this.startAlertProcessing()
+    }
   }
 
   static getInstance(): PerformanceDashboard {
@@ -965,12 +968,13 @@ class PerformanceDashboard {
   }
 
   private async collectTestingMetrics(): Promise<TestingMetrics> {
-    const activeTests = loadTestingFramework.getActiveTests().filter(t => t.status === 'running').length
-    const allTests = loadTestingFramework.getTestHistory(10)
-    const completedTests = allTests.filter(t => t.status === 'completed').length
-    const failedTests = allTests.filter(t => t.status === 'failed').length
+    const activeTestsList = loadTestingFramework.getActiveTests()
+    const activeTests = activeTestsList.filter(t => t.status === 'running').length
+    const completedTests = activeTestsList.filter(t => t.status === 'completed').length
+    const failedTests = activeTestsList.filter(t => t.status === 'failed').length
     const averageDuration = completedTests > 0
-      ? allTests.reduce((sum, t) => sum + t.duration, 0) / completedTests
+      ? activeTestsList.reduce((sum: number, t: LoadTestMetrics) => sum + t.duration, 0) /
+        completedTests
       : 0
 
     return {
@@ -978,12 +982,16 @@ class PerformanceDashboard {
       completedTests,
       failedTests,
       averageDuration,
-      lastTestDate: allTests.length > 0 ? allTests[0].timestamp : undefined,
-      testResults: allTests.slice(0, 5).map(test => ({
+      lastTestDate:
+        activeTestsList.length > 0 ? activeTestsList[0]?.timestamp : undefined,
+      testResults: activeTestsList.slice(0, 5).map(test => ({
         id: test.testId,
         name: test.config.name,
-        type: test.scenario,
-        status: test.status,
+        type: String(test.scenario),
+        status: (test.status === 'completed' ? 'passed' : test.status === 'failed' ? 'failed' : 'running') as
+          | 'passed'
+          | 'failed'
+          | 'running',
         duration: test.duration,
         timestamp: test.timestamp,
         metrics: test.performance
@@ -1013,10 +1021,11 @@ class PerformanceDashboard {
     if (testHistory.length >= 2) {
       const current = testHistory[0]
       const previous = testHistory[1]
-
-      current.comparisons.forEach(comparison => {
-        trends[comparison.metric] = comparison.changePercent
-      })
+      if (current && previous) {
+        current.comparisons.forEach(comparison => {
+          trends[comparison.metric] = comparison.changePercent
+        })
+      }
     }
 
     return {
@@ -1128,12 +1137,13 @@ class PerformanceDashboard {
       return 0
     }
 
-    const previousValue = trend[trend.length - 1].value
-    if (previousValue === 0) {
+    const previous = trend[trend.length - 1]
+    if (!previous || previous.value === 0) {
       return 0
     }
 
-    return ((currentValue - previousValue) / previousValue) * 100
+    const change = ((currentValue - previous.value) / previous.value) * 100
+    return Math.round(change * 100) / 100
   }
 
   private async checkPerformanceThresholds(): Promise<void> {

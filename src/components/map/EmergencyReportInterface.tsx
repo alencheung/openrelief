@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { AlertTriangle, MapPin, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { reverseGeocodeLabel } from '@/lib/geocode'
 import { useEmergencyStore, useLocationStore, useOfflineStore } from '@/store'
 import { useAuth } from '@/store/authStore'
 import { EmergencyEvent } from '@/types'
@@ -29,7 +30,9 @@ import {
 interface EmergencyReportInterfaceProps {
   isOpen: boolean
   onClose: () => void
-  onReportSubmitted: (report: Omit<EmergencyEvent, 'id' | 'created_at' | 'updated_at'>) => void
+  onReportSubmitted: (
+    report: Omit<EmergencyEvent, 'id' | 'created_at' | 'updated_at'>
+  ) => void | Promise<void>
   initialLocation?: { lat: number; lng: number }
   // MapLibre GL map instance
   mapInstance?: any
@@ -109,6 +112,7 @@ export default function EmergencyReportInterface({
   const [description, setDescription] = useState('')
   const [severity, setSeverity] = useState(3)
   const [location, setLocation] = useState(initialLocation || null)
+  const [locationAddress, setLocationAddress] = useState<string | null>(null)
   const [radius, setRadius] = useState(500)
   const [audioRecording, setAudioRecording] = useState<any>(null)
   const [images, setImages] = useState<any[]>([])
@@ -158,6 +162,30 @@ export default function EmergencyReportInterface({
       setRadius(selectedType.default_radius)
     }
   }, [selectedType])
+
+  // Resolve a human-readable address whenever the selected location changes,
+  // so the report can carry an address label alongside the coordinates.
+  useEffect(() => {
+    if (!location) {
+      setLocationAddress(null)
+      return
+    }
+    let cancelled = false
+    reverseGeocodeLabel(location.lat, location.lng)
+      .then(label => {
+        if (!cancelled) {
+          setLocationAddress(label)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setLocationAddress(null)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [location])
 
   // Monitor online status
   useEffect(() => {
@@ -387,7 +415,8 @@ export default function EmergencyReportInterface({
         audio: audioRecording ? audioRecording.url : null,
         // Reported at timestamp
         reported_at: new Date().toISOString(),
-        device_info: navigator.userAgent
+        device_info: navigator.userAgent,
+        address: locationAddress
       },
       // 24 hours
       expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
@@ -398,7 +427,9 @@ export default function EmergencyReportInterface({
     try {
       // Try to submit immediately
       if (isOnline) {
-        onReportSubmitted(emergencyReport)
+        // Await the caller so the submit spinner stays active during the network
+        // request and any error can abort the close/reset flow.
+        await onReportSubmitted(emergencyReport)
       } else {
         // Store offline with proper offline action
         addAction({

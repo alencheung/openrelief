@@ -281,7 +281,7 @@ const EnhancedRangeSlider = React.forwardRef<HTMLInputElement, EnhancedRangeSlid
           </div>
 
           {/* Marks */}
-          {showMarks && (
+          {(showMarks || (marks && marks.length > 0)) && (
             <div className="relative mt-2">
               {marks.map((mark, index) => {
                 const markPercentage = ((mark.value - min) / (max - min)) * 100

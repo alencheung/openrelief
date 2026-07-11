@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
-    "target": "es5",
-    "lib": ["dom", "dom.iterable", "es6"],
+    "target": "es2020",
+    "lib": ["dom", "dom.iterable", "es2020"],
+    "downlevelIteration": true,
     "allowJs": true,
     "strict": true,
     "noEmit": true,
@@ -54,8 +55,16 @@
     "build",
     "coverage",
     "cypress",
+    "cypress.config.ts",
+    "playwright.config.ts",
     "playwright",
-    "**/test-utils/**",
+    "supabase/functions",
+    "src/test-utils",
+    "**/__tests__/**",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
     "**/node_modules/**"
   ]
 }

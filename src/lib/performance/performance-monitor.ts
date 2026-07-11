@@ -116,7 +116,7 @@ export const PERFORMANCE_THRESHOLDS = {
 
   // Alert dispatch (ms)
   alert_dispatch: {
-    push_notification: 100,
+    push: 100,
     email: 5000,
     sms: 3000,
     websocket: 50
@@ -156,13 +156,30 @@ class PerformanceMonitor {
   private databaseQueryMetrics: DatabaseQueryMetrics[] = []
   private systemResourceMetrics: SystemResourceMetrics[] = []
   private monitoringActive = false
-  private supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  // Lazily created so that module-load (e.g. during the Next.js build's page
+  // data collection, where env vars are absent) doesn't throw. The client is
+  // only needed for server-side monitoring at request time. Typed as `any`
+  // because it queries tables (performance_metrics) not in the generated
+  // Database types, which would otherwise resolve to `never`.
+  private _supabase: any = null
+  private get supabase(): any {
+    if (!this._supabase) {
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+      if (!url || !key) {
+        throw new Error('Supabase env vars not configured')
+      }
+      this._supabase = createClient(url, key)
+    }
+    return this._supabase
+  }
 
   private constructor() {
-    this.startMonitoring()
+    // Defer monitoring startup outside the browser (build-time page-data
+    // collection lacks both env vars and browser APIs like window/document).
+    if (typeof window !== 'undefined') {
+      this.startMonitoring()
+    }
   }
 
   static getInstance(): PerformanceMonitor {
@@ -467,6 +484,11 @@ class PerformanceMonitor {
       ? clsMetrics.reduce((sum, m) => sum + m.value, 0) / clsMetrics.length
       : 0
 
+    const fcpMetrics = frontendMetrics.filter(m => m.name === 'first_contentful_paint')
+    const avgFcp = fcpMetrics.length > 0
+      ? fcpMetrics.reduce((sum, m) => sum + m.value, 0) / fcpMetrics.length
+      : 0
+
     // Calculate system metrics
     const systemMetrics = recentMetrics.filter(m => m.type === 'system')
     const cpuMetrics = systemMetrics.filter(m => m.name === 'cpu_usage')
@@ -494,7 +516,7 @@ class PerformanceMonitor {
         lcp: avgLcp,
         fid: avgFid,
         cls: avgCls,
-        fcp: avgFcp // TODO: Calculate FCP
+        fcp: avgFcp
       },
       alerts: {
         critical: activeAlerts.filter(a => a.level === PerformanceAlertLevel.CRITICAL).length,
@@ -540,7 +562,7 @@ class PerformanceMonitor {
         return
       }
 
-      this.metrics = (data || []).map(row => ({
+      this.metrics = (data || []).map((row: any) => ({
         id: row.id,
         timestamp: new Date(row.timestamp),
         type: row.type,

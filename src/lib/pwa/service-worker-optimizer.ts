@@ -313,11 +313,12 @@ class ServiceWorkerOptimizer {
       this.metrics.cache.totalSize += this.getResponseSize(response)
 
       // Record performance metric
-      performanceMonitor.recordMetric('service_worker_cache_api_response', {
-        url,
-        strategy,
-        size: this.getResponseSize(response),
-        timestamp: Date.now()
+      performanceMonitor.recordMetric({
+        type: 'edge',
+        name: 'service_worker_cache_api_response',
+        value: this.getResponseSize(response),
+        unit: 'bytes',
+        tags: { url, strategy }
       })
     } catch (error) {
       console.error('[ServiceWorkerOptimizer] Failed to cache API response:', error)
@@ -455,7 +456,8 @@ class ServiceWorkerOptimizer {
           maxEntries: 200,
           match: /\.(?:js|css|png|jpg|jpeg|svg|gif|webp)$/,
           cacheableResponse: {
-            statuses: [0, 200]
+            statuses: [0, 200],
+            headers: {}
           }
         },
         {
@@ -465,7 +467,8 @@ class ServiceWorkerOptimizer {
           maxEntries: 100,
           match: /\.(?:png|jpg|jpeg|svg|gif|webp)$/,
           cacheableResponse: {
-            statuses: [0, 200]
+            statuses: [0, 200],
+            headers: {}
           }
         }
       ],
@@ -938,8 +941,8 @@ class CacheManager {
     const cacheControl = response.headers.get('cache-control')
     if (cacheControl) {
       const maxAgeMatch = cacheControl.match(/max-age=(\d+)/)
-      if (maxAgeMatch) {
-        return Date.now() + (parseInt(maxAgeMatch[1], 10) * 1000)
+      if (maxAgeMatch && maxAgeMatch[1]) {
+        return Date.now() + parseInt(maxAgeMatch[1], 10) * 1000
       }
     }
 
@@ -1271,7 +1274,9 @@ class PushNotificationManager {
         const registration = await navigator.serviceWorker.ready
         this.subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: this.urlBase64ToUint8Array(this.config.vapidPublicKey)
+          applicationServerKey: this.urlBase64ToUint8Array(
+            this.config.vapidPublicKey
+          ) as BufferSource
         })
 
         // Send subscription to server
@@ -1318,8 +1323,12 @@ class PushNotificationManager {
     const now = new Date()
     const currentTime = now.getHours() * 60 + now.getMinutes()
 
-    const [startHour, startMin] = this.config.quietHours.start.split(':').map(Number)
-    const [endHour, endMin] = this.config.quietHours.end.split(':').map(Number)
+    const [startHourStr, startMinStr] = this.config.quietHours.start.split(':')
+    const [endHourStr, endMinStr] = this.config.quietHours.end.split(':')
+    const startHour = Number(startHourStr ?? 0)
+    const startMin = Number(startMinStr ?? 0)
+    const endHour = Number(endHourStr ?? 0)
+    const endMin = Number(endMinStr ?? 0)
 
     const startTime = startHour * 60 + startMin
     const endTime = endHour * 60 + endMin

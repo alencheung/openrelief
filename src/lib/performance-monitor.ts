@@ -606,13 +606,13 @@ export const usePerformanceMonitor = create<PerformanceState & PerformanceAction
 
           // Calculate statistics
           const sortedLatency = [...filteredLatency].sort((a, b) => a - b)
-          const avgLatency = sortedLatency.reduce((sum, l) => sum + l, 0) / sortedLatency.length
-          const p50 = sortedLatency[Math.floor(sortedLatency.length * 0.5)]
-          const p95 = sortedLatency[Math.floor(sortedLatency.length * 0.95)]
-          const p99 = sortedLatency[Math.floor(sortedLatency.length * 0.99)]
+          const avgLatency = sortedLatency.length > 0 ? sortedLatency.reduce((sum, l) => sum + l, 0) / sortedLatency.length : 0
+          const p50 = sortedLatency[Math.floor(sortedLatency.length * 0.5)] ?? 0
+          const p95 = sortedLatency[Math.floor(sortedLatency.length * 0.95)] ?? 0
+          const p99 = sortedLatency[Math.floor(sortedLatency.length * 0.99)] ?? 0
 
           // Generate recommendations
-          const recommendations = []
+          const recommendations: string[] = []
           if (avgLatency > 80) {
             recommendations.push('Consider query optimization')
           }

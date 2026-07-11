@@ -380,29 +380,44 @@ export default function EmergencyMap({
 
     let features: any[]
 
+    // Build the raw point features once for both paths. When MapLibre's
+    // source is configured with `cluster: true` (the default when
+    // enableClustering is on) it clusters on the GPU; feeding it
+    // pre-clustered features from a CPU Supercluster pass would (a) double-
+    // cluster the data and (b) stall the main thread rebuilding the index
+    // via cluster.load() on every data refresh — O(n log n) per poll. At
+    // 10K+ events that stalled the UI once a minute.
+    const rawFeatures = events.map(event => ({
+      type: 'Feature',
+      properties: {
+        id: event.id,
+        type: event.emergency_types?.slug || 'unknown',
+        severity: event.severity,
+        status: event.status,
+        trust_score: event.trust_weight,
+        title: event.title,
+        description: event.description,
+        created_at: event.created_at
+      },
+      geometry: {
+        type: 'Point' as const,
+        coordinates: [
+          parseFloat(event.location.split(' ')[1] || '0'),
+          parseFloat(event.location.split(' ')[0] || '0')
+        ]
+      }
+    }))
+
     if (enableClustering) {
-      features = clusterEmergencyEvents(filteredEvents, bounds, zoom, clusterRef.current)
+      // GPU clustering path — let MapLibre do the work. We feed it the
+      // raw points; the cluster layers defined in map-config.ts render
+      // cluster_count and individual points automatically.
+      features = rawFeatures
     } else {
-      features = events.map(event => ({
-        type: 'Feature',
-        properties: {
-          id: event.id,
-          type: event.emergency_types?.slug || 'unknown',
-          severity: event.severity,
-          status: event.status,
-          trust_score: event.trust_weight,
-          title: event.title,
-          description: event.description,
-          created_at: event.created_at
-        },
-        geometry: {
-          type: 'Point' as const,
-          coordinates: [
-            parseFloat(event.location.split(' ')[1] || '0'),
-            parseFloat(event.location.split(' ')[0] || '0')
-          ]
-        }
-      }))
+      // No GPU clustering enabled. Only in this case do we fall back to
+      // the CPU Supercluster to produce a single-feature-per-cluster
+      // view (e.g. for non-MapLibre renderers or debug overlays).
+      features = clusterEmergencyEvents(filteredEvents, bounds, zoom, clusterRef.current)
     }
 
     const source = map.getSource('emergency-events') as any

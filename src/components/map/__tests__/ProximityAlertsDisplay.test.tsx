@@ -6,7 +6,7 @@ import { ProximityAlertsDisplay, ProximityAlert } from '../ProximityAlertsDispla
 import { createTestUtils } from '@/test-utils'
 
 // Mock UI components
-vi.mock('@/components/ui', () => ({
+jest.mock('@/components/ui', () => ({
   StatusIndicator: ({ status, size, variant, pulse, showIcon, label }: any) => (
     <div
       data-testid="status-indicator"
@@ -80,13 +80,13 @@ describe('ProximityAlertsDisplay', () => {
         {
           id: 'navigate',
           label: 'Navigate',
-          action: vi.fn(),
+          action: jest.fn(),
           variant: 'outline'
         },
         {
           id: 'dismiss',
           label: 'Dismiss',
-          action: vi.fn(),
+          action: jest.fn(),
           variant: 'ghost'
         }
       ]
@@ -205,7 +205,7 @@ describe('ProximityAlertsDisplay', () => {
   })
 
   it('handles alert click', async () => {
-    const onAlertClick = vi.fn()
+    const onAlertClick = jest.fn()
     renderWithProviders(<ProximityAlertsDisplay {...defaultProps} onAlertClick={onAlertClick} />)
 
     const alertItem = screen.getByText(/building fire/i).closest('[role="button"]')
@@ -215,7 +215,7 @@ describe('ProximityAlertsDisplay', () => {
   })
 
   it('handles alert dismiss', async () => {
-    const onAlertDismiss = vi.fn()
+    const onAlertDismiss = jest.fn()
     renderWithProviders(
       <ProximityAlertsDisplay {...defaultProps} onAlertDismiss={onAlertDismiss} />
     )
@@ -262,7 +262,7 @@ describe('ProximityAlertsDisplay', () => {
 
   it('handles action button clicks', async () => {
     const user = userEvent.setup()
-    const mockAction = vi.fn()
+    const mockAction = jest.fn()
 
     const alerts = [
       {
@@ -332,7 +332,7 @@ describe('ProximityAlertsDisplay', () => {
 
   it('handles dismiss all', async () => {
     const user = userEvent.setup()
-    const onDismissAll = vi.fn()
+    const onDismissAll = jest.fn()
     renderWithProviders(
       <ProximityAlertsDisplay {...defaultProps} onDismissAll={onDismissAll} showDismissAll={true} />
     )
@@ -345,7 +345,7 @@ describe('ProximityAlertsDisplay', () => {
 
   it('handles mark all read', async () => {
     const user = userEvent.setup()
-    const onMarkAllRead = vi.fn()
+    const onMarkAllRead = jest.fn()
     renderWithProviders(
       <ProximityAlertsDisplay
         {...defaultProps}
@@ -450,7 +450,7 @@ describe('ProximityAlertsDisplay', () => {
   })
 
   it('handles keyboard navigation', async () => {
-    const onAlertClick = vi.fn()
+    const onAlertClick = jest.fn()
     renderWithProviders(<ProximityAlertsDisplay {...defaultProps} onAlertClick={onAlertClick} />)
 
     const alertItem = screen.getByText(/building fire/i).closest('[role="button"]')
@@ -472,7 +472,7 @@ describe('ProximityAlertsDisplay', () => {
 
   it('handles onFilterChange callback', async () => {
     const user = userEvent.setup()
-    const onFilterChange = vi.fn()
+    const onFilterChange = jest.fn()
 
     renderWithProviders(
       <ProximityAlertsDisplay
@@ -493,16 +493,16 @@ describe('ProximityAlertsDisplay', () => {
 
     const icons = screen.getAllByTestId('icon')
 
-    // Should have flame icon for fire emergency
-    const flameIcon = icons.find(icon => icon.getAttribute('data-name') === 'flame')
+    // Should have fire icon for fire emergency
+    const fireIcon = icons.find(icon => icon.getAttribute('data-name') === 'fire')
     expect(flameIcon).toBeInTheDocument()
 
-    // Should have heartPulse icon for medical emergency
-    const heartPulseIcon = icons.find(icon => icon.getAttribute('data-name') === 'heartPulse')
+    // Should have medical icon for medical emergency
+    const medicalIcon = icons.find(icon => icon.getAttribute('data-name') === 'medical')
     expect(heartPulseIcon).toBeInTheDocument()
 
-    // Should have shield icon for security emergency
-    const shieldIcon = icons.find(icon => icon.getAttribute('data-name') === 'shield')
+    // Should have security icon for security emergency
+    const securityIcon = icons.find(icon => icon.getAttribute('data-name') === 'security')
     expect(shieldIcon).toBeInTheDocument()
   })
 
@@ -532,8 +532,8 @@ describe('ProximityAlertsDisplay', () => {
   })
 
   it('handles alert item dismiss with stop propagation', async () => {
-    const onAlertClick = vi.fn()
-    const onAlertDismiss = vi.fn()
+    const onAlertClick = jest.fn()
+    const onAlertDismiss = jest.fn()
 
     renderWithProviders(
       <ProximityAlertsDisplay
@@ -553,8 +553,8 @@ describe('ProximityAlertsDisplay', () => {
 
   it('handles action button clicks with stop propagation', async () => {
     const user = userEvent.setup()
-    const onAlertClick = vi.fn()
-    const mockAction = vi.fn()
+    const onAlertClick = jest.fn()
+    const mockAction = jest.fn()
 
     const alerts = [
       {
@@ -606,7 +606,7 @@ describe('ProximityAlertsDisplay', () => {
 
     alertItems.forEach(item => {
       expect(item).toHaveAttribute('aria-label')
-      expect(item).toHaveAttribute('tabIndex', '0')
+      expect(item).toHaveAttribute('tabindex', '0')
     })
   })
 

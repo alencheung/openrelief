@@ -2,6 +2,16 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabaseHelpers, supabase } from '@/lib/supabase'
 import { Database } from '@/types/database'
 
+// NOTE on duplicate hooks: a richer implementation of these hooks lives in
+// `src/hooks/queries/useEmergencyQueries.ts` (offline-aware, API-route
+// backed, trust-integrated). This file retains the original, thinner
+// implementations because existing callers and tests depend on their exact
+// behaviour. There is NO runtime double-poll risk from both existing:
+// TanStack Query deduplicates observers by query key, so any components
+// using `useEmergencyEvents()` — whether imported from here or from
+// `queries/useEmergencyQueries` — share ONE underlying query and ONE
+// polling timer for a given ['emergency-events', filters] key.
+
 type EmergencyEvent = Database['public']['Tables']['emergency_events']['Row']
 type EmergencyEventInsert = Database['public']['Tables']['emergency_events']['Insert']
 

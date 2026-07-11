@@ -173,7 +173,7 @@ export class TrustScoreManager {
    */
   async calculateTrustScore(
     userId: string,
-    action: 'report' | 'confirm' | 'dispute' | 'endorse' | 'moderate',
+    action: 'report' | 'confirm' | 'dispute' | 'endorse' | 'moderate' | 'penalty',
     context: any
   ): Promise<{
     newScore: number
@@ -249,7 +249,7 @@ export class TrustScoreManager {
   getTrustThreshold(userId: string): TrustThreshold {
     const trustScore = this.trustScores.get(userId)
     if (!trustScore) {
-      return TRUST_CONFIG.thresholds.very_low
+      return { level: 'very_low', ...TRUST_CONFIG.thresholds.very_low }
     }
 
     const score = trustScore.overall
@@ -258,13 +258,13 @@ export class TrustScoreManager {
     for (const [level, threshold] of Object.entries(TRUST_CONFIG.thresholds)) {
       if (score >= threshold.minScore && score <= threshold.maxScore) {
         return {
-          level: level as any,
+          level: level as TrustThreshold['level'],
           ...threshold
         }
       }
     }
 
-    return TRUST_CONFIG.thresholds.very_low
+    return { level: 'very_low', ...TRUST_CONFIG.thresholds.very_low }
   }
 
   /**
@@ -532,7 +532,12 @@ export class TrustScoreManager {
     reason: string
     factor: keyof TrustFactors
   } {
-    const impacts = {
+    const penaltyImpact = {
+      impact: -0.05,
+      reason: 'Penalty applied',
+      factor: 'penaltyScore' as keyof TrustFactors
+    }
+    const impacts: Record<string, { impact: number; reason: string; factor: keyof TrustFactors }> = {
       report: { impact: 0.02, reason: 'Emergency report submitted', factor: 'reportingAccuracy' },
       confirm: {
         impact: 0.03,
@@ -542,11 +547,11 @@ export class TrustScoreManager {
       dispute: { impact: -0.02, reason: 'Emergency event disputed', factor: 'disputeAccuracy' },
       endorse: { impact: 0.01, reason: 'User endorsed', factor: 'communityEndorsement' },
       moderate: { impact: 0.01, reason: 'Content moderated', factor: 'communityEndorsement' },
-      penalty: { impact: -0.05, reason: 'Penalty applied', factor: 'penaltyScore' },
+      penalty: penaltyImpact,
       boost: { impact: 0.05, reason: 'Trust boost applied', factor: 'communityEndorsement' }
     }
 
-    return impacts[action] || impacts.penalty
+    return impacts[action] ?? penaltyImpact
   }
 
   private async updateTrustFactors(
@@ -558,9 +563,10 @@ export class TrustScoreManager {
 
     // Update specific factor based on action
     if (actionImpact.factor) {
-      const currentValue = updatedFactors[actionImpact.factor] || 0
+      const factorKey = actionImpact.factor as keyof TrustFactors
+      const currentValue = (updatedFactors[factorKey] as number) || 0
       const newValue = Math.max(0, Math.min(1, currentValue + actionImpact.impact))
-      updatedFactors[actionImpact.factor] = newValue
+      ;(updatedFactors as Record<string, unknown>)[actionImpact.factor] = newValue
     }
 
     // Update contribution frequency
@@ -572,7 +578,7 @@ export class TrustScoreManager {
     }
 
     // Update consistency score
-    updatedFactors.consistencyScore = this.calculateConsistencyScore(updatedFactors)
+    updatedFactors.consistencyScore = this.calculateConfidence(updatedFactors)
 
     return updatedFactors
   }
@@ -701,7 +707,7 @@ export class TrustScoreManager {
       admin: ['admin', 'manage', 'delete', 'ban']
     }
 
-    return permissions[action] || []
+    return (permissions as Record<string, string[]>)[action] || []
   }
 
   private async checkRequirements(
@@ -794,7 +800,8 @@ export class TrustScoreManager {
       if (index === 0) {
         return 0
       }
-      return Math.abs(entry.score - recentChanges[index - 1].score)
+      const prev = recentChanges[index - 1]
+      return prev ? Math.abs(entry.score - prev.score) : 0
     })
 
     const avgChange = scoreChanges.reduce((sum, change) => sum + change, 0) / scoreChanges.length
@@ -869,28 +876,39 @@ export class TrustScoreManager {
       'trust_system',
       {
         userId,
-        previousScore,
-        newScore,
-        change: newScore - previousScore,
-        action
+        metadata: {
+          previousScore,
+          newScore,
+          change: newScore - previousScore,
+          action
+        }
       }
     )
   }
 
   private async saveTrustScore(trustScore: TrustScore): Promise<void> {
-    await supabaseAdmin.from('user_trust_scores').upsert({
-      user_id: trustScore.userId,
-      overall_score: trustScore.overall,
-      factors: trustScore.factors,
-      reputation: trustScore.reputation,
-      confidence: trustScore.confidence,
-      updated_at: new Date().toISOString()
-    })
+    // Persist computed factors to the `trust_score_cache` table. This was
+    // previously an upsert into `user_trust_scores`, which is a VIEW (not
+    // writable), so writes silently failed and trust state was lost on
+    // process restart. A trigger mirrors overall_score onto user_profiles.
+    try {
+      await supabaseAdmin.from('trust_score_cache').upsert({
+        user_id: trustScore.userId,
+        overall_score: trustScore.overall,
+        factors: trustScore.factors,
+        reputation: trustScore.reputation,
+        confidence: trustScore.confidence,
+        history: trustScore.history,
+        updated_at: new Date().toISOString()
+      })
+    } catch (error) {
+      console.error('Error persisting trust score:', error)
+    }
   }
 
   private async loadTrustScores(): Promise<void> {
     try {
-      const { data, error } = await supabaseAdmin.from('user_trust_scores').select('*')
+      const { data, error } = await supabaseAdmin.from('trust_score_cache').select('*')
 
       if (error) {
         throw error

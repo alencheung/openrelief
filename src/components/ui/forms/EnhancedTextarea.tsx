@@ -92,7 +92,10 @@ const EnhancedTextarea = React.forwardRef<HTMLTextAreaElement, EnhancedTextareaP
     const inputId = id || `textarea-${generatedId}`
     const hasValue = value !== undefined && value !== ''
     const isFloating = floatingLabel && (isFocused || hasValue)
-    const currentLength = value?.toString().length || 0
+    // Track internal value for uncontrolled character counting
+    const [internalValue, setInternalValue] = React.useState(value ?? '')
+    const effectiveValue = value !== undefined ? value : internalValue
+    const currentLength = effectiveValue?.toString().length || 0
 
     // Determine the final variant based on props and validation state
     const getVariant = () => {
@@ -135,6 +138,7 @@ const EnhancedTextarea = React.forwardRef<HTMLTextAreaElement, EnhancedTextareaP
 
     // Handle textarea change
     const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      setInternalValue(e.target.value)
       onChange?.(e)
       validateInput(e.target.value)
 

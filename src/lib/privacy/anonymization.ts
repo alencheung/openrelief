@@ -291,38 +291,41 @@ export function aggregateData<T extends Record<string, any>>(
   // Aggregate each group
   const result: T[] = []
 
-  for (const [key, group] of groups) {
-    const aggregatedRecord = {} as T
+  for (const [, group] of groups) {
+    const aggregatedRecord: Record<string, unknown> = {}
 
     // Copy group by fields
     groupBy.forEach(field => {
-      aggregatedRecord[field] = group[0][field]
+      aggregatedRecord[field] = group[0]?.[field]
     })
 
     // Apply aggregations
     for (const [field, aggFunc] of Object.entries(aggregations)) {
-      const values = group.map(record => record[field]).filter(val => val !== null && val !== undefined)
+      const values = group
+        .map(rec => rec[field])
+        .filter((val): val is number => typeof val === 'number')
 
       switch (aggFunc) {
         case 'sum':
-          aggregatedRecord[field] = values.reduce((sum, val) => sum + val, 0) as any
+          aggregatedRecord[field] = values.reduce((sum, val) => sum + val, 0)
           break
         case 'avg':
-          aggregatedRecord[field] = values.reduce((sum, val) => sum + val, 0) / values.length as any
+          aggregatedRecord[field] =
+            values.length > 0 ? values.reduce((sum, val) => sum + val, 0) / values.length : 0
           break
         case 'count':
-          aggregatedRecord[field] = values.length as any
+          aggregatedRecord[field] = values.length
           break
         case 'min':
-          aggregatedRecord[field] = Math.min(...values) as any
+          aggregatedRecord[field] = values.length > 0 ? Math.min(...values) : 0
           break
         case 'max':
-          aggregatedRecord[field] = Math.max(...values) as any
+          aggregatedRecord[field] = values.length > 0 ? Math.max(...values) : 0
           break
       }
     }
 
-    result.push(aggregatedRecord)
+    result.push(aggregatedRecord as T)
   }
 
   return result
@@ -344,19 +347,29 @@ export function createUserClusters<T extends Record<string, any>>(
 
   while (unclustered.length >= k) {
     const seed = unclustered[0]
+    if (!seed) break
     const cluster = [seed]
     unclustered.shift()
 
     // Find nearby users
     for (let i = unclustered.length - 1; i >= 0; i--) {
       const user = unclustered[i]
-      if (user.latitude && user.longitude && seed.latitude && seed.longitude) {
+      if (
+        user &&
+        user.latitude &&
+        user.longitude &&
+        seed.latitude &&
+        seed.longitude
+      ) {
         const distance = calculateDistance(
-          seed.latitude, seed.longitude,
-          user.latitude, user.longitude
+          seed.latitude,
+          seed.longitude,
+          user.latitude,
+          user.longitude
         )
 
-        if (distance < 10) { // 10km radius
+        if (distance < 10) {
+          // 10km radius
           cluster.push(user)
           unclustered.splice(i, 1)
 
@@ -369,12 +382,14 @@ export function createUserClusters<T extends Record<string, any>>(
 
     if (cluster.length >= k) {
       // Calculate representative (center point)
-      const representative = { ...seed } as T
+      const representative = { ...seed } as Record<string, unknown> as T
       if (cluster.every(u => u.latitude && u.longitude)) {
-        const avgLat = cluster.reduce((sum, u) => sum + u.latitude, 0) / cluster.length
-        const avgLng = cluster.reduce((sum, u) => sum + u.longitude, 0) / cluster.length
-        representative.latitude = avgLat
-        representative.longitude = avgLng
+        const avgLat =
+          cluster.reduce((sum, u) => sum + (u.latitude ?? 0), 0) / cluster.length
+        const avgLng =
+          cluster.reduce((sum, u) => sum + (u.longitude ?? 0), 0) / cluster.length
+        ;(representative as Record<string, unknown>).latitude = avgLat
+        ;(representative as Record<string, unknown>).longitude = avgLng
       }
 
       clusters.push({ cluster, representative })
@@ -442,7 +457,7 @@ export function anonymizeUserData<T extends Record<string, any>>(
   }
 
   // Generalize age
-  if (options.generalizeAge && record.age) {
+  if (options.generalizeAge) {
     anonymized = anonymized.map(record => {
       if (record.age) {
         return { ...record, age: generalizeAge(record.age, options.ageRangeSize) }

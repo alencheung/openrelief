@@ -6,27 +6,34 @@
  */
 
 import { renderHook, waitFor, act } from '@testing-library/react'
+// Override the global React Query mock (from jest.setup.js) with the real
+// implementation so useQuery/useMutation actually execute queryFn and the
+// hook behaves as in production. The Supabase client is still mocked below.
+jest.mock('@tanstack/react-query', () => jest.requireActual('@tanstack/react-query'))
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useTrustSystem } from '../useTrustSystem'
 import { createMockSupabaseClient } from '@/test-utils/mocks/supabase'
 import { createUser, createTrustScore } from '@/test-utils/fixtures/emergencyScenarios'
 
-// Mock Supabase
-jest.mock('@/lib/supabase', () => ({
-  supabase: createMockSupabaseClient(),
-  supabaseHelpers: {
-    getUserProfile: jest.fn(),
-    updateUserProfile: jest.fn(),
-    createUserProfile: jest.fn(),
-    getEmergencyEvents: jest.fn(),
-    createEmergencyEvent: jest.fn(),
-    updateEmergencyEvent: jest.fn(),
-    confirmEvent: jest.fn(),
-    getEventConfirmations: jest.fn(),
-    getEmergencyTypes: jest.fn(),
-    subscribeToEmergencyEvents: jest.fn()
+// Mock Supabase (factory uses lazy require to avoid hoisting/init issues)
+jest.mock('@/lib/supabase', () => {
+  const { createMockSupabaseClient } = require('@/test-utils/mocks/supabase')
+  return {
+    supabase: createMockSupabaseClient(),
+    supabaseHelpers: {
+      getUserProfile: jest.fn(),
+      updateUserProfile: jest.fn(),
+      createUserProfile: jest.fn(),
+      getEmergencyEvents: jest.fn(),
+      createEmergencyEvent: jest.fn(),
+      updateEmergencyEvent: jest.fn(),
+      confirmEvent: jest.fn(),
+      getEventConfirmations: jest.fn(),
+      getEmergencyTypes: jest.fn(),
+      subscribeToEmergencyEvents: jest.fn()
+    }
   }
-}))
+})
 
 describe('useTrustSystem Hook', () => {
   let queryClient: QueryClient
@@ -52,10 +59,11 @@ describe('useTrustSystem Hook', () => {
   describe('Trust Score Queries', () => {
     it('should fetch trust calculation for user', async () => {
       const userId = 'test-user-1'
+      // Fields match the trust_score_cache table queried by useTrustSystem
       const mockTrustData = {
         user_id: userId,
         overall_score: 0.85,
-        trust_score_factors: {
+        factors: {
           reporting_accuracy: 0.9,
           confirmation_accuracy: 0.8,
           dispute_accuracy: 0.85,
@@ -66,14 +74,15 @@ describe('useTrustSystem Hook', () => {
           penalty_score: 0.05,
           expertise_areas: [1, 2]
         },
-        last_updated: new Date().toISOString()
+        confidence: 0.8,
+        updated_at: new Date().toISOString()
       }
 
+      const resolved = { data: mockTrustData, error: null }
+      const terminal = { single: jest.fn().mockResolvedValue(resolved), maybeSingle: jest.fn().mockResolvedValue(resolved), maybeSingle: jest.fn().mockResolvedValue(resolved) }
       mockSupabase.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({ data: mockTrustData, error: null })
-          })
+          eq: jest.fn().mockReturnValue(terminal)
         })
       })
 
@@ -93,7 +102,7 @@ describe('useTrustSystem Hook', () => {
       mockSupabase.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({ data: null, error: { message: 'Not found' } })
+            single: jest.fn().mockResolvedValue({data: null, error: { message: 'Not found' }}), maybeSingle: jest.fn().mockResolvedValue({data: null, error: { message: 'Not found' }}), maybeSingle: jest.fn().mockResolvedValue({data: null, error: { message: 'Not found' }})
           })
         })
       })
@@ -126,14 +135,14 @@ describe('useTrustSystem Hook', () => {
         .mockReturnValueOnce({
           select: jest.fn().mockReturnValue({
             eq: jest.fn().mockReturnValue({
-              single: jest.fn().mockResolvedValueOnce({ data: initialData, error: null })
+              single: jest.fn().mockResolvedValueOnce({ data: initialData, error: null }), maybeSingle: jest.fn().mockResolvedValueOnce({ data: initialData, error: null })
             })
           })
         })
         .mockReturnValueOnce({
           select: jest.fn().mockReturnValue({
             eq: jest.fn().mockReturnValue({
-              single: jest.fn().mockResolvedValueOnce({ data: updatedData, error: null })
+              single: jest.fn().mockResolvedValueOnce({ data: updatedData, error: null }), maybeSingle: jest.fn().mockResolvedValueOnce({ data: updatedData, error: null })
             })
           })
         })
@@ -334,7 +343,7 @@ describe('useTrustSystem Hook', () => {
       mockSupabase.from.mockReturnValueOnce({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValueOnce({ data: initialTrustData, error: null })
+            single: jest.fn().mockResolvedValueOnce({ data: initialTrustData, error: null }), maybeSingle: jest.fn().mockResolvedValueOnce({ data: initialTrustData, error: null })
           })
         })
       })
@@ -349,7 +358,7 @@ describe('useTrustSystem Hook', () => {
       mockSupabase.from.mockReturnValueOnce({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValueOnce({ data: updatedTrustData, error: null })
+            single: jest.fn().mockResolvedValueOnce({ data: updatedTrustData, error: null }), maybeSingle: jest.fn().mockResolvedValueOnce({ data: updatedTrustData, error: null })
           })
         })
       })
@@ -382,7 +391,7 @@ describe('useTrustSystem Hook', () => {
       mockSupabase.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({ data: null, error: mockError })
+            single: jest.fn().mockResolvedValue({data: null, error: mockError}), maybeSingle: jest.fn().mockResolvedValue({data: null, error: mockError}), maybeSingle: jest.fn().mockResolvedValue({data: null, error: mockError})
           })
         })
       })
@@ -427,7 +436,7 @@ describe('useTrustSystem Hook', () => {
       mockSupabase.from.mockReturnValueOnce({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValueOnce({ data: currentTrustData, error: null })
+            single: jest.fn().mockResolvedValueOnce({ data: currentTrustData, error: null }), maybeSingle: jest.fn().mockResolvedValueOnce({ data: currentTrustData, error: null })
           })
         })
       })
@@ -442,7 +451,7 @@ describe('useTrustSystem Hook', () => {
       mockSupabase.from.mockReturnValueOnce({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValueOnce({ data: recalculatedTrustData, error: null })
+            single: jest.fn().mockResolvedValueOnce({ data: recalculatedTrustData, error: null }), maybeSingle: jest.fn().mockResolvedValueOnce({ data: recalculatedTrustData, error: null })
           })
         })
       })
@@ -488,7 +497,7 @@ describe('useTrustSystem Hook', () => {
       mockSupabase.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({ data: mockTrustData, error: null })
+            single: jest.fn().mockResolvedValue({data: mockTrustData, error: null}), maybeSingle: jest.fn().mockResolvedValue({data: mockTrustData, error: null}), maybeSingle: jest.fn().mockResolvedValue({data: mockTrustData, error: null})
           })
         })
       })
@@ -530,7 +539,7 @@ describe('useTrustSystem Hook', () => {
       mockSupabase.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({ data: mockTrustData, error: null })
+            single: jest.fn().mockResolvedValue({data: mockTrustData, error: null}), maybeSingle: jest.fn().mockResolvedValue({data: mockTrustData, error: null}), maybeSingle: jest.fn().mockResolvedValue({data: mockTrustData, error: null})
           })
         })
       })
@@ -554,7 +563,7 @@ describe('useTrustSystem Hook', () => {
       mockSupabase.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({ data: null, error: { message: 'Not found' } })
+            single: jest.fn().mockResolvedValue({data: null, error: { message: 'Not found' }}), maybeSingle: jest.fn().mockResolvedValue({data: null, error: { message: 'Not found' }}), maybeSingle: jest.fn().mockResolvedValue({data: null, error: { message: 'Not found' }})
           })
         })
       })
@@ -606,7 +615,7 @@ describe('useTrustSystem Hook', () => {
         mockSupabase.from.mockReturnValue({
           select: jest.fn().mockReturnValue({
             eq: jest.fn().mockReturnValue({
-              single: jest.fn().mockResolvedValue({ data: mockTrustData, error: null })
+              single: jest.fn().mockResolvedValue({data: mockTrustData, error: null}), maybeSingle: jest.fn().mockResolvedValue({data: mockTrustData, error: null}), maybeSingle: jest.fn().mockResolvedValue({data: mockTrustData, error: null})
             })
           })
         })
@@ -737,7 +746,7 @@ describe('useTrustSystem Hook', () => {
       mockSupabase.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockRejectedValue(networkError)
+            single: jest.fn().mockRejectedValue(networkError), maybeSingle: jest.fn().mockRejectedValue(networkError)
           })
         })
       })
@@ -764,7 +773,7 @@ describe('useTrustSystem Hook', () => {
       mockSupabase.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({ data: malformedData, error: null })
+            single: jest.fn().mockResolvedValue({data: malformedData, error: null}), maybeSingle: jest.fn().mockResolvedValue({data: malformedData, error: null}), maybeSingle: jest.fn().mockResolvedValue({data: malformedData, error: null})
           })
         })
       })
@@ -804,7 +813,7 @@ describe('useTrustSystem Hook', () => {
       mockSupabase.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({ data: mockTrustData, error: null })
+            single: jest.fn().mockResolvedValue({data: mockTrustData, error: null}), maybeSingle: jest.fn().mockResolvedValue({data: mockTrustData, error: null}), maybeSingle: jest.fn().mockResolvedValue({data: mockTrustData, error: null})
           })
         })
       })
@@ -845,7 +854,7 @@ describe('useTrustSystem Hook', () => {
       mockSupabase.from.mockReturnValueOnce({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValueOnce({ data: initialTrustData, error: null })
+            single: jest.fn().mockResolvedValueOnce({ data: initialTrustData, error: null }), maybeSingle: jest.fn().mockResolvedValueOnce({ data: initialTrustData, error: null })
           })
         })
       })
@@ -854,7 +863,7 @@ describe('useTrustSystem Hook', () => {
       mockSupabase.from.mockReturnValueOnce({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValueOnce({ data: updatedTrustData, error: null })
+            single: jest.fn().mockResolvedValueOnce({ data: updatedTrustData, error: null }), maybeSingle: jest.fn().mockResolvedValueOnce({ data: updatedTrustData, error: null })
           })
         })
       })

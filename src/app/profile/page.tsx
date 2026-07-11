@@ -3,6 +3,7 @@
 import { useAuth, useAuthActions } from '@/store/authStore'
 import { useRouter } from 'next/navigation'
 import { Shield, LogOut, Bell, MapPin } from 'lucide-react'
+import { TrustDashboard } from '@/components/trust/TrustDashboard'
 
 export default function ProfilePage() {
   const { user, isAuthenticated } = useAuth()
@@ -75,6 +76,10 @@ export default function ProfilePage() {
                 </dd>
               </div>
             </dl>
+          </div>
+
+          <div className="border-t border-gray-100 pt-4">
+            <TrustDashboard userId={user.id} />
           </div>
 
           <div className="flex gap-3 pt-4">

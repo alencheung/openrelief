@@ -1,11 +1,15 @@
-# https://www.robotstxt.org/robotstxt.html
+# *
 User-agent: *
 Allow: /
 
+# *
+User-agent: *
 Disallow: /api/
-Disallow: /admin/
-Disallow: /settings/
-Disallow: /profile/
-Disallow: /auth/
+Disallow: /offline/
+Disallow: /pwa-status
 
+# Host
+Host: https://openrelief.org
+
+# Sitemaps
 Sitemap: https://openrelief.org/sitemap.xml

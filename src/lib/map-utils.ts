@@ -323,7 +323,9 @@ export class OfflineTileCache {
 
       for (let x = minTile.x; x <= maxTile.x; x++) {
         for (let y = minTile.y; y <= maxTile.y; y++) {
-          const tileUrl = `https://api.maptiler.com/tiles/v3/${zoom}/${x}/${y}.pbf?key=get_your_own_OpMapTiles_API_key`
+          const tileUrl = process.env.NEXT_PUBLIC_MAPTILER_API_KEY
+            ? `https://api.maptiler.com/tiles/v3/${zoom}/${x}/${y}.pbf?key=${process.env.NEXT_PUBLIC_MAPTILER_API_KEY}`
+            : `https://demotiles.maplibre.org/${zoom}/${x}/${y}.pbf`
 
           try {
             const response = await fetch(tileUrl)

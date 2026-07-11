@@ -194,7 +194,7 @@ export class RedisSessionStore {
 
       for (const key of keys) {
         const data = await this.redis.hgetall<Record<string, string>>(key)
-        if (data && data.expiresAt) {
+        if (data && data.expiresAt && data.sessionId) {
           const expiresAt = new Date(data.expiresAt)
           if (now > expiresAt) {
             await this.deleteSession(data.sessionId)

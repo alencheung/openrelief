@@ -307,6 +307,8 @@ const EnhancedFileUpload = React.forwardRef<HTMLInputElement, EnhancedFileUpload
 
         {/* Upload Area */}
         <div
+          role="button"
+          tabIndex={0}
           className={cn(
             enhancedFileUploadVariants({ variant: currentVariant, size }),
             isDragActive && 'border-primary bg-primary/5',

@@ -3,9 +3,41 @@ import { createClient } from '@supabase/supabase-js'
 import { withAPISecurity, API_SECURITY_CONFIGS } from '@/lib/security/api-security'
 import { trustScoreManager } from '@/lib/security/trust-integration'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+// Build-safe Supabase client: returns a real client when env vars are present,
+// otherwise a minimal stub so module-load during the Next.js build page-data
+// collection doesn't throw "supabaseUrl is required".
+function safeCreateClient(url?: string, key?: string, opts?: any): import('@supabase/supabase-js').SupabaseClient {
+  // In test mode, use the mock client from @/lib/supabase
+
+  if (process.env.NODE_ENV === 'test') {
+
+    try {
+
+      const { supabase } = require('@/lib/supabase')
+
+      return supabase as any
+
+    } catch {}
+
+  }
+
+  if (url && key) {
+    return createClient(url, key, opts)
+  }
+  const noop = () => chain
+    const chain = {
+      select: noop, insert: noop, update: noop, upsert: noop, delete: noop,
+      eq: noop, neq: noop, in: noop, gte: noop, lte: noop, gt: noop, lt: noop,
+      like: noop, ilike: noop, contains: noop, not: noop, is: noop, or: noop,
+      filter: noop, order: noop, limit: noop, range: noop, single: noop,
+      maybeSingle: noop, then: (resolve: any) => resolve({ data: [], error: null })
+    }
+  return { from: () => chain, auth: { getUser: async () => ({ data: { user: null }, error: null }) } } as any
+}
+
+const supabase = safeCreateClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
 export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (

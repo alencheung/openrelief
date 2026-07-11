@@ -170,6 +170,7 @@ export interface RecoveryProcedure {
   description: string
   responsible: string
   timeframe: number
+  dependencies?: string[]
   validation: string
 }
 
@@ -473,22 +474,23 @@ export class IncidentResponseManager {
     try {
       // Determine priority based on severity and impact
       const priority = this.determinePriority(incident)
+      const incidentType = incident.type as unknown as IncidentType
 
       // Assemble response team
-      const responseTeam = this.assembleResponseTeam(incident.type, priority)
+      const responseTeam = this.assembleResponseTeam(incidentType, priority)
 
       // Get response procedures
       const procedures
-        = this.responseTemplates.get(incident.type) || this.getDefaultProcedures(incident.type)
+        = this.responseTemplates.get(incidentType) || this.getDefaultProcedures(incidentType)
 
       // Create communication plan
       const communications = this.createCommunicationPlan(incident, priority)
 
       // Create escalation plan
-      const escalation = this.createEscalationPlan(incident.type, priority)
+      const escalation = this.createEscalationPlan(incidentType, priority)
 
       // Create recovery plan
-      const recovery = this.createRecoveryPlan(incident.type, priority)
+      const recovery = this.createRecoveryPlan(incidentType, priority)
 
       // Initialize timeline
       const timeline = this.initializeTimeline(incident, priority)
@@ -498,7 +500,7 @@ export class IncidentResponseManager {
 
       const responsePlan: IncidentResponsePlan = {
         incidentId: incident.id,
-        type: incident.type,
+        type: incidentType,
         severity: incident.severity,
         priority,
         responseTeam,
@@ -600,7 +602,7 @@ export class IncidentResponseManager {
       console.error('Error executing procedure:', error)
       return {
         success: false,
-        error: error.message
+        error: error instanceof Error ? error.message : String(error)
       }
     }
   }
@@ -668,7 +670,7 @@ export class IncidentResponseManager {
       }
 
       // Format message
-      const message = this.formatMessage(templateData.body, {
+      const message = this.formatMessage(templateData.body || '', {
         ...data,
         incident_id: incidentId,
         incident_type: plan.type,
@@ -691,7 +693,7 @@ export class IncidentResponseManager {
       console.error('Error sending communication:', error)
       return {
         success: false,
-        error: error.message
+        error: error instanceof Error ? error.message : String(error)
       }
     }
   }
@@ -744,7 +746,7 @@ export class IncidentResponseManager {
       console.error('Error completing response:', error)
       return {
         success: false,
-        error: error.message
+        error: error instanceof Error ? error.message : String(error)
       }
     }
   }
@@ -809,7 +811,8 @@ export class IncidentResponseManager {
       }
     }
 
-    return teams[incidentType] || teams[IncidentType.UNAUTHORIZED_ACCESS]
+    const teamsRecord = teams as Record<string, (typeof teams)[keyof typeof teams]>
+    return (teamsRecord[incidentType] ?? teamsRecord[IncidentType.UNAUTHORIZED_ACCESS])!
   }
 
   private createCommunicationPlan(

@@ -1,6 +1,11 @@
 import { create } from 'zustand'
 import { persist, subscribeWithSelector } from 'zustand/middleware'
-import { Database } from '@/types/database'
+import { executeOfflineAction, type SyncOutcome } from '@/lib/offline/sync-executor'
+import {
+  indexedDbCache,
+  requestPersistentStorage,
+  INDEXED_DB_BYTE_BUDGET
+} from '@/lib/offline/indexed-db-cache'
 
 // Types
 export interface OfflineAction {
@@ -438,7 +443,7 @@ export const useOfflineStore = create<OfflineStore>()(
                 continue
               }
 
-              set((state) => ({
+              set((_state) => ({
                 syncProgress: {
                   current: i + 1,
                   total: sortedActions.length,
@@ -446,11 +451,78 @@ export const useOfflineStore = create<OfflineStore>()(
                 }
               }))
 
-              // Simulate API call - replace with actual implementation
-              await new Promise(resolve => setTimeout(resolve, 1000))
+              // Skip actions whose dependencies haven't synced yet — they
+              // reference ids only the server can assign (e.g. a confirmation
+              // on a not-yet-created event).
+              if (action.dependencies && action.dependencies.length > 0) {
+                const allMet = action.dependencies.every(depId =>
+                  sortedActions.find(a => a.id === depId)?.synced
+                )
+                if (!allMet) {
+                  continue
+                }
+              }
 
-              // Mark as synced
-              get().markActionSynced(action.id)
+              // Actually send the action to the backend. Previously this was
+              // a `setTimeout` that marked the action synced without any
+              // network call — silently losing every offline write.
+              const outcome: SyncOutcome = await executeOfflineAction({
+                id: action.id,
+                type: action.type,
+                table: action.table,
+                data: action.data,
+                retryCount: action.retryCount,
+                maxRetries: action.maxRetries,
+                dependencies: action.dependencies
+              })
+
+              switch (outcome.status) {
+                case 'synced':
+                  get().markActionSynced(action.id)
+                  break
+
+                case 'conflict': {
+                  // Record for user resolution rather than dropping. Merge in
+                  // the remote record so the local copy isn't silently lost.
+                  get().addConflict({
+                    actionId: action.id,
+                    type: 'data_conflict',
+                    localData: action.data,
+                    remoteData: outcome.remoteData,
+                    resolution: 'manual'
+                  })
+                  get().markActionFailed(action.id, outcome.reason)
+                  break
+                }
+
+                case 'failed_permanently':
+                  // 400/401/403/404/422 — retrying won't help. Preserve the
+                  // action for the user to edit rather than deleting it.
+                  get().markActionFailed(action.id, outcome.reason)
+                  break
+
+                case 'failed_transiently': {
+                  // 429/5xx/network — honour Retry-After when provided and
+                  // back off exponentially based on retryCount.
+                  const backoff =
+                    outcome.retryAfterMs ??
+                    Math.min(1000 * Math.pow(2, action.retryCount), 60_000)
+                  if (action.retryCount + 1 >= action.maxRetries) {
+                    get().markActionFailed(action.id, outcome.reason)
+                  } else {
+                    get().updateAction(action.id, {
+                      synced: false,
+                      retryCount: action.retryCount + 1,
+                      error: outcome.reason,
+                      lastAttempt: Date.now()
+                    })
+                    // Stagger subsequent retries so a transient outage
+                    // doesn't produce a tight retry loop.
+                    await new Promise(resolve => setTimeout(resolve, backoff))
+                  }
+                  break
+                }
+              }
             }
 
             // Update queue status
@@ -487,6 +559,13 @@ export const useOfflineStore = create<OfflineStore>()(
         },
 
         // Cache management
+        //
+        // Two-tier cache: in-memory Map (synchronous reads for the TanStack
+        // query fallback path) backed by IndexedDB (durable across reloads,
+        // survives the ~5MB localStorage quota that previously truncated the
+        // entire offline cache via QuotaExceededError). Writes propagate to
+        // IndexedDB asynchronously so the UI never blocks on disk; on a miss
+        // the read falls through to IndexedDB and back-fills the Map.
         setCache: async (key, data, options = {}) => {
           const { settings } = get()
           const expiresAt = options.expiresAt || Date.now() + (settings.cacheMaxAge * 24 * 60 * 60 * 1000)
@@ -514,23 +593,71 @@ export const useOfflineStore = create<OfflineStore>()(
             return { cache: newCache }
           })
 
-          // Clean up if cache is too large
+          // Mirror to IndexedDB for durability across reloads and to escape
+          // the localStorage 5MB ceiling. Fire-and-forget — failure is
+          // non-fatal because the in-memory copy is already authoritative
+          // for the current session.
+          void indexedDbCache
+            .set(key, cacheData, { expiresAt, tags })
+            .then((stored) => {
+              if (stored) {
+                // Periodically enforce the byte budget at the IDB layer so
+                // the durable store doesn't grow without bound.
+                void indexedDbCache.evictToBudget(INDEXED_DB_BYTE_BUDGET)
+              }
+            })
+            .catch((err) => {
+              console.warn('[OfflineStore] IndexedDB mirror failed:', err)
+            })
+
+          // Clean up the in-memory tier if it is too large.
           get().optimizeStorage()
         },
 
         getCache: (key) => {
           const cache = get().cache.get(key)
-          if (!cache || cache.expiresAt < Date.now()) {
+          if (cache && cache.expiresAt >= Date.now()) {
+            // Decompress if needed
+            if (cache.data && typeof cache.data === 'object' && cache.data.compressed) {
+              return decompressData(cache.data)
+            }
+            return cache.data
+          }
+
+          if (cache && cache.expiresAt < Date.now()) {
             get().removeCache(key)
-            return null
           }
 
-          // Decompress if needed
-          if (cache.data && typeof cache.data === 'object' && cache.data.compressed) {
-            return decompressData(cache.data)
-          }
+          // Synchronous callers (TanStack queryFn fallback) cannot await
+          // IndexedDB. If the entry isn't in memory, kick off an async
+          // back-fill so the NEXT read finds it, and return null for now.
+          // This is a deliberate trade-off: durability via IDB without
+          // converting every caller to async.
+          void (async () => {
+            try {
+              const stored = await indexedDbCache.get(key)
+              if (stored && stored.expiresAt >= Date.now()) {
+                set((state) => {
+                  const newCache = new Map(state.cache)
+                  newCache.set(key, {
+                    key: stored.key,
+                    data: stored.data,
+                    timestamp: stored.timestamp,
+                    expiresAt: stored.expiresAt,
+                    size: stored.size,
+                    tags: stored.tags
+                  })
+                  return { cache: newCache }
+                })
+              } else if (stored) {
+                await indexedDbCache.delete(key)
+              }
+            } catch {
+              // ignore — best-effort back-fill
+            }
+          })()
 
-          return cache.data
+          return null
         },
 
         removeCache: (key) => {
@@ -539,6 +666,8 @@ export const useOfflineStore = create<OfflineStore>()(
             newCache.delete(key)
             return { cache: newCache }
           })
+          // Also drop from the durable tier.
+          void indexedDbCache.delete(key).catch(() => {})
         },
 
         clearCache: (tags) => {
@@ -559,6 +688,7 @@ export const useOfflineStore = create<OfflineStore>()(
 
             return { cache: newCache }
           })
+          void indexedDbCache.clear(tags).catch(() => {})
         },
 
         cleanExpiredCache: () => {
@@ -669,16 +799,17 @@ export const useOfflineStore = create<OfflineStore>()(
         },
 
         getStorageQuota: async () => {
-          if ('storage' in navigator && 'estimate' in navigator.storage) {
-            const estimate = await navigator.storage.estimate()
-            set({
-              storageQuota: {
-                used: Number(estimate.usage) || 0,
-                quota: Number(estimate.quota) || 0,
-                percentage: ((Number(estimate.usage) || 0) / (Number(estimate.quota) || 1)) * 100
-              }
-            })
-          }
+          // Use the IndexedDB cache's guarded estimate helper, which is
+          // SSR-safe and accounts for the IDB tier rather than just the
+          // localStorage quota that was previously reported.
+          const { usage, quota } = await indexedDbCache.usageEstimate()
+          set({
+            storageQuota: {
+              used: usage,
+              quota,
+              percentage: quota > 0 ? (usage / quota) * 100 : 0
+            }
+          })
         },
 
         optimizeStorage: async () => {
@@ -739,7 +870,7 @@ export const useOfflineStore = create<OfflineStore>()(
         unregisterBackgroundSync: async () => {
           if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
             try {
-              const registration = await navigator.serviceWorker.ready
+              const _registration = await navigator.serviceWorker.ready
               // Note: There's no direct way to unregister a specific sync tag
               set({ bgSyncRegistered: false })
             } catch (error) {
@@ -831,21 +962,134 @@ export const useOfflineStore = create<OfflineStore>()(
       }),
       {
         name: 'offline-storage',
-        partialize: (state) => ({
-          settings: state.settings,
-          actions: state.actions.filter(a => !a.synced), // Only persist unsynced actions
-          cache: Array.from(state.cache.entries()) // Convert Map to array for serialization
-        }),
+        // Cap the cache snapshot to a budget that fits inside the ~5MB
+        // localStorage quota. The configured cacheMaxSize (50MB) targets
+        // IndexedDB-grade storage; serializing that much into localStorage
+        // throws QuotaExceededError and corrupts the entire persisted state.
+        // We keep the highest-priority (most recently touched) entries and
+        // drop the rest rather than failing the whole write.
+        partialize: (state) => {
+          const MAX_CACHE_ENTRIES = 200
+          const entries = Array.from(state.cache.entries())
+            .sort(([, a], [, b]) => b.timestamp - a.timestamp)
+            .slice(0, MAX_CACHE_ENTRIES)
+          return {
+            settings: state.settings,
+            // Only persist unsynced actions; cap to avoid runaway growth.
+            actions: state.actions
+              .filter(a => !a.synced)
+              .slice(-500),
+            cache: entries
+          } as unknown as OfflineStore
+        },
         onRehydrateStorage: () => (state) => {
           if (state) {
             // Convert array back to Map
             state.cache = new Map(state.cache as any)
           }
-        }
+          // After the localStorage tier rehydrates, hydrate the cache Map
+          // from IndexedDB (the durable tier) and request a persistent
+          // storage grant so the browser won't evict the offline cache
+          // mid-emergency. Fire-and-forget — these must not block startup.
+          void hydrateFromIndexedDb()
+          void requestPersistentStorage()
+        },
+        // Wrap localStorage so a quota error degrades gracefully instead of
+        // throwing and aborting the persist. The in-memory store remains the
+        // source of truth; persistence is best-effort for offline resilience.
+        storage: createSafeJSONStorage() as any
       }
     )
   )
 )
+
+/**
+ * Populate the in-memory cache Map from IndexedDB on startup so reads
+ * after a reload hit memory immediately. Also evicts expired entries.
+ */
+async function hydrateFromIndexedDb(): Promise<void> {
+  try {
+    const entries = await indexedDbCache.entries()
+    const now = Date.now()
+    const store = useOfflineStore.getState()
+    const newCache = new Map(store.cache)
+    for (const entry of entries) {
+      if (entry.expiresAt < now) {
+        await indexedDbCache.delete(entry.key)
+        continue
+      }
+      newCache.set(entry.key, {
+        key: entry.key,
+        data: entry.data,
+        timestamp: entry.timestamp,
+        expiresAt: entry.expiresAt,
+        size: entry.size,
+        tags: entry.tags
+      })
+    }
+    useOfflineStore.setState({ cache: newCache })
+    store.updateMetrics()
+  } catch (err) {
+    console.warn('[OfflineStore] IndexedDB hydration failed:', err)
+  }
+}
+
+/**
+ * A Zustand-compatible storage wrapper around localStorage that swallows
+ * QuotaExceededError. When the browser is out of space (common under the
+ * configured 50MB budget vs ~5MB cap), we drop the oldest persisted
+ * actions/cache and retry once. If it still fails we give up silently —
+ * the in-memory state survives and syncs once online.
+ */
+function createSafeJSONStorage() {
+  if (typeof window === 'undefined') {
+    return {
+      getItem: () => null,
+      setItem: () => {},
+      removeItem: () => {}
+    }
+  }
+
+  const getItem = (name: string): string | null => {
+    try {
+      return window.localStorage.getItem(name)
+    } catch {
+      return null
+    }
+  }
+
+  const setItem = (name: string, value: string): void => {
+    try {
+      window.localStorage.setItem(name, value)
+    } catch (err) {
+      // Quota exhausted. Drop the named store entirely and try once more
+      // with the current payload — better to keep recent actions than to
+      // throw and leave the store in a half-persisted state.
+      if (err && (err as DOMException).name === 'QuotaExceededError') {
+        try {
+          window.localStorage.removeItem(name)
+          window.localStorage.setItem(name, value)
+        } catch {
+          // Still no room — accept that this session can't persist.
+        }
+      }
+    }
+  }
+
+  const removeItem = (name: string): void => {
+    try {
+      window.localStorage.removeItem(name)
+    } catch {
+      // ignore
+    }
+  }
+
+  return {
+    getItem: (name: string) => getItem(name),
+    setItem: (name: string, value: string) => setItem(name, value),
+    removeItem: (name: string) => removeItem(name)
+  }
+}
 
 // Selectors for common use cases
 export const useOfflineState = () => useOfflineStore(state => ({

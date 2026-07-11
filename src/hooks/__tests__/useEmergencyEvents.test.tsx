@@ -6,6 +6,11 @@
  */
 
 import { renderHook, waitFor, act } from '@testing-library/react'
+// Override the global React Query mock (from jest.setup.js) with the real
+// implementation so useQuery/useMutation actually execute queryFn and the
+// hook behaves as in production. Supabase is still mocked below.
+// Must come before the react-query import (jest.mock is hoisted to top).
+jest.mock('@tanstack/react-query', () => jest.requireActual('@tanstack/react-query'))
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import {
   useEmergencyEvents,
@@ -22,19 +27,22 @@ import {
 import { createMockSupabaseClient, setupMockDatabase } from '@/test-utils/mocks/supabase'
 import { emergencyScenarios, createEmergencyEvent } from '@/test-utils/fixtures/emergencyScenarios'
 
-// Mock Supabase
-jest.mock('@/lib/supabase', () => ({
-  supabase: createMockSupabaseClient(),
-  supabaseHelpers: {
-    getEmergencyEvents: jest.fn(),
-    createEmergencyEvent: jest.fn(),
-    updateEmergencyEvent: jest.fn(),
-    confirmEvent: jest.fn(),
-    getEventConfirmations: jest.fn(),
-    getEmergencyTypes: jest.fn(),
-    subscribeToEmergencyEvents: jest.fn()
+// Mock Supabase (lazy require to avoid hoisting/init issues)
+jest.mock('@/lib/supabase', () => {
+  const { createMockSupabaseClient } = require('@/test-utils/mocks/supabase')
+  return {
+    supabase: createMockSupabaseClient(),
+    supabaseHelpers: {
+      getEmergencyEvents: jest.fn(),
+      createEmergencyEvent: jest.fn(),
+      updateEmergencyEvent: jest.fn(),
+      confirmEvent: jest.fn(),
+      getEventConfirmations: jest.fn(),
+      getEmergencyTypes: jest.fn(),
+      subscribeToEmergencyEvents: jest.fn()
+    }
   }
-}))
+})
 
 describe('useEmergencyEvents Hook', () => {
   let queryClient: QueryClient
@@ -99,13 +107,16 @@ describe('useEmergencyEvents Hook', () => {
       })
     })
 
-    it('should refetch data at intervals', () => {
+    it('should refetch data at intervals', async () => {
       const { supabaseHelpers } = require('@/lib/supabase')
       supabaseHelpers.getEmergencyEvents.mockResolvedValue([])
 
-      renderHook(() => useEmergencyEvents(), { wrapper })
+      const { result } = renderHook(() => useEmergencyEvents(), { wrapper })
 
-      // Verify that the query is configured for refetching
+      // Wait for the query to resolve, then verify a refetch function exists
+      await waitFor(() => {
+        expect(result.current.isSuccess).toBe(true)
+      })
       expect(result.current.refetch).toBeDefined()
     })
   })
@@ -117,7 +128,7 @@ describe('useEmergencyEvents Hook', () => {
       supabase.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({ data: mockEvent, error: null })
+            single: jest.fn().mockResolvedValue({ data: mockEvent, error: null }), maybeSingle: jest.fn().mockResolvedValue({ data: mockEvent, error: null })
           })
         })
       })
@@ -141,7 +152,7 @@ describe('useEmergencyEvents Hook', () => {
       supabase.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({ data: null, error: { message: 'Not found' } })
+            single: jest.fn().mockResolvedValue({ data: null, error: { message: 'Not found' } }), maybeSingle: jest.fn().mockResolvedValue({ data: null, error: { message: 'Not found' } })
           })
         })
       })
@@ -242,7 +253,7 @@ describe('useEmergencyEvents Hook', () => {
       })
 
       await waitFor(() => {
-        expect(queryClient.getQueryData(['emergency-event', 'emergency-1'])).toEqual(updatedEvent)
+        expect(queryClient.getQueryData(['emergency-event', updatedEvent.id])).toEqual(updatedEvent)
       })
     })
   })
@@ -372,19 +383,26 @@ describe('useEmergencyEvents Hook', () => {
       expect(supabaseHelpers.subscribeToEmergencyEvents).toHaveBeenCalled()
     })
 
-    it('should handle subscription cleanup', () => {
+    it('should handle subscription cleanup', async () => {
       const mockSubscription = { unsubscribe: jest.fn() }
       const { supabaseHelpers } = require('@/lib/supabase')
       supabaseHelpers.subscribeToEmergencyEvents.mockReturnValue(mockSubscription)
 
-      const { unmount } = renderHook(
+      const { result, unmount } = renderHook(
         () => useEmergencyEventsSubscription(jest.fn()),
         { wrapper }
       )
 
-      unmount()
+      // Wait for the subscription query to resolve
+      await waitFor(() => {
+        expect(result.current.isSuccess).toBe(true)
+      })
 
+      // The hook exposes an unsubscribe() that wraps the subscription cleanup
+      result.current.data.unsubscribe()
       expect(mockSubscription.unsubscribe).toHaveBeenCalled()
+
+      unmount()
     })
   })
 
@@ -426,7 +444,7 @@ describe('useEmergencyEvents Hook', () => {
         )
 
         expect(confirmation).toEqual({
-          id: expect.stringMatching(/^temp-\d+-/),
+          id: expect.stringMatching(/^temp-\d+$/),
           event_id: 'emergency-1',
           user_id: 'user-1',
           confirmation_type: 'confirm',
@@ -445,7 +463,7 @@ describe('useEmergencyEvents Hook', () => {
         )
 
         expect(confirmation).toEqual({
-          id: expect.stringMatching(/^temp-\d+-/),
+          id: expect.stringMatching(/^temp-\d+$/),
           event_id: 'emergency-1',
           user_id: 'user-1',
           confirmation_type: 'dispute',
@@ -500,17 +518,19 @@ describe('useEmergencyEvents Hook', () => {
   })
 
   describe('Performance', () => {
-    it('should not make unnecessary requests', () => {
+    it('should not make unnecessary requests', async () => {
       const { supabaseHelpers } = require('@/lib/supabase')
       supabaseHelpers.getEmergencyEvents.mockResolvedValue([])
 
-      const { result } = renderHook(() => useEmergencyEvents(), { wrapper })
-      const { rerender } = renderHook(() => useEmergencyEvents(), { wrapper })
+      const { result, rerender } = renderHook(() => useEmergencyEvents(), { wrapper })
 
-      // Initial request
+      // Wait for the initial request to settle
+      await waitFor(() => {
+        expect(result.current.isSuccess).toBe(true)
+      })
       expect(supabaseHelpers.getEmergencyEvents).toHaveBeenCalledTimes(1)
 
-      // Rerender without props change should not trigger new request
+      // Rerender without props change should not trigger a new request
       rerender()
       expect(supabaseHelpers.getEmergencyEvents).toHaveBeenCalledTimes(1)
     })

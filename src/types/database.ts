@@ -146,6 +146,13 @@ export interface Database {
           active_session_start: string | null
           notification_preferences: Json
           privacy_settings: Json
+          display_name: string | null
+          avatar_url: string | null
+          role: Database['public']['Enums']['user_role']
+          permissions: string[]
+          onboarding_completed: boolean
+          skills: Json
+          emergency_contacts: Json
           created_at: string
           updated_at: string
         }
@@ -156,6 +163,13 @@ export interface Database {
           active_session_start?: string | null
           notification_preferences?: Json
           privacy_settings?: Json
+          display_name?: string | null
+          avatar_url?: string | null
+          role?: Database['public']['Enums']['user_role']
+          permissions?: string[]
+          onboarding_completed?: boolean
+          skills?: Json
+          emergency_contacts?: Json
           created_at?: string
           updated_at?: string
         }
@@ -166,7 +180,43 @@ export interface Database {
           active_session_start?: string | null
           notification_preferences?: Json
           privacy_settings?: Json
+          display_name?: string | null
+          avatar_url?: string | null
+          role?: Database['public']['Enums']['user_role']
+          permissions?: string[]
+          onboarding_completed?: boolean
+          skills?: Json
+          emergency_contacts?: Json
           created_at?: string
+          updated_at?: string
+        }
+      }
+      trust_score_cache: {
+        Row: {
+          user_id: string
+          overall_score: number
+          factors: Json
+          reputation: Json
+          confidence: number
+          history: Json
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          overall_score?: number
+          factors?: Json
+          reputation?: Json
+          confidence?: number
+          history?: Json
+          updated_at?: string
+        }
+        Update: {
+          user_id?: string
+          overall_score?: number
+          factors?: Json
+          reputation?: Json
+          confidence?: number
+          history?: Json
           updated_at?: string
         }
       }
@@ -516,6 +566,7 @@ export interface Database {
       notification_queue_status: 'pending' | 'sent' | 'failed' | 'cancelled'
       notification_queue_notification_type: 'new_event' | 'update' | 'resolution'
       user_trust_history_action_type: 'report' | 'confirm' | 'dispute'
+      user_role: 'citizen' | 'responder' | 'coordinator' | 'moderator' | 'admin'
     }
     CompositeTypes: {
       [_ in never]: never

@@ -60,16 +60,13 @@ export const useTrustSystem = (userId?: string) => {
   const thresholds = useTrustThresholds()
   const trustActions = useTrustActions()
 
-  // Check user permissions
-  const userPermissions = {
-    canReport: currentUserScore !== null && currentUserScore.score >= thresholds.reporting,
-    canConfirm: currentUserScore !== null && currentUserScore.score >= thresholds.confirming,
-    canDispute: currentUserScore !== null && currentUserScore.score >= thresholds.disputing,
-    isHighTrust: currentUserScore !== null && currentUserScore.score >= thresholds.highTrust,
-    isLowTrust: currentUserScore !== null && currentUserScore.score <= thresholds.lowTrust
-  }
+  // Check user permissions — will be computed after trustCalculation is
+  // available (moved below the useQuery calls to avoid temporal dead zone).
+  // Placeholder; the real computation happens after the queries.
 
-  // Query for trust score calculation
+  // Query for trust score calculation. Reads from the trust_score_cache table
+  // (written by the server-side TrustScoreManager) — previously targeted
+  // non-existent `trust_scores` / `trust_score_factors` tables.
   const { data: trustCalculation, isLoading: isCalculating } = useQuery({
     queryKey: ['trust-calculation', userId],
     queryFn: async () => {
@@ -78,13 +75,10 @@ export const useTrustSystem = (userId?: string) => {
       }
 
       const { data, error } = await supabase
-        .from('trust_scores')
-        .select(`
-          *,
-          trust_score_factors (*)
-        `)
+        .from('trust_score_cache')
+        .select('*')
         .eq('user_id', userId)
-        .single()
+        .maybeSingle()
 
       if (error) {
         throw error
@@ -95,17 +89,18 @@ export const useTrustSystem = (userId?: string) => {
 
       return {
         userId: data.user_id,
-        score: data.overall_score,
-        confidence: calculateConfidence(data),
-        factors: data.trust_score_factors,
-        lastUpdated: data.last_updated
+        score: typeof data.overall_score === 'number' ? data.overall_score : Number(data.overall_score) || 0,
+        confidence: data.confidence ?? calculateConfidence(data),
+        factors: data.factors,
+        lastUpdated: data.updated_at
       }
     },
     enabled: !!userId,
     staleTime: 5 * 60 * 1000 // 5 minutes
   })
 
-  // Query for trust history
+  // Query for trust history. user_trust_history is the real table name in the
+  // schema (was previously querying the non-existent trust_score_history).
   const { data: trustHistory, isLoading: isLoadingHistory } = useQuery({
     queryKey: ['trust-history', userId],
     queryFn: async () => {
@@ -114,7 +109,7 @@ export const useTrustSystem = (userId?: string) => {
       }
 
       const { data, error } = await supabase
-        .from('trust_score_history')
+        .from('user_trust_history')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
@@ -123,7 +118,15 @@ export const useTrustSystem = (userId?: string) => {
       if (error) {
         throw error
       }
-      return data || []
+      // Map snake_case DB columns to the camelCase shape consumers expect.
+      return (data || []).map((row: any) => ({
+        ...row,
+        actionType: row.action_type ?? row.actionType,
+        trustChange: row.trust_change ?? row.trustChange,
+        previousScore: row.previous_score ?? row.previousScore,
+        newScore: row.new_score ?? row.newScore,
+        createdAt: row.created_at ?? row.createdAt
+      }))
     },
     enabled: !!userId,
     staleTime: 10 * 60 * 1000 // 10 minutes
@@ -165,6 +168,18 @@ export const useTrustSystem = (userId?: string) => {
     enabled: !!userId,
     staleTime: 2 * 60 * 1000 // 2 minutes
   })
+
+  // Check user permissions — computed here (after trustCalculation is defined)
+  // to avoid temporal dead zone. Falls back to trustCalculation.score when the
+  // store's currentUserScore isn't populated.
+  const effectiveScore = currentUserScore?.score ?? trustCalculation?.score ?? null
+  const userPermissions = {
+    canReport: effectiveScore !== null && effectiveScore >= thresholds.reporting,
+    canConfirm: effectiveScore !== null && effectiveScore >= thresholds.confirming,
+    canDispute: effectiveScore !== null && effectiveScore >= thresholds.disputing,
+    isHighTrust: effectiveScore !== null && effectiveScore >= thresholds.highTrust,
+    isLowTrust: effectiveScore !== null && effectiveScore <= thresholds.lowTrust
+  }
 
   // Mutation for updating trust score
   const updateTrustMutation = useMutation({
@@ -257,13 +272,13 @@ export const useTrustSystem = (userId?: string) => {
 
   // Helper function to get trust level
   const getTrustLevel = (score: number): 'very-low' | 'low' | 'medium' | 'high' | 'very-high' => {
-    if (score < 0.2) {
+    if (score < 0.1) {
       return 'very-low'
     }
-    if (score < 0.4) {
+    if (score < 0.3) {
       return 'low'
     }
-    if (score < 0.6) {
+    if (score < 0.5) {
       return 'medium'
     }
     if (score < 0.8) {
@@ -271,6 +286,14 @@ export const useTrustSystem = (userId?: string) => {
     }
     return 'very-high'
   }
+
+  // Computed trust level and trend derived from the current score/history so
+  // consumers can read them as values rather than calling helper functions.
+  const currentScoreValue = currentUserScore?.score ?? trustCalculation?.score ?? 0
+  const trustLevel = getTrustLevel(currentScoreValue)
+  const trustTrend = Array.isArray(trustHistory)
+    ? getTrustTrend(trustHistory as TrustHistoryEntry[])
+    : 'stable'
 
   return {
     // Current user state
@@ -280,6 +303,10 @@ export const useTrustSystem = (userId?: string) => {
     trustHistory,
     consensusParticipation,
 
+    // Computed classification
+    trustLevel,
+    trustTrend,
+
     // Loading states
     isCalculating,
     isLoadingHistory,
@@ -288,6 +315,8 @@ export const useTrustSystem = (userId?: string) => {
     // Mutations
     updateTrustMutation,
     recalculateTrustMutation,
+    // Alias matching the action name used by callers/tests
+    recalculateTrust: () => recalculateTrustMutation.mutateAsync(userId as string),
 
     // Helper functions
     calculateConfidence,

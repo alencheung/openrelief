@@ -62,7 +62,15 @@ export const useEmergencyEvents = (filters?: {
       }
     },
     staleTime: 30 * 1000, // 30 seconds
-    refetchInterval: 60 * 1000, // 1 minute
+    // When realtime is feeding us updates, polling is redundant — the
+    // realtime handler calls invalidateQueries on every change. Keeping a
+    // 60s poll on top of realtime produced ~3.4K sustained RPS at 100K
+    // users. When realtime is connected we disable polling entirely; when
+    // it drops we fall back to the 60s interval as a safety net.
+    refetchInterval: () => {
+      const realtimeActive = useEmergencyStore.getState().isRealtimeEnabled
+      return realtimeActive ? false : 60 * 1000
+    },
     retry: (failureCount, error) => {
       // Don't retry on 4xx errors
       if (error && typeof error === 'object' && 'status' in error) {
@@ -250,11 +258,49 @@ export const useCreateEmergencyEvent = () => {
           return optimisticEvent
         }
 
-        // Create on server
-        const data: any = await supabaseHelpers.createEmergencyEvent(event)
+        // Create on server via the secured API route (not a direct Supabase
+        // insert). The API route enforces auth/trust, prevents reporter
+        // impersonation (reporter_id is derived from the session), runs Sybil
+        // checks, initialises consensus, and updates the reporter's trust score
+        // server-side. The location on the wire is an object {latitude,
+        // longitude} as the API expects; the client form holds it as a
+        // "lat lng" string, so normalise it here.
+        const locationParts = typeof event.location === 'string'
+          ? event.location.trim().split(/\s+/)
+          : null
+        const payload: Record<string, unknown> = {
+          type_id: event.type_id,
+          title: event.title,
+          description: event.description,
+          severity: event.severity,
+          metadata: event.metadata,
+          location: locationParts && locationParts.length >= 2
+            ? {
+                latitude: parseFloat(locationParts[0] ?? '0'),
+                longitude: parseFloat(locationParts[1] ?? '0')
+              }
+            : (event.location as unknown as { latitude: number; longitude: number })
+        }
+
+        const response = await fetch('/api/emergency', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+
+        if (!response.ok) {
+          const errBody = await response.json().catch(() => ({}))
+          throw new Error(
+            (errBody && (errBody as any).error) ||
+              `Failed to create emergency event (${response.status})`
+          )
+        }
+
+        const data: any = await response.json()
+        const created = data.data ?? data
 
         // Update trust score
-        await updateTrustForAction(userId, data.id, 'report', 'pending', {
+        await updateTrustForAction(userId, created.id, 'report', 'pending', {
           severity: event.severity,
           type: event.type_id
         })
@@ -542,7 +588,10 @@ export const useNearbyEmergencyEvents = (
     },
     enabled: !!(center.lat && center.lng),
     staleTime: 30 * 1000, // 30 seconds
-    refetchInterval: 60 * 1000 // 1 minute
+    // Suppress redundant polling when realtime is healthy (see
+    // useEmergencyEvents for rationale). Realtime handler invalidates this
+    // query on change; polling stays as a fallback when realtime drops.
+    refetchInterval: () => (useEmergencyStore.getState().isRealtimeEnabled ? false : 60 * 1000)
   })
 }
 

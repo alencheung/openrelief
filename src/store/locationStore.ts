@@ -284,7 +284,7 @@ export const useLocationStore = create<LocationStore>()(
                 get().setPermission(permission)
                 resolve(permission)
               },
-              (error) => {
+              (_error) => {
                 const permission: LocationPermission = {
                   granted: false,
                   accuracy: 'denied',
@@ -515,7 +515,7 @@ export const useLocationStore = create<LocationStore>()(
         },
 
         checkGeofences: (location) => {
-          const { geofences, activeGeofences, geofenceHistory } = get()
+          const { geofences, activeGeofences, geofenceHistory: _geofenceHistory } = get()
 
           geofences.forEach(geofence => {
             if (!geofence.isActive) {

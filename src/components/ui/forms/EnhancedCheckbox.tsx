@@ -138,6 +138,9 @@ const EnhancedCheckbox = React.forwardRef<HTMLInputElement, EnhancedCheckboxProp
             <input
               type="checkbox"
               id={inputId}
+              data-indeterminate={indeterminate ? 'true' : 'false'}
+              aria-label={label}
+              aria-required={required}
               className={cn(
                 enhancedCheckboxVariants({ variant: currentVariant, size }),
                 'sr-only',

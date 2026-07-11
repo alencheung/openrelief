@@ -31,7 +31,44 @@ jobs:
         run: npm run type-check
 
       - name: Test
-        run: npm test
+        run: npm run test:coverage
+
+      - name: Upload coverage to Codecov
+        if: env.CODECOV_TOKEN != ''
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage/lcov.info
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit (production deps)
+        run: npm audit --omit=dev --audit-level=high
+        continue-on-error: true
+
+      - name: Check for committed secrets
+        run: |
+          if git ls-files | grep -E '^\.env' | grep -v '.env.example'; then
+            echo "ERROR: Environment file with potential secrets is tracked in git"
+            git ls-files | grep -E '^\.env' | grep -v '.env.example'
+            exit 1
+          fi
 
   build:
     name: Build

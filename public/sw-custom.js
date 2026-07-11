@@ -32,7 +32,7 @@ const MAX_CACHE_AGE = {
 }
 
 const SYNC_TAGS = {
-  emergency: 'emergency-sync',
+  emergency: 'emergency-offline-sync',
   location: 'location-sync',
   alerts: 'alerts-sync'
 }

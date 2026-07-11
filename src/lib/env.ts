@@ -68,6 +68,30 @@ const ENV_CONFIG: EnvConfig[] = [
     sensitive: true
   },
 
+  // Optional - Web Push (RFC 8291/8292). Required for server-side push
+  // delivery. The public key is also exposed to the browser for subscription.
+  {
+    name: 'NEXT_PUBLIC_VAPID_PUBLIC_KEY',
+    required: false
+  },
+  {
+    name: 'VAPID_PRIVATE_KEY',
+    required: false,
+    sensitive: true
+  },
+  {
+    name: 'VAPID_SUBJECT',
+    required: false,
+    defaultValue: 'mailto:noreply@openrelief.org'
+  },
+
+  // Optional - Map tiles (MapTiler). Without a key the map falls back to a
+  // placeholder that will 403; set this for production.
+  {
+    name: 'NEXT_PUBLIC_MAPTILER_API_KEY',
+    required: false
+  },
+
   // Optional - App Config
   {
     name: 'NEXT_PUBLIC_APP_URL',

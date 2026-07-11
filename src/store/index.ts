@@ -5,7 +5,7 @@ import {
   useEmergencyEvents,
   useEmergencyFilters,
   useEmergencyMap,
-  useOfflineActions as useEmergencyOfflineActions,
+  useOfflineActions as _useEmergencyOfflineActions,
   useEmergencyActions
 } from './emergencyStore'
 import {
@@ -217,7 +217,7 @@ export const checkStoreHealth = () => {
 
 // Store reset utility
 export const resetAllStores = () => {
-  ;(useAuthStore.getState() as any).reset()
+  (useAuthStore.getState() as any).reset()
   useEmergencyStore.getState().reset()
   useTrustStore.getState().reset()
   useLocationStore.getState().reset()

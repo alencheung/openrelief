@@ -76,20 +76,6 @@ module.exports = {
   coverageDirectory: 'coverage',
   // Generate coverage reports for all files, even those not tested
   coverageReportAllFiles: true,
-  // Only collect coverage for files that have tests
-  collectCoverageOnlyFrom: {
-    // Emergency System
-    './src/store/emergencyStore.ts': true,
-    './src/hooks/useEmergencyEvents.ts': true,
-    './src/app/api/emergency/route.ts': true,
-    
-    // Trust System
-    './src/store/trustStore.ts': true,
-    './src/hooks/useTrustSystem.ts': true,
-    
-    // Database Operations
-    './src/lib/supabase.ts': true,
-  },
   // Setup files for coverage
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   // Transform patterns
@@ -97,10 +83,6 @@ module.exports = {
     '^.+\\.(ts|tsx)$': ['ts-jest', {
       tsconfig: 'tsconfig.json',
     }],
-  },
-  // Module name mapping
-  moduleNameMapping: {
-    '^@/(.*)$': '<rootDir>/src/$1',
   },
   // Test environment
   testEnvironment: 'jsdom',

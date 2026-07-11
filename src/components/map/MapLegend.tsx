@@ -313,7 +313,7 @@ const MapLegend: React.FC<MapLegendProps> = ({
               title="Severity Levels"
               icon={<Icon name="info" size="xs" />}
               collapsible
-              initiallyCollapsed={true}
+              initiallyCollapsed={false}
             >
               <div className="space-y-2">
                 {severityLevels.map(severity => (
@@ -411,3 +411,4 @@ const MapLegend: React.FC<MapLegendProps> = ({
 MapLegend.displayName = 'MapLegend'
 
 export { MapLegend, mapLegendVariants }
+export default MapLegend

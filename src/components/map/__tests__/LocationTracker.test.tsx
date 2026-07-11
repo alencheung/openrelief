@@ -6,31 +6,31 @@ import LocationTracker from '../LocationTracker'
 import { createTestUtils, createMockLocation, createMockEmergencyEvent } from '@/test-utils'
 
 // Mock store hooks
-vi.mock('@/store', () => ({
-  useLocationStore: vi.fn(() => ({
+jest.mock('@/store', () => ({
+  useLocationStore: jest.fn(() => ({
     currentLocation: createMockLocation({ lat: 40.7128, lng: -74.006 }),
-    setCurrentLocation: vi.fn(),
-    startTracking: vi.fn(),
-    stopTracking: vi.fn(),
-    requestLocationPermission: vi.fn(() => Promise.resolve({ granted: true })),
+    setCurrentLocation: jest.fn(),
+    startTracking: jest.fn(),
+    stopTracking: jest.fn(),
+    requestLocationPermission: jest.fn(() => Promise.resolve({ granted: true })),
     locationPermission: { granted: true },
     isTracking: false,
     geofences: [],
     proximityAlerts: [],
-    addGeofence: vi.fn(),
-    checkGeofences: vi.fn(),
-    addProximityAlert: vi.fn()
+    addGeofence: jest.fn(),
+    checkGeofences: jest.fn(),
+    addProximityAlert: jest.fn()
   })),
-  useEmergencyStore: vi.fn(() => ({
+  useEmergencyStore: jest.fn(() => ({
     events: [],
     filteredEvents: []
   }))
 }))
 
 // Mock privacy hook
-vi.mock('@/hooks/usePrivacy', () => ({
-  usePrivacy: vi.fn(() => ({
-    protectLocationData: vi.fn((data, options) => ({
+jest.mock('@/hooks/usePrivacy', () => ({
+  usePrivacy: jest.fn(() => ({
+    protectLocationData: jest.fn((data, options) => ({
       data: options?.applyAnonymization ? { lat: 40.7, lng: -74.0 } : data,
       isAnonymized: options?.applyAnonymization || false,
       hasDifferentialPrivacy: options?.applyDifferentialPrivacy || false,
@@ -44,15 +44,15 @@ vi.mock('@/hooks/usePrivacy', () => ({
         locationSharing: true
       }
     },
-    assessPrivacyImpact: vi.fn()
+    assessPrivacyImpact: jest.fn()
   }))
 }))
 
 // Mock navigator geolocation
 const mockGeolocation = {
-  getCurrentPosition: vi.fn(),
-  watchPosition: vi.fn(),
-  clearWatch: vi.fn()
+  getCurrentPosition: jest.fn(),
+  watchPosition: jest.fn(),
+  clearWatch: jest.fn()
 }
 
 Object.defineProperty(global.navigator, 'geolocation', {
@@ -64,7 +64,7 @@ Object.defineProperty(global.navigator, 'geolocation', {
 Object.defineProperty(navigator, 'permissions', {
   writable: true,
   value: {
-    query: vi.fn(() => Promise.resolve({ state: 'granted' }))
+    query: jest.fn(() => Promise.resolve({ state: 'granted' }))
   }
 })
 
@@ -98,17 +98,17 @@ describe('LocationTracker', () => {
 
     vi.mocked(require('@/store').useLocationStore).mockReturnValue({
       currentLocation: mockLocation,
-      setCurrentLocation: vi.fn(),
-      startTracking: vi.fn(),
-      stopTracking: vi.fn(),
-      requestLocationPermission: vi.fn(() => Promise.resolve({ granted: true })),
+      setCurrentLocation: jest.fn(),
+      startTracking: jest.fn(),
+      stopTracking: jest.fn(),
+      requestLocationPermission: jest.fn(() => Promise.resolve({ granted: true })),
       locationPermission: { granted: true },
       isTracking: false,
       geofences: [],
       proximityAlerts: [],
-      addGeofence: vi.fn(),
-      checkGeofences: vi.fn(),
-      addProximityAlert: vi.fn()
+      addGeofence: jest.fn(),
+      checkGeofences: jest.fn(),
+      addProximityAlert: jest.fn()
     })
 
     renderWithProviders(<LocationTracker {...defaultProps} />)
@@ -120,17 +120,17 @@ describe('LocationTracker', () => {
   it('shows tracking status when active', () => {
     vi.mocked(require('@/store').useLocationStore).mockReturnValue({
       currentLocation: createMockLocation({ lat: 40.7128, lng: -74.006 }),
-      setCurrentLocation: vi.fn(),
-      startTracking: vi.fn(),
-      stopTracking: vi.fn(),
-      requestLocationPermission: vi.fn(() => Promise.resolve({ granted: true })),
+      setCurrentLocation: jest.fn(),
+      startTracking: jest.fn(),
+      stopTracking: jest.fn(),
+      requestLocationPermission: jest.fn(() => Promise.resolve({ granted: true })),
       locationPermission: { granted: true },
       isTracking: true,
       geofences: [],
       proximityAlerts: [],
-      addGeofence: vi.fn(),
-      checkGeofences: vi.fn(),
-      addProximityAlert: vi.fn()
+      addGeofence: jest.fn(),
+      checkGeofences: jest.fn(),
+      addProximityAlert: jest.fn()
     })
 
     renderWithProviders(<LocationTracker {...defaultProps} />)
@@ -151,22 +151,22 @@ describe('LocationTracker', () => {
 
   it('starts tracking when start button is clicked', async () => {
     const user = userEvent.setup()
-    const startTracking = vi.fn()
-    const requestLocationPermission = vi.fn(() => Promise.resolve({ granted: true }))
+    const startTracking = jest.fn()
+    const requestLocationPermission = jest.fn(() => Promise.resolve({ granted: true }))
 
     vi.mocked(require('@/store').useLocationStore).mockReturnValue({
       currentLocation: createMockLocation({ lat: 40.7128, lng: -74.006 }),
-      setCurrentLocation: vi.fn(),
+      setCurrentLocation: jest.fn(),
       startTracking,
-      stopTracking: vi.fn(),
+      stopTracking: jest.fn(),
       requestLocationPermission,
       locationPermission: { granted: true },
       isTracking: false,
       geofences: [],
       proximityAlerts: [],
-      addGeofence: vi.fn(),
-      checkGeofences: vi.fn(),
-      addProximityAlert: vi.fn()
+      addGeofence: jest.fn(),
+      checkGeofences: jest.fn(),
+      addProximityAlert: jest.fn()
     })
 
     // Mock successful geolocation
@@ -193,21 +193,21 @@ describe('LocationTracker', () => {
 
   it('stops tracking when stop button is clicked', async () => {
     const user = userEvent.setup()
-    const stopTracking = vi.fn()
+    const stopTracking = jest.fn()
 
     vi.mocked(require('@/store').useLocationStore).mockReturnValue({
       currentLocation: createMockLocation({ lat: 40.7128, lng: -74.006 }),
-      setCurrentLocation: vi.fn(),
-      startTracking: vi.fn(),
+      setCurrentLocation: jest.fn(),
+      startTracking: jest.fn(),
       stopTracking,
-      requestLocationPermission: vi.fn(() => Promise.resolve({ granted: true })),
+      requestLocationPermission: jest.fn(() => Promise.resolve({ granted: true })),
       locationPermission: { granted: true },
       isTracking: true,
       geofences: [],
       proximityAlerts: [],
-      addGeofence: vi.fn(),
-      checkGeofences: vi.fn(),
-      addProximityAlert: vi.fn()
+      addGeofence: jest.fn(),
+      checkGeofences: jest.fn(),
+      addProximityAlert: jest.fn()
     })
 
     renderWithProviders(<LocationTracker {...defaultProps} />)
@@ -246,17 +246,17 @@ describe('LocationTracker', () => {
 
     vi.mocked(require('@/store').useLocationStore).mockReturnValue({
       currentLocation: mockLocation,
-      setCurrentLocation: vi.fn(),
-      startTracking: vi.fn(),
-      stopTracking: vi.fn(),
-      requestLocationPermission: vi.fn(() => Promise.resolve({ granted: true })),
+      setCurrentLocation: jest.fn(),
+      startTracking: jest.fn(),
+      stopTracking: jest.fn(),
+      requestLocationPermission: jest.fn(() => Promise.resolve({ granted: true })),
       locationPermission: { granted: true },
       isTracking: false,
       geofences: [],
       proximityAlerts: [],
-      addGeofence: vi.fn(),
-      checkGeofences: vi.fn(),
-      addProximityAlert: vi.fn()
+      addGeofence: jest.fn(),
+      checkGeofences: jest.fn(),
+      addProximityAlert: jest.fn()
     })
 
     renderWithProviders(<LocationTracker {...defaultProps} showAccuracy={true} />)
@@ -271,17 +271,17 @@ describe('LocationTracker', () => {
 
     vi.mocked(require('@/store').useLocationStore).mockReturnValue({
       currentLocation: mockLocation,
-      setCurrentLocation: vi.fn(),
-      startTracking: vi.fn(),
-      stopTracking: vi.fn(),
-      requestLocationPermission: vi.fn(() => Promise.resolve({ granted: true })),
+      setCurrentLocation: jest.fn(),
+      startTracking: jest.fn(),
+      stopTracking: jest.fn(),
+      requestLocationPermission: jest.fn(() => Promise.resolve({ granted: true })),
       locationPermission: { granted: true },
       isTracking: false,
       geofences: [],
       proximityAlerts: [],
-      addGeofence: vi.fn(),
-      checkGeofences: vi.fn(),
-      addProximityAlert: vi.fn()
+      addGeofence: jest.fn(),
+      checkGeofences: jest.fn(),
+      addProximityAlert: jest.fn()
     })
 
     renderWithProviders(<LocationTracker {...defaultProps} />)
@@ -295,17 +295,17 @@ describe('LocationTracker', () => {
 
     vi.mocked(require('@/store').useLocationStore).mockReturnValue({
       currentLocation: mockLocation,
-      setCurrentLocation: vi.fn(),
-      startTracking: vi.fn(),
-      stopTracking: vi.fn(),
-      requestLocationPermission: vi.fn(() => Promise.resolve({ granted: true })),
+      setCurrentLocation: jest.fn(),
+      startTracking: jest.fn(),
+      stopTracking: jest.fn(),
+      requestLocationPermission: jest.fn(() => Promise.resolve({ granted: true })),
       locationPermission: { granted: true },
       isTracking: false,
       geofences: [],
       proximityAlerts: [],
-      addGeofence: vi.fn(),
-      checkGeofences: vi.fn(),
-      addProximityAlert: vi.fn()
+      addGeofence: jest.fn(),
+      checkGeofences: jest.fn(),
+      addProximityAlert: jest.fn()
     })
 
     renderWithProviders(<LocationTracker {...defaultProps} />)
@@ -316,21 +316,21 @@ describe('LocationTracker', () => {
 
   it('shows location error when permission denied', async () => {
     const user = userEvent.setup()
-    const requestLocationPermission = vi.fn(() => Promise.resolve({ granted: false }))
+    const requestLocationPermission = jest.fn(() => Promise.resolve({ granted: false }))
 
     vi.mocked(require('@/store').useLocationStore).mockReturnValue({
       currentLocation: null,
-      setCurrentLocation: vi.fn(),
-      startTracking: vi.fn(),
-      stopTracking: vi.fn(),
+      setCurrentLocation: jest.fn(),
+      startTracking: jest.fn(),
+      stopTracking: jest.fn(),
       requestLocationPermission,
       locationPermission: { granted: false },
       isTracking: false,
       geofences: [],
       proximityAlerts: [],
-      addGeofence: vi.fn(),
-      checkGeofences: vi.fn(),
-      addProximityAlert: vi.fn()
+      addGeofence: jest.fn(),
+      checkGeofences: jest.fn(),
+      addProximityAlert: jest.fn()
     })
 
     renderWithProviders(<LocationTracker {...defaultProps} />)
@@ -359,17 +359,17 @@ describe('LocationTracker', () => {
 
     vi.mocked(require('@/store').useLocationStore).mockReturnValue({
       currentLocation: createMockLocation({ lat: 40.7128, lng: -74.006 }),
-      setCurrentLocation: vi.fn(),
-      startTracking: vi.fn(),
-      stopTracking: vi.fn(),
-      requestLocationPermission: vi.fn(() => Promise.resolve({ granted: true })),
+      setCurrentLocation: jest.fn(),
+      startTracking: jest.fn(),
+      stopTracking: jest.fn(),
+      requestLocationPermission: jest.fn(() => Promise.resolve({ granted: true })),
       locationPermission: { granted: true },
       isTracking: false,
       geofences: [],
       proximityAlerts: mockProximityAlerts,
-      addGeofence: vi.fn(),
-      checkGeofences: vi.fn(),
-      addProximityAlert: vi.fn()
+      addGeofence: jest.fn(),
+      checkGeofences: jest.fn(),
+      addProximityAlert: jest.fn()
     })
 
     renderWithProviders(<LocationTracker {...defaultProps} />)
@@ -397,17 +397,17 @@ describe('LocationTracker', () => {
 
     vi.mocked(require('@/store').useLocationStore).mockReturnValue({
       currentLocation: createMockLocation({ lat: 40.7128, lng: -74.006 }),
-      setCurrentLocation: vi.fn(),
-      startTracking: vi.fn(),
-      stopTracking: vi.fn(),
-      requestLocationPermission: vi.fn(() => Promise.resolve({ granted: true })),
+      setCurrentLocation: jest.fn(),
+      startTracking: jest.fn(),
+      stopTracking: jest.fn(),
+      requestLocationPermission: jest.fn(() => Promise.resolve({ granted: true })),
       locationPermission: { granted: true },
       isTracking: false,
       geofences: mockGeofences,
       proximityAlerts: [],
-      addGeofence: vi.fn(),
-      checkGeofences: vi.fn(),
-      addProximityAlert: vi.fn()
+      addGeofence: jest.fn(),
+      checkGeofences: jest.fn(),
+      addProximityAlert: jest.fn()
     })
 
     renderWithProviders(<LocationTracker {...defaultProps} />)
@@ -430,7 +430,7 @@ describe('LocationTracker', () => {
 
   it('shows privacy indicators when anonymized', () => {
     vi.mocked(require('@/hooks/usePrivacy').usePrivacy).mockReturnValue({
-      protectLocationData: vi.fn((data, options) => ({
+      protectLocationData: jest.fn((data, options) => ({
         data: options?.applyAnonymization ? { lat: 40.7, lng: -74.0 } : data,
         isAnonymized: options?.applyAnonymization || false,
         hasDifferentialPrivacy: options?.applyDifferentialPrivacy || false,
@@ -444,7 +444,7 @@ describe('LocationTracker', () => {
           locationSharing: true
         }
       },
-      assessPrivacyImpact: vi.fn()
+      assessPrivacyImpact: jest.fn()
     })
 
     renderWithProviders(<LocationTracker {...defaultProps} />)
@@ -455,7 +455,7 @@ describe('LocationTracker', () => {
 
   it('shows privacy budget usage', () => {
     vi.mocked(require('@/hooks/usePrivacy').usePrivacy).mockReturnValue({
-      protectLocationData: vi.fn((data, options) => ({
+      protectLocationData: jest.fn((data, options) => ({
         data: options?.applyAnonymization ? { lat: 40.7, lng: -74.0 } : data,
         isAnonymized: options?.applyAnonymization || false,
         hasDifferentialPrivacy: options?.applyDifferentialPrivacy || false,
@@ -469,7 +469,7 @@ describe('LocationTracker', () => {
           locationSharing: true
         }
       },
-      assessPrivacyImpact: vi.fn()
+      assessPrivacyImpact: jest.fn()
     })
 
     renderWithProviders(<LocationTracker {...defaultProps} />)
@@ -479,7 +479,7 @@ describe('LocationTracker', () => {
 
   it('disables tracking when location sharing is disabled', () => {
     vi.mocked(require('@/hooks/usePrivacy').usePrivacy).mockReturnValue({
-      protectLocationData: vi.fn((data, options) => ({
+      protectLocationData: jest.fn((data, options) => ({
         data: options?.applyAnonymization ? { lat: 40.7, lng: -74.0 } : data,
         isAnonymized: options?.applyAnonymization || false,
         hasDifferentialPrivacy: options?.applyDifferentialPrivacy || false,
@@ -493,7 +493,7 @@ describe('LocationTracker', () => {
           locationSharing: false
         }
       },
-      assessPrivacyImpact: vi.fn()
+      assessPrivacyImpact: jest.fn()
     })
 
     renderWithProviders(<LocationTracker {...defaultProps} />)
@@ -522,7 +522,7 @@ describe('LocationTracker', () => {
   })
 
   it('calls onLocationUpdate callback', () => {
-    const onLocationUpdate = vi.fn()
+    const onLocationUpdate = jest.fn()
 
     renderWithProviders(<LocationTracker {...defaultProps} onLocationUpdate={onLocationUpdate} />)
 
@@ -531,17 +531,17 @@ describe('LocationTracker', () => {
 
     vi.mocked(require('@/store').useLocationStore).mockReturnValue({
       currentLocation: mockLocation,
-      setCurrentLocation: vi.fn(),
-      startTracking: vi.fn(),
-      stopTracking: vi.fn(),
-      requestLocationPermission: vi.fn(() => Promise.resolve({ granted: true })),
+      setCurrentLocation: jest.fn(),
+      startTracking: jest.fn(),
+      stopTracking: jest.fn(),
+      requestLocationPermission: jest.fn(() => Promise.resolve({ granted: true })),
       locationPermission: { granted: true },
       isTracking: false,
       geofences: [],
       proximityAlerts: [],
-      addGeofence: vi.fn(),
-      checkGeofences: vi.fn(),
-      addProximityAlert: vi.fn()
+      addGeofence: jest.fn(),
+      checkGeofences: jest.fn(),
+      addProximityAlert: jest.fn()
     })
 
     // Trigger location update
@@ -549,19 +549,19 @@ describe('LocationTracker', () => {
       .mocked(require('@/store').useLocationStore())
       .mockReturnValue({
         currentLocation: mockLocation,
-        setCurrentLocation: vi.fn(location => {
+        setCurrentLocation: jest.fn(location => {
           onLocationUpdate(location)
         }),
-        startTracking: vi.fn(),
-        stopTracking: vi.fn(),
-        requestLocationPermission: vi.fn(() => Promise.resolve({ granted: true })),
+        startTracking: jest.fn(),
+        stopTracking: jest.fn(),
+        requestLocationPermission: jest.fn(() => Promise.resolve({ granted: true })),
         locationPermission: { granted: true },
         isTracking: false,
         geofences: [],
         proximityAlerts: [],
-        addGeofence: vi.fn(),
-        checkGeofences: vi.fn(),
-        addProximityAlert: vi.fn()
+        addGeofence: jest.fn(),
+        checkGeofences: jest.fn(),
+        addProximityAlert: jest.fn()
       })
 
     renderWithProviders(<LocationTracker {...defaultProps} onLocationUpdate={onLocationUpdate} />)
@@ -578,21 +578,21 @@ describe('LocationTracker', () => {
 
   it('handles high accuracy setting', async () => {
     const user = userEvent.setup()
-    const requestLocationPermission = vi.fn(() => Promise.resolve({ granted: true }))
+    const requestLocationPermission = jest.fn(() => Promise.resolve({ granted: true }))
 
     vi.mocked(require('@/store').useLocationStore).mockReturnValue({
       currentLocation: createMockLocation({ lat: 40.7128, lng: -74.006 }),
-      setCurrentLocation: vi.fn(),
-      startTracking: vi.fn(),
-      stopTracking: vi.fn(),
+      setCurrentLocation: jest.fn(),
+      startTracking: jest.fn(),
+      stopTracking: jest.fn(),
       requestLocationPermission,
       locationPermission: { granted: true },
       isTracking: false,
       geofences: [],
       proximityAlerts: [],
-      addGeofence: vi.fn(),
-      checkGeofences: vi.fn(),
-      addProximityAlert: vi.fn()
+      addGeofence: jest.fn(),
+      checkGeofences: jest.fn(),
+      addProximityAlert: jest.fn()
     })
 
     renderWithProviders(<LocationTracker {...defaultProps} enableHighAccuracy={true} />)
@@ -635,21 +635,21 @@ describe('LocationTracker', () => {
       filteredEvents: mockEvents
     })
 
-    const addProximityAlert = vi.fn()
+    const addProximityAlert = jest.fn()
 
     vi.mocked(require('@/store').useLocationStore).mockReturnValue({
       // Very close to emergency
       currentLocation: createMockLocation({ lat: 40.7129, lng: -74.0061 }),
-      setCurrentLocation: vi.fn(),
-      startTracking: vi.fn(),
-      stopTracking: vi.fn(),
-      requestLocationPermission: vi.fn(() => Promise.resolve({ granted: true })),
+      setCurrentLocation: jest.fn(),
+      startTracking: jest.fn(),
+      stopTracking: jest.fn(),
+      requestLocationPermission: jest.fn(() => Promise.resolve({ granted: true })),
       locationPermission: { granted: true },
       isTracking: false,
       geofences: [],
       proximityAlerts: [],
-      addGeofence: vi.fn(),
-      checkGeofences: vi.fn(),
+      addGeofence: jest.fn(),
+      checkGeofences: jest.fn(),
       addProximityAlert
     })
 
@@ -662,7 +662,7 @@ describe('LocationTracker', () => {
   it('opens privacy settings when privacy button is clicked', async () => {
     const user = userEvent.setup()
     const originalOpen = window.open
-    window.open = vi.fn()
+    window.open = jest.fn()
 
     renderWithProviders(<LocationTracker {...defaultProps} />)
 

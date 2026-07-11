@@ -1,0 +1,17 @@
+{
+  "architecture": {
+    "description": "Global architectural preferences and approved styles.",
+    "dataAccess": "ORM only — do not mix raw SQL with the ORM layer.",
+    "apiStyle": "All HTTP handlers go through the shared apiHandler() wrapper.",
+    "clientSerialization": "Never serialize raw DB rows to client components; map to DTOs."
+  },
+  "approvedStyles": [
+    "functional",
+    "explicit-types"
+  ],
+  "forbiddenPatterns": [
+    "any",
+    "eval",
+    "dangerouslySetInnerHTML"
+  ]
+}

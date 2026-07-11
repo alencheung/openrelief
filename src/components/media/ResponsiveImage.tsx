@@ -224,8 +224,7 @@ export function ResponsiveImage({
       )}
 
       {/* Main Image */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+            <img
         ref={imgRef}
         src={shouldLoad ? src : undefined}
         srcSet={shouldLoad ? srcSet : undefined}

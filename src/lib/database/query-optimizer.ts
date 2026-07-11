@@ -74,10 +74,11 @@ class DatabaseQueryOptimizer {
       materializedViews: true
     }
 
-    this.supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    // Guard against missing env vars at build time (page data collection has
+    // none). Use a placeholder client that will be replaced on first real use.
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+    this.supabase = url && key ? createClient(url, key) : (null as any)
 
     this.poolManager = PoolManager.getInstance(
       {

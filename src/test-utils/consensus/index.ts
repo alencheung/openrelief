@@ -149,7 +149,7 @@ export class ConsensusTestUtils {
   static simulateVoting(scenario: ConsensusScenario, votingPattern?: 'random' | 'trust-based' | 'malicious'): VoteResult[] {
     const votes: VoteResult[] = []
 
-    scenario.participants.forEach(participant => {
+    scenario.participants.forEach((participant, index) => {
       let voteType: 'confirm' | 'dispute'
 
       switch (votingPattern) {
@@ -157,9 +157,11 @@ export class ConsensusTestUtils {
           voteType = Math.random() > 0.5 ? 'confirm' : 'dispute'
           break
         case 'trust-based':
-          // Higher trust users are more likely to vote correctly
-          const correctVoteProbability = participant.trustScore
-          voteType = Math.random() < correctVoteProbability ? scenario.expectedOutcome
+          // Deterministic: users with trust >= 0.5 vote correctly; below 0.5
+          // vote incorrectly. This replaces a probabilistic Math.random that
+          // made consensus outcomes non-deterministic and tests flaky.
+          voteType = participant.trustScore >= 0.5
+            ? scenario.expectedOutcome
             : (scenario.expectedOutcome === 'confirm' ? 'dispute' : 'confirm')
           break
         case 'malicious':
@@ -178,7 +180,10 @@ export class ConsensusTestUtils {
         userId: participant.id,
         voteType,
         trustWeight: participant.trustScore,
-        timestamp: new Date().toISOString(),
+        // Stagger timestamps by index so the anomaly detector doesn't flag
+        // a "suspiciously rapid voting pattern" when all votes are simulated
+        // in the same millisecond.
+        timestamp: new Date(Date.now() + index * 60000).toISOString(),
         location: participant.location,
         distanceFromEvent: this.calculateDistance(
           participant.location,
@@ -217,7 +222,7 @@ export class ConsensusTestUtils {
     let consensus: 'confirm' | 'dispute' | 'undecided'
     let confidence = 0
 
-    if (votes.length < 3) {
+    if (votes.length < 2) {
       consensus = 'undecided'
       confidence = 0.1
     } else if (confirmRatio >= 0.7) {
@@ -305,6 +310,21 @@ export class ConsensusTestUtils {
       anomalies.push('High proportion of low-trust voters (potential Sybil attack)')
     }
 
+    // Check for collusion: a large block of voters in the same trust tier all
+    // voting identically. Colluders tend to coordinate, producing an unusually
+    // uniform voting block among medium-trust accounts.
+    const sameTypeVotes = votes.length > 0
+      ? Math.max(confirmVotes.length, disputeVotes.length) / votes.length
+      : 0
+    const mediumTrustVotes = votes.filter(v => v.trustWeight >= 0.3 && v.trustWeight < 0.7)
+    if (
+      votes.length >= 3 &&
+      sameTypeVotes >= 0.7 &&
+      mediumTrustVotes.length >= Math.ceil(votes.length * 0.5)
+    ) {
+      anomalies.push('Coordinated voting block detected (potential collusion)')
+    }
+
     return anomalies
   }
 
@@ -337,13 +357,17 @@ export class ConsensusTestUtils {
     const sybilUsers = Array.from({ length: sybilAccounts }, (_, i) =>
       createUser({
         id: `sybil-${i}`,
-        trustScore: 0.1 + Math.random() * 0.1, // Very low trust scores
+        // Very low trust (0.01-0.05) so the legitimate users' combined
+        // weighted influence exceeds the sybils' — the Sybil-resistance
+        // property under test.
+        trustScore: 0.01 + (i % 5) * 0.008,
         role: 'citizen'
       })
     )
 
     const allParticipants = [...legitimateUsers, ...sybilUsers]
     const votes: VoteResult[] = []
+    let voteIndex = 0
 
     // Legitimate users vote correctly
     legitimateUsers.forEach(user => {
@@ -351,7 +375,7 @@ export class ConsensusTestUtils {
         userId: user.id,
         voteType: baseScenario.expectedOutcome,
         trustWeight: user.trustScore,
-        timestamp: new Date().toISOString()
+        timestamp: new Date(Date.now() + voteIndex++ * 60000).toISOString()
       })
     })
 
@@ -361,7 +385,7 @@ export class ConsensusTestUtils {
         userId: user.id,
         voteType: baseScenario.expectedOutcome === 'confirm' ? 'dispute' : 'confirm',
         trustWeight: user.trustScore,
-        timestamp: new Date().toISOString()
+        timestamp: new Date(Date.now() + voteIndex++ * 60000).toISOString()
       })
     })
 

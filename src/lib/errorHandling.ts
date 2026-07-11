@@ -164,13 +164,17 @@ export const classifyError = (error: any, context?: any): ErrorInfo => {
     }
   }
 
-  // Server errors
-  if (error.code >= 500 && error.code < 600) {
+  // Server errors. Guard the type first: error.code can be a string
+  // ('NETWORK_ERROR', 'PGRST116'), a number, or undefined. The previous
+  // `error.code >= 500` threw when code was undefined and produced
+  // nonsensical comparisons when code was a non-numeric string.
+  const numericCode = typeof error.code === 'number' ? error.code : undefined
+  if (numericCode !== undefined && numericCode >= 500 && numericCode < 600) {
     return {
       id,
       type: 'server_error',
       message: 'Server error occurred',
-      code: error.code,
+      code: numericCode,
       timestamp,
       context,
       severity: 'high',
@@ -316,16 +320,26 @@ export const createRetryFunction = <T extends any[], R>(
 export const recoverFromError = async (errorInfo: ErrorInfo): Promise<boolean> => {
   switch (errorInfo.type) {
     case 'network':
-      // Try to reconnect
-      if (navigator.onLine) {
+      // Try to reconnect. PROBE AT MOST ONCE per BACKEND_HEALTH_RECHECK_MS —
+      // previously every client independently HEADed /api/health on every
+      // network error, producing 100K health-check hits on top of the
+      // original failure during a partial outage.
+      if (typeof navigator !== 'undefined' && navigator.onLine) {
+        const now = Date.now()
+        if (backendHealthOpen && now - backendHealthCheckedAt < BACKEND_HEALTH_RECHECK_MS) {
+          // Circuit is open and we probed recently; don't add to the load.
+          return false
+        }
         try {
           const response = await fetch('/api/health', {
             method: 'HEAD',
             cache: 'no-cache',
             signal: AbortSignal.timeout(3000)
           })
+          setBackendHealthCircuit(!response.ok)
           return response.ok
         } catch {
+          setBackendHealthCircuit(true)
           return false
         }
       }
@@ -335,28 +349,43 @@ export const recoverFromError = async (errorInfo: ErrorInfo): Promise<boolean> =
       // Wait for connection
       return new Promise(resolve => {
         const handleOnline = () => {
-          window.removeEventListener('online', handleOnline)
+          if (typeof window !== 'undefined') {
+            window.removeEventListener('online', handleOnline)
+          }
           resolve(true)
         }
-        window.addEventListener('online', handleOnline)
+        if (typeof window !== 'undefined') {
+          window.addEventListener('online', handleOnline)
+        }
 
         // Timeout after 30 seconds
         setTimeout(() => {
-          window.removeEventListener('online', handleOnline)
+          if (typeof window !== 'undefined') {
+            window.removeEventListener('online', handleOnline)
+          }
           resolve(false)
         }, 30000)
       })
 
     case 'timeout':
-      // Retry with shorter timeout
+      // Retry with shorter timeout, but gate on the health circuit so we
+      // don't compound the load when the backend is already struggling.
+      if (
+        backendHealthOpen &&
+        Date.now() - backendHealthCheckedAt < BACKEND_HEALTH_RECHECK_MS
+      ) {
+        return false
+      }
       try {
         const response = await fetch('/api/health', {
           method: 'HEAD',
           cache: 'no-cache',
           signal: AbortSignal.timeout(1000)
         })
+        setBackendHealthCircuit(!response.ok)
         return response.ok
       } catch {
+        setBackendHealthCircuit(true)
         return false
       }
 
@@ -406,7 +435,71 @@ export const recoverFromError = async (errorInfo: ErrorInfo): Promise<boolean> =
 }
 
 // Error reporting
+//
+// During a partial outage every client fires recoverFromError / reportError
+// independently. Without sampling, the error-reporting endpoint becomes a
+// secondary victim of the original failure (a self-inflicted feedback
+// loop). We sample (default 10%), dedupe by error signature, and suppress
+// while the backend health circuit is open.
+
+const ERROR_REPORT_SAMPLE_RATE = 0.1 // report ~1 in 10 client-side errors
+const ERROR_REPORT_DEDUP_TTL_MS = 60_000 // dedupe within a 60s window
+const ERROR_REPORT_DEDUP_MAX = 500
+const reportedSignatures = new Map<string, number>()
+
+let backendHealthOpen = false
+let backendHealthCheckedAt = 0
+const BACKEND_HEALTH_RECHECK_MS = 15_000 // only probe /api/health every 15s
+
+function shouldReportError(errorInfo: ErrorInfo): boolean {
+  // Always report criticals and auth errors — these are operationally
+  // important and rare enough not to flood.
+  if (errorInfo.severity === 'critical' || errorInfo.type === 'auth') {
+    return true
+  }
+  // If the backend health circuit is open, suppress non-critical reports
+  // to avoid hammering a known-down endpoint.
+  if (backendHealthOpen) {
+    return false
+  }
+  // Random sampling for the long tail of low/medium errors.
+  if (Math.random() > ERROR_REPORT_SAMPLE_RATE) {
+    return false
+  }
+  return true
+}
+
+function dedupeKey(errorInfo: ErrorInfo): string {
+  const ctx = errorInfo.context || {}
+  return [
+    errorInfo.type,
+    errorInfo.code ?? '',
+    ctx.action ?? '',
+    ctx.endpoint ?? ctx.table ?? ''
+  ].join('|')
+}
+
 export const reportError = async (errorInfo: ErrorInfo): Promise<void> => {
+  if (!shouldReportError(errorInfo)) {
+    return
+  }
+
+  // Dedupe identical error signatures within the TTL window. A single
+  // backend hiccup previously produced thousands of POSTs per client via
+  // the global error/unhandledrejection listeners.
+  const key = dedupeKey(errorInfo)
+  const now = Date.now()
+  const lastSeen = reportedSignatures.get(key)
+  if (lastSeen && now - lastSeen < ERROR_REPORT_DEDUP_TTL_MS) {
+    return
+  }
+  // Bound the dedupe map.
+  if (reportedSignatures.size > ERROR_REPORT_DEDUP_MAX) {
+    const oldest = reportedSignatures.keys().next().value
+    if (oldest) reportedSignatures.delete(oldest)
+  }
+  reportedSignatures.set(key, now)
+
   try {
     // Send to error tracking service
     await fetch('/api/errors/report', {
@@ -414,8 +507,8 @@ export const reportError = async (errorInfo: ErrorInfo): Promise<void> => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...errorInfo,
-        userAgent: navigator.userAgent,
-        url: window.location.href,
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+        url: typeof window !== 'undefined' ? window.location.href : 'unknown',
         timestamp: new Date().toISOString()
       })
     })
@@ -423,6 +516,17 @@ export const reportError = async (errorInfo: ErrorInfo): Promise<void> => {
     // Fallback to console
     console.error('[Error Reporting] Failed to report error:', errorInfo)
   }
+}
+
+/**
+ * Mark the backend health circuit as open (backend unreachable) or closed.
+ * While open, recoverFromError skips its /api/health probe and reportError
+ * suppresses non-critical reports — preventing the per-client retry storm
+ * that previously turned a 30s blip into a sustained self-DDoS.
+ */
+export function setBackendHealthCircuit(open: boolean): void {
+  backendHealthOpen = open
+  backendHealthCheckedAt = Date.now()
 }
 
 // Error boundary class for React
