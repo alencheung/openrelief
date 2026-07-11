@@ -1033,7 +1033,7 @@ export class SybilPreventionEngine {
     const windowSize = 5 * 60 * 1000 // 5 minutes
 
     for (let i = 0; i < actions.length; i++) {
-      const windowStart = actions[i].timestamp
+      const windowStart = actions[i]!.timestamp
       const windowEnd = windowStart + windowSize
 
       const burstCount = actions.filter(action =>

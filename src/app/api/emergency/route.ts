@@ -114,7 +114,7 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
       )
     }
 
-    const sanitizedData = validationResult.sanitizedData
+    const sanitizedData = validationResult.sanitizedData as Record<string, string>
 
     const cacheKey = generateCacheKey('emergency', {
       status: sanitizedData.status,

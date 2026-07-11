@@ -113,7 +113,7 @@ export const PUT = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
       )
     }
 
-    const updates = validationResult.sanitizedData
+    const updates = validationResult.sanitizedData as Record<string, any>
 
     if (updates.severity_filter) {
       const validSeverities = ['low', 'medium', 'high', 'critical']

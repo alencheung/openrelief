@@ -577,7 +577,7 @@ export const VALIDATION_SCHEMAS: ValidationSchemas = {
         // NOTE: formData is never supplied by applyRule (it calls
         // rule.custom(value) with a single argument), so this historically
         // compares against `undefined`. Behavior preserved verbatim.
-        const formData: { password?: string } | undefined = undefined
+        const formData = undefined as { password?: string } | undefined
         if (value !== formData?.password) {
           return 'Passwords do not match'
         }
