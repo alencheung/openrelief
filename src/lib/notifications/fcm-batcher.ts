@@ -5,7 +5,82 @@ const FCM_BATCH_SIZE = 1000
 const FCM_MAX_RETRIES = 3
 const FCM_BASE_DELAY_MS = 1000
 const FCM_MAX_DELAY_MS = 30000
-const FCM_API_URL = 'https://fcm.googleapis.com/fcm/send'
+
+// FCM HTTP v1 API. The legacy endpoint
+// (https://fcm.googleapis.com/fcm/send with `key=<serverKey>`) was deprecated
+// and shut down by Google; we now target the v1 endpoint with a short-lived
+// OAuth2 access token. Because this codebase has no google-auth-library dep,
+// the token must be minted/refreshed by external infra and supplied via
+// FCM_ACCESS_TOKEN. FCM_SERVER_KEY references have been removed.
+function getFcmV1Config(): { projectId: string; accessToken: string; endpoint: string } {
+  const projectId = process.env.FCM_PROJECT_ID
+  const accessToken = process.env.FCM_ACCESS_TOKEN
+  if (!projectId || !accessToken) {
+    throw new Error(
+      'FCM HTTP v1 not configured: set FCM_PROJECT_ID and FCM_ACCESS_TOKEN ' +
+        '(access token must be refreshed externally)'
+    )
+  }
+  return {
+    projectId,
+    accessToken,
+    endpoint: `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`
+  }
+}
+
+// Transform the legacy FCM payload shape (notification + data + android/apns)
+// into the FCM HTTP v1 message envelope. Exported so callers (e.g.
+// alert-dispatch-optimizer) can reuse the same shape without duplicating it.
+export function buildFcmV1Message(
+  token: string,
+  notification: FCMNotification,
+  data: Record<string, unknown>,
+  priority: AlertPriority
+): Record<string, unknown> {
+  // v1 data values must be strings.
+  const stringifiedData: Record<string, string> = {
+    priority,
+    ...Object.fromEntries(
+      Object.entries(data).map(([k, v]) => [k, typeof v === 'string' ? v : JSON.stringify(v)])
+    )
+  }
+
+  return {
+    message: {
+      token,
+      notification: {
+        title: notification.title,
+        body: notification.body
+      },
+      data: stringifiedData,
+      android: {
+        priority: notification.priority,
+        ttl: `${notification.ttl}s`
+      },
+      apns: {
+        headers: {
+          'apns-priority': getAPNSPriorityForPriority(priority),
+          'apns-expiration': getAPNSExpirationForTtl(notification.ttl)
+        }
+      }
+    }
+  }
+}
+
+function getAPNSPriorityForPriority(priority: AlertPriority): string {
+  switch (priority) {
+    case AlertPriority.CRITICAL:
+    case AlertPriority.HIGH:
+      return '10'
+    default:
+      return '5'
+  }
+}
+
+function getAPNSExpirationForTtl(ttlSeconds: number): string {
+  const expirationDate = new Date(Date.now() + ttlSeconds * 1000)
+  return expirationDate.toISOString()
+}
 
 export interface FCMNotification {
   title: string
@@ -48,12 +123,10 @@ export class FCMBatcher {
   private queue: QueuedNotification[] = []
   private batchSize: number
   private maxRetries: number
-  private serverKey: string | undefined
 
-  constructor(options?: { batchSize?: number; maxRetries?: number; serverKey?: string }) {
+  constructor(options?: { batchSize?: number; maxRetries?: number }) {
     this.batchSize = options?.batchSize ?? FCM_BATCH_SIZE
     this.maxRetries = options?.maxRetries ?? FCM_MAX_RETRIES
-    this.serverKey = options?.serverKey ?? process.env.FCM_SERVER_KEY
   }
 
   addToken(
@@ -241,41 +314,63 @@ export class FCMBatcher {
     data: Record<string, unknown>,
     priority: AlertPriority
   ): Promise<Response> {
-    if (!this.serverKey) {
-      throw new Error('FCM_SERVER_KEY is not configured')
-    }
+    // FCM HTTP v1 accepts a single message per request, so we fan out per
+    // token and synthesize a legacy-shaped response body so processFCMResponse
+    // keeps working unchanged.
+    const { endpoint, accessToken } = getFcmV1Config()
 
-    const payload = {
-      registration_ids: tokens,
-      notification: {
-        title: notification.title,
-        body: notification.body,
-        priority: notification.priority,
-        ttl: notification.ttl
-      },
-      data: {
-        priority,
-        ...data
-      },
-      android: {
-        priority: notification.priority,
-        ttl: notification.ttl
-      },
-      apns: {
-        headers: {
-          'apns-priority': this.getAPNSPriority(priority),
-          'apns-expiration': this.getAPNSExpiration(notification.ttl)
+    const results = await Promise.all(
+      tokens.map(async token => {
+        try {
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(buildFcmV1Message(token, notification, data, priority))
+          })
+          if (response.status === 429) {
+            return { token, status: 429, error: 'THROTTLED' }
+          }
+          if (!response.ok) {
+            let errorMsg = `HTTP_${response.status}`
+            try {
+              const errBody = await response.json()
+              if (errBody?.error?.details?.[0]?.errorCode === 'UNREGISTERED') {
+                errorMsg = 'NotRegistered'
+              } else if (errBody?.error?.status === 'INVALID_ARGUMENT') {
+                errorMsg = 'InvalidRegistration'
+              }
+            } catch {
+              // keep generic error
+            }
+            return { token, status: response.status, error: errorMsg }
+          }
+          const body = await response.json().catch(() => ({}))
+          return { token, status: 200, messageId: body?.name ?? `${token}:${Date.now()}` }
+        } catch (error) {
+          return {
+            token,
+            status: 0,
+            error: error instanceof Error ? error.message : 'fetch_error'
+          }
         }
-      }
+      })
+    )
+
+    const syntheticBody = {
+      success: results.filter(r => r.status === 200).length,
+      failure: results.filter(r => r.status !== 200).length,
+      results: results.map(r =>
+        r.status === 200 ? { message_id: r.messageId } : { error: r.error }
+      )
     }
 
-    return fetch(FCM_API_URL, {
-      method: 'POST',
-      headers: {
-        Authorization: `key=${this.serverKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
+    const overallStatus = results.some(r => r.status === 429) ? 429 : 200
+    return new Response(JSON.stringify(syntheticBody), {
+      status: overallStatus,
+      headers: { 'Content-Type': 'application/json' }
     })
   }
 
@@ -335,21 +430,6 @@ export class FCMBatcher {
   private calculateBackoffDelay(retryCount: number): number {
     const delay = Math.min(FCM_BASE_DELAY_MS * Math.pow(2, retryCount), FCM_MAX_DELAY_MS)
     return delay + Math.random() * 500
-  }
-
-  private getAPNSPriority(priority: AlertPriority): string {
-    switch (priority) {
-      case AlertPriority.CRITICAL:
-      case AlertPriority.HIGH:
-        return '10'
-      default:
-        return '5'
-    }
-  }
-
-  private getAPNSExpiration(ttlSeconds: number): string {
-    const expirationDate = new Date(Date.now() + ttlSeconds * 1000)
-    return expirationDate.toISOString()
   }
 }
 

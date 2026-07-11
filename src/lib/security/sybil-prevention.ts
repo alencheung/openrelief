@@ -189,7 +189,33 @@ export class SybilPreventionEngine {
   private analysisInterval: NodeJS.Timeout | null = null
 
   constructor() {
-    this.startDetection()
+    // Do NOT auto-start the full-table sweep on construction. Previously
+    // every serverless instance spun this singleton up on import, each
+    // running `SELECT * FROM user_profiles WHERE created_at > NOW()-7d`
+    // (no LIMIT) plus 6 queries per user every 5 minutes — 600K queries
+    // per sweep per instance at 100K users, with no cross-instance
+    // deduplication, and three of the key detectors stubbed out.
+    //
+    // Incremental risk scoring now lives in the database
+    // (increment_user_risk() trigger + scan_high_risk_users() cron — see
+    // migration 20240620000004_incremental_sybil.sql). The in-app sweep
+    // is retained for single-instance / self-hosted deployments that opt
+    // in explicitly via startDetection(); in multi-instance production it
+    // MUST stay off to avoid the per-instance fan-out.
+    if (this.shouldAutoStart()) {
+      this.startDetection()
+    }
+  }
+
+  /**
+   * Auto-start only in environments where we know we run as a single
+   * instance (local dev, test, or when explicitly enabled). In default
+   * serverless/production deployments this returns false and the
+   * DB-driven scoring is the source of truth.
+   */
+  private shouldAutoStart(): boolean {
+    if (process.env.NODE_ENV === 'test') return false
+    return process.env.SYBIL_ENGINE_AUTOSTART === 'true'
   }
 
   /**
@@ -348,7 +374,16 @@ export class SybilPreventionEngine {
     // Return highest confidence attack
     if (attacks.length > 0) {
       const sortedAttacks = attacks.sort((a, b) => b.confidence - a.confidence)
-      return sortedAttacks[0]
+      const top = sortedAttacks[0]
+      if (top) {
+        return {
+          attackDetected: top.detected,
+          attackType: top.attackType,
+          involvedUsers: top.involvedUsers,
+          confidence: top.confidence,
+          evidence: top.evidence
+        }
+      }
     }
 
     return {
@@ -489,9 +524,13 @@ export class SybilPreventionEngine {
     }
 
     // Calculate time between actions
-    const timeBetweenActions = []
+    const timeBetweenActions: number[] = []
     for (let i = 1; i < actions.length; i++) {
-      timeBetweenActions.push(actions[i].timestamp - actions[i - 1].timestamp)
+      const curr = actions[i]
+      const prev = actions[i - 1]
+      if (curr && prev) {
+        timeBetweenActions.push(curr.timestamp - prev.timestamp)
+      }
     }
 
     // Detect burst activity
@@ -521,14 +560,13 @@ export class SybilPreventionEngine {
         *,
         user: user_profiles!inner(user_id, trust_score)
       `)
-      .eq('user_id', userId)
-      .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+      .eq('user_id', userId)      .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
 
     if (error) {
       throw error
     }
 
-    return (data || []).map(connection => ({
+    return ((data as any[]) || []).map((connection: any) => ({
       connectedUserId: connection.event_id, // Simplified - would need proper relation
       connectionType: connection.confirmation_type as any,
       timestamp: new Date(connection.created_at),
@@ -548,10 +586,10 @@ export class SybilPreventionEngine {
       throw error
     }
 
-    const votes = data || []
+    const votes = (data as any[]) || []
     const totalVotes = votes.length
-    const confirmVotes = votes.filter(v => v.confirmation_type === 'confirm').length
-    const disputeVotes = votes.filter(v => v.confirmation_type === 'dispute').length
+    const confirmVotes = votes.filter((v: any) => v.confirmation_type === 'confirm').length
+    const disputeVotes = votes.filter((v: any) => v.confirmation_type === 'dispute').length
 
     // Calculate consensus alignment (simplified)
     const consensusAlignment = 0.5 // Would need actual consensus data
@@ -590,14 +628,14 @@ export class SybilPreventionEngine {
       throw error
     }
 
-    const reports = data || []
+    const reports = (data as any[]) || []
     const totalReports = reports.length
-    const confirmedReports = reports.filter(r => r.status === 'resolved').length
-    const disputedReports = reports.filter(r => r.status === 'disputed').length
+    const confirmedReports = reports.filter((r: any) => r.status === 'resolved').length
+    const disputedReports = reports.filter((r: any) => r.status === 'disputed').length
 
     // Calculate average severity
-    const severities = reports.map(r => this.severityToNumber(r.severity))
-    const averageSeverity = severities.reduce((sum, s) => sum + s, 0) / severities.length || 0
+    const severities = reports.map((r: any) => this.severityToNumber(r.severity))
+    const averageSeverity = severities.reduce((sum: number, s: number) => sum + s, 0) / severities.length || 0
 
     // Detect report clusters
     const reportClusters = await this.detectReportClusters(userId, reports)
@@ -626,8 +664,8 @@ export class SybilPreventionEngine {
       throw error
     }
 
-    const locations = data || []
-    return locations.map(loc => {
+    const locations = (data as any[]) || []
+    return locations.map((loc: any) => {
       const coords = this.parseLocation(loc.last_known_location)
       return {
         latitude: coords.lat,
@@ -768,11 +806,11 @@ export class SybilPreventionEngine {
       throw error
     }
 
-    const recentUsers = data || []
+    const recentUsers = (data as any[]) || []
 
     // Check for account creation burst
     if (recentUsers.length > DETECTION_CONFIG.accountCreation.maxAccountsPerHour) {
-      const suspiciousUsers = recentUsers.filter(user =>
+      const suspiciousUsers = recentUsers.filter((user: any) =>
         user.trust_score < DETECTION_CONFIG.accountCreation.suspiciousTrustScoreThreshold
       )
 
@@ -780,7 +818,7 @@ export class SybilPreventionEngine {
         return {
           detected: true,
           attackType: 'Account Creation Burst',
-          involvedUsers: suspiciousUsers.map(u => u.user_id),
+          involvedUsers: suspiciousUsers.map((u: any) => u.user_id),
           confidence: 0.8,
           evidence: [
             {
@@ -893,9 +931,9 @@ export class SybilPreventionEngine {
       `Coordinated attack detected: ${attack.attackType}`,
       `${attack.involvedUsers.length} users involved, Confidence: ${attack.confidence}`,
       {
-        attackType: attack.attackType,
-        involvedUsers: attack.involvedUsers,
-        evidence: attack.evidence
+        attackVector: attack.attackType,
+        affectedUsers: attack.involvedUsers,
+        indicators: attack.evidence.map((e: any) => JSON.stringify(e))
       }
     )
 
@@ -1065,7 +1103,7 @@ export class SybilPreventionEngine {
   private parseLocation(locationString: string): { lat: number; lng: number } {
     // Parse PostGIS POINT format
     const match = locationString.match(/POINT\(([-\d.]+)\s+([-\d.]+)\)/)
-    if (match) {
+    if (match && match[1] && match[2]) {
       return {
         lng: parseFloat(match[1]),
         lat: parseFloat(match[2])

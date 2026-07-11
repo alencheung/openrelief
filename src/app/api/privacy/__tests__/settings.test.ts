@@ -1,472 +1,228 @@
 /**
- * Tests for Privacy Settings API Endpoint
+ * Tests for Privacy Settings API Endpoint.
  *
- * These tests verify the functionality of the privacy settings API,
- * including authentication, validation, and data handling.
+ * The route uses the RLS-bound SSR client + withAPISecurity. These tests mock
+ * both layers and verify the real-persistence contract: GET returns stored
+ * settings (or defaults), POST validates and upserts, and both write to
+ * privacy_audit_log.
  */
 
 import { NextRequest } from 'next/server'
-import { GET, POST } from '../settings/route'
 
-// Mock next-auth
-jest.mock('next-auth', () => ({
-  getServerSession: jest.fn()
+let mockStored: Record<string, unknown> | null = null
+let lastInsert: Record<string, unknown> | null = null
+let lastUpsert: Record<string, unknown> | null = null
+
+function chainable(result: { data: unknown; error: unknown }) {
+  const self: Record<string, any> = {}
+  const passthrough = () => self
+  self.select = passthrough
+  self.insert = (row: Record<string, unknown>) => {
+    lastInsert = row
+    return self
+  }
+  self.upsert = (row: Record<string, unknown>) => {
+    lastUpsert = row
+    return self
+  }
+  self.update = passthrough
+  self.delete = passthrough
+  self.eq = passthrough
+  self.maybeSingle = async () => result
+  self.single = async () => result
+  return self
+}
+
+jest.mock('@/lib/supabase/server', () => ({
+  createClient: jest.fn(async () => ({
+    from: () =>
+      chainable({
+        data: mockStored,
+        error: null
+      })
+  }))
 }))
 
-// Mock console methods to avoid test output pollution
+jest.mock('@/lib/security/api-security', () => ({
+  withAPISecurity: () => (handler: any) => async (req: any, ctx: any) => handler(req, ctx),
+  API_SECURITY_CONFIGS: { user: {} }
+}))
+
 jest.spyOn(console, 'error').mockImplementation(() => {})
-jest.spyOn(console, 'log').mockImplementation(() => {})
+
+function jsonRequest(
+  method: string,
+  body: unknown,
+  url = 'http://localhost/api/privacy/settings'
+): NextRequest {
+  return new NextRequest(url, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+}
+
+const authedCtx = {
+  authenticated: true,
+  userId: 'test-user',
+  permissions: [],
+  deviceTrusted: true,
+  mfaVerified: false,
+  ipAddress: '127.0.0.1',
+  userAgent: 'test'
+}
+const unauthedCtx = {
+  authenticated: false,
+  userId: null,
+  permissions: []
+}
 
 describe('/api/privacy/settings Endpoint', () => {
-  const { getServerSession } = require('next-auth')
+  let GET: any, POST: any
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks()
+    mockStored = null
+    lastInsert = null
+    lastUpsert = null
+    jest.resetModules()
+    const route = require('../settings/route')
+    GET = route.GET
+    POST = route.POST
   })
 
   describe('GET Method', () => {
-    it('should return 401 when user is not authenticated', async () => {
-      getServerSession.mockResolvedValue(null)
-
-      const request = {} as NextRequest
-      const response = await GET(request)
-
+    it('returns 401 when not authenticated', async () => {
+      const request = jsonRequest('GET', {})
+      const response = await GET(request, unauthedCtx)
       expect(response.status).toBe(401)
-      const json = await response.json()
-      expect(json.error).toBe('Authentication required')
     })
 
-    it('should return default settings for new user', async () => {
-      getServerSession.mockResolvedValue({
-        user: { id: 'new-user-id' }
-      })
-
-      const request = {} as NextRequest
-      const response = await GET(request)
-
+    it('returns default settings for a new user', async () => {
+      const request = jsonRequest('GET', {})
+      const response = await GET(request, authedCtx)
       expect(response.status).toBe(200)
       const json = await response.json()
       expect(json.success).toBe(true)
-      expect(json.data.settings).toBeDefined()
       expect(json.data.settings.locationSharing).toBe(true)
       expect(json.data.settings.anonymizeData).toBe(true)
+      expect(json.data.settings.locationPrecision).toBe(3)
     })
 
-    it('should return existing settings for returning user', async () => {
-      getServerSession.mockResolvedValue({
-        user: { id: 'existing-user-id' }
-      })
-
-      // Mock that this user has existing settings in the database
-      const { privacySettingsDB } = require('../settings/route')
-      privacySettingsDB.set('existing-user-id', {
-        locationSharing: false,
-        locationPrecision: 2,
-        dataRetentionDays: 60,
-        anonymizeData: true,
-        differentialPrivacy: false,
-        kAnonymity: true,
-        endToEndEncryption: true,
-        emergencyDataSharing: false,
-        researchParticipation: true,
-        thirdPartyAnalytics: false,
-        automatedDataCleanup: false,
-        privacyBudgetAlerts: true,
-        legalNotifications: false,
-        dataProcessingPurposes: ['service_delivery'],
-        consentManagement: true,
-        realTimeMonitoring: false
-      })
-
-      const request = {} as NextRequest
-      const response = await GET(request)
-
-      expect(response.status).toBe(200)
+    it('returns stored settings for a returning user', async () => {
+      mockStored = {
+        location_sharing: false,
+        location_precision: 2,
+        data_retention_days: 60,
+        anonymize_data: true,
+        differential_privacy: false,
+        k_anonymity: true,
+        end_to_end_encryption: true,
+        emergency_data_sharing: false,
+        research_participation: true,
+        third_party_analytics: false,
+        automated_data_cleanup: false,
+        privacy_budget_alerts: true,
+        legal_notifications: false,
+        data_processing_purposes: ['service_delivery'],
+        consent_management: true,
+        real_time_monitoring: false,
+        updated_at: '2024-01-01T00:00:00.000Z'
+      }
+      const request = jsonRequest('GET', {})
+      const response = await GET(request, authedCtx)
       const json = await response.json()
-      expect(json.success).toBe(true)
       expect(json.data.settings.locationSharing).toBe(false)
       expect(json.data.settings.locationPrecision).toBe(2)
       expect(json.data.settings.dataRetentionDays).toBe(60)
     })
 
-    it('should log access for transparency', async () => {
-      getServerSession.mockResolvedValue({
-        user: { id: 'test-user-id' }
-      })
-
-      const request = {} as NextRequest
-      await GET(request)
-
-      // Verify that logging was called
-      // eslint-disable-next-line no-console
-      expect(console.log).toHaveBeenCalledWith(expect.stringContaining('Privacy access logged'))
+    it('writes an audit log entry on read', async () => {
+      const request = jsonRequest('GET', {})
+      await GET(request, authedCtx)
+      expect(lastInsert).toBeTruthy()
+      expect((lastInsert as Record<string, unknown>).action).toBe('settings_retrieval')
     })
   })
 
   describe('POST Method', () => {
-    it('should return 401 when user is not authenticated', async () => {
-      getServerSession.mockResolvedValue(null)
-
-      const request = {
-        json: async () => ({ settings: {} })
-      } as NextRequest
-
-      const response = await POST(request)
-
+    it('returns 401 when not authenticated', async () => {
+      const request = jsonRequest('POST', { settings: {} })
+      const response = await POST(request, unauthedCtx)
       expect(response.status).toBe(401)
-      const json = await response.json()
-      expect(json.error).toBe('Authentication required')
     })
 
-    it('should return 400 when settings are missing', async () => {
-      getServerSession.mockResolvedValue({
-        user: { id: 'test-user-id' }
-      })
+    it('returns 400 when settings are missing', async () => {
+      const request = jsonRequest('POST', {})
+      const response = await POST(request, authedCtx)
+      expect(response.status).toBe(400)
+    })
 
-      const request = {
-        json: async () => ({})
-      } as NextRequest
-
-      const response = await POST(request)
-
+    it('rejects locationPrecision out of range', async () => {
+      const request = jsonRequest('POST', { settings: { locationPrecision: 99 } })
+      const response = await POST(request, authedCtx)
       expect(response.status).toBe(400)
       const json = await response.json()
-      expect(json.error).toBe('Invalid settings format')
+      expect(json.error).toMatch(/locationPrecision/)
     })
 
-    it('should return 400 when required fields are missing', async () => {
-      getServerSession.mockResolvedValue({
-        user: { id: 'test-user-id' }
-      })
+    it('rejects dataRetentionDays out of range', async () => {
+      const request = jsonRequest('POST', { settings: { dataRetentionDays: 1 } })
+      const response = await POST(request, authedCtx)
+      expect(response.status).toBe(400)
+    })
 
-      // Missing other required fields
-      const request = {
-        json: async () => ({
-          settings: {
-            locationSharing: true
-          }
-        })
-      } as NextRequest
-
-      const response = await POST(request)
-
+    it('rejects dataProcessingPurposes that is not an array', async () => {
+      const request = jsonRequest('POST', { settings: { dataProcessingPurposes: 'no' } })
+      const response = await POST(request, authedCtx)
       expect(response.status).toBe(400)
       const json = await response.json()
-      expect(json.error).toContain('Missing required field')
+      expect(json.error).toMatch(/dataProcessingPurposes/)
     })
 
-    it('should return 400 for invalid field values', async () => {
-      getServerSession.mockResolvedValue({
-        user: { id: 'test-user-id' }
-      })
-
-      const request = {
-        json: async () => ({
-          settings: {
-            locationSharing: true,
-            // Invalid: > 5
-            locationPrecision: 10,
-            dataRetentionDays: 30,
-            anonymizeData: true,
-            differentialPrivacy: true,
-            kAnonymity: true,
-            endToEndEncryption: true,
-            emergencyDataSharing: true
-          }
-        })
-      } as NextRequest
-
-      const response = await POST(request)
-
+    it('rejects a non-boolean toggle', async () => {
+      const request = jsonRequest('POST', { settings: { anonymizeData: 'yes' } })
+      const response = await POST(request, authedCtx)
       expect(response.status).toBe(400)
-      const json = await response.json()
-      expect(json.error).toContain('locationPrecision must be a number between 1 and 5')
     })
 
-    it('should update settings successfully', async () => {
-      getServerSession.mockResolvedValue({
-        user: { id: 'test-user-id' }
-      })
-
-      const request = {
-        json: async () => ({
-          settings: {
-            locationSharing: false,
-            locationPrecision: 2,
-            dataRetentionDays: 60,
-            anonymizeData: true,
-            differentialPrivacy: true,
-            kAnonymity: true,
-            endToEndEncryption: true,
-            emergencyDataSharing: false
-          }
-        })
-      } as NextRequest
-
-      const response = await POST(request)
-
-      expect(response.status).toBe(200)
-      const json = await response.json()
-      expect(json.success).toBe(true)
-      expect(json.data.settings.locationSharing).toBe(false)
-      expect(json.data.settings.locationPrecision).toBe(2)
-      expect(json.data.settings.dataRetentionDays).toBe(60)
-    })
-
-    it('should merge partial updates with existing settings', async () => {
-      getServerSession.mockResolvedValue({
-        user: { id: 'test-user-id' }
-      })
-
-      // Set up existing settings
-      const { privacySettingsDB } = require('../settings/route')
-      privacySettingsDB.set('test-user-id', {
-        locationSharing: true,
-        locationPrecision: 3,
-        dataRetentionDays: 30,
-        anonymizeData: true,
-        differentialPrivacy: true,
-        kAnonymity: true,
-        endToEndEncryption: true,
-        emergencyDataSharing: true,
-        researchParticipation: false,
-        thirdPartyAnalytics: false,
-        automatedDataCleanup: true,
-        privacyBudgetAlerts: true,
-        legalNotifications: true,
-        dataProcessingPurposes: ['service_delivery', 'safety_monitoring'],
-        consentManagement: true,
-        realTimeMonitoring: true
-      })
-
-      // Send partial update
-      const request = {
-        json: async () => ({
-          settings: {
-            locationSharing: false,
-            researchParticipation: true
-          }
-        })
-      } as NextRequest
-
-      const response = await POST(request)
-
-      expect(response.status).toBe(200)
-      const json = await response.json()
-      expect(json.success).toBe(true)
-
-      // Check that only specified fields changed
-      expect(json.data.settings.locationSharing).toBe(false)
-      expect(json.data.settings.researchParticipation).toBe(true)
-
-      // Check that other fields remained unchanged
-      expect(json.data.settings.locationPrecision).toBe(3)
-      expect(json.data.settings.dataRetentionDays).toBe(30)
-      expect(json.data.settings.anonymizeData).toBe(true)
-    })
-
-    it('should log update for transparency', async () => {
-      getServerSession.mockResolvedValue({
-        user: { id: 'test-user-id' }
-      })
-
-      const request = {
-        json: async () => ({
-          settings: {
-            locationSharing: false,
-            locationPrecision: 2,
-            dataRetentionDays: 60,
-            anonymizeData: true,
-            differentialPrivacy: true,
-            kAnonymity: true,
-            endToEndEncryption: true,
-            emergencyDataSharing: false
-          }
-        })
-      } as NextRequest
-
-      await POST(request)
-
-      // Verify that logging was called
-      // eslint-disable-next-line no-console
-      expect(console.log).toHaveBeenCalledWith(expect.stringContaining('Privacy access logged'))
-    })
-
-    it('should trigger privacy impact assessment for significant changes', async () => {
-      getServerSession.mockResolvedValue({
-        user: { id: 'test-user-id' }
-      })
-
-      // Set up existing settings
-      const { privacySettingsDB } = require('../settings/route')
-      privacySettingsDB.set('test-user-id', {
-        locationSharing: true,
-        locationPrecision: 3,
-        dataRetentionDays: 30,
-        anonymizeData: true,
-        differentialPrivacy: true,
-        kAnonymity: true,
-        endToEndEncryption: true,
-        emergencyDataSharing: true,
-        researchParticipation: false,
-        thirdPartyAnalytics: false,
-        automatedDataCleanup: true,
-        privacyBudgetAlerts: true,
-        legalNotifications: true,
-        dataProcessingPurposes: ['service_delivery', 'safety_monitoring'],
-        consentManagement: true,
-        realTimeMonitoring: true
-      })
-
-      // Send significant changes (disable privacy features)
-      const request = {
-        json: async () => ({
-          settings: {
-            anonymizeData: false,
-            differentialPrivacy: false,
-            kAnonymity: false,
-            endToEndEncryption: false
-          }
-        })
-      } as NextRequest
-
-      await POST(request)
-
-      // Verify that impact assessment was triggered
-      // eslint-disable-next-line no-console
-      expect(console.log).toHaveBeenCalledWith(
-        expect.stringContaining('Privacy impact assessment triggered')
-      )
-    })
-  })
-
-  describe('Error Handling', () => {
-    it('should handle JSON parsing errors', async () => {
-      getServerSession.mockResolvedValue({
-        user: { id: 'test-user-id' }
-      })
-
-      const request = {
-        json: async () => {
-          throw new Error('Invalid JSON')
+    it('upserts valid settings and logs the update', async () => {
+      // The upsert path reads current row (.maybeSingle) then selects the saved row (.single).
+      mockStored = {
+        location_sharing: true, location_precision: 3, data_retention_days: 30,
+        anonymize_data: true, differential_privacy: true, k_anonymity: true,
+        end_to_end_encryption: true, emergency_data_sharing: true,
+        research_participation: false, third_party_analytics: false,
+        automated_data_cleanup: true, privacy_budget_alerts: true,
+        legal_notifications: true, data_processing_purposes: ['service_delivery'],
+        consent_management: true, real_time_monitoring: true,
+        updated_at: '2024-01-01T00:00:00.000Z'
+      }
+      const request = jsonRequest('POST', {
+        settings: {
+          locationSharing: false,
+          locationPrecision: 4,
+          dataRetentionDays: 60,
+          anonymizeData: true,
+          differentialPrivacy: true,
+          kAnonymity: true,
+          endToEndEncryption: true,
+          emergencyDataSharing: true,
+          researchParticipation: false,
+          thirdPartyAnalytics: false,
+          automatedDataCleanup: true,
+          privacyBudgetAlerts: true,
+          legalNotifications: true,
+          dataProcessingPurposes: ['service_delivery'],
+          consentManagement: true,
+          realTimeMonitoring: true
         }
-      } as NextRequest
-
-      const response = await POST(request)
-
-      expect(response.status).toBe(500)
-      const json = await response.json()
-      expect(json.error).toBe('Internal server error')
-    })
-
-    it('should handle database errors', async () => {
-      getServerSession.mockResolvedValue({
-        user: { id: 'test-user-id' }
       })
-
-      // Mock database error
-      const { privacySettingsDB } = require('../settings/route')
-      const originalGet = privacySettingsDB.get
-      privacySettingsDB.get = jest.fn(() => {
-        throw new Error('Database connection failed')
-      })
-
-      const request = {} as NextRequest
-      const response = await GET(request)
-
-      expect(response.status).toBe(500)
-      const json = await response.json()
-      expect(json.error).toBe('Internal server error')
-
-      // Restore original method
-      privacySettingsDB.get = originalGet
-    })
-  })
-
-  describe('Validation', () => {
-    it('should validate boolean fields', async () => {
-      getServerSession.mockResolvedValue({
-        user: { id: 'test-user-id' }
-      })
-
-      const request = {
-        json: async () => ({
-          settings: {
-            // Invalid
-            locationSharing: 'not-a-boolean',
-            locationPrecision: 3,
-            dataRetentionDays: 30,
-            anonymizeData: true,
-            differentialPrivacy: true,
-            kAnonymity: true,
-            endToEndEncryption: true,
-            emergencyDataSharing: true
-          }
-        })
-      } as NextRequest
-
-      const response = await POST(request)
-
-      expect(response.status).toBe(400)
-      const json = await response.json()
-      expect(json.error).toContain('locationSharing must be a boolean')
-    })
-
-    it('should validate number fields', async () => {
-      getServerSession.mockResolvedValue({
-        user: { id: 'test-user-id' }
-      })
-
-      const request = {
-        json: async () => ({
-          settings: {
-            locationSharing: true,
-            // Invalid
-            locationPrecision: 'not-a-number',
-            dataRetentionDays: 30,
-            anonymizeData: true,
-            differentialPrivacy: true,
-            kAnonymity: true,
-            endToEndEncryption: true,
-            emergencyDataSharing: true
-          }
-        })
-      } as NextRequest
-
-      const response = await POST(request)
-
-      expect(response.status).toBe(400)
-      const json = await response.json()
-      expect(json.error).toContain('locationPrecision must be a number')
-    })
-
-    it('should validate array fields', async () => {
-      getServerSession.mockResolvedValue({
-        user: { id: 'test-user-id' }
-      })
-
-      const request = {
-        json: async () => ({
-          settings: {
-            locationSharing: true,
-            locationPrecision: 3,
-            dataRetentionDays: 30,
-            anonymizeData: true,
-            differentialPrivacy: true,
-            kAnonymity: true,
-            endToEndEncryption: true,
-            emergencyDataSharing: true,
-            // Invalid
-            dataProcessingPurposes: 'not-an-array'
-          }
-        })
-      } as NextRequest
-
-      const response = await POST(request)
-
-      expect(response.status).toBe(400)
-      const json = await response.json()
-      expect(json.error).toContain('dataProcessingPurposes must be an array of strings')
+      const response = await POST(request, authedCtx)
+      expect(response.status).toBe(200)
+      expect(lastUpsert).toBeTruthy()
+      expect(lastInsert).toBeTruthy()
+      expect((lastInsert as Record<string, unknown>).action).toBe('settings_update')
     })
   })
 })

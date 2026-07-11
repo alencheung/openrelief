@@ -1,0 +1,33 @@
+{
+  "skills": [
+    "SKILL_SLOP_GUARD",
+    "SKILL_SECRETS_SHIELD",
+    "SKILL_DRY_ENGINE",
+    "SKILL_ARCH_ALIGNER",
+    "SKILL_ASYM_TESTER",
+    "SKILL_API_GHOST_HUNTER",
+    "SKILL_DEAD_BRANCH",
+    "SKILL_COMPLEXITY_RADAR",
+    "SKILL_DB_GUARD",
+    "SKILL_OPS_GUARD",
+    "SKILL_IAC_GUARD",
+    "SKILL_RESILIENCE_GUARD",
+    "SKILL_SCALE_GUARD",
+    "SKILL_OBSERVABILITY_GUARD",
+    "SKILL_WEB_GUARD",
+    "SKILL_PERF_GUARD",
+    "SKILL_SQL_PERF"
+  ],
+  "blockOn": [
+    "critical",
+    "high"
+  ],
+  "dedupThreshold": 2,
+  "newPackageAgeDays": 30,
+  "minDownloads": 50,
+  "minEntropy": 3,
+  "minTestTier": 2,
+  "maxComplexity": 10,
+  "maxNesting": 4,
+  "concurrency": 4
+}

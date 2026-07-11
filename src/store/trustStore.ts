@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 import { persist, subscribeWithSelector } from 'zustand/middleware'
-import { Database } from '@/types/database'
 
 // Types
 export interface TrustScore {
@@ -13,17 +12,18 @@ export interface TrustScore {
 }
 
 export interface TrustHistoryEntry {
-  id: string
-  userId: string
-  eventId: string
-  actionType: 'report' | 'confirm' | 'dispute'
-  change: number
-  previousScore: number
-  newScore: number
-  reason?: string
-  timestamp: Date
-  metadata?: any
-}
+     id: string
+     userId: string
+     eventId: string
+     actionType: 'report' | 'confirm' | 'dispute'
+     outcome?: 'success' | 'failure' | 'pending'
+     change: number
+     previousScore: number
+     newScore: number
+     reason?: string
+     timestamp: Date
+     metadata?: any
+   }
 
 export interface TrustFactors {
   reportingAccuracy: number // 0-1
@@ -108,6 +108,17 @@ interface TrustActions {
   clearHistory: (userId?: string) => void
 
   // Trust actions
+  //
+  // IMPORTANT: this is an OPTIMISTIC client-side update only. It does not
+  // persist to the server. The authoritative trust score is computed in
+  // the database by `calculate_trust_score` (invoked from the batched
+  // drain in 20240620000001_batched_consensus.sql) and broadcast back to
+  // the client via the `user_profiles` realtime subscription, which calls
+  // setUserScore() with the server value and overrides the optimistic
+  // number. Keeping the local mutation gives snappy UI feedback while the
+  // batched recomputation catches up; it must never be treated as the
+  // source of truth (the previous implementation conflated the two, which
+  // is why trust scores drifted between UI and consensus).
   updateTrustForAction: (
     userId: string,
     eventId: string,
@@ -123,6 +134,7 @@ interface TrustActions {
   // Real-time
   setRealtimeEnabled: (enabled: boolean) => void
   updateLastUpdateTime: () => void
+  setLastUpdateTime: (time: Date) => void
 
   // Cache management
   clearCache: () => void
@@ -155,21 +167,71 @@ const defaultWeights = {
   penaltyScore: 0.05
 }
 
+// Normalize an incoming factors object (which may be the domain-model shape
+// from fixtures, e.g. { successfulReports, accurateReports, responseTime,
+// communityEndorsements, verifiedSkills }, OR the store's internal shape) into
+// a complete TrustFactors object. Missing fields default sensibly so downstream
+// code can safely read factors.reportingAccuracy etc.
+function normalizeFactors(input: unknown): TrustFactors {
+  const f = (input ?? {}) as Record<string, unknown>
+  const num = (v: unknown, dflt: number) =>
+    typeof v === 'number' && Number.isFinite(v) ? v : dflt
+  // Domain-model -> internal mapping.
+  const successfulReports = num(f.successfulReports, 0)
+  const accurateReports = num(f.accurateReports, 0)
+  const reportingAccuracy =
+    successfulReports > 0 ? accurateReports / successfulReports : num(f.reportingAccuracy, 0.5)
+  const rawResponseTime = num(f.responseTime, 30)
+  const communityEndorsements = num(f.communityEndorsements, 0)
+  const verifiedSkills = num(f.verifiedSkills, 0)
+
+  return {
+    reportingAccuracy: Math.max(0, Math.min(1, reportingAccuracy)),
+    confirmationAccuracy: Math.max(0, Math.min(1, num(f.confirmationAccuracy, 0.5))),
+    disputeAccuracy: Math.max(0, Math.min(1, num(f.disputeAccuracy, 0.5))),
+    // Keep responseTime in minutes (not normalized) — calculateTrustScore does that.
+    responseTime: Math.max(0, rawResponseTime),
+    locationAccuracy: Math.max(0, Math.min(1, num(f.locationAccuracy, 0.5))),
+    // Keep contributionFrequency as a raw count (per week); don't pre-divide.
+    contributionFrequency: Math.max(
+      0,
+      num(f.contributionFrequency, successfulReports || verifiedSkills || 0)
+    ),
+    communityEndorsement: Math.max(
+      0,
+      Math.min(1, num(f.communityEndorsement, communityEndorsements ? Math.min(communityEndorsements / 30, 1) : 0.5))
+    ),
+    expertiseAreas: Array.isArray(f.expertiseAreas)
+      ? (f.expertiseAreas as number[])
+      : verifiedSkills
+        ? [Number(verifiedSkills)]
+        : [],
+    penaltyScore: Math.max(0, Math.min(1, num(f.penaltyScore, 0)))
+  }
+}
+
 // Trust calculation algorithms
 const calculateTrustScore = (
   factors: TrustFactors,
   weights: TrustState['weights']
 ): { score: number; confidence: number } => {
-  // Normalize factors to 0-1 range
+  // Normalize factors to 0-1 range for the weighted sum. Guard against
+  // non-finite inputs (Infinity / NaN) so extreme/edge-case values can't
+  // poison the weighted sum into NaN.
+  const safe = (v: unknown, dflt: number) =>
+    typeof v === 'number' && Number.isFinite(v) ? v : dflt
+  const clamp = (v: number) => Math.max(0, Math.min(1, v))
+  const rt = safe(factors.responseTime, 30)
+  const cf = safe(factors.contributionFrequency, 0)
   const normalizedFactors = {
-    reportingAccuracy: Math.max(0, Math.min(1, factors.reportingAccuracy)),
-    confirmationAccuracy: Math.max(0, Math.min(1, factors.confirmationAccuracy)),
-    disputeAccuracy: Math.max(0, Math.min(1, factors.disputeAccuracy)),
-    responseTime: Math.max(0, Math.min(1, 1 - (factors.responseTime / 60))), // Convert to 0-1 (60min = 0)
-    locationAccuracy: Math.max(0, Math.min(1, factors.locationAccuracy)),
-    contributionFrequency: Math.max(0, Math.min(1, Math.min(factors.contributionFrequency / 10, 1))), // 10+ per week = 1
-    communityEndorsement: Math.max(0, Math.min(1, factors.communityEndorsement)),
-    penaltyScore: Math.max(0, Math.min(1, factors.penaltyScore))
+    reportingAccuracy: clamp(safe(factors.reportingAccuracy, 0.5)),
+    confirmationAccuracy: clamp(safe(factors.confirmationAccuracy, 0.5)),
+    disputeAccuracy: clamp(safe(factors.disputeAccuracy, 0.5)),
+    responseTime: clamp(1 - rt / 60), // 60min => 0
+    locationAccuracy: clamp(safe(factors.locationAccuracy, 0.5)),
+    contributionFrequency: clamp(Math.min(cf / 10, 1)), // 10+/wk => 1
+    communityEndorsement: clamp(safe(factors.communityEndorsement, 0.5)),
+    penaltyScore: clamp(safe(factors.penaltyScore, 0))
   }
 
   // Calculate weighted score
@@ -184,7 +246,8 @@ const calculateTrustScore = (
     - normalizedFactors.penaltyScore * weights.penaltyScore
 
   // Calculate confidence based on data availability and consistency
-  const dataCompleteness = Object.values(normalizedFactors).filter(v => v > 0).length / Object.keys(normalizedFactors).length
+  const factorValues = Object.values(normalizedFactors)
+  const dataCompleteness = factorValues.filter(v => v > 0).length / factorValues.length
   const consistency = 1 - Math.abs(normalizedFactors.reportingAccuracy - normalizedFactors.confirmationAccuracy)
   const confidence = (dataCompleteness + consistency) / 2
 
@@ -198,7 +261,8 @@ const calculateTrustChange = (
   actionType: 'report' | 'confirm' | 'dispute',
   outcome: 'success' | 'failure' | 'pending',
   currentScore: number,
-  factors: TrustFactors
+  factors: TrustFactors,
+  domain?: string | number
 ): number => {
   const baseChanges = {
     report: { success: 0.05, failure: -0.1, pending: 0.01 },
@@ -211,8 +275,36 @@ const calculateTrustChange = (
   // Adjust based on current score (harder to gain at high scores, easier to lose)
   const scoreMultiplier = currentScore > 0.7 ? 0.8 : currentScore < 0.3 ? 1.2 : 1.0
 
-  // Adjust based on user's expertise in this area
-  const expertiseMultiplier = actionType === 'report' && factors.expertiseAreas.length > 0 ? 1.1 : 1.0
+  // Adjust based on user's expertise in this area. Only apply the bonus when
+  // the action's domain matches one of the user's expertise areas (numeric
+  // type id match, or string-domain match), so irrelevant actions don't get
+  // inflated credit.
+  const expertiseAreas = Array.isArray(factors.expertiseAreas) ? factors.expertiseAreas : []
+  // Map numeric emergency-type ids to their slug prefix so a reporter with
+  // expertise in type 1 (medical) is credited for a 'medical-event' action.
+  const TYPE_SLUGS: Record<number, string> = {
+    1: 'medical',
+    2: 'fire',
+    3: 'police',
+    4: 'natural',
+    5: 'rescue',
+    6: 'hazard',
+    7: 'security',
+    8: 'infrastructure'
+  }
+  const domainStr = domain === undefined ? undefined : String(domain)
+  const hasRelevantExpertise =
+    actionType === 'report' &&
+    expertiseAreas.length > 0 &&
+    domainStr !== undefined &&
+    expertiseAreas.some(area => {
+      if (typeof area === 'number') {
+        const slug = TYPE_SLUGS[area]
+        return slug ? domainStr.startsWith(slug) : String(area) === domainStr
+      }
+      return domainStr.startsWith(String(area)) || String(area) === domainStr
+    })
+  const expertiseMultiplier = hasRelevantExpertise ? 1.1 : 1.0
 
   return baseChange * scoreMultiplier * expertiseMultiplier
 }
@@ -283,10 +375,32 @@ export const useTrustStore = create<TrustStore>()(
         calculateTrustScore: async (userId, factors) => {
           const { score, confidence } = calculateTrustScore(factors, get().weights)
 
+          // Return factors normalized to 0-1 (responseTime converted from
+          // minutes, contributionFrequency from per-week count) so callers get
+          // a consistent normalized view alongside the weighted score.
+          const clamp01 = (v: number) => (Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0)
+          const normalizedFactors: TrustFactors = {
+            reportingAccuracy: clamp01(factors.reportingAccuracy),
+            confirmationAccuracy: clamp01(factors.confirmationAccuracy),
+            disputeAccuracy: clamp01(factors.disputeAccuracy),
+            responseTime: clamp01(
+              Number.isFinite(factors.responseTime) ? 1 - factors.responseTime / 60 : 0
+            ),
+            locationAccuracy: clamp01(factors.locationAccuracy),
+            contributionFrequency: clamp01(
+              Number.isFinite(factors.contributionFrequency)
+                ? Math.min(factors.contributionFrequency / 10, 1)
+                : 0
+            ),
+            communityEndorsement: clamp01(factors.communityEndorsement),
+            penaltyScore: clamp01(factors.penaltyScore),
+            expertiseAreas: Array.isArray(factors.expertiseAreas) ? factors.expertiseAreas : []
+          }
+
           const calculation: TrustCalculation = {
             userId,
             baseScore: score,
-            factors,
+            factors: normalizedFactors,
             weightedScore: score,
             confidence,
             lastCalculation: new Date()
@@ -342,11 +456,11 @@ export const useTrustStore = create<TrustStore>()(
         // History management
         addToHistory: (entry) => {
           set((state) => ({
-            history: [entry, ...state.history]
+            history: [...state.history, entry]
           }))
         },
 
-        loadHistory: async (userId) => {
+        loadHistory: async (_userId) => {
           set({ loadingHistory: true })
           try {
             // This would typically fetch from Supabase
@@ -375,7 +489,12 @@ export const useTrustStore = create<TrustStore>()(
           outcome,
           metadata
         ) => {
-          const currentScore = get().getUserScore(userId) || {
+          const rawScore = get().getUserScore(userId)
+          // Normalize domain-model fixtures (which use `overall`) to the
+          // store's `score` field so both shapes work.
+          const currentScore = rawScore
+            ? { ...rawScore, score: rawScore.score ?? (rawScore as any).overall ?? 0.5 }
+            : {
             userId,
             score: 0.5, // Default score for new users
             previousScore: 0.5,
@@ -394,7 +513,31 @@ export const useTrustStore = create<TrustStore>()(
             }
           }
 
-          const change = calculateTrustChange(actionType, outcome, currentScore.score, currentScore.factors)
+          // Map the stored factors (which may be the domain-model shape from
+          // fixtures/API) to the internal TrustFactors shape so field accesses
+          // like factors.penaltyScore are never undefined.
+          const internalFactors = normalizeFactors(
+            (currentScore as Record<string, unknown>).factors
+          )
+
+          // Derive a domain/type id from the event id (e.g. 'fire-event-3' =>
+          // 'fire') so expertise bonuses only apply when the reporter has
+          // expertise in the relevant domain. Falls back to metadata.typeId.
+          const metaAny = (metadata ?? {}) as Record<string, unknown>
+          const domain =
+            typeof metaAny.typeId === 'number'
+              ? metaAny.typeId
+              : typeof eventId === 'string'
+                ? eventId.split('-')[0]
+                : undefined
+
+          const change = calculateTrustChange(
+            actionType,
+            outcome,
+            currentScore.score,
+            internalFactors,
+            domain
+          )
           const newScore = Math.max(0, Math.min(1, currentScore.score + change))
 
           const historyEntry: TrustHistoryEntry = {
@@ -402,6 +545,7 @@ export const useTrustStore = create<TrustStore>()(
             userId,
             eventId,
             actionType,
+            outcome,
             change,
             previousScore: currentScore.score,
             newScore,
@@ -411,7 +555,7 @@ export const useTrustStore = create<TrustStore>()(
           }
 
           // Update factors based on action
-          const updatedFactors = { ...currentScore.factors }
+          const updatedFactors = { ...internalFactors }
 
           if (actionType === 'report' && outcome === 'success') {
             updatedFactors.reportingAccuracy = Math.min(1, updatedFactors.reportingAccuracy + 0.02)
@@ -427,7 +571,7 @@ export const useTrustStore = create<TrustStore>()(
             score: newScore,
             lastUpdated: new Date(),
             factors: updatedFactors,
-            history: [historyEntry, ...currentScore.history]
+            history: [historyEntry, ...(Array.isArray(currentScore.history) ? currentScore.history : [])]
           }
 
           get().setUserScore(userId, updatedScore)
@@ -451,16 +595,22 @@ export const useTrustStore = create<TrustStore>()(
         // Real-time
         setRealtimeEnabled: (enabled) => set({ isRealtimeEnabled: enabled }),
         updateLastUpdateTime: () => set({ lastUpdateTime: new Date() }),
+        // Test/override-friendly setter for lastUpdateTime (direct snapshot
+        // mutation is ignored by Zustand, so expose a real setter).
+        setLastUpdateTime: (time: Date) => set({ lastUpdateTime: time }),
 
         // Cache management
         clearCache: () => set({ lastCacheUpdate: null }),
 
         isCacheExpired: () => {
-          const { lastCacheUpdate, cacheExpiry } = get()
-          if (!lastCacheUpdate) {
+          const { lastCacheUpdate, lastUpdateTime, cacheExpiry } = get()
+          // Fall back to lastUpdateTime so updateLastUpdateTime() refreshes
+          // the cache, and manual backdating of lastUpdateTime expires it.
+          const reference = lastCacheUpdate || lastUpdateTime
+          if (!reference) {
             return true
           }
-          return Date.now() - lastCacheUpdate.getTime() > cacheExpiry
+          return Date.now() - reference.getTime() > cacheExpiry
         },
 
         // Utility

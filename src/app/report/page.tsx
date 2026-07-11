@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import EmergencyReportInterface from '@/components/map/EmergencyReportInterface'
+import ReportPageClient from './ReportPageClient'
 
 export const metadata: Metadata = {
   title: 'Report Emergency - OpenRelief',
@@ -7,13 +7,5 @@ export const metadata: Metadata = {
 }
 
 export default function ReportPage() {
-  return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
-      <EmergencyReportInterface
-        isOpen={true}
-        onClose={() => window.history.back()}
-        onReportSubmitted={() => window.history.back()}
-      />
-    </div>
-  )
+  return <ReportPageClient />
 }

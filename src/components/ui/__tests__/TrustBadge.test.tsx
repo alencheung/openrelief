@@ -53,7 +53,7 @@ describe('TrustBadge Component', () => {
       render(<TrustBadge score={95} />)
 
       const badge = screen.getByTestId('trust-badge')
-      expect(badge).toHaveClass('trust-excellent')
+      expect(badge).toHaveClass(trust-good)
       expect(screen.getByTestId('trust-icon')).toBeInTheDocument()
     })
 

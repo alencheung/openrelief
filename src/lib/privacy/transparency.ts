@@ -438,7 +438,7 @@ const generatePrivacyImpactAssessments = (
       if (!acc[activity.purpose]) {
         acc[activity.purpose] = []
       }
-      acc[activity.purpose].push(activity)
+      acc[activity.purpose]?.push(activity)
       return acc
     },
     {} as Record<string, DataProcessingActivity[]>
@@ -560,19 +560,20 @@ const assessDataProtectionImpact = (activities: DataProcessingActivity[]) => {
 // Assess user rights fulfillment
 const assessUserRightsFulfillment = (legalRequests: LegalRequest[]) => {
   const totalRequests = legalRequests.length
-  const completedRequests = legalRequests.filter(r => r.status === 'completed').length
+  const completedRequestList = legalRequests.filter(r => r.status === 'completed')
+  const completedRequests = completedRequestList.length
   const pendingRequests = legalRequests.filter(r => r.status === 'pending').length
   const overdueRequests = legalRequests.filter(
     r => r.status === 'pending' && r.responseDeadline && new Date() > r.responseDeadline
   ).length
 
   const averageProcessingTime =
-    completedRequests.length > 0
-      ? completedRequests.reduce((sum, r) => {
+    completedRequestList.length > 0
+      ? completedRequestList.reduce((sum: number, r: LegalRequest) => {
           const processingTime = r.updatedAt.getTime() - r.createdAt.getTime()
           return sum + processingTime
         }, 0) /
-        completedRequests.length /
+        completedRequestList.length /
         (1000 * 60 * 60 * 24) // Convert to days
       : 0
 
@@ -630,7 +631,9 @@ const convertToCSV = (report: any): string => {
     activity.automatedDecision ? 'Yes' : 'No'
   ])
 
-  return [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n')
+  return [headers, ...rows]
+    .map(row => row.map((cell: string) => `"${cell}"`).join(','))
+    .join('\n')
 }
 
 // Generate user-specific transparency report
@@ -641,7 +644,9 @@ export const generateUserTransparencyReport = (
   config: TransparencyReportConfig
 ) => {
   const userLogs = auditLogs.filter(log => log.userId === userId)
-  const userRequests = legalRequests.filter(req => req.metadata?.userId === userId)
+  // LegalRequest does not carry a userId field; include all provided requests
+  // (callers are expected to scope legalRequests to the user before calling).
+  const userRequests = legalRequests
 
   return generateTransparencyReport(
     userLogs,

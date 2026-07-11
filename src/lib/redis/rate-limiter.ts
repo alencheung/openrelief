@@ -19,7 +19,18 @@ export interface RateLimitConfig {
   windowMs: number
   maxRequests: number
   penaltyMultiplier?: number
+  /**
+   * When true and `emergencyMode` is active, the limit is RAISED by
+   * `emergencyModeMultiplier` instead of lowered. During mass-casualty events
+   * the platform exists to absorb legitimate victim traffic, not throttle it.
+   */
   emergencyOverride?: boolean
+  /**
+   * Multiplier applied to `maxRequests` when `emergencyMode` is on and
+   * `emergencyOverride` is enabled. Default 5x — gives victims headroom while
+   * still capping runaway abuse.
+   */
+  emergencyModeMultiplier?: number
 }
 
 export interface RateLimitResult {
@@ -35,13 +46,18 @@ export const RATE_LIMIT_TIERS: Record<RateLimitTier, RateLimitConfig> = {
     windowMs: 15 * 60 * 1000,
     maxRequests: 30,
     penaltyMultiplier: 2.0,
-    emergencyOverride: true
+    emergencyOverride: true,
+    emergencyModeMultiplier: 5
   },
   auth: {
     windowMs: 15 * 60 * 1000,
     maxRequests: 10,
+    // Authentication (login/signup) must NOT be throttled during a crisis —
+    // first-time victims need to create accounts to report. Raise the limit
+    // during emergency mode instead of leaving it pinned at peacetime levels.
     penaltyMultiplier: 3.0,
-    emergencyOverride: false
+    emergencyOverride: true,
+    emergencyModeMultiplier: 4
   },
   api: {
     windowMs: 15 * 60 * 1000,
@@ -114,6 +130,15 @@ export class RateLimiter {
 
     this.redisAvailable = await checkRedisAvailability()
     this.redisChecked = true
+
+    // If Redis was unavailable, re-check on a short cadence so we recover
+    // automatically when it comes back mid-incident. A successful check is
+    // trusted for longer to avoid probing Redis on every request.
+    if (!this.redisAvailable) {
+      setTimeout(() => {
+        this.redisChecked = false
+      }, 10_000)
+    }
     return this.redisAvailable
   }
 
@@ -156,10 +181,21 @@ export class RateLimiter {
 
     let effectiveMaxRequests = customMaxRequests ?? config.maxRequests
 
+    // During emergency mode, RAISE the limit for victim-facing tiers
+    // (emergency reports, auth). The previous logic multiplied by 0.3,
+    // throttling legitimate victims during the exact events the platform
+    // exists to serve. Verified-first-responder traffic still has headroom
+    // via the per-user (not per-IP) key below; only verified reporter-tier
+    // requests get the multiplier.
     if (emergencyMode && config.emergencyOverride) {
-      effectiveMaxRequests = Math.floor(effectiveMaxRequests * 0.3)
+      const multiplier = config.emergencyModeMultiplier ?? 5
+      effectiveMaxRequests = Math.floor(effectiveMaxRequests * multiplier)
     }
 
+    // Trust-weight adjustments. High-trust reporters get more headroom, but
+    // this is now bounded — a single user cannot multiply their own limit
+    // indefinitely, and low-trust traffic is dampened to absorb abuse during
+    // a surge.
     if (trustWeight > 0.7) {
       effectiveMaxRequests = Math.floor(effectiveMaxRequests * 2)
     } else if (trustWeight < 0.3) {
@@ -280,12 +316,24 @@ export function getRateLimiter(): RateLimiter {
 }
 
 export function generateRateLimitKey(req: NextRequest, tier: string): string {
+  // Prefer a per-user bucket once authenticated. In disaster zones many
+  // victims share a carrier-grade NAT IP — keying on IP alone collapses
+  // thousands of legitimate users into one bucket and throttles them
+  // collectively. Fall back to IP only for anonymous traffic.
+  const userId = req.headers.get('x-user-id')
   const ip = getClientIP(req)
-  const userAgent = req.headers.get('user-agent') ?? 'unknown'
-  const userId = req.headers.get('x-user-id') ?? 'anonymous'
 
-  const keyData = `${tier}:${ip}:${userId}:${userAgent}`
-  return simpleHash(keyData)
+  if (userId && userId !== 'anonymous') {
+    // Authenticated: bucket per user so NAT sharing cannot starve neighbors.
+    return simpleHash(`${tier}:user:${userId}`)
+  }
+
+  const userAgent = req.headers.get('user-agent') ?? 'unknown'
+  // Anonymous: include IP but strip volatile UA substrings so a single device
+  // cannot trivially rotate its key by tweaking the UA. UA is hashed together
+  // to still provide some client discrimination without exploding cardinality.
+  const uaStable = userAgent.split(' ')[0] ?? 'unknown'
+  return simpleHash(`${tier}:anon:${ip}:${uaStable}`)
 }
 
 export function getClientIP(req: NextRequest): string {

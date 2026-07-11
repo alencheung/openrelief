@@ -89,16 +89,23 @@ MAX_BATCH_SIZE = "100"
 MAX_EXECUTION_TIME = "29000"
 ENABLE_METRICS = "true"
 ENABLE_TRACING = "true"
-SENTRY_DSN = "https://PRODUCTION_SENTRY_DSN_REPLACE@sentry.io/1234567"
-DATABASE_URL = "postgresql://postgres:PRODUCTION_PASSWORD_REPLACE@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
+# SECRET HANDLING: every value below MUST be provisioned with
+#   wrangler secret put <NAME> --env production
+# and NOT committed here as a [vars] entry. Committing real secrets as
+# vars leaks them to anyone with repo access and into the bundler output.
+# The non-secret config knobs (cooldowns, thresholds, cache TTL) stay as
+# vars; secrets are referenced by name only and resolved at runtime from
+# the Workers secret store.
+#   SENTRY_DSN          (secret)
+#   DATABASE_URL        (secret)  — point at the Supavisor pooler (port 6543)
+#   SUPABASE_ANON_KEY   (secret)
+#   FCM_SERVER_KEY      (secret)
+#   APNS_KEY_ID         (secret)
+#   APNS_TEAM_ID        (secret)
+#   OPENAI_API_KEY      (secret)
+#   WEBHOOK_SECRET      (secret)
+#   API_SECRET_KEY      (secret)
 SUPABASE_URL = "https://openrelief.supabase.co"
-SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9wZW5yZWxpZWYiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTY5NzQwMDAwMCwiZXhwIjoyMDEyOTc2MDAwfQ.PRODUCTION_ANON_KEY_REPLACE"
-FCM_SERVER_KEY = "AAAA_PRODUCTION_FCM_KEY_REPLACE"
-APNS_KEY_ID = "PRODUCTION_APNS_KEY_ID_REPLACE"
-APNS_TEAM_ID = "PRODUCTION_APPLE_TEAM_ID_REPLACE"
-OPENAI_API_KEY = "sk-PRODUCTION_OPENAI_KEY_REPLACE"
-WEBHOOK_SECRET = "PRODUCTION_WEBHOOK_SECRET_REPLACE"
-API_SECRET_KEY = "PRODUCTION_API_SECRET_KEY_REPLACE"
 EMERGENCY_ALERT_COOLDOWN_SECONDS = "60"
 EMERGENCY_MAX_ALERTS_PER_USER_PER_HOUR = "10"
 EMERGENCY_TRUST_THRESHOLD = "0.7"
@@ -115,16 +122,10 @@ MAX_BATCH_SIZE = "50"
 MAX_EXECUTION_TIME = "25000"
 ENABLE_METRICS = "true"
 ENABLE_TRACING = "false"
-SENTRY_DSN = "https://STAGING_SENTRY_DSN_REPLACE@sentry.io/1234568"
-DATABASE_URL = "postgresql://postgres:STAGING_PASSWORD_REPLACE@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
+# SECRET HANDLING: provision via `wrangler secret put <NAME> --env staging`.
+# See the production [vars] block above for the full list. Do not commit
+# real secrets as vars.
 SUPABASE_URL = "https://staging.openrelief.supabase.co"
-SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0YWdpbmcub3BlbnJlbGllZiIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjk3NDAwMDAwLCJleHAiOjIwMTI5NzYwMDB9.STAGING_ANON_KEY_REPLACE"
-FCM_SERVER_KEY = "AAAA_STAGING_FCM_KEY_REPLACE"
-APNS_KEY_ID = "STAGING_APNS_KEY_ID_REPLACE"
-APNS_TEAM_ID = "STAGING_APPLE_TEAM_ID_REPLACE"
-OPENAI_API_KEY = "sk-STAGING_OPENAI_KEY_REPLACE"
-WEBHOOK_SECRET = "STAGING_WEBHOOK_SECRET_REPLACE"
-API_SECRET_KEY = "STAGING_API_SECRET_KEY_REPLACE"
 EMERGENCY_ALERT_COOLDOWN_SECONDS = "30"
 EMERGENCY_MAX_ALERTS_PER_USER_PER_HOUR = "20"
 EMERGENCY_TRUST_THRESHOLD = "0.5"

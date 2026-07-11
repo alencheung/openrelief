@@ -507,8 +507,7 @@ export function MobileEmergencyReport({
               <div className="grid grid-cols-3 gap-2">
                 {images.map((image, index) => (
                   <div key={index} className="relative aspect-square">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                                        <img
                       src={URL.createObjectURL(image)}
                       alt={`Emergency photo ${index + 1}`}
                       className="w-full h-full object-cover rounded-lg border"
@@ -517,7 +516,7 @@ export function MobileEmergencyReport({
                       className="absolute top-1 right-1 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center text-xs"
                       onClick={() => setImages(prev => prev.filter((_, i) => i !== index))}
                     >
-                      ×
+                      ?
                     </button>
                   </div>
                 ))}

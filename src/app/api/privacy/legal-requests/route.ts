@@ -1,395 +1,297 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-// @ts-nocheck
 /**
- * Legal Requests API Endpoint
+ * Legal Requests API Endpoint (user self-service GDPR data-subject rights).
  *
- * This endpoint handles GET, POST, PUT, and DELETE requests for legal requests,
- * allowing users to exercise their GDPR rights including data access,
- * rectification, erasure, portability, and objection.
+ * Backed by the user_legal_requests table. All access is logged to
+ * privacy_audit_log. Uses the RLS-bound SSR client so users can only
+ * read/modify their own requests.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from '@/lib/auth'
-import { LegalRequest } from '@/hooks/usePrivacy'
+import { createClient } from '@/lib/supabase/server'
+import { withAPISecurity, API_SECURITY_CONFIGS } from '@/lib/security/api-security'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { LegalRequest } from '@/hooks/usePrivacy'
 
-// Mock database for legal requests
-// In a real implementation, this would be replaced with actual database calls
-const legalRequestsDB = new Map<string, LegalRequest[]>()
+// SSR client cast to untyped form: user_legal_requests / privacy_audit_log are
+// not yet modelled in Database types. RLS scopes all access to the caller.
+type SSRClient = SupabaseClient
 
-// GET handler - retrieve legal requests
-export async function GET(request: NextRequest) {
-  try {
-    // Get user session
-    const session = await getServerSession()
+const ALLOWED_TYPES = ['data_access', 'deletion', 'correction', 'portability', 'objection'] as const
+type RequestType = (typeof ALLOWED_TYPES)[number]
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-    }
+// Service-level deadlines (calendar days) per request type, tighter than the
+// 30-day GDPR statutory maximum.
+const RESPONSE_DEADLINE_DAYS: Record<RequestType, number> = {
+  data_access: 15,
+  deletion: 10,
+  correction: 10,
+  portability: 20,
+  objection: 14
+}
 
-    // Parse query parameters
-    const { searchParams } = new URL(request.url)
-    const status = searchParams.get('status')
-    const type = searchParams.get('type')
-    const limit = searchParams.get('limit')
-    const offset = searchParams.get('offset')
+function generateId(): string {
+  return `request_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+}
 
-    // Get user's legal requests from database
-    let requests = legalRequestsDB.get(session.user.id) || []
-
-    // Filter by status if provided
-    if (status) {
-      requests = requests.filter(req => req.status === status)
-    }
-
-    // Filter by type if provided
-    if (type) {
-      requests = requests.filter(req => req.type === type)
-    }
-
-    // Sort by creation date (newest first)
-    requests.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-
-    // Apply pagination if provided
-    const limitNum = limit ? parseInt(limit, 10) : undefined
-    const offsetNum = offset ? parseInt(offset, 10) : 0
-
-    if (limitNum) {
-      requests = requests.slice(offsetNum, offsetNum + limitNum)
-    }
-
-    // Log access for transparency
-    await logLegalRequestAccess(session.user.id, 'requests_retrieval', 'legal_requests', {
-      filters: { status, type },
-      pagination: { limit: limitNum, offset: offsetNum },
-      resultCount: requests.length
-    })
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        requests,
-        totalCount: legalRequestsDB.get(session.user.id)?.length || 0,
-        filters: { status, type },
-        pagination: { limit: limitNum, offset: offsetNum }
-      }
-    })
-  } catch (error) {
-    console.error('Error retrieving legal requests:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+function rowToRequest(row: Record<string, unknown>): LegalRequest {
+  return {
+    id: row.id as string,
+    type: row.type as LegalRequest['type'],
+    status: row.status as LegalRequest['status'],
+    title: row.title as string,
+    description: row.description as string,
+    createdAt: new Date(row.created_at as string),
+    updatedAt: new Date(row.updated_at as string),
+    responseDeadline: row.response_deadline ? new Date(row.response_deadline as string) : undefined,
+    estimatedCompletion: row.estimated_completion
+      ? new Date(row.estimated_completion as string)
+      : undefined,
+    canUserContact: (row.can_user_contact ?? true) as boolean
   }
 }
 
-// POST handler - create new legal request
-export async function POST(request: NextRequest) {
-  try {
-    // Get user session
-    const session = await getServerSession()
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-    }
-
-    // Parse request body
-    const body = await request.json()
-    const { type, title, description } = body
-
-    // Validate required fields
-    if (!type || !title || !description) {
-      return NextResponse.json(
-        { error: 'Missing required fields: type, title, description' },
-        { status: 400 }
-      )
-    }
-
-    // Validate request type
-    const validTypes = ['data_access', 'deletion', 'correction', 'portability', 'objection']
-    if (!validTypes.includes(type)) {
-      return NextResponse.json(
-        { error: `Invalid request type. Valid types: ${validTypes.join(', ')}` },
-        { status: 400 }
-      )
-    }
-
-    // Validate title and description length
-    if (title.length < 3 || title.length > 200) {
-      return NextResponse.json(
-        { error: 'Title must be between 3 and 200 characters' },
-        { status: 400 }
-      )
-    }
-
-    if (description.length < 10 || description.length > 2000) {
-      return NextResponse.json(
-        { error: 'Description must be between 10 and 2000 characters' },
-        { status: 400 }
-      )
-    }
-
-    // Get existing requests for this user
-    const userRequests = legalRequestsDB.get(session.user.id) || []
-
-    // Check for duplicate requests
-    const existingRequest = userRequests.find(
-      req =>
-        req.type === type &&
-        req.status === 'pending' &&
-        req.title.toLowerCase() === title.toLowerCase()
-    )
-
-    if (existingRequest) {
-      return NextResponse.json(
-        { error: 'A similar request is already being processed' },
-        { status: 409 }
-      )
-    }
-
-    // Create new legal request
-    const newRequest: LegalRequest = {
-      id: `request_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: type as any,
-      status: 'pending',
-      title,
-      description,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      responseDeadline: calculateResponseDeadline(type),
-      estimatedCompletion: calculateEstimatedCompletion(type),
-      canUserContact: true
-    }
-
-    // Save to database
-    userRequests.push(newRequest)
-    legalRequestsDB.set(session.user.id, userRequests)
-
-    // Log request creation for transparency
-    await logLegalRequestAccess(session.user.id, 'request_creation', 'legal_request', {
-      requestId: newRequest.id,
-      type,
-      title
-    })
-
-    // Trigger notification to privacy team
-    await notifyPrivacyTeam(newRequest, session.user.id)
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        request: newRequest,
-        message: 'Legal request submitted successfully'
-      }
-    })
-  } catch (error) {
-    console.error('Error creating legal request:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-// PUT handler - update legal request (for appeals, etc.)
-export async function PUT(request: NextRequest) {
-  try {
-    // Get user session
-    const session = await getServerSession()
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-    }
-
-    // Parse request body
-    const body = await request.json()
-    const { requestId, status, description } = body
-
-    // Validate required fields
-    if (!requestId) {
-      return NextResponse.json({ error: 'Missing required field: requestId' }, { status: 400 })
-    }
-
-    // Get user's legal requests
-    const userRequests = legalRequestsDB.get(session.user.id) || []
-
-    // Find the request to update
-    const requestIndex = userRequests.findIndex(req => req.id === requestId)
-
-    if (requestIndex === -1) {
-      return NextResponse.json({ error: 'Legal request not found' }, { status: 404 })
-    }
-
-    const existingRequest = userRequests[requestIndex]
-
-    if (!existingRequest) {
-      return NextResponse.json({ error: 'Request not found' }, { status: 404 })
-    }
-
-    // Validate status transition
-    if (!isValidStatusTransition(existingRequest.status, status)) {
-      return NextResponse.json(
-        { error: `Invalid status transition from ${existingRequest.status} to ${status}` },
-        { status: 400 }
-      )
-    }
-
-    // Update the request
-    const updatedRequest: LegalRequest = {
-      ...existingRequest,
-      status: status as any,
-      updatedAt: new Date(),
-      // Update response deadline if status changes to processing
-      responseDeadline:
-        status === 'processing'
-          ? calculateResponseDeadline(existingRequest.type)
-          : existingRequest.responseDeadline
-    }
-
-    // Add description if provided (for appeals)
-    if (description) {
-      updatedRequest.description = description
-    }
-
-    // Save to database
-    userRequests[requestIndex] = updatedRequest
-    legalRequestsDB.set(session.user.id, userRequests)
-
-    // Log update for transparency
-    await logLegalRequestAccess(session.user.id, 'request_update', 'legal_request', {
-      requestId,
-      previousStatus: existingRequest.status,
-      newStatus: status,
-      description
-    })
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        request: updatedRequest,
-        message: 'Legal request updated successfully'
-      }
-    })
-  } catch (error) {
-    console.error('Error updating legal request:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
-}
-
-// Calculate response deadline based on request type
-function calculateResponseDeadline(type: string): Date {
-  const deadline = new Date()
-
-  // GDPR requires response within 30 days, but we set earlier deadlines for better service
-  switch (type) {
-    case 'data_access':
-      // 15 days for data access
-      deadline.setDate(deadline.getDate() + 15)
-      break
-    case 'deletion':
-      // 10 days for deletion
-      deadline.setDate(deadline.getDate() + 10)
-      break
-    case 'correction':
-      // 10 days for correction
-      deadline.setDate(deadline.getDate() + 10)
-      break
-    case 'portability':
-      // 20 days for portability
-      deadline.setDate(deadline.getDate() + 20)
-      break
-    case 'objection':
-      // 14 days for objection
-      deadline.setDate(deadline.getDate() + 14)
-      break
-    default:
-      // 30 days default
-      deadline.setDate(deadline.getDate() + 30)
-  }
-
-  return deadline
-}
-
-// Calculate estimated completion time
-function calculateEstimatedCompletion(type: string): Date {
-  const estimated = new Date()
-
-  switch (type) {
-    case 'data_access':
-      estimated.setDate(estimated.getDate() + 12)
-      break
-    case 'deletion':
-      estimated.setDate(estimated.getDate() + 7)
-      break
-    case 'correction':
-      estimated.setDate(estimated.getDate() + 7)
-      break
-    case 'portability':
-      estimated.setDate(estimated.getDate() + 15)
-      break
-    case 'objection':
-      estimated.setDate(estimated.getDate() + 10)
-      break
-    default:
-      estimated.setDate(estimated.getDate() + 25)
-  }
-
-  return estimated
-}
-
-// Validate if status transition is allowed
-function isValidStatusTransition(currentStatus: string, newStatus: string): boolean {
-  const validTransitions: Record<string, string[]> = {
-    pending: ['processing', 'completed', 'rejected'],
-    processing: ['completed', 'rejected', 'appealed'],
-    completed: ['appealed'],
-    rejected: ['appealed'],
-    appealed: ['processing', 'completed', 'rejected']
-  }
-
-  return validTransitions[currentStatus]?.includes(newStatus) || false
-}
-
-// Log legal request access for transparency
-async function logLegalRequestAccess(
+async function logLegalAccess(
+  supabase: SSRClient,
   userId: string,
   action: string,
-  dataType: string,
-  metadata?: any
+  metadata?: Record<string, unknown>
 ): Promise<void> {
-  // In a real implementation, this would log to a secure audit database
-  const logEntry = {
-    id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    timestamp: new Date(),
-    userId,
+  const { error } = await supabase.from('privacy_audit_log').insert({
+    user_id: userId,
     action,
-    dataType,
-    dataTypes: [dataType],
-    privacyImpact: 'high',
-    legalBasis: 'user_rights',
-    retentionPeriod: 2555,
-    // 7 years for legal requests
-    automatedDecision: false,
-    dataSubjects: 1,
-    // In real implementation, this would be actual IP
-    ipAddress: 'server',
-    userAgent: 'api_server',
-    metadata
-  }
-
-  // eslint-disable-next-line no-console
-  console.log('Legal request access logged:', logEntry)
-
-  // In a real implementation, save to audit database
-  // await saveToAuditDatabase(logEntry)
-}
-
-// Notify privacy team of new request
-async function notifyPrivacyTeam(request: LegalRequest, userId: string): Promise<void> {
-  // In a real implementation, this would send notifications to the privacy team
-  // eslint-disable-next-line no-console
-  console.log('Privacy team notified of new request:', {
-    requestId: request.id,
-    userId,
-    type: request.type,
-    title: request.title,
-    deadline: request.responseDeadline
+    data_type: 'legal_request',
+    privacy_budget_used: 0,
+    metadata: metadata ?? null,
+    user_agent: 'api_server'
   })
-
-  // In a real implementation:
-  // await sendEmailToPrivacyTeam(request)
-  // await createTaskInPrivacySystem(request)
+  if (error) {
+    console.error('Failed to write privacy_audit_log:', error)
+  }
 }
+
+async function notifyPrivacyTeam(userId: string, requestId: string, type: string): Promise<void> {
+  // TODO: wire to PRIVACY_TEAM_WEBHOOK_URL / notification infra once available.
+  if (process.env.PRIVACY_TEAM_WEBHOOK_URL) {
+    console.warn(`[privacy-team] New legal request ${requestId} (type=${type}) from ${userId}`)
+  } else {
+    console.warn(
+      `[privacy-team] PRIVACY_TEAM_WEBHOOK_URL not set; legal request ${requestId} queued without team notification`
+    )
+  }
+}
+
+// GET handler - list the user's legal requests
+export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(
+  async (request: NextRequest, context) => {
+    try {
+      if (!context.userId) {
+        return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+      }
+
+      const { searchParams } = new URL(request.url)
+      const status = searchParams.get('status')
+      const type = searchParams.get('type')
+      const limit = Math.min(Number(searchParams.get('limit') ?? '50'), 100)
+      const offset = Number(searchParams.get('offset') ?? '0')
+
+      const supabase = (await createClient()) as SSRClient
+      let query = supabase
+        .from('user_legal_requests')
+        .select('*')
+        .eq('user_id', context.userId)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1)
+
+      if (status) query = query.eq('status', status)
+      if (type) query = query.eq('type', type)
+
+      const { data, error } = await query
+
+      if (error) {
+        console.error('Error fetching legal requests:', error)
+        return NextResponse.json({ error: 'Failed to fetch requests' }, { status: 500 })
+      }
+
+      await logLegalAccess(supabase, context.userId, 'request_list')
+
+      return NextResponse.json({
+        success: true,
+        data: { requests: (data ?? []).map(rowToRequest) }
+      })
+    } catch (error) {
+      console.error('Error retrieving legal requests:', error)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
+  }
+)
+
+// POST handler - create a new legal request
+export const POST = withAPISecurity(API_SECURITY_CONFIGS.user)(
+  async (request: NextRequest, context) => {
+    try {
+      if (!context.userId) {
+        return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+      }
+
+      const body = await request.json()
+      const { type, title, description } = body as {
+        type?: string
+        title?: string
+        description?: string
+      }
+
+      if (!type || !ALLOWED_TYPES.includes(type as RequestType)) {
+        return NextResponse.json(
+          { error: `type must be one of: ${ALLOWED_TYPES.join(', ')}` },
+          { status: 400 }
+        )
+      }
+      if (!title || typeof title !== 'string' || title.trim().length < 3 || title.length > 200) {
+        return NextResponse.json(
+          { error: 'title must be between 3 and 200 characters' },
+          { status: 400 }
+        )
+      }
+      if (
+        !description ||
+        typeof description !== 'string' ||
+        description.trim().length < 10 ||
+        description.length > 2000
+      ) {
+        return NextResponse.json(
+          { error: 'description must be between 10 and 2000 characters' },
+          { status: 400 }
+        )
+      }
+
+      const requestType = type as RequestType
+      const now = new Date()
+      const responseDeadline = new Date(
+        now.getTime() + RESPONSE_DEADLINE_DAYS[requestType] * 24 * 60 * 60 * 1000
+      )
+      const estimatedCompletion = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+
+      const id = generateId()
+      const supabase = (await createClient()) as SSRClient
+
+      // De-duplicate: same type + pending status + same title.
+      const { data: existing } = await supabase
+        .from('user_legal_requests')
+        .select('id')
+        .eq('user_id', context.userId)
+        .eq('type', requestType)
+        .eq('status', 'pending')
+        .ilike('title', title)
+        .maybeSingle()
+
+      if (existing) {
+        return NextResponse.json(
+          { error: 'A similar pending request already exists' },
+          { status: 409 }
+        )
+      }
+
+      const { data, error } = await supabase
+        .from('user_legal_requests')
+        .insert({
+          id,
+          user_id: context.userId,
+          type: requestType,
+          status: 'pending',
+          title,
+          description,
+          response_deadline: responseDeadline.toISOString(),
+          estimated_completion: estimatedCompletion.toISOString(),
+          can_user_contact: true
+        })
+        .select('*')
+        .single()
+
+      if (error) {
+        console.error('Error creating legal request:', error)
+        return NextResponse.json({ error: 'Failed to create request' }, { status: 500 })
+      }
+
+      await logLegalAccess(supabase, context.userId, 'request_creation', {
+        requestId: id,
+        type: requestType,
+        title
+      })
+      await notifyPrivacyTeam(context.userId, id, requestType)
+
+      return NextResponse.json(
+        {
+          success: true,
+          data: { request: rowToRequest(data), message: 'Legal request submitted successfully' }
+        },
+        { status: 201 }
+      )
+    } catch (error) {
+      console.error('Error creating legal request:', error)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
+  }
+)
+
+// PUT handler - update a legal request (e.g. appeal, add info)
+export const PUT = withAPISecurity(API_SECURITY_CONFIGS.user)(
+  async (request: NextRequest, context) => {
+    try {
+      if (!context.userId) {
+        return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+      }
+
+      const body = await request.json()
+      const { requestId, status, description } = body as {
+        requestId?: string
+        status?: string
+        description?: string
+      }
+
+      if (!requestId) {
+        return NextResponse.json({ error: 'Missing required field: requestId' }, { status: 400 })
+      }
+
+      // Users may only appeal (set status to 'appealed') or amend description.
+      const patch: Record<string, unknown> = {}
+      if (status === 'appealed') patch.status = 'appealed'
+      if (typeof description === 'string' && description.trim().length > 0) {
+        patch.description = description
+      }
+
+      if (Object.keys(patch).length === 0) {
+        return NextResponse.json({ error: 'No updatable fields provided' }, { status: 400 })
+      }
+
+      const supabase = (await createClient()) as SSRClient
+      const { data, error } = await supabase
+        .from('user_legal_requests')
+        .update(patch)
+        .eq('id', requestId)
+        .eq('user_id', context.userId) // RLS also enforces this; belt and suspenders
+        .select('*')
+        .maybeSingle()
+
+      if (error) {
+        console.error('Error updating legal request:', error)
+        return NextResponse.json({ error: 'Failed to update request' }, { status: 500 })
+      }
+      if (!data) {
+        return NextResponse.json({ error: 'Request not found' }, { status: 404 })
+      }
+
+      await logLegalAccess(supabase, context.userId, 'request_update', {
+        requestId,
+        changes: patch
+      })
+
+      return NextResponse.json({
+        success: true,
+        data: { request: rowToRequest(data), message: 'Legal request updated successfully' }
+      })
+    } catch (error) {
+      console.error('Error updating legal request:', error)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
+  }
+)

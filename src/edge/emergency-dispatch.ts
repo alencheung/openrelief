@@ -7,6 +7,35 @@
 
 import { Request, Response, ExecutionContext, ScheduledEvent } from '@cloudflare/workers-types'
 
+// Minimal structural shape for the Cloudflare KV namespaces this worker uses.
+// Defined locally (rather than relying on the @cloudflare/workers-types
+// ambient globals KVNamespace/D1Database, which require tsconfig `types`
+// configuration) so this file type-checks in any project configuration.
+interface EdgeKV {
+  get(key: string, options?: any): Promise<string | null>
+  put(key: string, value: string, options?: any): Promise<void>
+  delete(key: string): Promise<void>
+  list(options?: { prefix?: string }): Promise<{ keys: Array<{ name: string }> }>
+}
+
+// Worker bindings / env vars.
+// NOTE: DISPATCH_SIGNING_KEY is a shared HMAC secret that MUST be provisioned
+// with `wrangler secret put DISPATCH_SIGNING_KEY` (production + staging). It
+// needs adding to the secret list documented in `src/edge/wrangler.toml` and
+// `src/edge/wrangler.production.toml`. Other bindings (KV/D1) are declared
+// in those toml files already.
+interface Env {
+  DISPATCH_SIGNING_KEY?: string
+  PUSH_SERVICE_URL?: string
+  PUSH_SERVICE_KEY?: string
+  TARGETS_KV: EdgeKV
+  ANALYTICS_KV: EdgeKV
+  DISPATCH_METRICS: EdgeKV
+  EMERGENCY_DB?: any
+  ENVIRONMENT?: string
+  LOG_LEVEL?: string
+}
+
 // Types
 interface EmergencyEvent {
   id: string
@@ -265,9 +294,53 @@ async function sendPushNotification(
   }
 }
 
+// Constant-time string comparison to mitigate timing attacks on the HMAC.
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    return false
+  }
+  let mismatch = 0
+  for (let i = 0; i < a.length; i++) {
+    mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  }
+  return mismatch === 0
+}
+
+// Verify the caller-supplied HMAC-SHA256 signature over the request body.
+// Uses the Web Crypto API (Cloudflare Workers runtime) and compares the
+// provided hex signature against the expected value in constant time.
+async function verifyDispatchSignature(request: Request, env: Env): Promise<boolean> {
+  const signingKey = env.DISPATCH_SIGNING_KEY
+  if (!signingKey) {
+    console.error('DISPATCH_SIGNING_KEY not configured')
+    return false
+  }
+  const signature = request.headers.get('X-Dispatch-Signature')
+  if (!signature) return false
+  const body = await request.clone().arrayBuffer()
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(signingKey),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  )
+  const expected = await crypto.subtle.sign('HMAC', key, body)
+  const expectedHex = Array.from(new Uint8Array(expected))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('')
+  return timingSafeEqual(signature, expectedHex)
+}
+
+// Sanitize untrusted emergency.id before it is interpolated into a KV key.
+// Allow alphanumeric + dash, max 64 chars.
+function isValidEmergencyId(id: unknown): boolean {
+  return typeof id === 'string' && /^[A-Za-z0-9-]{1,64}$/.test(id)
+}
+
 // Main edge function
 export default {
-  async fetch(request: Request, env: any, ctx: ExecutionContext): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const startTime = Date.now()
 
     try {
@@ -276,11 +349,24 @@ export default {
         return new Response('Method not allowed', { status: 405 })
       }
 
+      // Verify HMAC dispatch signature BEFORE parsing/persisting anything.
+      // request.clone() preserves the original body for request.json() below.
+      const signatureValid = await verifyDispatchSignature(request, env)
+      if (!signatureValid) {
+        return new Response('Unauthorized', { status: 401 })
+      }
+
       const emergency: EmergencyEvent = await request.json()
 
       // Validate emergency data
       if (!emergency.id || !emergency.location || !emergency.severity) {
         return new Response('Invalid emergency data', { status: 400 })
+      }
+
+      // Sanitize untrusted emergency.id before it is used as a KV key.
+      // This prevents KV-key injection and traversal-style abuse.
+      if (!isValidEmergencyId(emergency.id)) {
+        return new Response('Invalid emergency id', { status: 400 })
       }
 
       // Get edge region

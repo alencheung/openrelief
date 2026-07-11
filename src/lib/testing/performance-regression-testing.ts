@@ -195,6 +195,7 @@ export interface PerformanceRegressionResults {
     junitReport?: string
     jsonReport?: string
     htmlReport?: string
+    markdownReport?: string
     trendData?: any
   }
 }
@@ -519,7 +520,9 @@ class PerformanceRegressionTesting {
           threshold: 0,
           actual: 1,
           severity: 'critical',
-          description: `Test execution failed: ${error.message}`,
+          description: `Test execution failed: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
           impact: 'Unable to measure performance for this component',
           recommendation: 'Fix test execution issues before proceeding'
         })
@@ -552,11 +555,11 @@ class PerformanceRegressionTesting {
       responseTimes.sort((a, b) => a - b)
 
       metrics[endpoint] = {
-        min: responseTimes[0],
-        max: responseTimes[responseTimes.length - 1],
-        p50: responseTimes[Math.floor(responseTimes.length * 0.5)],
-        p95: responseTimes[Math.floor(responseTimes.length * 0.95)],
-        p99: responseTimes[Math.floor(responseTimes.length * 0.99)],
+        min: responseTimes[0] ?? 0,
+        max: responseTimes[responseTimes.length - 1] ?? 0,
+        p50: responseTimes[Math.floor(responseTimes.length * 0.5)] ?? 0,
+        p95: responseTimes[Math.floor(responseTimes.length * 0.95)] ?? 0,
+        p99: responseTimes[Math.floor(responseTimes.length * 0.99)] ?? 0,
         mean: responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length
       }
     }
@@ -587,11 +590,11 @@ class PerformanceRegressionTesting {
 
       metrics[query] = {
         queryTime: {
-          min: queryTimes[0],
-          max: queryTimes[queryTimes.length - 1],
-          p50: queryTimes[Math.floor(queryTimes.length * 0.5)],
-          p95: queryTimes[Math.floor(queryTimes.length * 0.95)],
-          p99: queryTimes[Math.floor(queryTimes.length * 0.99)],
+          min: queryTimes[0] ?? 0,
+          max: queryTimes[queryTimes.length - 1] ?? 0,
+          p50: queryTimes[Math.floor(queryTimes.length * 0.5)] ?? 0,
+          p95: queryTimes[Math.floor(queryTimes.length * 0.95)] ?? 0,
+          p99: queryTimes[Math.floor(queryTimes.length * 0.99)] ?? 0,
           mean: queryTimes.reduce((sum, time) => sum + time, 0) / queryTimes.length
         },
         connectionPoolUtilization: 60 + Math.random() * 30, // 60-90%
@@ -795,7 +798,7 @@ class PerformanceRegressionTesting {
       const baselineMetrics = baseline[endpoint]
       const currentMetrics = current[endpoint]
 
-      if (!baselineMetrics) {
+      if (!baselineMetrics || !currentMetrics) {
         continue
       }
 
@@ -864,7 +867,7 @@ class PerformanceRegressionTesting {
       const baselineMetrics = baseline[query]
       const currentMetrics = current[query]
 
-      if (!baselineMetrics) {
+      if (!baselineMetrics || !currentMetrics) {
         continue
       }
 
@@ -1271,8 +1274,8 @@ class PerformanceRegressionTesting {
         name: comparison.metric,
         time: 0,
         failure: comparison.status === 'fail' ? {
-          message: `Performance threshold exceeded: ${comparison.actual} > ${comparison.threshold}`,
-          _text: `Baseline: ${comparison.baseline}, Current: ${comparison.actual}, Change: ${comparison.changePercent.toFixed(2)}%`
+          message: `Performance threshold exceeded: ${comparison.current} > ${comparison.threshold}`,
+          _text: `Baseline: ${comparison.baseline}, Current: ${comparison.current}, Change: ${comparison.changePercent.toFixed(2)}%`
         } : undefined
       }))
     }
@@ -1369,7 +1372,7 @@ ${test.failure ? `    <failure message="${test.failure.message}">${test.failure.
                     <td>${comparison.category}</td>
                     <td>${comparison.metric}</td>
                     <td>${comparison.baseline.toFixed(2)}</td>
-                    <td>${comparison.actual.toFixed(2)}</td>
+                    <td>${comparison.current.toFixed(2)}</td>
                     <td>${comparison.changePercent > 0 ? '+' : ''}${comparison.changePercent.toFixed(2)}%</td>
                     <td>${comparison.threshold.toFixed(2)}</td>
                     <td class="${comparison.status}">${comparison.status.toUpperCase()}</td>
@@ -1419,7 +1422,7 @@ ${results.violations.map(violation => `
 | Category | Metric | Baseline | Current | Change | Threshold | Status |
 |----------|--------|----------|---------|--------|-----------|--------|
 ${results.comparisons.map(comparison =>
-    `| ${comparison.category} | ${comparison.metric} | ${comparison.baseline.toFixed(2)} | ${comparison.actual.toFixed(2)} | ${comparison.changePercent > 0 ? '+' : ''}${comparison.changePercent.toFixed(2)}% | ${comparison.threshold.toFixed(2)} | ${comparison.status.toUpperCase()} |`
+    `| ${comparison.category} | ${comparison.metric} | ${comparison.baseline.toFixed(2)} | ${comparison.current.toFixed(2)} | ${comparison.changePercent > 0 ? '+' : ''}${comparison.changePercent.toFixed(2)}% | ${comparison.threshold.toFixed(2)} | ${comparison.status.toUpperCase()} |`
   ).join('\n')}
 
 ## Recommendations

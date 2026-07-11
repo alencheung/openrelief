@@ -298,7 +298,13 @@
     },
     "ipWhitelist": {
       "enabled": true,
-      "adminEndpoints": ["0.0.0.0/0"], // Allow all for now, restrict in production
+      // Admin endpoints MUST be restricted to a known ops CIDR. The previous
+      // "0.0.0.0/0 with a TODO" shipped admin access open to the internet.
+      // The resolved CIDRs are supplied at deploy time via the
+      // ADMIN_ALLOWED_CIDRS env var (comma-separated); when unset, admin
+      // endpoints are denied from every IP except loopback so a misconfigured
+      // deploy fails closed rather than open.
+      "adminEndpoints": "${ADMIN_ALLOWED_CIDRS:127.0.0.1/32,::1/128}",
       "apiEndpoints": ["0.0.0.0/0"]
     },
     "requestLimits": {

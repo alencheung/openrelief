@@ -1,0 +1,4 @@
+# Approved package registries / internal namespaces, one per line.
+# Examples:
+# registry.npmjs.org
+# @mycompany/*

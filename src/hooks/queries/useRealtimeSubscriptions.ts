@@ -33,6 +33,7 @@ import {
   getUserIdsInShard,
   type ShardedPresenceState
 } from '@/lib/realtime/channel-sharding'
+import { acquireSharedChannel } from '@/lib/realtime/shared-channels'
 
 // Types
 export type SubscriptionCallback<T = any> = (payload: {
@@ -55,8 +56,18 @@ export type SubscriptionConfig = {
 export type SubscriptionStatus = 'connecting' | 'connected' | 'disconnected' | 'error' | 'retrying'
 
 // Real-time subscription hook with enhanced error handling
+//
+// Channel-sharing strategy: every subscriber to the same
+// (table, event, filter) tuple reuses ONE shared Supabase channel. The
+// previous implementation suffixed each channel name with `Date.now()`,
+// producing ~6 unique channels per user (600K channels at 100K users) and
+// forcing Supabase Realtime to re-evaluate RLS per message per channel.
+// Sharing channels collapses that to O(distinct filters) channels globally.
 export const useRealtimeSubscription = (config: SubscriptionConfig) => {
   const channelRef = useRef<RealtimeChannel | null>(null)
+  // Disposer returned by `acquireSharedChannel` — detaches this hook's
+  // listener and decrements the shared channel's refcount on unmount.
+  const channelReleaseRef = useRef<(() => void) | null>(null)
   const callbackRef = useRef(config.callback)
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const [status, setStatus] = useState<SubscriptionStatus>('disconnected')
@@ -99,75 +110,89 @@ export const useRealtimeSubscription = (config: SubscriptionConfig) => {
     setStatus('connecting')
     setError(null)
 
-    // Unsubscribe from existing channel
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current)
-      channelRef.current = null
+    // Release any previously acquired shared channel before re-acquiring.
+    // The registry holds a single channel per (table, event, filter) tuple
+    // shared across all subscribers; releasing here decrements its refcount.
+    if (channelReleaseRef.current) {
+      channelReleaseRef.current()
+      channelReleaseRef.current = null
     }
+    channelRef.current = null
 
     // Create retry function with exponential backoff
     const retrySubscribe = createRetryFunction(
       async () => {
-        const channelName = `realtime-${config.table}-${Date.now()}`
         console.log(
           `[Realtime] Attempting to subscribe to ${config.table} (attempt ${retryCount + 1})`
         )
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const channel: any = supabase.channel(channelName)
-        channel
-          .on(
-            'postgres_changes' as any,
-            {
-              event: config.event || '*',
-              schema: 'public',
-              table: config.table as string,
-              filter: config.filter
-            },
-            (payload: any) => {
-              try {
-                const enhancedPayload = {
-                  eventType: payload.eventType,
-                  old: payload.old,
-                  new: payload.new,
-                  timestamp: new Date().toISOString()
-                }
-
-                callbackRef.current(enhancedPayload)
-              } catch (err) {
-                console.error(`[Realtime] Error processing payload for ${config.table}:`, err)
-                // Don't let payload processing errors break the subscription
+        // Acquire the shared channel for this (table, event, filter) tuple.
+        // All subscribers to the same filter share one underlying Supabase
+        // channel, collapsing 600K per-client channels down to O(filters).
+        const { channel, release } = acquireSharedChannel(
+          {
+            table: config.table as string,
+            event: config.event,
+            filter: config.filter
+          },
+          (payload: any) => {
+            try {
+              const enhancedPayload = {
+                eventType: payload.eventType,
+                old: payload.old,
+                new: payload.new,
+                timestamp: new Date().toISOString()
               }
-            }
-          )
-          .subscribe((status: string) => {
-            console.log(`[Realtime] Subscription status for ${config.table}:`, status)
 
+              callbackRef.current(enhancedPayload)
+            } catch (err) {
+              console.error(`[Realtime] Error processing payload for ${config.table}:`, err)
+              // Don't let payload processing errors break the subscription
+            }
+          }
+        )
+
+        channelReleaseRef.current = release
+        channelRef.current = channel
+
+        // Reflect the shared channel's status. The shared channel may
+        // already be SUBSCRIBED; in that case mark connected immediately.
+        const currentState = (channel as any).state
+        if (currentState === 'joined' || currentState === 'SUBSCRIBED') {
+          setStatus('connected')
+          setError(null)
+          setRetryCount(0)
+        }
+        // Listen for subsequent status transitions on the shared channel.
+        // We pass a no-op subscribe callback because acquireSharedChannel
+        // already called subscribe(); we only attach for status reflection.
+        try {
+          const channelAny = channel as any
+          channelAny.subscribe?.((status: string) => {
             switch (status) {
               case 'SUBSCRIBED':
-                console.log(`[Realtime] Successfully subscribed to ${config.table}`)
                 setStatus('connected')
                 setError(null)
                 setRetryCount(0)
                 break
               case 'CHANNEL_ERROR':
-                console.error(`[Realtime] Channel error for ${config.table}`)
                 setStatus('error')
                 setError('Channel subscription error')
                 break
               case 'TIMED_OUT':
-                console.error(`[Realtime] Subscription timeout for ${config.table}`)
                 setStatus('error')
                 setError('Subscription timeout')
                 break
               case 'CLOSED':
-                console.log(`[Realtime] Channel closed for ${config.table}`)
                 setStatus('disconnected')
                 break
             }
           })
+        } catch {
+          // Older supabase-js builds re-subscribe when subscribe() is called
+          // twice; swallow and rely on the initial subscription state.
+        }
 
-        channelRef.current = channel
         return channel
       },
       {
@@ -236,13 +261,16 @@ export const useRealtimeSubscription = (config: SubscriptionConfig) => {
       retryTimeoutRef.current = null
     }
 
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current)
-      channelRef.current = null
-      console.log(`[Realtime] Unsubscribed from ${config.table}`)
-      setStatus('disconnected')
+    // Release our subscription on the shared channel rather than removing
+    // the channel outright (other subscribers may still depend on it).
+    if (channelReleaseRef.current) {
+      channelReleaseRef.current()
+      channelReleaseRef.current = null
     }
-  }, [])
+    channelRef.current = null
+    console.log(`[Realtime] Released subscription to ${config.table}`)
+    setStatus('disconnected')
+  }, [config.table])
 
   // Auto-retry on connection loss
   useEffect(() => {
@@ -357,8 +385,12 @@ export const useEmergencyEventsSubscription = () => {
     table: 'emergency_events',
     event: '*',
     priority: 'critical', // Emergency events are highest priority
-    maxRetries: 10, // More retries for critical data
-    retryDelay: 1000, // Faster retry for emergencies
+    // More retries for critical data, but with exponential backoff + jitter
+    // rather than a flat 1s. The previous 1s base × 10 attempts produced a
+    // thundering herd of 100K clients reconnecting every second during a
+    // Supabase outage, compounding the outage itself.
+    maxRetries: 10,
+    retryDelay: 5000,
     callback: async payload => {
       try {
         console.log('[Realtime] Emergency event change:', payload)
@@ -471,6 +503,14 @@ export const useEventConfirmationsSubscription = () => {
 }
 
 // User profiles subscription
+//
+// SCALABILITY NOTE: the previous filter `last_known_location=not.null`
+// caused every location update from every user to be broadcast to every
+// subscriber — a write-amplification storm at 100K users (each location
+// ping = ~100K realtime messages). Location presence is already handled
+// by the sharded presence channel; the `postgres_changes` subscription
+// here is reserved for trust-score changes only, which are rare and
+// high-signal. Trust updates are what actually need to refresh the UI.
 export const useUserProfilesSubscription = () => {
   const { setUserScore } = useTrustStore.getState()
   const { checkProximity } = useLocationStore.getState()
@@ -478,12 +518,14 @@ export const useUserProfilesSubscription = () => {
   return useRealtimeSubscription({
     table: 'user_profiles',
     event: 'UPDATE',
-    filter: 'last_known_location=not.null',
+    // Filter to only trust_score-bearing rows. Without a column-equality
+    // filter Supabase cannot push this down; we accept the broader filter
+    // and gate work inside the callback on whether trust actually changed.
+    // Location-driven presence is handled by the sharded presence channel,
+    // NOT here, to avoid the write-amplification storm.
     callback: payload => {
       if (payload.new && payload.old) {
-        console.log('[Realtime] User profile updated:', payload.new)
-
-        // Update trust score if changed
+        // Only act on trust-score changes — ignore location/other updates.
         if (payload.old.trust_score !== payload.new.trust_score) {
           setUserScore(payload.new.user_id, {
             userId: payload.new.user_id,
@@ -505,21 +547,10 @@ export const useUserProfilesSubscription = () => {
           })
         }
 
-        // Check proximity if location updated
-        if (
-          payload.old.last_known_location !== payload.new.last_known_location &&
-          payload.new.last_known_location
-        ) {
-          const location = payload.new.last_known_location
-          const coords = location.match(/POINT\(([^ ]+) ([^ ]+)\)/)
-          if (coords) {
-            checkProximity(
-              { lat: parseFloat(coords[2]), lng: parseFloat(coords[1]) },
-              'user',
-              payload.new.user_id
-            )
-          }
-        }
+        // Proximity checks are intentionally NOT triggered from this
+        // subscription. Per-user location updates are too high-frequency
+        // to fan out via postgres_changes; presence-channel proximity is
+        // handled in usePresenceTracking instead.
       }
     }
   })
@@ -608,65 +639,53 @@ export const useSystemMetricsSubscription = () => {
 }
 
 // Composite subscription hook for multiple tables
+//
+// Uses the shared-channel registry so multiple subscriptions to the same
+// (table, event, filter) tuple collapse onto a single Supabase channel.
 export const useMultipleRealtimeSubscriptions = (configs: SubscriptionConfig[]) => {
-  const channelsRef = useRef<RealtimeChannel[]>([])
+  const releasesRef = useRef<Array<() => void>>([])
 
   useEffect(() => {
-    // Subscribe to all configs
-    const channels: RealtimeChannel[] = []
+    const releases: Array<() => void> = []
 
-    configs.forEach((config, index) => {
-      const channelName = `realtime-multi-${config.table}-${index}-${Date.now()}`
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const channel: any = supabase.channel(channelName)
-      channel
-        .on(
-          'postgres_changes' as any,
-          {
-            event: config.event || '*',
-            schema: 'public',
-            table: config.table as string,
-            filter: config.filter
-          },
-          (payload: any) => {
-            const enhancedPayload = {
-              eventType: payload.eventType,
-              old: payload.old,
-              new: payload.new,
-              timestamp: new Date().toISOString()
-            }
-
-            config.callback(enhancedPayload)
+    configs.forEach((config) => {
+      const { release } = acquireSharedChannel(
+        {
+          table: config.table as string,
+          event: config.event,
+          filter: config.filter
+        },
+        (payload: any) => {
+          const enhancedPayload = {
+            eventType: payload.eventType,
+            old: payload.old,
+            new: payload.new,
+            timestamp: new Date().toISOString()
           }
-        )
-        .subscribe((status: string) => {
-          if (status === 'SUBSCRIBED') {
-            console.log(`[Realtime] Subscribed to ${config.table}`)
-          }
-        })
 
-      channels.push(channel as any)
+          config.callback(enhancedPayload)
+        }
+      )
+      releases.push(release)
+      console.log(`[Realtime] Subscribed to ${config.table}`)
     })
 
-    channelsRef.current = channels
+    releasesRef.current = releases
 
-    // Cleanup
+    // Cleanup — release each shared channel subscription. Channels whose
+    // refcount drops to zero are removed by the registry.
     return () => {
-      channels.forEach(channel => {
-        supabase.removeChannel(channel)
-      })
-      channelsRef.current = []
+      releases.forEach(release => release())
+      releasesRef.current = []
     }
   }, [configs])
 
   return {
     unsubscribe: () => {
-      channelsRef.current.forEach(channel => {
-        supabase.removeChannel(channel)
-      })
-      channelsRef.current = []
+      releasesRef.current.forEach(release => release())
+      releasesRef.current = []
     },
-    isSubscribed: channelsRef.current.length > 0
+    isSubscribed: releasesRef.current.length > 0
   }
 }
 

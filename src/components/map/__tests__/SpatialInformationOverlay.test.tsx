@@ -6,7 +6,7 @@ import SpatialInformationOverlay from '../SpatialInformationOverlay'
 import { createTestUtils } from '@/test-utils'
 
 // Mock UI components
-vi.mock('@/components/ui', () => ({
+jest.mock('@/components/ui', () => ({
   Icon: ({ name, size, variant, className }: any) => (
     <div
       data-testid="icon"
@@ -52,8 +52,8 @@ describe('SpatialInformationOverlay', () => {
 
   const defaultProps = {
     spatialInfo: defaultSpatialInfo,
-    onUnitChange: vi.fn(),
-    onToggleOverlay: vi.fn()
+    onUnitChange: jest.fn(),
+    onToggleOverlay: jest.fn()
   }
 
   beforeEach(() => {
@@ -382,7 +382,7 @@ describe('SpatialInformationOverlay', () => {
 
   it('toggles unit system', async () => {
     const user = userEvent.setup()
-    const onUnitChange = vi.fn()
+    const onUnitChange = jest.fn()
 
     renderWithProviders(<SpatialInformationOverlay {...defaultProps} onUnitChange={onUnitChange} />)
 
@@ -394,7 +394,7 @@ describe('SpatialInformationOverlay', () => {
 
   it('toggles overlay visibility', async () => {
     const user = userEvent.setup()
-    const onToggleOverlay = vi.fn()
+    const onToggleOverlay = jest.fn()
 
     renderWithProviders(
       <SpatialInformationOverlay {...defaultProps} onToggleOverlay={onToggleOverlay} />
@@ -418,7 +418,7 @@ describe('SpatialInformationOverlay', () => {
 
   it('handles escape key to hide overlay', async () => {
     const user = userEvent.setup()
-    const onToggleOverlay = vi.fn()
+    const onToggleOverlay = jest.fn()
 
     renderWithProviders(
       <SpatialInformationOverlay {...defaultProps} onToggleOverlay={onToggleOverlay} />

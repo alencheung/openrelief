@@ -633,4 +633,6 @@ VALUES (
 )
 ON CONFLICT (id) DO NOTHING;
 
-COMMIT;
+-- NOTE: bare COMMIT removed — Supabase wraps each migration in its own
+-- transaction, so an explicit COMMIT here errors with "cannot commit within
+-- a transaction block".

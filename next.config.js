@@ -11,6 +11,12 @@ const withPWA = require('next-pwa')({
   disable: process.env.NODE_ENV === 'development',
   register: true,
   skipWaiting: true,
+  // Pull sw-custom.js into the generated Workbox service worker so its push,
+  // background-sync, and offline-POST-queue handlers actually run. Previously
+  // sw-custom.js was a fully-written but never-registered orphan, so none of
+  // those features (push delivery, emergency report retry, sync tags) were
+  // active even though the app registered sync events.
+  importScripts: ['/sw-custom.js'],
   // Don't include problematic files in precache
   exclude: [
     // Exclude build manifests that cause precaching issues
@@ -321,10 +327,22 @@ const nextConfig = {
   // Bundle analyzer
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
     // Custom webpack config for PWA
+    // Explicitly resolve the @/ path alias to the absolute src directory.
+    // This avoids filesystem/alias resolution flakiness on network drives
+    // (e.g. webpack "Module not found" for files that exist on disk).
+    const path = require('path')
+    const srcPath = path.resolve(__dirname, 'src')
     config.resolve.alias = {
       ...config.resolve.alias,
+      '@': srcPath,
       apexcharts: 'apexcharts.esm.js'
     }
+
+    // Disable the webpack persistent filesystem cache. On network-mapped
+    // drives (UNC paths) the cache validation pass scans every managed
+    // node_modules entry and stalls the build indefinitely. The in-memory
+    // cache is still used within a single build.
+    config.cache = false
 
     // Optimize for PWA
     if (!isServer) {

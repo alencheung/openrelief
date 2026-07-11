@@ -4,9 +4,15 @@ import { Database } from '@/types/database'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
-// Use mock client in test, or in dev when env vars aren't configured
+// Use mock client in test, in dev when env vars aren't configured, or during
+// the Next.js build (no env vars are present then). Falling back to the mock
+// avoids a "supabaseUrl is required" throw at module-load time that aborts the
+// production build.
 const shouldUseMockClient =
-  process.env.NODE_ENV === 'test' || (process.env.NODE_ENV === 'development' && !supabaseUrl)
+  process.env.NODE_ENV === 'test' ||
+  !supabaseUrl ||
+  !supabaseAnonKey ||
+  process.env.NEXT_PHASE === 'phase-production-build'
 
 export const supabase = shouldUseMockClient
   ? createMockSupabaseClient()
@@ -120,6 +126,18 @@ function createMockSupabaseClient() {
         chain.eq = (..._args: any[]) => chain
         chain.neq = (..._args: any[]) => chain
         chain.in = (..._args: any[]) => chain
+        chain.gte = (..._args: any[]) => chain
+        chain.lte = (..._args: any[]) => chain
+        chain.gt = (..._args: any[]) => chain
+        chain.lt = (..._args: any[]) => chain
+        chain.like = (..._args: any[]) => chain
+        chain.ilike = (..._args: any[]) => chain
+        chain.contains = (..._args: any[]) => chain
+        chain.containedBy = (..._args: any[]) => chain
+        chain.not = (..._args: any[]) => chain
+        chain.is = (..._args: any[]) => chain
+        chain.or = (..._args: any[]) => chain
+        chain.filter = (..._args: any[]) => chain
         chain.order = (..._args: any[]) => chain
         chain.limit = (..._args: any[]) => chain
         chain.range = (..._args: any[]) => chain

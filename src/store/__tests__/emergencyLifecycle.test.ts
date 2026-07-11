@@ -312,7 +312,7 @@ describe('Emergency Event Lifecycle', () => {
       const oldEvent = createEmergencyEvent({
         id: 'expired-event-1',
         status: 'resolved',
-        reportedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days ago
+        reportedAt: new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString() // 31 days ago (clearly expired)
       })
 
       act(() => {

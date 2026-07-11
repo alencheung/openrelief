@@ -2,45 +2,53 @@
 -- This migration contains production-specific optimizations and settings
 
 -- Enable connection pooling
-ALTER SYSTEM SET max_connections = 200;
-ALTER SYSTEM SET shared_buffers = '256MB';
-ALTER SYSTEM SET effective_cache_size = '1GB';
-ALTER SYSTEM SET work_mem = '4MB';
-ALTER SYSTEM SET maintenance_work_mem = '64MB';
-ALTER SYSTEM SET random_page_cost = 1.1;
-ALTER SYSTEM SET effective_io_concurrency = 200;
+-- NOTE: ALTER SYSTEM is rejected by Supabase (no superuser) and cannot run in a
+-- transaction block. Set these via the Supabase dashboard, postgresql.conf
+-- (self-hosted), or the equivalent configuration mechanism. Left for reference.
+-- ALTER SYSTEM SET max_connections = 200;
+-- ALTER SYSTEM SET shared_buffers = '256MB';
+-- ALTER SYSTEM SET effective_cache_size = '1GB';
+-- ALTER SYSTEM SET work_mem = '4MB';
+-- ALTER SYSTEM SET maintenance_work_mem = '64MB';
+-- ALTER SYSTEM SET random_page_cost = 1.1;
+-- ALTER SYSTEM SET effective_io_concurrency = 200;
 
 -- Configure logging for production monitoring
-ALTER SYSTEM SET log_statement = 'mod';
-ALTER SYSTEM SET log_min_duration_statement = 1000;
-ALTER SYSTEM SET log_checkpoints = on;
-ALTER SYSTEM SET log_connections = on;
-ALTER SYSTEM SET log_disconnections = on;
-ALTER SYSTEM SET log_lock_waits = on;
+-- NOTE: same as above — set via dashboard / postgresql.conf, not in a migration.
+-- ALTER SYSTEM SET log_statement = 'mod';
+-- ALTER SYSTEM SET log_min_duration_statement = 1000;
+-- ALTER SYSTEM SET log_checkpoints = on;
+-- ALTER SYSTEM SET log_connections = on;
+-- ALTER SYSTEM SET log_disconnections = on;
+-- ALTER SYSTEM SET log_lock_waits = on;
 
 -- Create production indexes for performance
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_emergency_events_location_gist 
-ON emergency_events USING GIST (ST_Point(location::geometry));
+-- NOTE: redundant with idx_emergency_events_location (USING GIST (location))
+-- created in migration 20240101000002_performance_indexes.sql, and ST_Point is
+-- invalid for a GEOGRAPHY column. Intentionally omitted.
+-- CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_emergency_events_location_gist
+-- ON emergency_events USING GIST (ST_Point(location::geometry));
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_emergency_events_severity_status 
+-- NOTE: CONCURRENTLY cannot run inside a migration transaction block; dropped.
+CREATE INDEX IF NOT EXISTS idx_emergency_events_severity_status
 ON emergency_events (severity DESC, status, created_at DESC);
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_emergency_events_expires_at 
+CREATE INDEX IF NOT EXISTS idx_emergency_events_expires_at
 ON emergency_events (expires_at) WHERE status IN ('active', 'pending');
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_event_confirmations_event_user 
+CREATE INDEX IF NOT EXISTS idx_event_confirmations_event_user
 ON event_confirmations (event_id, user_id);
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_user_profiles_trust_score 
+CREATE INDEX IF NOT EXISTS idx_user_profiles_trust_score
 ON user_profiles (trust_score DESC, updated_at DESC);
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_notification_queue_status_scheduled 
+CREATE INDEX IF NOT EXISTS idx_notification_queue_status_scheduled
 ON notification_queue (status, scheduled_at) WHERE status = 'pending';
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_audit_log_created_at 
+CREATE INDEX IF NOT EXISTS idx_audit_log_created_at
 ON audit_log (created_at DESC);
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_system_metrics_name_created 
+CREATE INDEX IF NOT EXISTS idx_system_metrics_name_created
 ON system_metrics (metric_name, created_at DESC);
 
 -- Create partitioned table for high-volume data
@@ -121,9 +129,14 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION refresh_analytics_views()
 RETURNS void AS $$
 BEGIN
-  REFRESH MATERIALIZED VIEW CONCURRENTLY emergency_stats;
-  REFRESH MATERIALIZED VIEW CONCURRENTLY user_activity_stats;
-  
+  -- NOTE: REFRESH MATERIALIZED VIEW CONCURRENTLY cannot run inside a function
+  -- (it cannot execute within a transaction block). Schedule these via pg_cron
+  -- or an external job instead:
+  --   REFRESH MATERIALIZED VIEW CONCURRENTLY emergency_stats;
+  --   REFRESH MATERIALIZED VIEW CONCURRENTLY user_activity_stats;
+  REFRESH MATERIALIZED VIEW emergency_stats;
+  REFRESH MATERIALIZED VIEW user_activity_stats;
+
   -- Log refresh action
   INSERT INTO audit_log (action, table_name, created_at)
   VALUES ('refresh_analytics_views', 'materialized_views', NOW());
@@ -257,21 +270,29 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Enable audit triggers on critical tables
+-- NOTE: audit_emergency_events and audit_user_profiles were already created in
+-- migration 20240101000006_database_triggers.sql. CREATE TRIGGER has no
+-- IF NOT EXISTS, so DROP first for idempotency.
+DROP TRIGGER IF EXISTS audit_emergency_events ON emergency_events;
 CREATE TRIGGER audit_emergency_events
   AFTER INSERT OR UPDATE OR DELETE ON emergency_events
   FOR EACH ROW EXECUTE FUNCTION trigger_audit_log();
 
+DROP TRIGGER IF EXISTS audit_user_profiles ON user_profiles;
 CREATE TRIGGER audit_user_profiles
   AFTER INSERT OR UPDATE OR DELETE ON user_profiles
   FOR EACH ROW EXECUTE FUNCTION trigger_audit_log();
 
+DROP TRIGGER IF EXISTS audit_notification_queue ON notification_queue;
 CREATE TRIGGER audit_notification_queue
   AFTER INSERT OR UPDATE OR DELETE ON notification_queue
   FOR EACH ROW EXECUTE FUNCTION trigger_audit_log();
 
 -- Add production constraints
+-- NOTE: emergency_events.severity is constrained to 1-5 by migration
+-- 20240101000001_initial_schema.sql; keep this consistent (not 1-10).
 ALTER TABLE emergency_events 
-ADD CONSTRAINT chk_severity_range CHECK (severity >= 1 AND severity <= 10),
+ADD CONSTRAINT chk_severity_range CHECK (severity >= 1 AND severity <= 5),
 ADD CONSTRAINT chk_trust_weight_range CHECK (trust_weight >= 0 AND trust_weight <= 1),
 ADD CONSTRAINT chk_radius_positive CHECK (radius_meters > 0);
 

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:mobile="http://www.google.com/schemas/sitemap-mobile/1.0" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
+<url><loc>https://openrelief.org/sitemap.xml</loc><lastmod>2026-06-16T12:57:58.447Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://openrelief.org/login</loc><lastmod>2026-06-16T12:57:58.448Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://openrelief.org/offline</loc><lastmod>2026-06-16T12:57:58.448Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://openrelief.org/privacy/legal-requests</loc><lastmod>2026-06-16T12:57:58.448Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://openrelief.org/privacy/settings</loc><lastmod>2026-06-16T12:57:58.448Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://openrelief.org/forgot-password</loc><lastmod>2026-06-16T12:57:58.448Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://openrelief.org/privacy</loc><lastmod>2026-06-16T12:57:58.448Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://openrelief.org/onboarding</loc><lastmod>2026-06-16T12:57:58.448Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://openrelief.org/settings</loc><lastmod>2026-06-16T12:57:58.448Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://openrelief.org/terms</loc><lastmod>2026-06-16T12:57:58.448Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://openrelief.org/profile</loc><lastmod>2026-06-16T12:57:58.448Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://openrelief.org/reset-password</loc><lastmod>2026-06-16T12:57:58.448Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://openrelief.org/report</loc><lastmod>2026-06-16T12:57:58.448Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://openrelief.org/signup</loc><lastmod>2026-06-16T12:57:58.448Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+</urlset>

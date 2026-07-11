@@ -12,7 +12,7 @@
 import { performanceMonitor } from '../performance/performance-monitor'
 import { queryOptimizer } from '../database/query-optimizer'
 import { createClient } from '@supabase/supabase-js'
-import { FCMBatcher, fcmBatcher } from '../notifications/fcm-batcher'
+import { FCMBatcher, fcmBatcher, buildFcmV1Message } from '../notifications/fcm-batcher'
 
 const ALLOWED_EXTERNAL_DOMAINS = [
   'api.sendgrid.net',
@@ -177,10 +177,20 @@ class AlertDispatchOptimizer {
   private connectionPools: Map<DeliveryChannel, any[]> = new Map()
   private metrics: DispatchMetrics
   private config: QueueConfig
-  private supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  // Lazily created so module-load (e.g. during the Next.js build) doesn't throw
+  // when env vars are absent.
+  private _supabase: any = null
+  private get supabase(): any {
+    if (!this._supabase) {
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+      if (!url || !key) {
+        throw new Error('Supabase env vars not configured')
+      }
+      this._supabase = createClient(url, key)
+    }
+    return this._supabase
+  }
 
   private constructor() {
     this.config = {
@@ -613,30 +623,99 @@ class AlertDispatchOptimizer {
   }
 
   /**
-   * Send a single FCM batch request with retry logic
+   * Send a single FCM batch request with retry logic.
+   *
+   * Migrated from the deprecated legacy endpoint to FCM HTTP v1. The v1 API
+   * accepts one message per request, so we fan out per device token and
+   * synthesize a legacy-shaped response body so the caller's results parsing
+   * (processFCMResponse-style handling in batchPushNotifications) keeps working
+   * unchanged. OAuth2 access token + project id are read from env; if either
+   * is missing we log a clear error rather than silently falling back to the
+   * removed legacy endpoint.
    */
   private async sendFCMBatchWithRetry(
     payload: FCMBatchPayload,
     retryCount = 0
   ): Promise<{ success: boolean; response?: Response; shouldRetry: boolean }> {
     try {
-      const response = await fetch('https://fcm.googleapis.com/fcm/send', {
-        method: 'POST',
-        headers: {
-          Authorization: `key=${process.env.FCM_SERVER_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      })
+      const projectId = process.env.FCM_PROJECT_ID
+      const accessToken = process.env.FCM_ACCESS_TOKEN
+      if (!projectId || !accessToken) {
+        console.error(
+          'FCM HTTP v1 not configured: set FCM_PROJECT_ID and FCM_ACCESS_TOKEN ' +
+            '(access token must be refreshed externally)'
+        )
+        return { success: false, shouldRetry: false }
+      }
 
-      if (response.status === 429) {
+      const endpoint = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`
+      const tokens = payload.tokens
+      // payload.data.priority holds the AlertPriority enum value; fall back to
+      // MEDIUM if absent so buildFcmV1Message gets a valid priority.
+      const alertPriority = (payload.data.priority as AlertPriority) ?? AlertPriority.MEDIUM
+
+      const perTokenResults = await Promise.all(
+        tokens.map(async token => {
+          try {
+            const response = await fetch(endpoint, {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(
+                buildFcmV1Message(token, payload.notification, payload.data, alertPriority)
+              )
+            })
+            if (response.status === 429) {
+              return { token, status: 429, error: 'THROTTLED' }
+            }
+            if (!response.ok) {
+              let errorMsg = `HTTP_${response.status}`
+              try {
+                const errBody = await response.json()
+                if (errBody?.error?.details?.[0]?.errorCode === 'UNREGISTERED') {
+                  errorMsg = 'NotRegistered'
+                } else if (errBody?.error?.status === 'INVALID_ARGUMENT') {
+                  errorMsg = 'InvalidRegistration'
+                }
+              } catch {
+                // keep generic error
+              }
+              return { token, status: response.status, error: errorMsg }
+            }
+            const body = await response.json().catch(() => ({}))
+            return { token, status: 200, messageId: body?.name ?? `${token}:${Date.now()}` }
+          } catch (error) {
+            return {
+              token,
+              status: 0,
+              error: error instanceof Error ? error.message : 'fetch_error'
+            }
+          }
+        })
+      )
+
+      const throttled = perTokenResults.some(r => r.status === 429)
+      if (throttled) {
         if (retryCount < FCM_MAX_RETRIES) {
           return { success: false, shouldRetry: true }
         }
         return { success: false, shouldRetry: false }
       }
 
-      return { success: response.ok, response, shouldRetry: false }
+      const syntheticBody = {
+        success: perTokenResults.filter(r => r.status === 200).length,
+        failure: perTokenResults.filter(r => r.status !== 200).length,
+        results: perTokenResults.map(r =>
+          r.status === 200 ? { message_id: r.messageId } : { error: r.error }
+        )
+      }
+      const response = new Response(JSON.stringify(syntheticBody), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+      return { success: true, response, shouldRetry: false }
     } catch {
       if (retryCount < FCM_MAX_RETRIES) {
         return { success: false, shouldRetry: true }

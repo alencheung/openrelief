@@ -259,7 +259,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.vercel-insights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.openrelief.org https://openrelief.supabase.co; worker-src 'self' blob:; manifest-src 'self';"
+          "value": "default-src 'self'; script-src 'self' 'strict-dynamic' 'unsafe-inline' https://cdn.vercel-insights.com https://browser.sentry-cdn.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.openrelief.org https://openrelief.supabase.co https://dispatch.openrelief.org wss://openrelief.supabase.co https://o*.ingest.sentry.io; worker-src 'self' blob:; manifest-src 'self';"
         }
       ]
     }

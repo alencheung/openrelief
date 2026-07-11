@@ -219,8 +219,12 @@ class LoadTestingFramework {
   private predefinedScenarios: Map<LoadTestScenario, LoadTestConfig> = new Map()
 
   private constructor() {
+    // Defer worker-pool setup outside the browser (build-time page-data
+    // collection lacks env vars and browser APIs).
     this.initializePredefinedScenarios()
-    this.setupWorkerPools()
+    if (typeof window !== 'undefined') {
+      this.setupWorkerPools()
+    }
   }
 
   static getInstance(): LoadTestingFramework {

@@ -116,21 +116,28 @@ const TrustBadge = React.forwardRef<HTMLDivElement, TrustBadgeProps>(
     },
     ref
   ) => {
-    const level = getTrustLevel(score, maxScore)
+    // Cap score at maxScore for display purposes (scores above max are clamped)
+    const displayScore = Math.min(score, maxScore)
+    const level = getTrustLevel(displayScore, maxScore)
     const IconComponent = showIcon ? getTrustIcon(level) : null
     const TrendComponent = showTrend ? getTrendIcon(trend) : null
-    const percentage = Math.round((score / maxScore) * 100)
+    const percentage = Math.round((displayScore / maxScore) * 100)
 
     return (
       <div
         ref={ref}
+        data-testid="trust-badge"
+        tabIndex={0}
+        role="img"
+        aria-label={label || `Trust score: ${displayScore}/${maxScore} (${percentage}%)`}
         className={cn(trustBadgeVariants({ level, size, variant, className }))}
-        title={label || `Trust score: ${score}/${maxScore} (${percentage}%)`}
+        title={label || `Trust score: ${displayScore}/${maxScore} (${percentage}%)`}
         {...props}
       >
         {variant === 'indicator' && (
           <div className="absolute left-2 top-1/2 -translate-y-1/2">
             <div
+              data-testid="trust-indicator"
               className={cn(
                 'w-2 h-2 rounded-full',
                 level === 'excellent' || level === 'good'
@@ -145,14 +152,24 @@ const TrustBadge = React.forwardRef<HTMLDivElement, TrustBadgeProps>(
           </div>
         )}
 
-        {IconComponent && <IconComponent className="w-3 h-3 flex-shrink-0" />}
+        {IconComponent && (
+          <IconComponent data-testid="trust-icon" className="w-3 h-3 flex-shrink-0" />
+        )}
 
         <span className="truncate">
-          {label || (showPercentage ? `${percentage}%` : `${score}/${maxScore}`)}
+          {label || (
+            <>
+              {showPercentage && <span>{percentage}%</span>}
+              <span>
+                {displayScore}/{maxScore}
+              </span>
+            </>
+          )}
         </span>
 
         {TrendComponent && (
           <TrendComponent
+            data-testid={`trend-${trend || 'stable'}`}
             className={cn(
               'w-3 h-3 flex-shrink-0',
               trend === 'up'

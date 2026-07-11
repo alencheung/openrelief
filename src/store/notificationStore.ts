@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 import { persist, subscribeWithSelector } from 'zustand/middleware'
-import { Database } from '@/types/database'
 
 // Types
 export interface Notification {
@@ -453,7 +452,7 @@ export const useNotificationStore = create<NotificationStore>()(
         },
 
         processQueue: async () => {
-          const { queue, settings } = get()
+          const { queue, settings: _settings } = get()
           const pendingItems = queue.filter(item => item.status === 'pending')
 
           for (const item of pendingItems) {

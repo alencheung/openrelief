@@ -1,6 +1,9 @@
 import '@testing-library/jest-dom'
 import { configure } from '@testing-library/react'
 
+// Enable React act() test environment (required by React 18 for testing-library)
+global.IS_REACT_ACT_ENVIRONMENT = true
+
 // Configure React Testing Library
 configure({
   testIdAttribute: 'data-testid',
@@ -235,9 +238,27 @@ jest.mock('@supabase/supabase-js', () => ({
 }))
 
 // Mock TanStack Query
+// useQuery/useMutation return sensible default shapes so hooks that
+// destructure { data, isLoading } / { mutate, isPending } don't crash when a
+// test doesn't explicitly mock the return value. Individual tests can override
+// via jest.mocked(...).mockReturnValue(...).
 jest.mock('@tanstack/react-query', () => ({
-  useQuery: jest.fn(),
-  useMutation: jest.fn(),
+  useQuery: jest.fn(() => ({
+    data: undefined,
+    isLoading: false,
+    isError: false,
+    error: null,
+    refetch: jest.fn(() => Promise.resolve({ data: undefined })),
+    isFetching: false
+  })),
+  useMutation: jest.fn(() => ({
+    mutate: jest.fn(),
+    mutateAsync: jest.fn(() => Promise.resolve({})),
+    isPending: false,
+    isError: false,
+    error: null,
+    reset: jest.fn()
+  })),
   useQueryClient: jest.fn(() => ({
     invalidateQueries: jest.fn(),
     refetchQueries: jest.fn(),
@@ -263,6 +284,104 @@ global.fetch = jest.fn(() =>
     text: () => Promise.resolve('')
   })
 )
+
+// Polyfill Web APIs that jsdom does not provide but app code relies on
+if (typeof global.Request === 'undefined') {
+  global.Request = class Request {
+    constructor(input, init = {}) {
+      const url = typeof input === 'string' ? input : input?.url
+      // Use defineProperty so subclasses (NextRequest) that override url
+      // don't get "Cannot set property url which has only a getter".
+      try {
+        this.url = url
+      } catch {
+        Object.defineProperty(this, 'url', { value: url, writable: true, configurable: true })
+      }
+      this.method = init.method || 'GET'
+      this.headers = new Headers(init.headers || {})
+      this.body = init.body || null
+      this._json = init.body
+    }
+    async json() {
+      return typeof this._json === 'string' ? JSON.parse(this._json) : this._json
+    }
+    async text() {
+      return typeof this._json === 'string' ? this._json : JSON.stringify(this._json)
+    }
+  }
+}
+if (typeof global.Response === 'undefined') {
+  global.Response = class Response {
+    constructor(body, init = {}) {
+      this.body = body
+      this.status = init.status || 200
+      this.ok = this.status < 400
+      this.headers = new Headers(init.headers || {})
+    }
+    async json() {
+      return typeof this.body === 'string' ? JSON.parse(this.body) : this.body
+    }
+    async text() {
+      return typeof this.body === 'string' ? this.body : JSON.stringify(this.body)
+    }
+    // Static factory used by Next.js route handlers: Response.json(data, init)
+    static json(data, init = {}) {
+      return new global.Response(JSON.stringify(data), {
+        ...init,
+        headers: { 'content-type': 'application/json', ...(init.headers || {}) }
+      })
+    }
+    static redirect(url, status = 302) {
+      return new global.Response(null, { status, headers: { location: url } })
+    }
+  }
+}
+if (typeof global.Headers === 'undefined') {
+  global.Headers = class Headers {
+    constructor(init = {}) {
+      this._h = new Map()
+      if (init) {
+        if (typeof init.forEach === 'function') {
+          init.forEach((v, k) => this._h.set(k.toLowerCase(), v))
+        } else {
+          for (const [k, v] of Object.entries(init)) {
+            this._h.set(k.toLowerCase(), v)
+          }
+        }
+      }
+    }
+    get(name) {
+      return this._h.get(name.toLowerCase()) || null
+    }
+    set(name, value) {
+      this._h.set(name.toLowerCase(), value)
+    }
+    has(name) {
+      return this._h.has(name.toLowerCase())
+    }
+    forEach(cb) {
+      this._h.forEach((v, k) => cb(v, k))
+    }
+    entries() {
+      return this._h.entries()
+    }
+  }
+}
+if (typeof global.TextEncoder === 'undefined') {
+  global.TextEncoder = require('util').TextEncoder
+}
+if (typeof global.TextDecoder === 'undefined') {
+  global.TextDecoder = require('util').TextDecoder
+}
+if (typeof global.Request !== 'undefined' && typeof globalThis.Request === 'undefined') {
+  globalThis.Request = global.Request
+}
+if (typeof global.Response !== 'undefined' && typeof globalThis.Response === 'undefined') {
+  globalThis.Response = global.Response
+}
+if (typeof global.Headers !== 'undefined' && typeof globalThis.Headers === 'undefined') {
+  globalThis.Headers = global.Headers
+}
 
 // Suppress console warnings in tests
 const originalError = console.error

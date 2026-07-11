@@ -68,7 +68,7 @@ export default function Hero() {
               size={isMobile ? 'lg' : 'lg'}
               className={cn('flex items-center gap-2 touch-target', isMobile && 'w-full')}
             >
-              <a href="#features">{isMobile ? 'Learn More' : 'Learn More'}</a>
+              <a href="#features">Learn More</a>
             </Button>
           </div>
         </div>

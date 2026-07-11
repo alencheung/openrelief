@@ -5,6 +5,9 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
   endpoint TEXT NOT NULL,
   p256dh TEXT,
   auth TEXT,
+  is_active BOOLEAN DEFAULT true NOT NULL,
+  device_info JSONB,
+  expires_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
   updated_at TIMESTAMPTZ DEFAULT now() NOT NULL,
   UNIQUE(endpoint)

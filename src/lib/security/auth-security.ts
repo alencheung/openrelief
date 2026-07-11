@@ -11,7 +11,6 @@
  */
 
 import { createHash, randomBytes, scrypt, timingSafeEqual } from 'crypto'
-import { sign, verify } from 'jsonwebtoken'
 import {
   securityMonitor,
   SecurityIncidentType,
@@ -486,14 +485,24 @@ export class AuthSecurityManager {
     const [salt, key] = hash.split(':')
     const pepper = process.env.AUTH_PEPPER || ''
 
+    if (!salt || !key) {
+      return false
+    }
+
     return new Promise(resolve => {
       scrypt(password + pepper, Buffer.from(salt, 'hex'), 64, (err, derivedKey) => {
-        if (err) {
+        if (err || !derivedKey) {
           resolve(false)
+          return
         }
 
-        // Use timing-safe comparison
-        const isValid = timingSafeEqual(Buffer.from(key, 'hex'), derivedKey)
+        // Use timing-safe comparison (buffers must be equal length)
+        const keyBuffer = Buffer.from(key, 'hex')
+        if (keyBuffer.length !== derivedKey.length) {
+          resolve(false)
+          return
+        }
+        const isValid = timingSafeEqual(keyBuffer, derivedKey)
         resolve(isValid)
       })
     })
@@ -546,13 +555,15 @@ export class AuthSecurityManager {
     const failedUserAttempts = recentUserAttempts.filter(attempt => !attempt.success)
     if (failedUserAttempts.length >= AUTH_SECURITY_CONFIG.loginProtection.maxAttempts) {
       const lastAttempt = failedUserAttempts[failedUserAttempts.length - 1]
-      const lockoutTime =
-        lastAttempt.timestamp.getTime() + AUTH_SECURITY_CONFIG.loginProtection.lockoutDuration
+      if (lastAttempt) {
+        const lockoutTime =
+          lastAttempt.timestamp.getTime() + AUTH_SECURITY_CONFIG.loginProtection.lockoutDuration
 
-      if (now < lockoutTime) {
-        return {
-          allowed: false,
-          lockoutTime
+        if (now < lockoutTime) {
+          return {
+            allowed: false,
+            lockoutTime
+          }
         }
       }
     }
@@ -561,13 +572,15 @@ export class AuthSecurityManager {
     const failedIpAttempts = recentIpAttempts.filter(attempt => !attempt.success)
     if (failedIpAttempts.length >= AUTH_SECURITY_CONFIG.loginProtection.maxAttempts) {
       const lastAttempt = failedIpAttempts[failedIpAttempts.length - 1]
-      const lockoutTime =
-        lastAttempt.timestamp.getTime() + AUTH_SECURITY_CONFIG.loginProtection.lockoutDuration
+      if (lastAttempt) {
+        const lockoutTime =
+          lastAttempt.timestamp.getTime() + AUTH_SECURITY_CONFIG.loginProtection.lockoutDuration
 
-      if (now < lockoutTime) {
-        return {
-          allowed: false,
-          lockoutTime
+        if (now < lockoutTime) {
+          return {
+            allowed: false,
+            lockoutTime
+          }
         }
       }
     }
@@ -797,7 +810,8 @@ export class AuthSecurityManager {
         if (userSessionList.length > AUTH_SECURITY_CONFIG.session.maxConcurrentSessions) {
           // Sort by creation time, oldest first
           const sortedSessions = userSessionList.sort(
-            (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            (a: { created_at: string }, b: { created_at: string }) =>
+              new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
           )
           const sessionsToInvalidate = sortedSessions.slice(
             0,

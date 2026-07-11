@@ -6,38 +6,38 @@ import EmergencyReportInterface from '../EmergencyReportInterface'
 import { createTestUtils, createMockLocation } from '@/test-utils'
 
 // Mock store hooks
-vi.mock('@/store', () => ({
-  useEmergencyStore: vi.fn(() => ({
-    addOfflineAction: vi.fn()
+jest.mock('@/store', () => ({
+  useEmergencyStore: jest.fn(() => ({
+    addOfflineAction: jest.fn()
   })),
-  useLocationStore: vi.fn(() => ({
+  useLocationStore: jest.fn(() => ({
     currentLocation: createMockLocation({ lat: 40.7128, lng: -74.006 })
   })),
-  useOfflineStore: vi.fn(() => ({
-    addAction: vi.fn()
+  useOfflineStore: jest.fn(() => ({
+    addAction: jest.fn()
   }))
 }))
 
 // Mock accessibility hooks
-vi.mock('@/hooks/accessibility', () => ({
-  useFocusManagement: vi.fn(() => ({
+jest.mock('@/hooks/accessibility', () => ({
+  useFocusManagement: jest.fn(() => ({
     containerRef: { current: null },
-    getFocusableElements: vi.fn(() => []),
-    focusFirstElement: vi.fn()
+    getFocusableElements: jest.fn(() => []),
+    focusFirstElement: jest.fn()
   })),
-  useAriaAnnouncer: vi.fn(() => ({
-    announcePolite: vi.fn(),
-    announceAssertive: vi.fn()
+  useAriaAnnouncer: jest.fn(() => ({
+    announcePolite: jest.fn(),
+    announceAssertive: jest.fn()
   })),
-  useFormValidationAnnouncer: vi.fn(() => ({
-    announceValidationErrors: vi.fn(),
-    announceFieldError: vi.fn(),
-    announceFieldSuccess: vi.fn()
+  useFormValidationAnnouncer: jest.fn(() => ({
+    announceValidationErrors: jest.fn(),
+    announceFieldError: jest.fn(),
+    announceFieldSuccess: jest.fn()
   }))
 }))
 
 // Mock UI components
-vi.mock('@/components/ui', () => ({
+jest.mock('@/components/ui', () => ({
   EnhancedCard: ({ children, ...props }: any) => (
     <div data-testid="enhanced-card" {...props}>
       {children}
@@ -74,7 +74,7 @@ vi.mock('@/components/ui', () => ({
 }))
 
 // Mock form components
-vi.mock('@/components/ui/forms', () => ({
+jest.mock('@/components/ui/forms', () => ({
   EnhancedInput: ({ label, value, onChange, errorText, ...props }: any) => (
     <div>
       <label>{label}</label>
@@ -183,7 +183,7 @@ vi.mock('@/components/ui/forms', () => ({
 Object.defineProperty(navigator, 'permissions', {
   writable: true,
   value: {
-    query: vi.fn(() => Promise.resolve({ state: 'granted' }))
+    query: jest.fn(() => Promise.resolve({ state: 'granted' }))
   }
 })
 
@@ -198,8 +198,8 @@ describe('EmergencyReportInterface', () => {
 
   const defaultProps = {
     isOpen: true,
-    onClose: vi.fn(),
-    onReportSubmitted: vi.fn()
+    onClose: jest.fn(),
+    onReportSubmitted: jest.fn()
   }
 
   beforeEach(() => {
@@ -427,9 +427,9 @@ describe('EmergencyReportInterface', () => {
   it('allows selecting location on map', async () => {
     const user = userEvent.setup()
     const mockMapInstance = {
-      getCanvas: vi.fn(() => ({ style: {} })),
-      on: vi.fn(),
-      off: vi.fn()
+      getCanvas: jest.fn(() => ({ style: {} })),
+      on: jest.fn(),
+      off: jest.fn()
     }
 
     renderWithProviders(
@@ -585,7 +585,7 @@ describe('EmergencyReportInterface', () => {
 
   it('submits form when submit button is clicked', async () => {
     const user = userEvent.setup()
-    const onReportSubmitted = vi.fn()
+    const onReportSubmitted = jest.fn()
 
     renderWithProviders(
       <EmergencyReportInterface {...defaultProps} onReportSubmitted={onReportSubmitted} />
@@ -621,7 +621,7 @@ describe('EmergencyReportInterface', () => {
 
   it('shows loading state during submission', async () => {
     const user = userEvent.setup()
-    const onReportSubmitted = vi.fn(() => new Promise(resolve => setTimeout(resolve, 1000)))
+    const onReportSubmitted = jest.fn(() => new Promise(resolve => setTimeout(resolve, 1000)))
 
     renderWithProviders(
       <EmergencyReportInterface {...defaultProps} onReportSubmitted={onReportSubmitted} />
@@ -653,7 +653,7 @@ describe('EmergencyReportInterface', () => {
 
   it('closes dialog when close button is clicked', async () => {
     const user = userEvent.setup()
-    const onClose = vi.fn()
+    const onClose = jest.fn()
 
     renderWithProviders(<EmergencyReportInterface {...defaultProps} onClose={onClose} />)
 
@@ -665,7 +665,7 @@ describe('EmergencyReportInterface', () => {
 
   it('closes dialog when cancel button is clicked', async () => {
     const user = userEvent.setup()
-    const onClose = vi.fn()
+    const onClose = jest.fn()
 
     renderWithProviders(<EmergencyReportInterface {...defaultProps} onClose={onClose} />)
 
@@ -742,7 +742,7 @@ describe('EmergencyReportInterface', () => {
     })
 
     const { addAction } = vi.mocked(require('@/store').useOfflineStore()).mockReturnValue({
-      addAction: vi.fn()
+      addAction: jest.fn()
     })
 
     renderWithProviders(<EmergencyReportInterface {...defaultProps} />)
@@ -777,8 +777,8 @@ describe('EmergencyReportInterface', () => {
 
   it('resets form after successful submission', async () => {
     const user = userEvent.setup()
-    const onReportSubmitted = vi.fn()
-    const onClose = vi.fn()
+    const onReportSubmitted = jest.fn()
+    const onClose = jest.fn()
 
     renderWithProviders(
       <EmergencyReportInterface
@@ -814,7 +814,7 @@ describe('EmergencyReportInterface', () => {
 
   it('handles submission errors', async () => {
     const user = userEvent.setup()
-    const onReportSubmitted = vi.fn(() => {
+    const onReportSubmitted = jest.fn(() => {
       throw new Error('Submission failed')
     })
 
@@ -851,8 +851,8 @@ describe('EmergencyReportInterface', () => {
     const { announcePolite } = vi
       .mocked(require('@/hooks/accessibility').useAriaAnnouncer())
       .mockReturnValue({
-        announcePolite: vi.fn(),
-        announceAssertive: vi.fn()
+        announcePolite: jest.fn(),
+        announceAssertive: jest.fn()
       })
 
     renderWithProviders(<EmergencyReportInterface {...defaultProps} />)
@@ -886,8 +886,8 @@ describe('EmergencyReportInterface', () => {
     const { announceAssertive } = vi
       .mocked(require('@/hooks/accessibility').useAriaAnnouncer())
       .mockReturnValue({
-        announcePolite: vi.fn(),
-        announceAssertive: vi.fn()
+        announcePolite: jest.fn(),
+        announceAssertive: jest.fn()
       })
 
     expect(announceAssertive).toHaveBeenCalledWith('Please fix form errors before submitting')

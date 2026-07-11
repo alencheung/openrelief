@@ -10,9 +10,14 @@ ALTER TABLE user_notification_settings ENABLE ROW LEVEL SECURITY;
 -- Enable RLS on emergency-related tables
 ALTER TABLE emergency_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE event_confirmations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE emergency_types ENABLE ROW LEVEL SECURITY;
 
 -- Enable RLS on notification tables
 ALTER TABLE notification_queue ENABLE ROW LEVEL SECURITY;
+
+-- Enable RLS on operational/system tables
+ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
+ALTER TABLE system_metrics ENABLE ROW LEVEL SECURITY;
 
 -- User Profiles RLS Policies
 

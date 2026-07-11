@@ -5,10 +5,10 @@ import { ResponsiveMapContainer, useResponsive, responsiveUtils } from '../Respo
 import { createTestUtils } from '@/test-utils'
 
 // Mock ResizeObserver
-global.ResizeObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn()
+global.ResizeObserver = jest.fn().mockImplementation(() => ({
+  observe: jest.fn(),
+  unobserve: jest.fn(),
+  disconnect: jest.fn()
 }))
 
 describe('ResponsiveMapContainer', () => {
@@ -87,14 +87,14 @@ describe('ResponsiveMapContainer', () => {
     }
 
     vi.mocked(global.ResizeObserver).mockImplementation(callback => ({
-      observe: vi.fn(element => {
+      observe: jest.fn(element => {
         // Simulate mobile dimensions
         Object.defineProperty(element, 'clientWidth', { value: 500, configurable: true })
         Object.defineProperty(element, 'clientHeight', { value: 800, configurable: true })
         callback([{ target: element }])
       }),
-      unobserve: vi.fn(),
-      disconnect: vi.fn()
+      unobserve: jest.fn(),
+      disconnect: jest.fn()
     }))
 
     const TestChild = () => {
@@ -121,14 +121,14 @@ describe('ResponsiveMapContainer', () => {
   it('detects tablet breakpoint', async () => {
     // Mock container width to simulate tablet
     vi.mocked(global.ResizeObserver).mockImplementation(callback => ({
-      observe: vi.fn(element => {
+      observe: jest.fn(element => {
         // Simulate tablet dimensions
         Object.defineProperty(element, 'clientWidth', { value: 900, configurable: true })
         Object.defineProperty(element, 'clientHeight', { value: 1200, configurable: true })
         callback([{ target: element }])
       }),
-      unobserve: vi.fn(),
-      disconnect: vi.fn()
+      unobserve: jest.fn(),
+      disconnect: jest.fn()
     }))
 
     const TestChild = () => {
@@ -155,14 +155,14 @@ describe('ResponsiveMapContainer', () => {
   it('detects portrait orientation', async () => {
     // Mock container height > width to simulate portrait
     vi.mocked(global.ResizeObserver).mockImplementation(callback => ({
-      observe: vi.fn(element => {
+      observe: jest.fn(element => {
         // Simulate portrait dimensions
         Object.defineProperty(element, 'clientWidth', { value: 800, configurable: true })
         Object.defineProperty(element, 'clientHeight', { value: 1200, configurable: true })
         callback([{ target: element }])
       }),
-      unobserve: vi.fn(),
-      disconnect: vi.fn()
+      unobserve: jest.fn(),
+      disconnect: jest.fn()
     }))
 
     const TestChild = () => {
@@ -187,17 +187,17 @@ describe('ResponsiveMapContainer', () => {
   })
 
   it('calls onBreakpointChange callback', async () => {
-    const onBreakpointChange = vi.fn()
+    const onBreakpointChange = jest.fn()
 
     vi.mocked(global.ResizeObserver).mockImplementation(callback => ({
-      observe: vi.fn(element => {
+      observe: jest.fn(element => {
         // Simulate mobile dimensions
         Object.defineProperty(element, 'clientWidth', { value: 500, configurable: true })
         Object.defineProperty(element, 'clientHeight', { value: 800, configurable: true })
         callback([{ target: element }])
       }),
-      unobserve: vi.fn(),
-      disconnect: vi.fn()
+      unobserve: jest.fn(),
+      disconnect: jest.fn()
     }))
 
     renderWithProviders(
@@ -210,17 +210,17 @@ describe('ResponsiveMapContainer', () => {
   })
 
   it('calls onOrientationChange callback', async () => {
-    const onOrientationChange = vi.fn()
+    const onOrientationChange = jest.fn()
 
     vi.mocked(global.ResizeObserver).mockImplementation(callback => ({
-      observe: vi.fn(element => {
+      observe: jest.fn(element => {
         // Simulate portrait dimensions
         Object.defineProperty(element, 'clientWidth', { value: 800, configurable: true })
         Object.defineProperty(element, 'clientHeight', { value: 1200, configurable: true })
         callback([{ target: element }])
       }),
-      unobserve: vi.fn(),
-      disconnect: vi.fn()
+      unobserve: jest.fn(),
+      disconnect: jest.fn()
     }))
 
     renderWithProviders(
@@ -233,7 +233,7 @@ describe('ResponsiveMapContainer', () => {
   })
 
   it('handles orientation change events', async () => {
-    const onOrientationChange = vi.fn()
+    const onOrientationChange = jest.fn()
 
     renderWithProviders(
       <ResponsiveMapContainer {...defaultProps} onOrientationChange={onOrientationChange} />
@@ -248,16 +248,16 @@ describe('ResponsiveMapContainer', () => {
     })
   })
 
-  it('applies responsive styles based on breakpoint', () => {
+  it('applies responsive styles based on breakpoint', async () => {
     vi.mocked(global.ResizeObserver).mockImplementation(callback => ({
-      observe: vi.fn(element => {
+      observe: jest.fn(element => {
         // Simulate mobile dimensions
         Object.defineProperty(element, 'clientWidth', { value: 500, configurable: true })
         Object.defineProperty(element, 'clientHeight', { value: 800, configurable: true })
         callback([{ target: element }])
       }),
-      unobserve: vi.fn(),
-      disconnect: vi.fn()
+      unobserve: jest.fn(),
+      disconnect: jest.fn()
     }))
 
     renderWithProviders(<ResponsiveMapContainer {...defaultProps} />)

@@ -1,0 +1,230 @@
+/**
+ * Single Emergency Event API (dynamic route).
+ *
+ * - GET    : fetch one event by id (RLS enforces visibility)
+ * - PATCH  : owner updates their own event (reporter_id === caller)
+ * - DELETE : owner cancels their own event (soft-delete via status)
+ *
+ * Uses the RLS-bound SSR client so row-level security is actually enforced
+ * (unlike routes that use the service-role key).
+ */
+
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import type { SupabaseClient } from '@supabase/supabase-js'
+
+// emergency_events is typed in Database, but cast for safety against drift.
+type SSRClient = SupabaseClient
+
+interface EmergencyRow {
+  id: string
+  reporter_id: string
+  type_id: number
+  severity: number
+  status: string
+  description: string | null
+  radius_meters: number
+  expires_at: string | null
+}
+
+async function requireUser(supabase: SSRClient): Promise<string | NextResponse> {
+  const {
+    data: { user },
+    error
+  } = await supabase.auth.getUser()
+  if (error || !user) {
+    return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+  }
+  return user.id
+}
+
+// GET — fetch a single event.
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    if (!id) {
+      return NextResponse.json({ error: 'Event id is required' }, { status: 400 })
+    }
+
+    const supabase = (await createClient()) as SSRClient
+    const authResult = await requireUser(supabase)
+    if (authResult instanceof NextResponse) return authResult
+
+    const { data, error } = await supabase
+      .from('emergency_events')
+      .select(
+        'id, reporter_id, type_id, severity, status, description, radius_meters, created_at, expires_at, confirmation_count, dispute_count'
+      )
+      .eq('id', id)
+      .maybeSingle()
+
+    if (error) {
+      console.error('Error fetching emergency event:', error)
+      return NextResponse.json({ error: 'Failed to fetch event' }, { status: 500 })
+    }
+    if (!data) {
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+    }
+
+    return NextResponse.json({ success: true, data })
+  } catch (error) {
+    console.error('Error in emergency/[id] GET:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+// PATCH — owner updates their own event.
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    if (!id) {
+      return NextResponse.json({ error: 'Event id is required' }, { status: 400 })
+    }
+
+    const supabase = (await createClient()) as SSRClient
+    const authResult = await requireUser(supabase)
+    if (authResult instanceof NextResponse) return authResult
+    const userId = authResult
+
+    // Fetch + ownership check.
+    const { data: existing, error: fetchError } = await supabase
+      .from('emergency_events')
+      .select('id, reporter_id, status')
+      .eq('id', id)
+      .maybeSingle()
+
+    if (fetchError) {
+      console.error('Error fetching event for update:', fetchError)
+      return NextResponse.json({ error: 'Failed to fetch event' }, { status: 500 })
+    }
+    if (!existing) {
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+    }
+    if ((existing as EmergencyRow).reporter_id !== userId) {
+      return NextResponse.json(
+        { error: 'Only the reporter may update this event' },
+        { status: 403 }
+      )
+    }
+
+    const body = await request.json()
+    const patch: Record<string, unknown> = {}
+
+    if (typeof body.description === 'string') {
+      if (body.description.length > 2000) {
+        return NextResponse.json({ error: 'description too long (max 2000 chars)' }, { status: 400 })
+      }
+      patch.description = body.description
+    }
+    if (body.severity !== undefined) {
+      const sev = Number(body.severity)
+      if (!Number.isInteger(sev) || sev < 1 || sev > 5) {
+        return NextResponse.json({ error: 'severity must be an integer 1-5' }, { status: 400 })
+      }
+      patch.severity = sev
+    }
+    if (body.radius_meters !== undefined) {
+      const r = Number(body.radius_meters)
+      if (!Number.isFinite(r) || r <= 0 || r > 100000) {
+        return NextResponse.json(
+          { error: 'radius_meters must be a positive number up to 100000' },
+          { status: 400 }
+        )
+      }
+      patch.radius_meters = r
+    }
+    if (typeof body.status === 'string') {
+      const allowed = ['pending', 'active', 'resolved', 'closed', 'cancelled']
+      if (!allowed.includes(body.status)) {
+        return NextResponse.json(
+          { error: `status must be one of: ${allowed.join(', ')}` },
+          { status: 400 }
+        )
+      }
+      patch.status = body.status
+    }
+
+    if (Object.keys(patch).length === 0) {
+      return NextResponse.json({ error: 'No updatable fields provided' }, { status: 400 })
+    }
+
+    const { data, error } = await supabase
+      .from('emergency_events')
+      .update(patch)
+      .eq('id', id)
+      .select(
+        'id, reporter_id, type_id, severity, status, description, radius_meters, updated_at'
+      )
+      .maybeSingle()
+
+    if (error) {
+      console.error('Error updating emergency event:', error)
+      return NextResponse.json({ error: 'Failed to update event' }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true, data })
+  } catch (error) {
+    console.error('Error in emergency/[id] PATCH:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+// DELETE — owner soft-cancels their own event.
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    if (!id) {
+      return NextResponse.json({ error: 'Event id is required' }, { status: 400 })
+    }
+
+    const supabase = (await createClient()) as SSRClient
+    const authResult = await requireUser(supabase)
+    if (authResult instanceof NextResponse) return authResult
+    const userId = authResult
+
+    const { data: existing, error: fetchError } = await supabase
+      .from('emergency_events')
+      .select('id, reporter_id, status')
+      .eq('id', id)
+      .maybeSingle()
+
+    if (fetchError) {
+      console.error('Error fetching event for delete:', fetchError)
+      return NextResponse.json({ error: 'Failed to fetch event' }, { status: 500 })
+    }
+    if (!existing) {
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+    }
+    if ((existing as EmergencyRow).reporter_id !== userId) {
+      return NextResponse.json(
+        { error: 'Only the reporter may cancel this event' },
+        { status: 403 }
+      )
+    }
+
+    // Soft-cancel: preserves audit trail + consensus history.
+    const { error } = await supabase
+      .from('emergency_events')
+      .update({ status: 'cancelled' })
+      .eq('id', id)
+
+    if (error) {
+      console.error('Error cancelling emergency event:', error)
+      return NextResponse.json({ error: 'Failed to cancel event' }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true, message: 'Event cancelled' })
+  } catch (error) {
+    console.error('Error in emergency/[id] DELETE:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}

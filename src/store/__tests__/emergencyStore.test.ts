@@ -308,7 +308,8 @@ describe('Emergency Store', () => {
         })
 
         expect(result.current.filteredEvents).toHaveLength(1)
-        expect(result.current.filteredEvents[0].title).toContain('medical')
+        // The medical event matches via its `type: 'medical'` field
+        expect(result.current.filteredEvents[0].type).toContain('medical')
       })
     })
   })
@@ -424,7 +425,11 @@ describe('Emergency Store', () => {
 
         act(() => {
           result.current.addOfflineAction(action)
-          result.current.markActionSynced(result.current.offlineActions[0].id)
+        })
+
+        const actionId = result.current.offlineActions[0].id
+        act(() => {
+          result.current.markActionSynced(actionId)
         })
 
         expect(result.current.offlineActions[0].synced).toBe(true)
@@ -440,10 +445,14 @@ describe('Emergency Store', () => {
         act(() => {
           result.current.addOfflineAction(action1)
           result.current.addOfflineAction(action2)
-          result.current.markActionSynced(result.current.offlineActions[0].id)
         })
 
         expect(result.current.offlineActions).toHaveLength(2)
+
+        const actionId = result.current.offlineActions[0].id
+        act(() => {
+          result.current.markActionSynced(actionId)
+        })
 
         act(() => {
           result.current.clearSyncedActions()
@@ -626,7 +635,8 @@ describe('Emergency Store', () => {
       })
 
       expect(result.current.filteredEvents).toHaveLength(1)
-      expect(result.current.filteredEvents[0].title).toContain('medical')
+      // The medical event matches via its `type: 'medical'` field
+      expect(result.current.filteredEvents[0].type).toContain('medical')
     })
 
     it('should filter by radius', () => {
@@ -671,14 +681,21 @@ describe('Emergency Store', () => {
     it('should handle real-time event updates', () => {
       const { result } = renderHook(() => useEmergencyStore())
       const initialEvent = emergencyScenarios.medicalEmergency
-      const updatedEvent = { ...initialEvent, status: 'resolved' }
 
       act(() => {
         result.current.setEvents([initialEvent])
         result.current.updateEvent(initialEvent.id, { status: 'resolved' })
       })
 
+      // The event itself reflects the update
       expect(result.current.events[0].status).toBe('resolved')
+
+      // Include 'resolved' in the status filter so the updated event appears in
+      // the filtered view (default filters only show pending/active)
+      act(() => {
+        result.current.setFilters({ status: ['pending', 'active', 'resolved'] })
+      })
+
       expect(result.current.filteredEvents[0].status).toBe('resolved')
     })
 

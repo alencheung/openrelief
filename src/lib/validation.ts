@@ -1,3 +1,4 @@
+import React, { useState, useCallback, useEffect } from 'react'
 import {
   EnhancedInputProps as _EnhancedInputProps,
   EnhancedTextareaProps as _EnhancedTextareaProps,
@@ -7,7 +8,7 @@ import {
 // Validation rule types
 export interface ValidationRule {
   name: string
-  validator: (value: any) => string | null
+  validator: (value: any, formData?: Record<string, any>) => string | null
   message?: string
 }
 
@@ -417,7 +418,7 @@ export const validationSchemas = {
       validators.required('Please confirm your password'),
       {
         name: 'passwordMatch',
-        validator: (value, formData) => {
+        validator: (value: any, formData?: Record<string, any>) => {
           if (!value || !formData?.password) {
             return null
           }

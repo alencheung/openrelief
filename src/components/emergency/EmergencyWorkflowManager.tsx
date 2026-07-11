@@ -283,8 +283,21 @@ export function EmergencyWorkflowManager({ className }: EmergencyWorkflowManager
           })
           break
 
-        case 'escalate':
+        case 'escalate': {
+          // Escalate priority: raise severity toward the maximum and flag the
+          // event as escalated so responders and consensus can re-weight it.
+          // Previously this case was an empty no-op.
+          const newSeverity = Math.min(emergency.severity + 1, 5)
+          await updateEvent(emergency.id, {
+            severity: newSeverity,
+            metadata: {
+              ...(emergency.metadata || {}),
+              escalated: true,
+              escalated_at: new Date().toISOString()
+            }
+          } as any)
           break
+        }
 
         case 'resolve':
           await updateEvent(emergency.id, {

@@ -33,15 +33,58 @@ import {
 
 const rateLimiter = getRateLimiter()
 
-// Suspicious IP tracking (in-memory for single instance, Redis handles distributed)
-const suspiciousIPs = new Map<
-  string,
-  {
-    score: number
-    lastActivity: number
-    offenses: string[]
+// Redis-backed state with in-memory fallback.
+//
+// The middleware runs on every request and may be replicated across many
+// serverless instances, so module-scoped Maps/booleans only see local traffic.
+// We keep the in-memory structures as a fast L1 cache / offline fallback and
+// mirror state into Redis when it is available. Every Redis call is wrapped in
+// try/catch so Redis being down never breaks a request — it just degrades to
+// the pre-existing single-instance behaviour.
+let redisClient: import('@/lib/redis/client').Redis | null = null
+let redisAvailabilityChecked = false
+let redisIsAvailable = false
+
+async function getRedis(): Promise<import('@/lib/redis/client').Redis | null> {
+  if (redisClient === null) {
+    const { getRedisClient } = await import('@/lib/redis/client')
+    redisClient = getRedisClient()
   }
->()
+  return redisClient
+}
+
+async function isRedisReady(): Promise<boolean> {
+  if (redisAvailabilityChecked) {
+    return redisIsAvailable
+  }
+  try {
+    const { checkRedisAvailability } = await import('@/lib/redis/client')
+    redisIsAvailable = await checkRedisAvailability()
+  } catch {
+    redisIsAvailable = false
+  }
+  redisAvailabilityChecked = true
+  // Re-probe periodically if Redis was down so we recover automatically.
+  if (!redisIsAvailable) {
+    setTimeout(() => {
+      redisAvailabilityChecked = false
+    }, 10_000).unref?.()
+  }
+  return redisIsAvailable
+}
+
+// Suspicious IP tracking.
+// In-memory Map acts as an L1 cache and offline fallback; Redis is the source
+// of truth across replicas when available. Stale entries are expired lazily on
+// read (see isSuspiciousIP), so correctness no longer depends on the periodic
+// interval below — the interval only enforces the size cap.
+interface SuspiciousIPData {
+  score: number
+  lastActivity: number
+  offenses: string[]
+}
+
+const suspiciousIPs = new Map<string, SuspiciousIPData>()
 
 // Configuration for suspicious IP tracking
 const SUSPICIOUS_IP_CONFIG = {
@@ -52,8 +95,13 @@ const SUSPICIOUS_IP_CONFIG = {
   suspiciousThreshold: 50 // Score threshold for suspicious activity
 }
 
-// Periodic cleanup of old entries
-if (typeof setInterval !== 'undefined') {
+const SUSPICIOUS_IP_REDIS_PREFIX = 'openrelief:suspicious_ip:'
+const SUSPICIOUS_IP_REDIS_TTL = Math.floor(SUSPICIOUS_IP_CONFIG.maxAge / 1000)
+
+// Periodic size-cap cleanup. Read-time expiry (in isSuspiciousIP) is the
+// primary eviction mechanism, so this only guards against unbounded growth and
+// is skipped entirely in serverless/edge contexts where timers do not run.
+if (typeof setInterval !== 'undefined' && process.env.NEXT_RUNTIME !== 'edge') {
   setInterval(() => {
     const now = Date.now()
     for (const [ip, data] of suspiciousIPs.entries()) {
@@ -69,39 +117,82 @@ if (typeof setInterval !== 'undefined') {
         suspiciousIPs.delete(ip)
       }
     }
-  }, SUSPICIOUS_IP_CONFIG.cleanupInterval)
+  }, SUSPICIOUS_IP_CONFIG.cleanupInterval).unref?.()
 }
 
 // Emergency mode detection
 let emergencyMode = false
 let emergencyModeExpiry = 0
+const EMERGENCY_MODE_REDIS_KEY = 'openrelief:emergency_mode'
 
 /**
- * Check if request is from suspicious IP
+ * Apply time-based score decay to a suspicious-IP record in place.
  */
-function isSuspiciousIP(ip: string): boolean {
-  const suspicious = suspiciousIPs.get(ip)
-  if (!suspicious) {
-    return false
-  }
-
-  // Check if IP is temporarily blocked
-  if (suspicious.score > SUSPICIOUS_IP_CONFIG.blockThreshold) {
-    return true
-  }
-
-  // Decay score over time
-  const timeSinceLastActivity = Date.now() - suspicious.lastActivity
+function decaySuspiciousScore(data: SuspiciousIPData): void {
+  const timeSinceLastActivity = Date.now() - data.lastActivity
   const decayAmount = Math.floor(timeSinceLastActivity / (60 * 60 * 1000)) // Decay per hour
-  suspicious.score = Math.max(0, suspicious.score - decayAmount * 10)
-
-  return suspicious.score > SUSPICIOUS_IP_CONFIG.suspiciousThreshold
+  data.score = Math.max(0, data.score - decayAmount * 10)
 }
 
 /**
- * Update suspicious IP score
+ * Check if request is from suspicious IP.
+ *
+ * Uses the in-memory L1 cache first (fast path). If the IP is not cached
+ * locally and Redis is available, falls back to Redis so that suspicious IPs
+ * flagged by another replica are still caught. This is best-effort: any Redis
+ * failure degrades to the in-memory view.
  */
-function updateSuspiciousIP(ip: string, offense: string, severity: number = 10): void {
+async function isSuspiciousIP(ip: string): Promise<boolean> {
+  const cached = suspiciousIPs.get(ip)
+
+  if (cached) {
+    // Read-time expiry: drop entries older than maxAge instead of relying on
+    // the background interval (which never fires on serverless/edge).
+    if (Date.now() - cached.lastActivity > SUSPICIOUS_IP_CONFIG.maxAge) {
+      suspiciousIPs.delete(ip)
+    } else {
+      if (cached.score > SUSPICIOUS_IP_CONFIG.blockThreshold) {
+        return true
+      }
+      decaySuspiciousScore(cached)
+      return cached.score > SUSPICIOUS_IP_CONFIG.suspiciousThreshold
+    }
+  }
+
+  // L1 miss — consult Redis if it is available so cross-replica flags hold.
+  if (await isRedisReady()) {
+    const redis = await getRedis()
+    if (redis) {
+      try {
+        const raw = await redis.get<string>(`${SUSPICIOUS_IP_REDIS_PREFIX}${ip}`)
+        if (raw) {
+          const data: SuspiciousIPData = JSON.parse(raw)
+          // Populate the L1 cache for subsequent fast-path hits.
+          suspiciousIPs.set(ip, data)
+          if (data.score > SUSPICIOUS_IP_CONFIG.blockThreshold) {
+            return true
+          }
+          decaySuspiciousScore(data)
+          return data.score > SUSPICIOUS_IP_CONFIG.suspiciousThreshold
+        }
+      } catch {
+        // Redis read failed — fall through to "not suspicious" (in-memory view).
+      }
+    }
+  }
+
+  return false
+}
+
+/**
+ * Update suspicious IP score.
+ *
+ * Writes to the in-memory L1 cache synchronously, then best-effort mirrors the
+ * record into Redis so other replicas observe the elevated score. Redis
+ * failures are swallowed — the local cache remains authoritative for the
+ * current instance.
+ */
+async function updateSuspiciousIP(ip: string, offense: string, severity: number = 10): Promise<void> {
   const suspicious = suspiciousIPs.get(ip) || {
     score: 0,
     lastActivity: Date.now(),
@@ -119,6 +210,20 @@ function updateSuspiciousIP(ip: string, offense: string, severity: number = 10):
 
   suspiciousIPs.set(ip, suspicious)
 
+  // Best-effort Redis replication. Never let this block or throw a request.
+  if (await isRedisReady()) {
+    const redis = await getRedis()
+    if (redis) {
+      try {
+        await redis.set(`${SUSPICIOUS_IP_REDIS_PREFIX}${ip}`, JSON.stringify(suspicious), {
+          ex: SUSPICIOUS_IP_REDIS_TTL
+        })
+      } catch {
+        // Swallow — in-memory cache already holds the updated score.
+      }
+    }
+  }
+
   // Log to security monitor if score is high
   if (suspicious.score > SUSPICIOUS_IP_CONFIG.suspiciousThreshold) {
     securityMonitor.createAlert(
@@ -132,29 +237,114 @@ function updateSuspiciousIP(ip: string, offense: string, severity: number = 10):
 }
 
 /**
- * Check emergency mode status
+ * Check emergency mode status.
+ *
+ * The local flag/expiry is the fast path. If the local flag is clear or stale,
+ * we also consult Redis so emergency mode activated on another replica (e.g.
+ * one that observed the attack first) is honoured here. Redis is best-effort:
+ * any failure falls back to the local value.
  */
-function checkEmergencyMode(): boolean {
-  // Check if emergency mode is active
+async function checkEmergencyMode(): Promise<boolean> {
+  // Fast path: locally active and not expired.
   if (emergencyMode && Date.now() < emergencyModeExpiry) {
     return true
   }
 
-  // Reset emergency mode if expired
+  // Reset local emergency mode if expired.
   if (emergencyMode && Date.now() >= emergencyModeExpiry) {
     emergencyMode = false
     emergencyModeExpiry = 0
+  }
+
+  // Cross-replica sync: another instance may have activated emergency mode.
+  if (!emergencyMode && (await isRedisReady())) {
+    const redis = await getRedis()
+    if (redis) {
+      try {
+        const ttl = await redis.ttl(EMERGENCY_MODE_REDIS_KEY)
+        if (ttl && ttl > 0) {
+          // Another replica is in emergency mode; mirror it locally so the
+          // fast path serves subsequent requests without a Redis round-trip.
+          emergencyMode = true
+          emergencyModeExpiry = Date.now() + ttl * 1000
+          return true
+        }
+      } catch {
+        // Redis read failed — keep using the local value.
+      }
+    }
   }
 
   return emergencyMode
 }
 
 /**
- * Activate emergency mode
+ * Decide whether a request warrants a security-audit record.
+ *
+ * Auditing every API request (the previous behaviour) cost a per-request
+ * hash + buffer append at 100K req/s for negligible signal. We audit only:
+ *  - state-changing requests (POST/PUT/PATCH/DELETE)
+ *  - requests from a known-suspicious IP
+ *  - requests where the trust system denied or rate-limited the caller
+ *  - admin/auth endpoints (regardless of method)
+ *
+ * GETs to read-only public endpoints are not audited here; they are still
+ * observable via standard access logs / Sentry breadcrumbs.
  */
-function activateEmergencyMode(duration: number = 60 * 60 * 1000): void {
+async function shouldAuditRequest(
+  req: NextRequest,
+  trustContext: { resistance?: string } | undefined | null
+): Promise<boolean> {
+  const method = req.method.toUpperCase()
+  if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+    return true
+  }
+
+  const pathname = new URL(req.url).pathname
+  if (
+    pathname.includes('/api/auth') ||
+    pathname.includes('/api/admin') ||
+    pathname.includes('/api/trust') ||
+    pathname.includes('/api/consensus')
+  ) {
+    return true
+  }
+
+  if (trustContext && trustContext.resistance && trustContext.resistance !== 'allowed' && trustContext.resistance !== 'no_user') {
+    return true
+  }
+
+  const ip = getClientIP(req)
+  if (ip !== 'unknown' && (await isSuspiciousIP(ip))) {
+    return true
+  }
+
+  return false
+}
+
+/**
+ * Activate emergency mode.
+ *
+ * Sets the local flag and, best-effort, writes a TTL'd key to Redis so every
+ * replica observes emergency mode for the same window. Redis failures are
+ * swallowed — the local activation still protects this instance.
+ */
+async function activateEmergencyMode(duration: number = 60 * 60 * 1000): Promise<void> {
   emergencyMode = true
   emergencyModeExpiry = Date.now() + duration
+
+  if (await isRedisReady()) {
+    const redis = await getRedis()
+    if (redis) {
+      try {
+        await redis.set(EMERGENCY_MODE_REDIS_KEY, '1', {
+          ex: Math.floor(duration / 1000)
+        })
+      } catch {
+        // Swallow — local activation still holds for this instance.
+      }
+    }
+  }
 
   securityMonitor.createAlert(
     SecurityIncidentType.SYSTEM_COMPROMISE,
@@ -206,7 +396,7 @@ async function rateLimitMiddleware(
 /**
  * Input validation middleware
  */
-function inputValidationMiddleware(req: NextRequest): { valid: boolean; response?: NextResponse } {
+async function inputValidationMiddleware(req: NextRequest): Promise<{ valid: boolean; response?: NextResponse }> {
   const url = req.url
   const method = req.method
   const userAgent = req.headers.get('user-agent') || ''
@@ -229,7 +419,7 @@ function inputValidationMiddleware(req: NextRequest): { valid: boolean; response
   for (const pattern of suspiciousPatterns) {
     if (pattern.test(url)) {
       const ip = getClientIP(req)
-      updateSuspiciousIP(ip, 'suspicious_url_pattern', 15)
+      await updateSuspiciousIP(ip, 'suspicious_url_pattern', 15)
 
       return {
         valid: false,
@@ -238,22 +428,30 @@ function inputValidationMiddleware(req: NextRequest): { valid: boolean; response
     }
   }
 
-  // Check user agent for suspicious patterns
+  // Check user agent for suspicious patterns. The previous list flagged
+  // /bot|crawler|scanner|curl|wget|python|perl|java/i — which also flagged
+  // legitimate emergency-service API integrations and any non-browser
+  // reporter. We now flag only UAs that are both non-browser AND exhibit
+  // known-malicious signatures (mass-scanner toolkits), while letting
+  // programmatic clients through. Per-IP severity stays low so this is a
+  // signal, not a block.
   const suspiciousUserAgents = [
-    /bot/i,
-    /crawler/i,
-    /scanner/i,
-    /curl/i,
-    /wget/i,
-    /python/i,
-    /perl/i,
-    /java/i
+    /sqlmap/i,
+    /nikto/i,
+    /nmap/i,
+    /masscan/i,
+    /acunetix/i,
+    /nessus/i,
+    /dirbuster/i,
+    /wpscan/i,
+    /hydra/i,
+    /burpcollaborator/i
   ]
 
   for (const pattern of suspiciousUserAgents) {
     if (pattern.test(userAgent)) {
       const ip = getClientIP(req)
-      updateSuspiciousIP(ip, 'suspicious_user_agent', 5)
+      await updateSuspiciousIP(ip, 'suspicious_user_agent', 5)
     }
   }
 
@@ -290,7 +488,7 @@ function securityHeadersMiddleware(response: NextResponse): NextResponse {
   // Content Security Policy
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.vercel-insights.com https://browser.sentry-cdn.com",
+    "script-src 'self' 'strict-dynamic' 'unsafe-inline' https://cdn.vercel-insights.com https://browser.sentry-cdn.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https: blob:",
@@ -341,12 +539,12 @@ export async function middleware(req: NextRequest) {
   const ip = getClientIP(req)
 
   // Check if IP is suspicious
-  if (isSuspiciousIP(ip)) {
+  if (await isSuspiciousIP(ip)) {
     return NextResponse.json({ error: 'Access denied' }, { status: 403 })
   }
 
   // Input validation
-  const inputValidation = inputValidationMiddleware(req)
+  const inputValidation = await inputValidationMiddleware(req)
   if (!inputValidation.valid) {
     return inputValidation.response
   }
@@ -357,7 +555,7 @@ export async function middleware(req: NextRequest) {
     const trustResult = await trustSecurityMiddleware(req, {
       enableTrustBasedRateLimiting: true,
       enableAttackResistance: true,
-      emergencyMode: checkEmergencyMode()
+      emergencyMode: await checkEmergencyMode()
     })
 
     if (!trustResult.allowed) {
@@ -378,29 +576,39 @@ export async function middleware(req: NextRequest) {
     // Apply rate limiting with trust-based adjustments
     const rateLimitResult = await rateLimitMiddleware(req, tier, {
       trustWeight: trustContext?.trustWeight ?? 1,
-      emergencyMode: checkEmergencyMode()
+      emergencyMode: await checkEmergencyMode()
     })
     if (!rateLimitResult.allowed) {
       return rateLimitResult.response
     }
   }
 
-  // Log request for monitoring with trust context
-  await securityMonitor.createAlert(
-    SecurityIncidentType.ANOMALOUS_BEHAVIOR,
-    IncidentSeverity.LOW,
-    'API request processed',
-    `${req.method} ${pathname} from ${ip}${trustContext ? ` (Trust: ${trustContext.trustWeight}, Level: ${trustContext.trustThreshold})` : ''}`,
-    'middleware',
-    trustContext
-      ? {
-          trustScore: trustContext.trustScore,
-          trustThreshold: trustContext.trustThreshold,
-          trustWeight: trustContext.trustWeight,
-          resistance: trustContext.resistance
-        }
-      : undefined
-  )
+  // Audit only security-relevant events, not every request. The previous
+  // implementation called securityMonitor.createAlert('API request
+  // processed', ...) on every single API request — at 100K req/s that is
+  // a per-request CPU + memory + hash tax for near-zero security value,
+  // and the in-memory audit buffer grew without bound. We now audit only
+  // the events that actually warrant a security record: writes,
+  // trust-tier elevation, denials, and suspicious-IP traffic.
+  if (await shouldAuditRequest(req, trustContext)) {
+    await securityMonitor.createAlert(
+      SecurityIncidentType.ANOMALOUS_BEHAVIOR,
+      IncidentSeverity.LOW,
+      `${req.method} ${pathname}`,
+      `from ${ip}${trustContext ? ` (Trust: ${trustContext.trustWeight}, Level: ${trustContext.trustThreshold})` : ''}`,
+      'middleware',
+      trustContext
+        ? {
+            metadata: {
+              trustScore: trustContext.trustScore,
+              trustThreshold: trustContext.trustThreshold,
+              trustWeight: trustContext.trustWeight,
+              resistance: trustContext.resistance
+            }
+          }
+        : undefined
+    )
+  }
 
   // Apply security headers with trust information
   const finalResponse = securityHeadersMiddleware(response)

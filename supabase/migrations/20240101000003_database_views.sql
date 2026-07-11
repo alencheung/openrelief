@@ -150,7 +150,7 @@ SELECT
     et.name as emergency_type,
     COUNT(*) as event_count,
     -- Create a grid cell (approximately 1km x 1km)
-    ST SnapToGrid(ee.location::geometry, 0.01) as hotspot_center,
+    ST_SnapToGrid(ee.location::geometry, 0.01) as hotspot_center,
     -- Calculate radius of affected area
     AVG(ee.radius_meters) as avg_radius,
     -- Average severity

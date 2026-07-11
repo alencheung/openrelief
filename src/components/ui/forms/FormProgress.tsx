@@ -245,6 +245,7 @@ const FormProgress = React.forwardRef<HTMLDivElement, FormProgressProps>(
           return (
             <React.Fragment key={step.id}>
               <div
+                data-status={status}
                 className={cn(
                   'flex items-center gap-3',
                   isVertical ? 'flex-row' : 'flex-col',

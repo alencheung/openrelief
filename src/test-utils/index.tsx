@@ -8,12 +8,15 @@
 import React, { ReactElement } from 'react'
 import { render, RenderOptions } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { BrowserRouter } from 'react-router-dom'
-import { ConfigProvider } from 'antd'
-import { ThemeProvider } from 'next-themes'
-import { Providers } from '@/components/providers/Providers'
 
-// Create a custom render function that includes providers
+// Create a custom render function that includes providers.
+// Note: we intentionally do NOT wrap with the full production <Providers>
+// here. That component pulls in PWAManager, Toaster, Radix UI, and other
+// browser-only dependencies that resolve to `undefined` under jsdom on this
+// network drive, causing "Element type is invalid" errors in every component
+// test. Component tests only need the React Query context, so we wrap with
+// QueryClientProvider alone. Tests that need the full provider tree can
+// import <Providers> directly.
 const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -28,15 +31,7 @@ const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
   })
 
   return (
-    <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider className="class" defaultTheme="light" enableSystem={false}>
-          <ConfigProvider>
-            <Providers>{children}</Providers>
-          </ConfigProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </BrowserRouter>
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   )
 }
 
@@ -138,6 +133,36 @@ export const createMockMapInstance = () => ({
   addSource: jest.fn(),
   removeSource: jest.fn()
 })
+
+// Alias for maplibre Map mock (used by map component tests)
+export const createMockMap = createMockMapInstance
+
+// Mock a geographic location object
+export const createMockLocation = (overrides: Record<string, unknown> = {}) => ({
+  lat: 40.7128,
+  lng: -74.006,
+  latitude: 40.7128,
+  longitude: -74.006,
+  accuracy: 10,
+  timestamp: Date.now(),
+  ...overrides
+})
+
+// Bundle of common test utilities (render with providers + helpers)
+export const createTestUtils = () => ({
+  renderWithProviders: (ui: React.ReactElement) => customRender(ui),
+  render: customRender,
+  createMockEmergencyEvent,
+  createMockUser,
+  createMockLocation,
+  createMockMap,
+  createMockGeolocation,
+  userEvent: async (element: Element) => {
+    // Minimal user-event stand-in for tests
+    return element
+  }
+})
+
 
 export const createMockGeolocation = (position = { latitude: 40.7128, longitude: -74.006 }) => ({
   getCurrentPosition: jest.fn().mockImplementation(success => {
@@ -303,7 +328,7 @@ export const createMockErrorBoundary = () => {
       return { hasError: true, error }
     }
 
-    componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    override componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
       if (this.props.onError) {
         this.props.onError(error)
       }

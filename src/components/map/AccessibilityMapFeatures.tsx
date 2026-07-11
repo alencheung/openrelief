@@ -490,3 +490,5 @@ const AccessibilityMapFeatures: React.FC<AccessibilityMapFeaturesProps> = ({
 AccessibilityMapFeatures.displayName = 'AccessibilityMapFeatures'
 
 export { AccessibilityMapFeatures, accessibilityControlsVariants }
+
+export default AccessibilityMapFeatures

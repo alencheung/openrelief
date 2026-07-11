@@ -29,7 +29,7 @@ export interface ImageOptimizationConfig {
   enableWebP: boolean
   enableAVIF: boolean
   quality: number
-  placeholderStrategy: 'blur' | 'color' | 'gradient'
+  placeholderStrategy: 'blur' | 'color' | 'gradient' | 'none'
   responsiveBreakpoints: number[]
   enableProgressiveLoading: boolean
 }
@@ -130,6 +130,12 @@ class FrontendOptimizer {
    * Initialize frontend optimizations
    */
   private initializeOptimizations(): void {
+    // These optimizations touch browser-only globals (document, window,
+    // IntersectionObserver). No-op on the server (SSR / build-time page-data
+    // collection) so importing this module doesn't throw outside the browser.
+    if (typeof document === 'undefined' || typeof window === 'undefined') {
+      return
+    }
     this.setupIntersectionObserver()
     this.setupResourceHints()
     this.setupCriticalResourcePreloading()
@@ -351,9 +357,10 @@ class FrontendOptimizer {
   /**
    * Add image quality to URL
    */
-  private addImageQuality(url: string): string {
+  private addImageQuality(url: string, quality?: number): string {
     const separator = url.includes('?') ? '&' : '?'
-    return `${url}${separator}quality=${this.imageConfig.quality}`
+    const q = quality ?? this.imageConfig.quality
+    return `${url}${separator}quality=${q}`
   }
 
   /**
@@ -518,6 +525,7 @@ class FrontendOptimizer {
       const observer = new PerformanceObserver(list => {
         list.getEntries().forEach(entry => {
           if (entry.name.includes('chunk')) {
+            const resourceEntry = entry as PerformanceResourceTiming
             performanceMonitor.recordMetric({
               type: 'frontend',
               name: 'chunk_load_time',
@@ -525,7 +533,7 @@ class FrontendOptimizer {
               unit: 'ms',
               tags: {
                 chunk_name: entry.name,
-                chunk_size: entry.transferSize?.toString() || 'unknown'
+                chunk_size: resourceEntry.transferSize?.toString() || 'unknown'
               }
             })
           }
@@ -542,7 +550,8 @@ class FrontendOptimizer {
   private setupAsyncLoading(): void {
     // Add async loading for non-critical scripts
     const scripts = document.querySelectorAll('script[data-async]')
-    scripts.forEach(script => {
+    scripts.forEach(scriptEl => {
+      const script = scriptEl as HTMLScriptElement
       script.async = true
       script.defer = true
     })
@@ -601,7 +610,10 @@ class FrontendOptimizer {
     if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
       navigator.serviceWorker.ready.then(registration => {
         // Register background sync for emergency data
-        registration.sync.register('emergency-data-sync')
+        const syncReg = registration as ServiceWorkerRegistration & {
+          sync: { register: (tag: string) => Promise<void> }
+        }
+        syncReg.sync.register('emergency-data-sync')
       })
     }
   }
@@ -651,6 +663,7 @@ class FrontendOptimizer {
       const observer = new PerformanceObserver(list => {
         const entries = list.getEntries()
         const lastEntry = entries[entries.length - 1]
+        if (!lastEntry) return
 
         performanceMonitor.recordMetric({
           type: 'frontend',

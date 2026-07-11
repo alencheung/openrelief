@@ -26,11 +26,47 @@ import {
   CACHE_CONFIGS
 } from '@/lib/cache/api-cache'
 
-// Create Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+// Build-safe Supabase client: returns a real client when env vars are present,
+// otherwise a minimal stub so module-load during the Next.js build page-data
+// collection doesn't throw "supabaseUrl is required".
+function safeCreateClient(url?: string, key?: string, opts?: any): import('@supabase/supabase-js').SupabaseClient {
+  // In test mode, use the mock client from @/lib/supabase (which tests
+  // override via jest.mock). This lets test mocks control query results.
+  if (process.env.NODE_ENV === 'test') {
+    try {
+      const { supabase } = require('@/lib/supabase')
+      return supabase as any
+    } catch {
+      // fall through to stub
+    }
+  }
+  if (url && key) {
+    return createClient(url, key, opts)
+  }
+  const noop = () => chain
+    const chain = {
+      select: noop, insert: noop, update: noop, upsert: noop, delete: noop,
+      eq: noop, neq: noop, in: noop, gte: noop, lte: noop, gt: noop, lt: noop,
+      like: noop, ilike: noop, contains: noop, not: noop, is: noop, or: noop,
+      filter: noop, order: noop, limit: noop, range: noop, single: noop,
+      maybeSingle: noop, then: (resolve: any) => resolve({ data: [], error: null })
+    }
+  return { from: () => chain, auth: { getUser: async () => ({ data: { user: null }, error: null }) } } as any
+}
+
+
+// Lazy Supabase client — re-evaluated on each access so test mocks that
+// reset between tests always get the current mock instance.
+let _supabase: any = null
+function getSupabase() {
+  if (process.env.NODE_ENV === 'test') {
+    try { return require('@/lib/supabase').supabase } catch {}
+  }
+  if (!_supabase) {
+    _supabase = safeCreateClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY)
+  }
+  return _supabase
+}
 
 export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
   request: NextRequest,
@@ -95,7 +131,7 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
     const { data, cached, etag } = await cacheResponse(
       cacheKey,
       async () => {
-        let query = supabase
+        let query = getSupabase()
           .from('emergency_events')
           .select(
             `
@@ -125,7 +161,7 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
           const centerLng = parseFloat(sanitizedData.center_lng)
 
           // Call RPC separately to get nearby event IDs
-          const { data: nearbyEvents, error: rpcError } = await supabase.rpc(
+          const { data: nearbyEvents, error: rpcError } = await getSupabase().rpc(
             'nearby_emergency_events',
             {
               center_lat: centerLat,
@@ -260,14 +296,22 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (
 
     const sanitizedData = validationResult.sanitizedData
 
+    // Use the authenticated caller as the reporter ??never trust a reporter_id
+    // supplied in the request body (that allowed impersonation). The emergency
+    // security config requires auth, so context.userId is guaranteed present.
+    const reporterId = context.userId
+    if (!reporterId) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
+
     // Get reporter's trust score
-    const { data: reporter, error: reporterError } = await supabase
+    const { data: reporter, error: reporterError } = await getSupabase()
       .from('user_profiles')
       .select('trust_score')
-      .eq('user_id', sanitizedData.reporter_id)
-      .single()
+      .eq('user_id', reporterId)
+      .maybeSingle()
 
-    if (reporterError || !reporter) {
+    if (!reporter) {
       return NextResponse.json({ error: 'Reporter not found' }, { status: 404 })
     }
 
@@ -290,8 +334,11 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (
     // Calculate trust weight if not provided
     const calculatedTrustWeight = sanitizedData.trust_weight || reporter.trust_score || 0.5
 
-    // Create emergency event
-    const { data, error } = await supabase
+    // Create emergency event. reporter_id comes from the authenticated
+    // session (context.userId), not the request body, to prevent impersonation.
+    // The schema column is `reporter_id`; the earlier code wrote a non-existent
+    // `reported_by` column. severity is clamped to the schema's 1-5 range.
+    const { data, error } = await getSupabase()
       .from('emergency_events')
       .insert({
         type_id: parseInt(sanitizedData.type_id, 10),
@@ -299,8 +346,8 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (
         description: sanitizedData.description.trim(),
         location: `POINT(${sanitizedData.location.longitude} ${sanitizedData.location.latitude})`,
         location_address: sanitizedData.location.address,
-        severity: sanitizedData.severity || 'medium',
-        reported_by: sanitizedData.reporter_id,
+        severity: Math.min(Math.max(Number(sanitizedData.severity) || 3, 1), 5),
+        reporter_id: reporterId,
         status: 'pending',
         trust_weight: calculatedTrustWeight,
         metadata: sanitizedData.metadata || {},
@@ -343,7 +390,7 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (
     if (calculatedTrustWeight >= 0.3) {
       // This would typically be handled by a background job
       // For now, we'll initiate immediate consensus check
-      await supabase.rpc('initiate_consensus_check', {
+      await getSupabase().rpc('initiate_consensus_check', {
         event_id: data.id
       })
     }
@@ -462,7 +509,35 @@ export const PUT = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
       updates.expires_at = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
     }
 
-    const { data, error } = await supabase
+    // Ownership check: only the reporter (or an admin/moderator) may update.
+    // The route uses the service-role client (RLS is bypassed), so this
+    // in-handler check is the actual authorization boundary.
+    const { data: existingEvent } = await getSupabase()
+      .from('emergency_events')
+      .select('reporter_id')
+      .eq('id', eventId)
+      .maybeSingle()
+
+    const reporterId = (existingEvent as { reporter_id?: string } | null)?.reporter_id
+    const isAdmin =
+      context.role === 'admin' ||
+      context.role === 'moderator' ||
+      (context.permissions ?? []).some(p => p === 'admin' || p === 'moderator')
+    if (reporterId && reporterId !== context.userId && !isAdmin) {
+      await securityMonitor.createAlert(
+        SecurityIncidentType.UNAUTHORIZED_ACCESS,
+        IncidentSeverity.MEDIUM,
+        'Non-owner attempted to update emergency event',
+        `User ${context.userId} attempted to update event ${eventId} owned by ${reporterId}`,
+        'api_security'
+      )
+      return NextResponse.json(
+        { error: 'Only the reporter or a moderator may update this event' },
+        { status: 403 }
+      )
+    }
+
+    const { data, error } = await getSupabase()
       .from('emergency_events')
       .update(updates)
       .eq('id', eventId)
@@ -535,15 +610,36 @@ export const DELETE = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
       return NextResponse.json({ error: 'Event ID is required' }, { status: 400 })
     }
 
-    // Check if event can be deleted (only resolved/closed events)
-    const { data: event, error: fetchError } = await supabase
+    // Check if event can be deleted (only resolved/closed events) and load
+    // the reporter for the ownership check.
+    const { data: event, error: fetchError } = await getSupabase()
       .from('emergency_events')
-      .select('status')
+      .select('status, reporter_id')
       .eq('id', eventId)
       .single()
 
     if (fetchError || !event) {
       return NextResponse.json({ error: 'Emergency event not found' }, { status: 404 })
+    }
+
+    // Ownership check: only the reporter (or an admin/moderator) may delete.
+    const reporterId = (event as { reporter_id?: string }).reporter_id
+    const isAdmin =
+      context.role === 'admin' ||
+      context.role === 'moderator' ||
+      (context.permissions ?? []).some(p => p === 'admin' || p === 'moderator')
+    if (reporterId && reporterId !== context.userId && !isAdmin) {
+      await securityMonitor.createAlert(
+        SecurityIncidentType.UNAUTHORIZED_ACCESS,
+        IncidentSeverity.MEDIUM,
+        'Non-owner attempted to delete emergency event',
+        `User ${context.userId} attempted to delete event ${eventId} owned by ${reporterId}`,
+        'api_security'
+      )
+      return NextResponse.json(
+        { error: 'Only the reporter or a moderator may delete this event' },
+        { status: 403 }
+      )
     }
 
     if (!['resolved', 'closed'].includes(event.status)) {
@@ -554,7 +650,7 @@ export const DELETE = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
     }
 
     // Archive event before deletion
-    const { error: archiveError } = await supabase.from('emergency_events_archive').insert({
+    const { error: archiveError } = await getSupabase().from('emergency_events_archive').insert({
       ...event,
       archived_at: new Date().toISOString(),
       deleted_by: context.userId
@@ -578,7 +674,7 @@ export const DELETE = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
     }
 
     // Delete event
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await getSupabase()
       .from('emergency_events')
       .delete()
       .eq('id', eventId)

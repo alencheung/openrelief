@@ -9,51 +9,80 @@ import {
   createMockEmergencyEvent,
   createMockLocation
 } from '@/test-utils'
-import { useEmergencyStore, useLocationStore } from '@/store'
+import { useEmergencyStore } from '@/store/emergencyStore'
+import { useLocationStore } from '@/store/locationStore'
 
 // Mock the maplibre-gl library
-vi.mock('maplibre-gl', () => ({
-  default: {
-    Map: vi.fn(() => createMockMap()),
-    NavigationControl: vi.fn(),
-    ScaleControl: vi.fn(),
-    LngLat: vi.fn(),
-    LngLatBounds: vi.fn(() => ({
-      extend: vi.fn()
-    }))
+jest.mock('maplibre-gl', () => {
+  const createMockMapInstance = () => ({
+    on: function(event, cb) { if (event === 'load' && typeof cb === 'function') { try { cb() } catch(e){} } },
+    off: () => {},
+    addControl: () => {},
+    removeControl: () => {},
+    getCanvas: () => ({ style: {} }),
+    setStyle: () => {},
+    addSource: () => {},
+    addLayer: () => {},
+    getSource: () => null,
+    removeLayer: () => {},
+    removeSource: () => {},
+    setGeoJSONSourceData: () => {},
+    getLayer: () => null,
+    fitBounds: () => {},
+    setLayoutProperty: () => {},
+    setPaintProperty: () => {},
+    setFilter: () => {},
+    getCenter: () => ({ lat: 40.7128, lng: -74.006 }),
+    setCenter: () => {},
+    getZoom: () => 10,
+    setZoom: () => {},
+    zoomIn: () => {},
+    zoomOut: () => {},
+    panTo: () => {},
+    flyTo: () => {},
+    easeTo: () => {},
+    resize: () => {},
+    remove: () => {},
+    project: () => ({ x: 0, y: 0 }),
+    unproject: () => ({ lat: 0, lng: 0 }),
+    getBounds: () => ({ extend: () => {}, getNorth: () => 0, getSouth: () => 0, getEast: () => 0, getWest: () => 0 }),
+    queryRenderedFeatures: () => []
+  })
+  return {
+    __esModule: true,
+    default: {
+      Map: jest.fn(function() { return createMockMapInstance() }),
+      NavigationControl: function() {},
+      ScaleControl: function() {},
+      LngLat: function() {},
+      LngLatBounds: function() { return { extend: () => {} } }
+    }
   }
-}))
+})
 
 // Mock the map utilities
-vi.mock('@/lib/map-utils', () => ({
-  createEmergencyCluster: vi.fn(() => ({
-    getLeaves: vi.fn(() => []),
-    getClusterExpansionZoom: vi.fn(() => 10)
-  })),
-  clusterEmergencyEvents: vi.fn(() => []),
-  MapPerformanceManager: vi.fn(() => ({
-    destroy: vi.fn()
-  })),
-  OfflineTileCache: vi.fn(),
-  EmergencyRouter: vi.fn(),
-  MapAccessibilityManager: vi.fn(() => ({
-    announceLocation: vi.fn()
-  })),
-  generateEmergencyHeatmap: vi.fn(() => ({
+jest.mock('@/lib/map-utils', () => ({
+  createEmergencyCluster: () => ({
+    getLeaves: () => [],
+    getClusterExpansionZoom: () => 10
+  }),
+  clusterEmergencyEvents: () => [],
+  MapPerformanceManager: function() { return { destroy: () => {} } },
+  OfflineTileCache: function() {},
+  EmergencyRouter: function() {},
+  MapAccessibilityManager: function() { return { announceLocation: () => {} } },
+  generateEmergencyHeatmap: () => ({
     type: 'FeatureCollection',
     features: []
-  })),
-  createGeofenceBuffer: vi.fn(() => ({
+  }),
+  createGeofenceBuffer: () => ({
     type: 'Feature',
-    geometry: {
-      type: 'Polygon',
-      coordinates: []
-    }
-  }))
+    geometry: { type: 'Polygon', coordinates: [] }
+  })
 }))
 
 // Mock the map configuration
-vi.mock('@/lib/map-config', () => ({
+jest.mock('@/lib/map-config', () => ({
   mapConfiguration: {
     style: 'mapbox://styles/mapbox/streets-v11',
     default: {
@@ -77,79 +106,95 @@ vi.mock('@/lib/map-config', () => ({
 }))
 
 // Mock accessibility hooks
-vi.mock('@/hooks/accessibility', () => ({
-  useKeyboardNavigation: vi.fn(() => ({
-    registerShortcut: vi.fn(),
-    unregisterShortcut: vi.fn()
+const mockRegisterShortcut = jest.fn()
+const mockUnregisterShortcut = jest.fn()
+const mockAnnouncePolite = jest.fn()
+const mockAnnounceAssertive = jest.fn()
+jest.mock('@/hooks/accessibility', () => ({
+  useKeyboardNavigation: jest.fn(() => ({
+    registerShortcut: mockRegisterShortcut,
+    unregisterShortcut: mockUnregisterShortcut
   })),
-  useAriaAnnouncer: vi.fn(() => ({
-    announcePolite: vi.fn(),
-    announceAssertive: vi.fn()
+  useAriaAnnouncer: jest.fn(() => ({
+    announcePolite: mockAnnouncePolite,
+    announceAssertive: mockAnnounceAssertive
   })),
-  useReducedMotion: vi.fn(() => ({
+  useReducedMotion: jest.fn(() => ({
     prefersReducedMotion: false
   }))
 }))
 
 // Mock mobile detection
-vi.mock('@/hooks/useMobileDetection', () => ({
-  useMobileDetection: vi.fn(() => ({
+jest.mock('@/hooks/useMobileDetection', () => ({
+  useMobileDetection: jest.fn(() => ({
     isMobile: false,
     isTouch: false
   }))
 }))
 
 // Mock touch gestures
-vi.mock('@/hooks/useTouchGestures', () => ({
-  useTouchGestures: vi.fn(() => ({
+jest.mock('@/hooks/useTouchGestures', () => ({
+  useTouchGestures: jest.fn(() => ({
     current: null
   }))
 }))
 
 // Mock responsive container
-vi.mock('./ResponsiveMapContainer', () => ({
-  ResponsiveMapContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  useResponsive: vi.fn(() => ({
+jest.mock('../ResponsiveMapContainer', () => ({
+  ResponsiveMapContainer: ({ children, className }: { children: React.ReactNode; className?: string }) => <div className={className}>{children}</div>,
+  useResponsive: jest.fn(() => ({
     breakpoint: 'desktop',
     orientation: 'landscape'
   })),
   responsiveUtils: {
-    getResponsiveValue: vi.fn(value => value)
+    getResponsiveValue: jest.fn(value => value)
   }
 }))
 
 // Mock child components
-vi.mock('./MapLegend', () => ({
-  MapLegend: vi.fn(() => <div data-testid="map-legend">Map Legend</div>)
+jest.mock('../MapLegend', () => ({
+  MapLegend: jest.fn(() => <div data-testid="map-legend">Map Legend</div>)
 }))
 
-vi.mock('./ProximityAlertsDisplay', () => ({
-  ProximityAlertsDisplay: vi.fn(() => <div data-testid="proximity-alerts">Proximity Alerts</div>),
+jest.mock('../ProximityAlertsDisplay', () => ({
+  ProximityAlertsDisplay: jest.fn(() => <div data-testid="proximity-alerts">Proximity Alerts</div>),
   ProximityAlert: {}
 }))
 
-vi.mock('./EmergencyDetailsPopup', () => ({
-  EmergencyDetailsPopup: vi.fn(() => <div data-testid="emergency-details">Emergency Details</div>),
+jest.mock('../EmergencyDetailsPopup', () => ({
+  EmergencyDetailsPopup: jest.fn(() => <div data-testid="emergency-details">Emergency Details</div>),
   EmergencyDetails: {}
 }))
 
-vi.mock('./SpatialInformationOverlay', () => ({
-  SpatialInformationOverlay: vi.fn(() => <div data-testid="spatial-info">Spatial Info</div>)
+jest.mock('../SpatialInformationOverlay', () => ({
+  SpatialInformationOverlay: jest.fn(() => <div data-testid="spatial-info">Spatial Info</div>)
 }))
 
-vi.mock('./AccessibilityMapFeatures', () => ({
-  AccessibilityMapFeatures: vi.fn(() => (
+jest.mock('../AccessibilityMapFeatures', () => ({
+  AccessibilityMapFeatures: jest.fn(() => (
     <div data-testid="accessibility-features">Accessibility Features</div>
   )),
   AccessibilitySettings: {}
 }))
 
-vi.mock('@/components/mobile/MobileMapControls', () => ({
-  MobileMapControls: vi.fn(() => <div data-testid="mobile-controls">Mobile Controls</div>)
+jest.mock('@/components/mobile/MobileMapControls', () => ({
+  MobileMapControls: jest.fn(() => <div data-testid="mobile-controls">Mobile Controls</div>)
+}))
+
+// Mock the store hooks so vi.mocked(useEmergencyStore).mockReturnValue(...)
+// controls their return values per-test.
+jest.mock('@/store/emergencyStore', () => ({
+  useEmergencyStore: jest.fn()
+}))
+jest.mock('@/store/locationStore', () => ({
+  useLocationStore: jest.fn()
 }))
 
 describe('EmergencyMap', () => {
   const { renderWithProviders } = createTestUtils()
+  // Shared store mock fns so individual tests can assert on them.
+  const mockSetMapState = jest.fn()
+  const mockSetSelectedEventOnMap = jest.fn()
 
   // Mock store data
   const mockEmergencyEvents = [
@@ -212,8 +257,8 @@ describe('EmergencyMap', () => {
         zoom: 10,
         bounds: null
       },
-      setMapState: vi.fn(),
-      setSelectedEventOnMap: vi.fn()
+      setMapState: mockSetMapState,
+      setSelectedEventOnMap: mockSetSelectedEventOnMap
     } as any)
 
     vi.mocked(useLocationStore).mockReturnValue({
@@ -221,8 +266,8 @@ describe('EmergencyMap', () => {
       isTracking: true,
       geofences: mockGeofences,
       proximityAlerts: mockProximityAlerts,
-      startTracking: vi.fn(),
-      stopTracking: vi.fn()
+      startTracking: jest.fn(),
+      stopTracking: jest.fn()
     } as any)
   })
 
@@ -282,8 +327,8 @@ describe('EmergencyMap', () => {
     const zoomInButton = screen.getByRole('button', { name: /zoom in/i })
     await user.click(zoomInButton)
 
-    // The mock map should have zoomIn called
-    expect(vi.mocked(useEmergencyStore).mockReturnValue.setMapState).toHaveBeenCalled()
+    // Zooming announces an accessibility message
+    expect(mockAnnouncePolite).toHaveBeenCalledWith('Zoomed in')
   })
 
   it('handles zoom out control click', async () => {
@@ -293,7 +338,7 @@ describe('EmergencyMap', () => {
     const zoomOutButton = screen.getByRole('button', { name: /zoom out/i })
     await user.click(zoomOutButton)
 
-    expect(vi.mocked(useEmergencyStore).mockReturnValue.setMapState).toHaveBeenCalled()
+    expect(mockAnnouncePolite).toHaveBeenCalledWith('Zoomed out')
   })
 
   it('handles center on user location click', async () => {
@@ -307,8 +352,8 @@ describe('EmergencyMap', () => {
     const { announcePolite } = vi
       .mocked(require('@/hooks/accessibility').useAriaAnnouncer())
       .mockReturnValue({
-        announcePolite: vi.fn(),
-        announceAssertive: vi.fn()
+        announcePolite: jest.fn(),
+        announceAssertive: jest.fn()
       })
 
     expect(announcePolite).toHaveBeenCalledWith('Centered map on your location')
@@ -324,15 +369,15 @@ describe('EmergencyMap', () => {
     const { announcePolite } = vi
       .mocked(require('@/hooks/accessibility').useAriaAnnouncer())
       .mockReturnValue({
-        announcePolite: vi.fn(),
-        announceAssertive: vi.fn()
+        announcePolite: jest.fn(),
+        announceAssertive: jest.fn()
       })
 
     expect(announcePolite).toHaveBeenCalled()
   })
 
   it('handles emergency click event', async () => {
-    const onEmergencyClick = vi.fn()
+    const onEmergencyClick = jest.fn()
     renderWithProviders(<EmergencyMap onEmergencyClick={onEmergencyClick} />)
 
     // Simulate clicking on an emergency marker
@@ -345,7 +390,7 @@ describe('EmergencyMap', () => {
     renderWithProviders(<EmergencyMap />)
 
     // Map movement should update state
-    expect(vi.mocked(useEmergencyStore).mockReturnValue.setMapState).toBeDefined()
+    expect(mockSetMapState).toBeDefined()
   })
 
   it('updates when emergency events change', () => {
@@ -395,8 +440,8 @@ describe('EmergencyMap', () => {
     const { registerShortcut } = vi
       .mocked(require('@/hooks/accessibility').useKeyboardNavigation())
       .mockReturnValue({
-        registerShortcut: vi.fn(),
-        unregisterShortcut: vi.fn()
+        registerShortcut: jest.fn(),
+        unregisterShortcut: jest.fn()
       })
 
     renderWithProviders(<EmergencyMap />)
@@ -517,7 +562,7 @@ describe('EmergencyMap', () => {
   })
 
   it('calls onMapLoad when map loads', () => {
-    const onMapLoad = vi.fn()
+    const onMapLoad = jest.fn()
     renderWithProviders(<EmergencyMap onMapLoad={onMapLoad} />)
 
     // Map load would be triggered after initialization
@@ -525,7 +570,7 @@ describe('EmergencyMap', () => {
   })
 
   it('calls onLocationUpdate when location changes', () => {
-    const onLocationUpdate = vi.fn()
+    const onLocationUpdate = jest.fn()
     renderWithProviders(<EmergencyMap onLocationUpdate={onLocationUpdate} />)
 
     expect(onLocationUpdate).toBeDefined()
@@ -589,8 +634,8 @@ describe('EmergencyMap', () => {
     const { announcePolite } = vi
       .mocked(require('@/hooks/accessibility').useAriaAnnouncer())
       .mockReturnValue({
-        announcePolite: vi.fn(),
-        announceAssertive: vi.fn()
+        announcePolite: jest.fn(),
+        announceAssertive: jest.fn()
       })
 
     renderWithProviders(<EmergencyMap />)

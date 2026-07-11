@@ -6,7 +6,7 @@ import MapLegend from '../MapLegend'
 import { createTestUtils } from '@/test-utils'
 
 // Mock UI components
-vi.mock('@/components/ui', () => ({
+jest.mock('@/components/ui', () => ({
   EmergencyIndicator: ({ type, size, variant, label }: any) => (
     <div data-testid="emergency-indicator" data-type={type} data-size={size} data-variant={variant}>
       {label}
@@ -171,7 +171,7 @@ describe('MapLegend', () => {
 
   it('calls onToggleCollapse when legend is collapsed', async () => {
     const user = userEvent.setup()
-    const onToggleCollapse = vi.fn()
+    const onToggleCollapse = jest.fn()
 
     renderWithProviders(
       <MapLegend {...defaultProps} collapsible={true} onToggleCollapse={onToggleCollapse} />
@@ -192,7 +192,7 @@ describe('MapLegend', () => {
 
     // Collapse emergency types section
     const emergencyTypesHeader = screen.getByText(/emergency types/i).closest('div')
-    const collapseButton = emergencyTypesHeader?.querySelector('[role="button"]')
+    const collapseButton = emergencyTypesHeader
     await user.click(collapseButton!)
 
     // Emergency types should be collapsed

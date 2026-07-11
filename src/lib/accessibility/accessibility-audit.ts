@@ -439,8 +439,8 @@ const WCAG_GUIDELINES = {
                         || ['button', 'link', 'input', 'select', 'textarea'].includes(element.tagName.toLowerCase())
         const hasName = element.getAttribute('aria-label')
                         || element.getAttribute('aria-labelledby')
-                        || element.textContent?.trim().length > 0
-        return hasRole && hasName
+                        || ((element.textContent?.trim().length ?? 0) > 0)
+        return Boolean(hasRole && hasName)
       }
     },
     '4.1.3': {

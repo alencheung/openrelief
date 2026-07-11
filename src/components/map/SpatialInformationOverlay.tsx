@@ -537,3 +537,5 @@ export {
   SpeedDisplay,
   AccuracyDisplay
 }
+
+export default SpatialInformationOverlay

@@ -35,6 +35,15 @@ export interface ValidationResult {
   securityFlags: SecurityFlag[]
 }
 
+// Result shape returned by validateApiInput (field-keyed errors/warnings)
+export interface ApiValidationResult {
+  isValid: boolean
+  sanitizedData: Record<string, any>
+  errors: Record<string, string[]>
+  warnings: Record<string, string[]>
+  securityFlags: SecurityFlag[]
+}
+
 export interface SecurityFlag {
   type: 'xss' | 'sql_injection' | 'path_traversal' | 'command_injection' | 'csrf' | 'suspicious_pattern'
   severity: 'low' | 'medium' | 'high' | 'critical'
@@ -247,7 +256,7 @@ export class InputValidator {
       const highSeverityFlags = securityFlags.filter(flag =>
         flag.severity === 'high' || flag.severity === 'critical'
       )
-      if (highSeverityFlags.length > 0) {
+      if (highSeverityFlags.length > 0 && highSeverityFlags[0]) {
         securityMonitor.createAlert(
           'malicious_activity' as any,
           'high' as any,
@@ -450,8 +459,7 @@ export class InputValidator {
         ALLOWED_ATTR: this.options.allowedAttributes || [],
         KEEP_CONTENT: false,
         RETURN_DOM: false,
-        RETURN_DOM_FRAGMENT: false,
-        RETURN_DOM_IMPORT: false
+        RETURN_DOM_FRAGMENT: false
       })
     } else {
       // Strip all HTML
@@ -460,8 +468,7 @@ export class InputValidator {
         ALLOWED_ATTR: [],
         KEEP_CONTENT: true,
         RETURN_DOM: false,
-        RETURN_DOM_FRAGMENT: false,
-        RETURN_DOM_IMPORT: false
+        RETURN_DOM_FRAGMENT: false
       })
     }
 
@@ -477,8 +484,7 @@ export class InputValidator {
       ALLOWED_ATTR: [],
       KEEP_CONTENT: true,
       RETURN_DOM: false,
-      RETURN_DOM_FRAGMENT: false,
-      RETURN_DOM_IMPORT: false
+      RETURN_DOM_FRAGMENT: false
     })
   }
 }
@@ -524,8 +530,11 @@ export const VALIDATION_SCHEMAS: ValidationSchemas = {
         return null
       } }
     ],
-    reporterId: [
-      { name: 'reporterId', required: true, type: 'string', minLength: 1, maxLength: 100 }
+    type_id: [
+      { name: 'type_id', required: true, type: 'number', min: 1 }
+    ],
+    metadata: [
+      { name: 'metadata', type: 'object' }
     ]
   },
 
@@ -591,7 +600,7 @@ export const inputValidator = new InputValidator()
  * Middleware helper function for API validation
  */
 export function validateApiInput(schema: Record<string, ValidationRule[]>) {
-  return (req: Request) => {
+  return (req: Request): Promise<ApiValidationResult> => {
     const contentType = req.headers.get('content-type') || ''
 
     if (contentType.includes('application/json')) {
@@ -601,6 +610,7 @@ export function validateApiInput(schema: Record<string, ValidationRule[]>) {
           isValid: result.isValid,
           sanitizedData: result.sanitizedData,
           errors: result.errors,
+          warnings: result.warnings,
           securityFlags: result.securityFlags
         }
       })
@@ -610,6 +620,7 @@ export function validateApiInput(schema: Record<string, ValidationRule[]>) {
       isValid: false,
       sanitizedData: {},
       errors: { general: ['Invalid content type'] },
+      warnings: {},
       securityFlags: []
     })
   }

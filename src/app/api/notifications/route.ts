@@ -4,9 +4,42 @@ import { withAPISecurity, API_SECURITY_CONFIGS } from '@/lib/security/api-securi
 import { inputValidator } from '@/lib/security/input-validation'
 import { securityMonitor } from '@/lib/audit/security-monitor'
 
-const supabase = createClient(
+// Build-safe Supabase client: returns a real client when env vars are present,
+// otherwise a minimal stub so module-load during the Next.js build page-data
+// collection doesn't throw "supabaseUrl is required".
+function safeCreateClient(url?: string, key?: string, opts?: any): import('@supabase/supabase-js').SupabaseClient {
+  // In test mode, use the mock client from @/lib/supabase
+
+  if (process.env.NODE_ENV === 'test') {
+
+    try {
+
+      const { supabase } = require('@/lib/supabase')
+
+      return supabase as any
+
+    } catch {}
+
+  }
+
+  if (url && key) {
+    return createClient(url, key, opts)
+  }
+  const noop = () => chain
+    const chain = {
+      select: noop, insert: noop, update: noop, upsert: noop, delete: noop,
+      eq: noop, neq: noop, in: noop, gte: noop, lte: noop, gt: noop, lt: noop,
+      like: noop, ilike: noop, contains: noop, not: noop, is: noop, or: noop,
+      filter: noop, order: noop, limit: noop, range: noop, single: noop,
+      maybeSingle: noop, then: (resolve: any) => resolve({ data: [], error: null })
+    }
+  return { from: () => chain, auth: { getUser: async () => ({ data: { user: null }, error: null }) } } as any
+}
+
+
+const supabase = safeCreateClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
 interface PushSubscriptionData {
@@ -41,7 +74,7 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
     }
 
     const { data: subscriptions, error: subsError } = await supabase
-      .from('user_push_subscriptions')
+      .from('push_subscriptions')
       .select('id, endpoint, created_at, is_active')
       .eq('user_id', context.userId)
       .eq('is_active', true)
@@ -116,12 +149,12 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
 
       const sub = subscription as PushSubscriptionData
 
-      const { error: upsertError } = await supabase.from('user_push_subscriptions').upsert(
+      const { error: upsertError } = await supabase.from('push_subscriptions').upsert(
         {
           user_id: context.userId,
           endpoint: sub.endpoint,
-          p256dh_key: sub.keys.p256dh,
-          auth_key: sub.keys.auth,
+          p256dh: sub.keys.p256dh,
+          auth: sub.keys.auth,
           is_active: true,
           updated_at: new Date().toISOString()
         },
@@ -187,7 +220,7 @@ export const DELETE = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
 
     if (endpoint) {
       const { error: deleteError } = await supabase
-        .from('user_push_subscriptions')
+        .from('push_subscriptions')
         .update({ is_active: false, updated_at: new Date().toISOString() })
         .eq('user_id', context.userId)
         .eq('endpoint', endpoint)
@@ -201,7 +234,7 @@ export const DELETE = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
       }
     } else {
       const { error: deleteAllError } = await supabase
-        .from('user_push_subscriptions')
+        .from('push_subscriptions')
         .update({ is_active: false, updated_at: new Date().toISOString() })
         .eq('user_id', context.userId)
 

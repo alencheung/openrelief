@@ -104,8 +104,10 @@ export default function SignupForm() {
     try {
       await signUp(email, password)
 
-      // Redirect to dashboard or home page after successful signup
-      router.push('/')
+      // Redirect to onboarding so the user completes their profile (name, role,
+      // location) before entering the app. This populates the user_profiles
+      // row created by the on_auth_user_created trigger.
+      router.push('/onboarding')
     } catch (err) {
       console.error('Signup failed:', err)
       setErrors({
