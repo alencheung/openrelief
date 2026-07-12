@@ -266,7 +266,7 @@ const filterEvents = (
     const e = event as unknown as LooseEmergencyEvent
 
     // Status filter
-    if (filters.status && !filters.status.includes(e.status)) {
+    if (filters.status && e.status && !filters.status.includes(e.status as 'active' | 'pending' | 'resolved' | 'expired')) {
       return false
     }
 
