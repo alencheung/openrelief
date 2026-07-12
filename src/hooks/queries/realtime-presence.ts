@@ -93,7 +93,7 @@ export const useRealtimeConnection = () => {
     // Listen to connection events. Route through the untyped-event view
     // because 'system' is a valid runtime event but not part of the
     // supabase-js literal union for `.on()`.
-    const channel = asUntypedEventChannel(supabase.channel('system-connection'))
+    const channel = asUntypedEventChannel(supabase.channel('system-connection') as RealtimeChannel)
     channel.on('system', {}, (payload: unknown) => {
       console.log('[Realtime] System event:', payload)
     })
@@ -198,7 +198,7 @@ export const usePresenceTracking = (
       isSharded ? `(sharded, total shards: ${getShardCount()})` : '(legacy mode)'
     )
 
-    const presenceChannel = asUntypedEventChannel(supabase.channel(channelName))
+    const presenceChannel = asUntypedEventChannel(supabase.channel(channelName) as RealtimeChannel)
     presenceChannel
       .on('presence', { event: 'sync' }, (state: unknown) => {
         if (isSharded) {
