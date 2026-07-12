@@ -34,7 +34,7 @@ export interface TrustHistoryEntry {
      newScore: number
      reason?: string
      timestamp: Date
-     metadata?: any
+     metadata?: Record<string, unknown>
    }
 
 export interface TrustFactors {
@@ -136,7 +136,7 @@ interface TrustActions {
     eventId: string,
     actionType: 'report' | 'confirm' | 'dispute',
     outcome: 'success' | 'failure' | 'pending',
-    metadata?: any
+    metadata?: Record<string, unknown>
   ) => Promise<void>
 
   // Configuration
@@ -505,7 +505,7 @@ export const useTrustStore = create<TrustStore>()(
           // Normalize domain-model fixtures (which use `overall`) to the
           // store's `score` field so both shapes work.
           const currentScore = rawScore
-            ? { ...rawScore, score: rawScore.score ?? (rawScore as any).overall ?? 0.5 }
+            ? { ...rawScore, score: rawScore.score ?? (rawScore as unknown as { overall?: number }).overall ?? 0.5 }
             : {
             userId,
             score: 0.5, // Default score for new users
@@ -653,8 +653,12 @@ export const useTrustStore = create<TrustStore>()(
         onRehydrateStorage: () => (state) => {
           if (state) {
             // Convert arrays back to Maps
-            state.userScores = new Map(state.userScores as any)
-            state.calculations = new Map(state.calculations as any)
+            state.userScores = new Map(
+              state.userScores as unknown as [string, TrustScore][]
+            )
+            state.calculations = new Map(
+              state.calculations as unknown as [string, TrustCalculation][]
+            )
           }
         }
       }
