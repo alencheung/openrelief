@@ -189,6 +189,7 @@ export interface PrivacyAuditLog {
 export interface PrivacyAlert {
   id: string
   type: string
+  title?: string
   message: string
   timestamp: Date
   severity: 'info' | 'warning' | 'critical'

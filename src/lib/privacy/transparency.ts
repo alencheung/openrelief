@@ -347,7 +347,7 @@ const extractThirdPartySharing = (
         determineDataLocation(log.dataType) !== 'EU'
           ? ['Standard Contractual Clauses', 'Technical safeguards']
           : []
-    }))
+    })) as ThirdPartySharing[]
 }
 
 // Extract algorithmic decisions from audit logs
@@ -369,7 +369,7 @@ const extractAlgorithmicDecisions = (
       impact: log.metadata?.impact || 'neutral',
       userCanAppeal: true,
       appealProcess: 'Users can appeal automated decisions through the privacy dashboard'
-    }))
+    })) as AlgorithmicDecision[]
 }
 
 // Calculate system-wide transparency metrics

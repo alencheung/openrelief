@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { persist, subscribeWithSelector } from 'zustand/middleware'
+import { persist, subscribeWithSelector, type PersistStorage } from 'zustand/middleware'
 import {
   indexedDbCache
 } from '@/lib/offline/indexed-db-cache'
@@ -479,12 +479,12 @@ export const useOfflineStore = create<OfflineStore>()(
           // request a persistent-storage grant. Fire-and-forget.
           void hydrateFromIndexedDb(
             () => useOfflineStore.getState(),
-            (partial) => useOfflineStore.setState(partial)
+            (partial) => useOfflineStore.setState(partial as Partial<OfflineStore>)
           )
         },
         // localStorage wrapper that swallows QuotaExceededError; persistence
         // is best-effort — the in-memory store remains the source of truth.
-        storage: createSafeJSONStorage()
+        storage: createSafeJSONStorage() as unknown as PersistStorage<OfflineStore>
       }
     )
   )
