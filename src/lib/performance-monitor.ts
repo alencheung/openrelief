@@ -399,7 +399,7 @@ export const usePerformanceMonitor = create<PerformanceMonitorStore>()(
           // This would collect real-time metrics from the system
           // For now, we'll simulate with some basic browser metrics
           if (typeof window !== 'undefined' && 'performance' in window) {
-            const perf = (window as Window & PerformanceWithMemory).performance
+            const perf = window.performance as Performance & PerformanceWithMemory
             const memory: PerformanceMemoryInfo | undefined = perf?.memory
             if (memory) {
               get().recordSystemMetrics({
