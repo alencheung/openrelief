@@ -1,6 +1,28 @@
 // Comprehensive error handling and retry logic for OpenRelief
 
 // Types
+
+/**
+ * Minimal structural shape that classifyError and retry logic rely on.
+ * Errors thrown in JS are `unknown` at catch sites; consumers narrow to
+ * this shape before reading name / message / code.
+ */
+export interface ErrorLike {
+  name?: string
+  message?: string
+  code?: string | number
+}
+
+export interface ErrorContext {
+  action?: string
+  table?: string
+  userId?: string
+  eventId?: string
+  endpoint?: string
+  retryCount?: number
+  [key: string]: unknown
+}
+
 export interface ErrorInfo {
   id: string
   type:
@@ -17,15 +39,7 @@ export interface ErrorInfo {
   message: string
   code?: string | number
   timestamp: number
-  context?: {
-    action?: string
-    table?: string
-    userId?: string
-    eventId?: string
-    endpoint?: string
-    retryCount?: number
-    [key: string]: any
-  }
+  context?: ErrorContext
   severity: 'low' | 'medium' | 'high' | 'critical'
   recoverable: boolean
   suggestions: string[]
@@ -43,10 +57,10 @@ export interface RetryConfig {
   maxDelay: number
   backoffFactor: number
   jitter: boolean
-  retryCondition?: (error: any) => boolean
-  onRetry?: (attempt: number, error: any) => void
+  retryCondition?: (error: unknown) => boolean
+  onRetry?: (attempt: number, error: unknown) => void
   onSuccess?: (attempt: number) => void
-  onFailure?: (error: any, attempts: number) => void
+  onFailure?: (error: unknown, attempts: number) => void
 }
 
 export interface ErrorBoundaryState {
@@ -59,12 +73,22 @@ export interface ErrorBoundaryState {
 }
 
 // Error classification
-export const classifyError = (error: any, context?: any): ErrorInfo => {
+export const classifyError = (error: unknown, context?: ErrorContext): ErrorInfo => {
   const timestamp = Date.now()
   const id = `error-${timestamp}-${Math.random().toString(36).substr(2, 9)}`
 
+  // Narrow the unknown error into a structural shape with the fields we read.
+  const errorLike: ErrorLike =
+    error instanceof Error
+      ? error
+      : (error as ErrorLike) ?? {}
+
+  const name = errorLike.name
+  const message = errorLike.message
+  const code = errorLike.code
+
   // Network errors
-  if (error.name === 'TypeError' && error.message.includes('fetch')) {
+  if (name === 'TypeError' && (message?.includes('fetch') ?? false)) {
     return {
       id,
       type: 'network',
@@ -81,7 +105,7 @@ export const classifyError = (error: any, context?: any): ErrorInfo => {
   }
 
   // Timeout errors
-  if (error.name === 'AbortError' || error.code === 'TIMEOUT') {
+  if (name === 'AbortError' || code === 'TIMEOUT') {
     return {
       id,
       type: 'timeout',
@@ -98,7 +122,7 @@ export const classifyError = (error: any, context?: any): ErrorInfo => {
   }
 
   // Permission errors
-  if (error.message?.includes('permission') || error.code === 'PERMISSION_DENIED') {
+  if (message?.includes('permission') || code === 'PERMISSION_DENIED') {
     return {
       id,
       type: 'permission',
@@ -114,7 +138,7 @@ export const classifyError = (error: any, context?: any): ErrorInfo => {
   }
 
   // Authentication errors
-  if (error.code === '401' || error.message?.includes('unauthorized')) {
+  if (code === '401' || message?.includes('unauthorized')) {
     return {
       id,
       type: 'auth',
@@ -130,7 +154,7 @@ export const classifyError = (error: any, context?: any): ErrorInfo => {
   }
 
   // Validation errors
-  if (error.code === '400' || error.name === 'ValidationError') {
+  if (code === '400' || name === 'ValidationError') {
     return {
       id,
       type: 'validation',
@@ -146,7 +170,7 @@ export const classifyError = (error: any, context?: any): ErrorInfo => {
   }
 
   // Rate limiting
-  if (error.code === '429' || error.message?.includes('rate limit')) {
+  if (code === '429' || message?.includes('rate limit')) {
     return {
       id,
       type: 'rate_limit',
@@ -168,7 +192,7 @@ export const classifyError = (error: any, context?: any): ErrorInfo => {
   // ('NETWORK_ERROR', 'PGRST116'), a number, or undefined. The previous
   // `error.code >= 500` threw when code was undefined and produced
   // nonsensical comparisons when code was a non-numeric string.
-  const numericCode = typeof error.code === 'number' ? error.code : undefined
+  const numericCode = typeof code === 'number' ? code : undefined
   if (numericCode !== undefined && numericCode >= 500 && numericCode < 600) {
     return {
       id,
@@ -186,12 +210,12 @@ export const classifyError = (error: any, context?: any): ErrorInfo => {
   }
 
   // Database errors
-  if (error.message?.includes('database') || error.code?.toString().startsWith('PGRST')) {
+  if (message?.includes('database') || code?.toString().startsWith('PGRST')) {
     return {
       id,
       type: 'database',
       message: 'Database operation failed',
-      code: error.code,
+      code,
       timestamp,
       context,
       severity: 'high',
@@ -203,7 +227,7 @@ export const classifyError = (error: any, context?: any): ErrorInfo => {
   }
 
   // Offline errors
-  if (!navigator.onLine || error.message?.includes('offline')) {
+  if (!navigator.onLine || message?.includes('offline')) {
     return {
       id,
       type: 'offline',
@@ -222,8 +246,8 @@ export const classifyError = (error: any, context?: any): ErrorInfo => {
   return {
     id,
     type: 'unknown',
-    message: error.message || 'An unexpected error occurred',
-    code: error.code,
+    message: message || 'An unexpected error occurred',
+    code,
     timestamp,
     context,
     severity: 'medium',
@@ -235,7 +259,7 @@ export const classifyError = (error: any, context?: any): ErrorInfo => {
 }
 
 // Retry logic with exponential backoff
-export const createRetryFunction = <T extends any[], R>(
+export const createRetryFunction = <T extends unknown[], R>(
   fn: (...args: T) => Promise<R>,
   config: Partial<RetryConfig> = {}
 ) => {
@@ -250,7 +274,7 @@ export const createRetryFunction = <T extends any[], R>(
   const finalConfig = { ...defaultConfig, ...config }
 
   return async (...args: T): Promise<R> => {
-    let lastError: any
+    let lastError: unknown
 
     for (let attempt = 0; attempt <= finalConfig.maxRetries; attempt++) {
       try {
@@ -717,9 +741,9 @@ export class CircuitBreaker {
 export const globalErrorBoundary = new EmergencyErrorBoundary()
 
 // Utility functions
-export const createSafeAsyncFunction = <T extends any[], R>(
+export const createSafeAsyncFunction = <T extends unknown[], R>(
   fn: (...args: T) => Promise<R>,
-  errorHandler?: (error: any) => void
+  errorHandler?: (error: ErrorInfo) => void
 ) => {
   return async (...args: T): Promise<R | null> => {
     try {
@@ -739,7 +763,7 @@ export const createSafeAsyncFunction = <T extends any[], R>(
   }
 }
 
-export const withErrorHandling = <T extends any[], R>(
+export const withErrorHandling = <T extends unknown[], R>(
   fn: (...args: T) => Promise<R>,
   options: {
     retry?: Partial<RetryConfig>

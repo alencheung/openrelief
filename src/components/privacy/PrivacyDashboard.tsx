@@ -4,248 +4,63 @@
  * This component provides users with a comprehensive view of their privacy settings,
  * data usage, and retention policies with advanced features like real-time monitoring,
  * transparency reporting, and granular controls.
+ *
+ * Types live in privacy-dashboard-types.ts, helper / mock data builders live in
+ * privacy-dashboard-helpers.ts, and tab view components live in privacy-dashboard-tabs.tsx.
+ * They are re-exported below for backward compatibility.
  */
 
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Card } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
 import { StatusIndicator } from '@/components/ui/StatusIndicator'
 import { useToast } from '@/hooks/use-toast'
+
+// Re-export extracted types and helpers for backward compatibility
+export * from './privacy-dashboard-types'
+export * from './privacy-dashboard-helpers'
 import {
-  Shield,
-  Activity,
-  Download,
-  AlertTriangle,
-  CheckCircle,
-  TrendingUp,
-  Info,
-  Bell,
-  Database,
-  Calendar
-} from 'lucide-react'
-
-// Types for privacy settings
-interface PrivacySettings {
-  locationSharing: boolean
-  locationPrecision: number
-  dataRetentionDays: number
-  anonymizeData: boolean
-  differentialPrivacy: boolean
-  kAnonymity: boolean
-  endToEndEncryption: boolean
-  emergencyDataSharing: boolean
-  researchParticipation: boolean
-  thirdPartyAnalytics: boolean
-  automatedDataCleanup: boolean
-  privacyBudgetAlerts: boolean
-}
-
-interface DataUsage {
-  totalQueries: number
-  locationQueries: number
-  profileViews: number
-  dataExports: number
-  lastActivity: Date
-  privacyBudgetUsed: number
-  privacyBudgetTotal: number
-  realTimeUsage: {
-    timestamp: Date
-    dataType: string
-    operation: string
-    privacyImpact: 'low' | 'medium' | 'high'
-  }[]
-}
-
-interface DataRetention {
-  dataType: string
-  retentionDays: number
-  autoDelete: boolean
-  lastAccessed: Date
-  dataCount: number
-  dataSize: string
-}
-
-interface PrivacyZone {
-  id: string
-  name: string
-  latitude: number
-  longitude: number
-  radius: number
-  privacyLevel: 'high' | 'medium' | 'low'
-  enabled: boolean
-}
-
-interface ThirdPartySharing {
-  partner: string
-  dataType: string
-  purpose: string
-  frequency: 'real-time' | 'daily' | 'weekly' | 'monthly'
-  enabled: boolean
-  lastShared?: Date
-}
-
-interface LegalRequest {
-  id: string
-  type: 'data_access' | 'deletion' | 'correction' | 'portability'
-  status: 'pending' | 'processing' | 'completed' | 'rejected'
-  createdAt: Date
-  description: string
-  canNotify: boolean
-}
-
-interface PrivacyImpactScore {
-  action: string
-  score: number
-  factors: string[]
-  recommendations: string[]
-  lastCalculated: Date
-}
+  createPrivacyZone,
+  getDefaultDataRetention,
+  getDefaultDataUsage,
+  getDefaultLegalRequests,
+  getDefaultPrivacyImpactScore,
+  getDefaultPrivacySettings,
+  getDefaultPrivacyZones,
+  getDefaultThirdPartySharing,
+  getPrivacyLevel
+} from './privacy-dashboard-helpers'
+import { OverviewTab, RetentionTab, SettingsTab, UsageTab } from './privacy-dashboard-tabs'
+import type {
+  DataRetention,
+  LegalRequest,
+  PrivacyDashboardTab,
+  PrivacySettings,
+  PrivacyZone,
+  ThirdPartySharing
+} from './privacy-dashboard-types'
 
 const PrivacyDashboard: React.FC = () => {
   const { toast } = useToast()
-  const [privacySettings, setPrivacySettings] = useState<PrivacySettings>({
-    locationSharing: true,
-    locationPrecision: 3,
-    dataRetentionDays: 30,
-    anonymizeData: true,
-    differentialPrivacy: true,
-    kAnonymity: true,
-    endToEndEncryption: true,
-    emergencyDataSharing: true,
-    researchParticipation: false,
-    thirdPartyAnalytics: false,
-    automatedDataCleanup: true,
-    privacyBudgetAlerts: true
-  })
+  const [privacySettings, setPrivacySettings] = useState<PrivacySettings>(
+    getDefaultPrivacySettings()
+  )
 
-  const [dataUsage, _setDataUsage] = useState<DataUsage>({
-    totalQueries: 127,
-    locationQueries: 45,
-    profileViews: 23,
-    dataExports: 3,
-    lastActivity: new Date(),
-    privacyBudgetUsed: 0.65,
-    privacyBudgetTotal: 1.0,
-    realTimeUsage: [
-      {
-        timestamp: new Date(Date.now() - 5 * (60 * 1000)),
-        dataType: 'location',
-        operation: 'query',
-        privacyImpact: 'medium'
-      },
-      {
-        timestamp: new Date(Date.now() - 15 * (60 * 1000)),
-        dataType: 'profile',
-        operation: 'view',
-        privacyImpact: 'low'
-      },
-      {
-        timestamp: new Date(Date.now() - 30 * (60 * 1000)),
-        dataType: 'emergency',
-        operation: 'report',
-        privacyImpact: 'high'
-      }
-    ]
-  })
+  const [dataUsage, _setDataUsage] = useState(getDefaultDataUsage())
 
-  const [dataRetention, setDataRetention] = useState<DataRetention[]>([
-    {
-      dataType: 'Location Data',
-      retentionDays: 7,
-      autoDelete: true,
-      lastAccessed: new Date(Date.now() - 2 * (60 * 60 * 1000)),
-      dataCount: 89,
-      dataSize: '1.2 MB'
-    },
-    {
-      dataType: 'Trust Score',
-      retentionDays: 90,
-      autoDelete: false,
-      lastAccessed: new Date(Date.now() - 24 * (60 * 60 * 1000)),
-      dataCount: 45,
-      dataSize: '0.3 MB'
-    },
-    {
-      dataType: 'Emergency Reports',
-      retentionDays: 365,
-      autoDelete: false,
-      lastAccessed: new Date(Date.now() - 7 * (24 * 60 * 60 * 1000)),
-      dataCount: 12,
-      dataSize: '0.8 MB'
-    },
-    {
-      dataType: 'User Profile',
-      retentionDays: 30,
-      autoDelete: true,
-      lastAccessed: new Date(Date.now() - 3 * (24 * 60 * 60 * 1000)),
-      dataCount: 10,
-      dataSize: '0.1 MB'
-    }
-  ])
+  const [dataRetention, setDataRetention] = useState<DataRetention[]>(getDefaultDataRetention())
 
-  const [_privacyZones, setPrivacyZones] = useState<PrivacyZone[]>([
-    {
-      id: 'home',
-      name: 'Home',
-      latitude: 37.7749,
-      longitude: -122.4194,
-      radius: 100,
-      privacyLevel: 'high',
-      enabled: true
-    },
-    {
-      id: 'work',
-      name: 'Work',
-      latitude: 37.7849,
-      longitude: -122.4094,
-      radius: 200,
-      privacyLevel: 'medium',
-      enabled: true
-    }
-  ])
+  const [_privacyZones, setPrivacyZones] = useState<PrivacyZone[]>(getDefaultPrivacyZones())
 
-  const [_thirdPartySharing, setThirdPartySharing] = useState<ThirdPartySharing[]>([
-    {
-      partner: 'Emergency Services',
-      dataType: 'Location Data',
-      purpose: 'Emergency response coordination',
-      frequency: 'real-time',
-      enabled: true,
-      lastShared: new Date(Date.now() - 2 * (60 * 60 * 1000))
-    },
-    {
-      partner: 'Research Institute',
-      dataType: 'Anonymized Usage Data',
-      purpose: 'Emergency response research',
-      frequency: 'weekly',
-      enabled: false
-    }
-  ])
+  const [_thirdPartySharing, setThirdPartySharing] = useState<ThirdPartySharing[]>(
+    getDefaultThirdPartySharing()
+  )
 
-  const [_legalRequests, _setLegalRequests] = useState<LegalRequest[]>([
-    {
-      id: 'req-001',
-      type: 'data_access',
-      status: 'completed',
-      createdAt: new Date(Date.now() - 5 * (24 * 60 * 60 * 1000)),
-      description: 'Request for all personal data',
-      canNotify: true
-    }
-  ])
+  const [_legalRequests, _setLegalRequests] = useState<LegalRequest[]>(getDefaultLegalRequests())
 
-  const [privacyImpactScore, _setPrivacyImpactScore] = useState<PrivacyImpactScore>({
-    action: 'location_query',
-    score: 75,
-    factors: ['Differential privacy enabled', 'K-anonymity active', 'Location precision reduced'],
-    recommendations: ['Consider reducing location precision further for enhanced privacy'],
-    lastCalculated: new Date()
-  })
+  const [privacyImpactScore, _setPrivacyImpactScore] = useState(getDefaultPrivacyImpactScore())
 
-  const [activeTab, setActiveTab] = useState<
-    'overview' | 'settings' | 'usage' | 'retention' | 'zones' | 'sharing' | 'legal'
-  >('overview')
+  const [activeTab, setActiveTab] = useState<PrivacyDashboardTab>('overview')
   const [isLoading, setIsLoading] = useState(false)
   const [realTimeMonitoring, setRealTimeMonitoring] = useState(true)
 
@@ -273,7 +88,7 @@ const PrivacyDashboard: React.FC = () => {
   }, [toast])
 
   // Handle privacy setting changes
-  const handleSettingChange = (key: keyof PrivacySettings, value: any) => {
+  const handleSettingChange = (key: keyof PrivacySettings, value: boolean | number) => {
     setPrivacySettings(prev => ({
       ...prev,
       [key]: value
@@ -308,79 +123,12 @@ const PrivacyDashboard: React.FC = () => {
 
   // Reset privacy settings to defaults
   const resetPrivacySettings = () => {
-    setPrivacySettings({
-      locationSharing: true,
-      locationPrecision: 3,
-      dataRetentionDays: 30,
-      anonymizeData: true,
-      differentialPrivacy: true,
-      kAnonymity: true,
-      endToEndEncryption: true,
-      emergencyDataSharing: true,
-      researchParticipation: false,
-      thirdPartyAnalytics: false,
-      automatedDataCleanup: true,
-      privacyBudgetAlerts: true
-    })
-  }
-
-  // Get privacy impact status
-  const getPrivacyImpactStatus = (impact: 'low' | 'medium' | 'high') => {
-    switch (impact) {
-      case 'low':
-        return 'resolved'
-      case 'medium':
-        return 'pending'
-      case 'high':
-        return 'critical'
-      default:
-        return 'inactive'
-    }
-  }
-
-  // Get privacy zone status
-  const _getPrivacyZoneStatus = (level: 'high' | 'medium' | 'low') => {
-    switch (level) {
-      case 'high':
-        return 'critical'
-      case 'medium':
-        return 'pending'
-      case 'low':
-        return 'resolved'
-      default:
-        return 'inactive'
-    }
-  }
-
-  // Format time ago
-  const formatTimeAgo = (date: Date) => {
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffMins = Math.floor(diffMs / (1000 * 60))
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-
-    if (diffMins < 60) {
-      return `${diffMins} minutes ago`
-    }
-    if (diffHours < 24) {
-      return `${diffHours} hours ago`
-    }
-    return `${diffDays} days ago`
+    setPrivacySettings(getDefaultPrivacySettings())
   }
 
   // Add new privacy zone
   const _addPrivacyZone = () => {
-    const newZone: PrivacyZone = {
-      id: `zone-${Date.now()}`,
-      name: 'New Zone',
-      latitude: 37.7749,
-      longitude: -122.4194,
-      radius: 100,
-      privacyLevel: 'medium',
-      enabled: true
-    }
-    setPrivacyZones(prev => [...prev, newZone])
+    setPrivacyZones(prev => [...prev, createPrivacyZone()])
   }
 
   const _updatePrivacyZone = (id: string, updates: Partial<PrivacyZone>) => {
@@ -397,43 +145,7 @@ const PrivacyDashboard: React.FC = () => {
     )
   }
 
-  // Get real-time privacy budget status
-  const getPrivacyBudgetStatus = () => {
-    const percentage = (dataUsage.privacyBudgetUsed / dataUsage.privacyBudgetTotal) * 100
-    if (percentage >= 90) {
-      return { status: 'critical' as const, color: 'critical' as const }
-    }
-    if (percentage >= 75) {
-      return { status: 'warning' as const, color: 'pending' as const }
-    }
-    if (percentage >= 50) {
-      return { status: 'moderate' as const, color: 'active' as const }
-    }
-    return { status: 'good' as const, color: 'resolved' as const }
-  }
-
-  // Get privacy level indicator
-  const getPrivacyLevel = () => {
-    const enabledFeatures = [
-      privacySettings.anonymizeData,
-      privacySettings.differentialPrivacy,
-      privacySettings.kAnonymity,
-      privacySettings.endToEndEncryption
-    ].filter(Boolean).length
-
-    if (enabledFeatures === 4) {
-      return { level: 'Maximum', color: 'resolved' as const }
-    }
-    if (enabledFeatures >= 3) {
-      return { level: 'High', color: 'active' as const }
-    }
-    if (enabledFeatures >= 2) {
-      return { level: 'Medium', color: 'pending' as const }
-    }
-    return { level: 'Basic', color: 'critical' as const }
-  }
-
-  const privacyLevel = getPrivacyLevel()
+  const privacyLevel = getPrivacyLevel(privacySettings)
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
@@ -468,529 +180,41 @@ const PrivacyDashboard: React.FC = () => {
 
       {/* Overview Tab */}
       {activeTab === 'overview' && (
-        <div className="space-y-6">
-          {/* Privacy Score Card */}
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Privacy Overview</h2>
-              <div className="flex items-center space-x-2">
-                <Bell className="h-4 w-4 text-gray-600" />
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={realTimeMonitoring}
-                    onChange={e => setRealTimeMonitoring(e.target.checked)}
-                  />
-                  <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-                <span className="text-sm text-gray-600">Real-time</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center">
-                <div className="flex items-center justify-center mb-2">
-                  <Shield className="h-8 w-8 text-blue-600" />
-                </div>
-                <div className="text-2xl font-bold">{privacyLevel.level}</div>
-                <div className="text-gray-600">Privacy Level</div>
-                <div className="text-sm text-gray-500 mt-1">
-                  {privacyLevel.level === 'Maximum' && 'All protections enabled'}
-                  {privacyLevel.level === 'High' && 'Most protections enabled'}
-                  {privacyLevel.level === 'Medium' && 'Some protections enabled'}
-                  {privacyLevel.level === 'Basic' && 'Minimal protections enabled'}
-                </div>
-              </div>
-
-              <div className="text-center">
-                <div className="flex items-center justify-center mb-2">
-                  <Activity className="h-8 w-8 text-green-600" />
-                </div>
-                <div className="text-2xl font-bold">{privacyImpactScore.score}</div>
-                <div className="text-gray-600">Privacy Score</div>
-                <div className="text-sm text-gray-500 mt-1">Out of 100</div>
-              </div>
-
-              <div className="text-center">
-                <div className="flex items-center justify-center mb-2">
-                  <TrendingUp className="h-8 w-8 text-yellow-600" />
-                </div>
-                <div className="text-2xl font-bold">
-                  {(dataUsage.privacyBudgetUsed * 100).toFixed(0)}%
-                </div>
-                <div className="text-gray-600">Budget Used</div>
-                <StatusIndicator
-                  status={getPrivacyBudgetStatus().color}
-                  label={getPrivacyBudgetStatus().status}
-                />
-              </div>
-            </div>
-          </Card>
-
-          {/* Real-time Activity */}
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Real-time Activity</h2>
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <Activity className="h-4 w-4" />
-                <span>Live monitoring</span>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {dataUsage.realTimeUsage.map((activity, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 border rounded-lg"
-                >
-                  <div className="flex items-center space-x-3">
-                    <StatusIndicator
-                      status={getPrivacyImpactStatus(activity.privacyImpact)}
-                      label=""
-                    />
-                    <div>
-                      <div className="font-medium capitalize">{activity.operation}</div>
-                      <div className="text-sm text-gray-600">{activity.dataType} data</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm text-gray-600">{formatTimeAgo(activity.timestamp)}</div>
-                    <div className="text-xs capitalize text-gray-500">
-                      {activity.privacyImpact} impact
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="p-6">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Download className="h-6 w-6 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-gray-900">Export Your Data</h3>
-                  <p className="text-sm text-gray-600">Download all your personal data</p>
-                </div>
-              </div>
-              <Button
-                className="mt-4 w-full"
-                variant="outline"
-                onClick={() => setActiveTab('retention')}
-              >
-                View Retention
-              </Button>
-            </Card>
-
-            <Card className="p-6">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <Shield className="h-6 w-6 text-green-600" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-gray-900">Privacy Report</h3>
-                  <p className="text-sm text-gray-600">View detailed privacy metrics</p>
-                </div>
-              </div>
-              <Button
-                className="mt-4 w-full"
-                variant="outline"
-                onClick={() =>
-                  toast({
-                    title: 'Privacy Report',
-                    description: 'Your detailed privacy report is being generated.'
-                  })
-                }
-              >
-                Generate Report
-              </Button>
-            </Card>
-
-            <Card className="p-6">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-yellow-100 rounded-lg">
-                  <AlertTriangle className="h-6 w-6 text-yellow-600" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-gray-900">Privacy Alerts</h3>
-                  <p className="text-sm text-gray-600">Manage privacy notifications</p>
-                </div>
-              </div>
-              <Button
-                className="mt-4 w-full"
-                variant="outline"
-                onClick={() => setActiveTab('settings')}
-              >
-                Manage Alerts
-              </Button>
-            </Card>
-          </div>
-        </div>
+        <OverviewTab
+          privacySettings={privacySettings}
+          privacyImpactScore={privacyImpactScore}
+          dataUsage={dataUsage}
+          realTimeMonitoring={realTimeMonitoring}
+          onToggleRealTimeMonitoring={setRealTimeMonitoring}
+          onNavigateTab={tab => setActiveTab(tab)}
+          onGenerateReport={() =>
+            toast({
+              title: 'Privacy Report',
+              description: 'Your detailed privacy report is being generated.'
+            })
+          }
+        />
       )}
 
       {/* Settings Tab */}
       {activeTab === 'settings' && (
-        <div className="space-y-6">
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Privacy Settings</h2>
-
-            <div className="space-y-4">
-              {/* Location Sharing */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium">Location Sharing</h3>
-                  <p className="text-sm text-gray-600">
-                    Share your location for emergency response
-                  </p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={privacySettings.locationSharing}
-                    onChange={e => handleSettingChange('locationSharing', e.target.checked)}
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-
-              {/* Location Precision */}
-              <div>
-                <h3 className="font-medium mb-2">Location Precision</h3>
-                <p className="text-sm text-gray-600 mb-3">
-                  Lower precision provides better privacy
-                </p>
-                <input
-                  type="range"
-                  min="1"
-                  max="5"
-                  value={privacySettings.locationPrecision}
-                  onChange={e =>
-                    handleSettingChange('locationPrecision', parseInt(e.target.value, 10))
-                  }
-                  className="w-full"
-                />
-                <div className="flex justify-between text-xs text-gray-500 mt-1">
-                  <span>Low (1)</span>
-                  <span>Medium (3)</span>
-                  <span>High (5)</span>
-                </div>
-              </div>
-
-              {/* Data Anonymization */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium">Data Anonymization</h3>
-                  <p className="text-sm text-gray-600">Anonymize your data for analysis</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={privacySettings.anonymizeData}
-                    onChange={e => handleSettingChange('anonymizeData', e.target.checked)}
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-
-              {/* Differential Privacy */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium">Differential Privacy</h3>
-                  <p className="text-sm text-gray-600">Add mathematical noise to protect privacy</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={privacySettings.differentialPrivacy}
-                    onChange={e => handleSettingChange('differentialPrivacy', e.target.checked)}
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-
-              {/* K-Anonymity */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium">K-Anonymity</h3>
-                  <p className="text-sm text-gray-600">Ensure anonymity in groups</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={privacySettings.kAnonymity}
-                    onChange={e => handleSettingChange('kAnonymity', e.target.checked)}
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-
-              {/* End-to-End Encryption */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium">End-to-End Encryption</h3>
-                  <p className="text-sm text-gray-600">Encrypt sensitive data</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={privacySettings.endToEndEncryption}
-                    onChange={e => handleSettingChange('endToEndEncryption', e.target.checked)}
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-
-              {/* Emergency Data Sharing */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium">Emergency Data Sharing</h3>
-                  <p className="text-sm text-gray-600">Share data during emergencies</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={privacySettings.emergencyDataSharing}
-                    onChange={e => handleSettingChange('emergencyDataSharing', e.target.checked)}
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-            </div>
-
-            <div className="flex justify-between mt-6">
-              <Button variant="outline" onClick={resetPrivacySettings}>
-                Reset to Defaults
-              </Button>
-              <Button onClick={savePrivacySettings} disabled={isLoading}>
-                {isLoading ? 'Saving...' : 'Save Settings'}
-              </Button>
-            </div>
-          </Card>
-        </div>
+        <SettingsTab
+          privacySettings={privacySettings}
+          isLoading={isLoading}
+          onSettingChange={handleSettingChange}
+          onReset={resetPrivacySettings}
+          onSave={savePrivacySettings}
+        />
       )}
 
       {/* Usage Tab */}
       {activeTab === 'usage' && (
-        <div className="space-y-6">
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Data Usage & Analytics</h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="font-medium mb-2">Query Statistics</h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Total Queries:</span>
-                    <span>{dataUsage.totalQueries}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Location Queries:</span>
-                    <span>{dataUsage.locationQueries}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Profile Views:</span>
-                    <span>{dataUsage.profileViews}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Data Exports:</span>
-                    <span>{dataUsage.dataExports}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="font-medium mb-2">Privacy Budget</h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Used Today:</span>
-                    <span>{(dataUsage.privacyBudgetUsed * 100).toFixed(1)}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5">
-                    <div
-                      className={`h-2.5 rounded-full ${
-                        getPrivacyBudgetStatus().color === 'critical' && 'bg-red-600'
-                      } ${getPrivacyBudgetStatus().color === 'pending' && 'bg-yellow-600'} ${
-                        getPrivacyBudgetStatus().color === 'active' && 'bg-blue-600'
-                      } ${getPrivacyBudgetStatus().color === 'resolved' && 'bg-green-600'}`}
-                      style={{ width: `${dataUsage.privacyBudgetUsed * 100}%` }}
-                    ></div>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Status:</span>
-                    <StatusIndicator
-                      status={getPrivacyBudgetStatus().color}
-                      label={getPrivacyBudgetStatus().status}
-                    />
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Last Activity:</span>
-                    <span>{formatTimeAgo(dataUsage.lastActivity)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Privacy Impact Score */}
-            <div className="mt-6 pt-6 border-t">
-              <h3 className="font-medium mb-4">Privacy Impact Assessment</h3>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-gray-600">Current Action Score:</span>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-2xl font-bold">{privacyImpactScore.score}</span>
-                    <StatusIndicator
-                      status={
-                        (privacyImpactScore.score >= 80 && 'resolved') ||
-                        (privacyImpactScore.score >= 60 && 'pending') ||
-                        'critical'
-                      }
-                      label=""
-                    />
-                  </div>
-                </div>
-
-                <div className="mb-3">
-                  <h4 className="font-medium mb-2">Contributing Factors:</h4>
-                  <ul className="space-y-1">
-                    {privacyImpactScore.factors.map((factor, index) => (
-                      <li key={index} className="flex items-center space-x-2">
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                        <span className="text-sm">{factor}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 className="font-medium mb-2">Recommendations:</h4>
-                  <ul className="space-y-1">
-                    {privacyImpactScore.recommendations.map((rec, index) => (
-                      <li key={index} className="flex items-center space-x-2">
-                        <Info className="h-4 w-4 text-blue-600" />
-                        <span className="text-sm">{rec}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </Card>
-        </div>
+        <UsageTab dataUsage={dataUsage} privacyImpactScore={privacyImpactScore} />
       )}
 
       {/* Retention Tab */}
       {activeTab === 'retention' && (
-        <div className="space-y-6">
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Data Retention Timeline</h2>
-              <div className="flex items-center space-x-2">
-                <Calendar className="h-4 w-4 text-gray-600" />
-                <span className="text-sm text-gray-600">Automatic cleanup enabled</span>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {dataRetention.map((item, index) => (
-                <div key={index} className="p-4 border rounded-lg">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center space-x-3">
-                      <Database className="h-5 w-5 text-gray-600" />
-                      <h3 className="font-medium">{item.dataType}</h3>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="sr-only peer"
-                          checked={item.autoDelete}
-                          onChange={e => {
-                            const updated = [...dataRetention]
-                            updated[index]!.autoDelete = e.target.checked
-                            setDataRetention(updated)
-                          }}
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                      </label>
-                      <span className="text-sm text-gray-600">Auto-delete</span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-600">Retention Period:</span>
-                      <div className="font-medium">{item.retentionDays} days</div>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Records Count:</span>
-                      <div className="font-medium">{item.dataCount}</div>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Data Size:</span>
-                      <div className="font-medium">{item.dataSize}</div>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Last Accessed:</span>
-                      <div className="font-medium">{formatTimeAgo(item.lastAccessed)}</div>
-                    </div>
-                  </div>
-
-                  {/* Retention Timeline Visualization */}
-                  <div className="mt-3 pt-3 border-t">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">Retention Timeline:</span>
-                      <div className="flex-1 bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-blue-600 h-2 rounded-full"
-                          style={{
-                            width: `${Math.min(100, (item.retentionDays / 365) * 100)}%`
-                          }}
-                        ></div>
-                      </div>
-                      <span className="text-sm text-gray-600">{item.retentionDays} days</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          {/* Data Retention Summary */}
-          <Card className="p-6">
-            <h3 className="font-medium mb-4">Retention Summary</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">
-                  {dataRetention.reduce((sum, item) => sum + item.dataCount, 0)}
-                </div>
-                <div className="text-gray-600">Total Records</div>
-              </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">
-                  {dataRetention.filter(item => item.autoDelete).length}
-                </div>
-                <div className="text-gray-600">Auto-delete Enabled</div>
-              </div>
-              <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                <div className="text-2xl font-bold text-yellow-600">
-                  {dataRetention.reduce((sum, item) => sum + item.retentionDays, 0) /
-                    dataRetention.length}
-                </div>
-                <div className="text-gray-600">Avg. Retention (days)</div>
-              </div>
-            </div>
-          </Card>
-        </div>
+        <RetentionTab dataRetention={dataRetention} onDataChange={setDataRetention} />
       )}
     </div>
   )

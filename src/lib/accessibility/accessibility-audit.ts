@@ -3,454 +3,22 @@
  *
  * This tool provides comprehensive WCAG 2.1 AA compliance checking
  * for the OpenRelief emergency coordination system.
+ *
+ * Type definitions live in accessibility-audit-types.ts and the WCAG guideline
+ * definitions live in accessibility-audit-guidelines.ts. Both are re-exported
+ * below for backward compatibility.
  */
 
-export interface AccessibilityAuditResult {
-
-  /**
-   * Overall compliance score (0-100)
-   */
-  score: number
-
-  /**
-   * WCAG level achieved
-   */
-  level: 'A' | 'AA' | 'AAA' | 'Non-compliant'
-
-  /**
-   * Issues found during audit
-   */
-  issues: AccessibilityIssue[]
-
-  /**
-   * Recommendations for improvement
-   */
-  recommendations: AccessibilityRecommendation[]
-
-  /**
-   * Audit timestamp
-   */
-  timestamp: Date
-}
-
-export interface AccessibilityIssue {
-
-  /**
-   * Unique identifier for the issue
-   */
-  id: string
-
-  /**
-   * WCAG guideline violated
-   */
-  guideline: string
-
-  /**
-   * WCAG success criterion
-   */
-  criterion: string
-
-  /**
-   * WCAG level (A, AA, AAA)
-   */
-  level: 'A' | 'AA' | 'AAA'
-
-  /**
-   * Issue severity
-   */
-  severity: 'critical' | 'serious' | 'moderate' | 'minor'
-
-  /**
-   * Issue description
-   */
-  description: string
-
-  /**
-   * Element or component where issue was found
-   */
-  element: string
-
-  /**
-   * CSS selector for the element
-   */
-  selector: string
-
-  /**
-   * How to fix the issue
-   */
-  fix: string
-
-  /**
-   * Whether issue is automatically detectable
-   */
-  autoDetectable: boolean
-}
-
-export interface AccessibilityRecommendation {
-
-  /**
-   * Recommendation category
-   */
-  category: 'color-contrast' | 'keyboard' | 'screen-reader' | 'focus' | 'motion' | 'touch' | 'emergency'
-
-  /**
-   * Priority level
-   */
-  priority: 'high' | 'medium' | 'low'
-
-  /**
-   * Recommendation description
-   */
-  description: string
-
-  /**
-   * Implementation steps
-   */
-  steps: string[]
-
-  /**
-   * Components affected
-   */
-  components: string[]
-
-  /**
-   * Estimated implementation time
-   */
-  estimatedTime: string
-}
-
-/**
- * WCAG 2.1 AA Guidelines for audit
- */
-const WCAG_GUIDELINES = {
-  perceivable: {
-    '1.1.1': {
-      title: 'Non-text Content',
-      description: 'All non-text content has a text alternative',
-      level: 'A',
-      check: (element: Element) => {
-        // Check for alt text on images, captions on videos, etc.
-        if (element instanceof HTMLImageElement) {
-          return element.alt && element.alt.trim().length > 0
-        }
-        if (element instanceof HTMLVideoElement) {
-          return element.querySelector('track') !== null
-        }
-        return true
-      }
-    },
-    '1.2.1': {
-      title: 'Time-based Media',
-      description: 'Alternatives for time-based media are provided',
-      level: 'A',
-      check: () => true // Implement as needed
-    },
-    '1.3.1': {
-      title: 'Adaptable',
-      description: 'Content can be presented in different ways',
-      level: 'AA',
-      check: (element: Element) => {
-        // Check for semantic structure, proper headings, etc.
-        const semanticTags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'main', 'nav', 'section', 'article', 'aside', 'header', 'footer']
-        return semanticTags.some(tag => element.tagName.toLowerCase() === tag)
-      }
-    },
-    '1.3.2': {
-      title: 'Meaningful Sequence',
-      description: 'The meaning of content does not depend on sensory characteristics',
-      level: 'A',
-      check: () => true // Check color-only instructions
-    },
-    '1.3.3': {
-      title: 'Sensory Characteristics',
-      description: 'Instructions do not rely solely on sensory characteristics',
-      level: 'A',
-      check: () => true // Check for non-color instructions
-    },
-    '1.3.4': {
-      title: 'Orientation',
-      description: 'Content does not restrict its view or operation',
-      level: 'AA',
-      check: () => true // Check for landscape/portrait restrictions
-    },
-    '1.3.5': {
-      title: 'Identify Input Purpose',
-      description: 'Input purpose can be programmatically determined',
-      level: 'AA',
-      check: (element: Element) => {
-        if (element instanceof HTMLInputElement) {
-          return element.autocomplete !== '' || element.type === 'hidden'
-        }
-        return true
-      }
-    },
-    '1.4.1': {
-      title: 'Use of Color',
-      description: 'Color is not used as the only visual means of conveying information',
-      level: 'A',
-      check: () => true // Check for color-only indicators
-    },
-    '1.4.2': {
-      title: 'Audio Control',
-      description: 'Audio that plays automatically can be stopped',
-      level: 'A',
-      check: () => true // Check for auto-playing audio
-    },
-    '1.4.3': {
-      title: 'Contrast (Minimum)',
-      description: 'Text and images have contrast ratio of at least 4.5:1',
-      level: 'AA',
-      check: (element: Element) => {
-        // Calculate contrast ratio
-        const styles = window.getComputedStyle(element)
-        const color = styles.color
-        const backgroundColor = styles.backgroundColor
-
-        if (color === 'rgba(0, 0, 0, 0)' || backgroundColor === 'rgba(0, 0, 0, 0)') {
-          return true // Assume default colors are compliant
-        }
-
-        // Simplified contrast calculation - would need proper implementation
-        return true // Placeholder
-      }
-    },
-    '1.4.4': {
-      title: 'Resize text',
-      description: 'Text can be resized without assistive technology up to 200%',
-      level: 'AA',
-      check: () => true // Check for text resizing
-    },
-    '1.4.5': {
-      title: 'Images of Text',
-      description: 'Images of text are not used unless essential',
-      level: 'AA',
-      check: () => true // Check for text images
-    },
-    '1.4.6': {
-      title: 'Contrast (Enhanced)',
-      description: 'Contrast ratio of at least 7:1 for large text',
-      level: 'AAA',
-      check: () => true // Enhanced contrast check
-    }
-  },
-  operable: {
-    '2.1.1': {
-      title: 'Keyboard',
-      description: 'All functionality is available via keyboard',
-      level: 'A',
-      check: (element: Element) => {
-        // Check for keyboard accessibility
-        const interactiveTags = ['button', 'a', 'input', 'select', 'textarea', 'details']
-        const tagName = element.tagName.toLowerCase()
-
-        if (interactiveTags.includes(tagName)) {
-          return (element as HTMLElement).tabIndex >= 0 || (element as HTMLElement).tabIndex === -1
-        }
-        return true
-      }
-    },
-    '2.1.2': {
-      title: 'No Keyboard Trap',
-      description: 'Keyboard focus is not trapped',
-      level: 'A',
-      check: () => true // Check for keyboard traps
-    },
-    '2.1.3': {
-      title: 'Character Key Shortcuts',
-      description: 'Keyboard shortcuts do not conflict with browser/assistive technology',
-      level: 'A',
-      check: () => true // Check for conflicting shortcuts
-    },
-    '2.1.4': {
-      title: 'Character Key Shortcuts (Single)',
-      description: 'Single key shortcuts can be turned off',
-      level: 'A',
-      check: () => true // Check for single key shortcuts
-    },
-    '2.2.1': {
-      title: 'Timing Adjustable',
-      description: 'Users can control time limits',
-      level: 'A',
-      check: () => true // Check for time limits
-    },
-    '2.2.2': {
-      title: 'Pause, Stop, Hide',
-      description: 'Moving, blinking, or scrolling content can be paused',
-      level: 'A',
-      check: () => true // Check for auto-moving content
-    },
-    '2.3.1': {
-      title: 'Three Flashes or Below Threshold',
-      description: 'Content does not flash more than 3 times per second',
-      level: 'A',
-      check: () => true // Check for flashing content
-    },
-    '2.3.2': {
-      title: 'Three Flashes or Below Threshold',
-      description: 'Content does not violate flash thresholds',
-      level: 'AAA',
-      check: () => true // Check flash thresholds
-    },
-    '2.4.1': {
-      title: 'Bypass Blocks',
-      description: 'Mechanism to bypass blocks of content is available',
-      level: 'A',
-      check: () => true // Check for skip links
-    },
-    '2.4.2': {
-      title: 'Page Titled',
-      description: 'Web pages have titles that describe topic',
-      level: 'A',
-      check: () => document.title && document.title.trim().length > 0
-    },
-    '2.4.3': {
-      title: 'Focus Order',
-      description: 'Focus order is logical and intuitive',
-      level: 'A',
-      check: () => true // Check focus order
-    },
-    '2.4.4': {
-      title: 'Link Purpose',
-      description: 'Purpose of each link can be determined from text alone',
-      level: 'A',
-      check: (element: Element) => {
-        if (element instanceof HTMLAnchorElement) {
-          return element.textContent && element.textContent.trim().length > 0
-        }
-        return true
-      }
-    },
-    '2.4.5': {
-      title: 'Multiple Ways',
-      description: 'Multiple ways to locate pages are provided',
-      level: 'AA',
-      check: () => true // Check for navigation alternatives
-    },
-    '2.4.6': {
-      title: 'Headings and Labels',
-      description: 'Headings and labels describe topic or purpose',
-      level: 'AA',
-      check: (element: Element) => {
-        const headingTags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']
-        const tagName = element.tagName.toLowerCase()
-
-        if (headingTags.includes(tagName)) {
-          return element.textContent && element.textContent.trim().length > 0
-        }
-        return true
-      }
-    },
-    '2.4.7': {
-      title: 'Focus Visible',
-      description: 'Keyboard focus indicator is visible',
-      level: 'AA',
-      check: () => true // Check for focus indicators
-    }
-  },
-  understandable: {
-    '3.1.1': {
-      title: 'Language of Page',
-      description: 'Language of page can be programmatically determined',
-      level: 'A',
-      check: () => document.documentElement.lang && document.documentElement.lang.length > 0
-    },
-    '3.1.2': {
-      title: 'Language of Parts',
-      description: 'Language of parts can be programmatically determined',
-      level: 'AA',
-      check: () => true // Check for language changes
-    },
-    '3.2.1': {
-      title: 'On Focus',
-      description: 'Component focus does not cause context change',
-      level: 'A',
-      check: () => true // Check for focus changes
-    },
-    '3.2.2': {
-      title: 'On Input',
-      description: 'Changing settings does not cause context change',
-      level: 'A',
-      check: () => true // Check for input changes
-    },
-    '3.2.3': {
-      title: 'Consistent Navigation',
-      description: 'Navigation mechanisms are consistent',
-      level: 'AA',
-      check: () => true // Check navigation consistency
-    },
-    '3.2.4': {
-      title: 'Consistent Identification',
-      description: 'Components with same functionality are identified consistently',
-      level: 'AA',
-      check: () => true // Check component consistency
-    },
-    '3.3.1': {
-      title: 'Error Identification',
-      description: 'Errors are identified and described to user',
-      level: 'A',
-      check: (element: Element) => {
-        // Check for error messages
-        const hasError = element.getAttribute('aria-invalid') === 'true'
-                         || element.getAttribute('aria-describedby')?.includes('error')
-                         || element.classList.contains('error')
-        return true // Would need more sophisticated checking
-      }
-    },
-    '3.3.2': {
-      title: 'Labels or Instructions',
-      description: 'Labels or instructions are provided when content requires input',
-      level: 'A',
-      check: (element: Element) => {
-        if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement || element instanceof HTMLSelectElement) {
-          return element.labels && element.labels.length > 0
-                 || element.getAttribute('aria-label')
-                 || element.getAttribute('aria-labelledby')
-        }
-        return true
-      }
-    },
-    '3.3.3': {
-      title: 'Error Suggestion',
-      description: 'Suggestions for fixing errors are provided when appropriate',
-      level: 'AA',
-      check: () => true // Check for error suggestions
-    },
-    '3.3.4': {
-      title: 'Error Prevention (Legal, Financial, Data)',
-      description: 'Error prevention and confirmation is available',
-      level: 'AA',
-      check: () => true // Check for error prevention
-    }
-  },
-  robust: {
-    '4.1.1': {
-      title: 'Parsing',
-      description: 'Content is well-formed and uses valid markup',
-      level: 'A',
-      check: () => true // Check for valid HTML
-    },
-    '4.1.2': {
-      title: 'Name, Role, Value',
-      description: 'Name, role, value can be programmatically determined',
-      level: 'A',
-      check: (element: Element) => {
-        // Check for proper ARIA attributes
-        const hasRole = element.getAttribute('role')
-                        || ['button', 'link', 'input', 'select', 'textarea'].includes(element.tagName.toLowerCase())
-        const hasName = element.getAttribute('aria-label')
-                        || element.getAttribute('aria-labelledby')
-                        || ((element.textContent?.trim().length ?? 0) > 0)
-        return Boolean(hasRole && hasName)
-      }
-    },
-    '4.1.3': {
-      title: 'Status Messages',
-      description: 'Status messages can be programmatically determined',
-      level: 'AA',
-      check: () => true // Check for status messages
-    }
-  }
-}
+// Re-export extracted types and guidelines for backward compatibility
+export * from './accessibility-audit-types'
+export * from './accessibility-audit-guidelines'
+import { WCAG_GUIDELINES } from './accessibility-audit-guidelines'
+import type {
+  AccessibilityAuditResult,
+  AccessibilityIssue,
+  AccessibilityRecommendation,
+  ComplianceLevel
+} from './accessibility-audit-types'
 
 /**
  * Accessibility Audit Class
@@ -655,7 +223,7 @@ export class AccessibilityAuditor {
    */
   private async checkUnderstandable(): Promise<void> {
     // Check 3.1.1 Language of Page
-    if (!WCAG_GUIDELINES.understandable['3.1.1'].check()) {
+    if (!WCAG_GUIDELINES.understandable['3.1.1'].check(document.documentElement)) {
       this.addIssue({
         id: '3.1.1-' + Math.random().toString(36).substr(2, 9),
         guideline: '3.1 Understandable',
@@ -789,11 +357,16 @@ export class AccessibilityAuditor {
 
     const totalWeight = this.issues.reduce((total, issue) => {
       switch (issue.severity) {
-        case 'critical': return total + criticalWeight
-        case 'serious': return total + seriousWeight
-        case 'moderate': return total + moderateWeight
-        case 'minor': return total + minorWeight
-        default: return total
+        case 'critical':
+          return total + criticalWeight
+        case 'serious':
+          return total + seriousWeight
+        case 'moderate':
+          return total + moderateWeight
+        case 'minor':
+          return total + minorWeight
+        default:
+          return total
       }
     }, 0)
 
@@ -807,7 +380,7 @@ export class AccessibilityAuditor {
   /**
    * Determine compliance level
    */
-  private determineComplianceLevel(score: number): 'A' | 'AA' | 'AAA' | 'Non-compliant' {
+  private determineComplianceLevel(score: number): ComplianceLevel {
     if (score >= 90) {
       return 'AAA'
     }
@@ -836,18 +409,26 @@ export class AccessibilityAuditor {
 **Issues Found:** ${this.issues.length}
 
 ## Critical Issues
-${this.issues.filter(i => i.severity === 'critical').map(issue =>
-    `- **${issue.criterion}**: ${issue.description} (${issue.selector})`
-  ).join('\n') || 'None'}
+${
+  this.issues
+    .filter(i => i.severity === 'critical')
+    .map(issue => `- **${issue.criterion}**: ${issue.description} (${issue.selector})`)
+    .join('\n') || 'None'
+}
 
 ## Serious Issues
-${this.issues.filter(i => i.severity === 'serious').map(issue =>
-    `- **${issue.criterion}**: ${issue.description} (${issue.selector})`
-  ).join('\n') || 'None'}
+${
+  this.issues
+    .filter(i => i.severity === 'serious')
+    .map(issue => `- **${issue.criterion}**: ${issue.description} (${issue.selector})`)
+    .join('\n') || 'None'
+}
 
 ## Recommendations
 
-${this.recommendations.map(rec => `
+${this.recommendations
+  .map(
+    rec => `
 ### ${rec.category} (Priority: ${rec.priority})
 ${rec.description}
 
@@ -856,7 +437,9 @@ ${rec.steps.map(step => `- ${step}`).join('\n')}
 
 **Affected Components:** ${rec.components.join(', ')}
 **Estimated Time:** ${rec.estimatedTime}
-`).join('\n')}
+`
+  )
+  .join('\n')}
     `
   }
 }
