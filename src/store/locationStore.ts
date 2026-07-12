@@ -37,7 +37,7 @@ export interface LocationTrackingSession {
   points: LocationPoint[]
   purpose: 'emergency_response' | 'patrol' | 'evacuation' | 'general'
   isActive: boolean
-  metadata?: any
+  metadata?: Record<string, unknown>
 }
 
 export interface LocationPermission {
@@ -127,7 +127,7 @@ interface LocationActions {
   setPermission: (permission: LocationPermission) => void
 
   // Tracking management
-  startTracking: (purpose?: LocationTrackingSession['purpose'], metadata?: any) => Promise<void>
+  startTracking: (purpose?: LocationTrackingSession['purpose'], metadata?: Record<string, unknown>) => Promise<void>
   stopTracking: () => void
   pauseTracking: () => void
   resumeTracking: () => void

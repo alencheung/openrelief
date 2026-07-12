@@ -182,7 +182,16 @@ export interface PrivacyAuditLog {
   dataSubjects: number
   ipAddress: string
   userAgent: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
+}
+
+// Privacy budget / consent alert surfaced via usePrivacy().privacyAlerts.
+export interface PrivacyAlert {
+  id: string
+  type: string
+  message: string
+  timestamp: Date
+  severity: 'info' | 'warning' | 'critical'
 }
 
 // Privacy context interface
@@ -284,7 +293,7 @@ export const usePrivacy = (options: UsePrivacyOptions = {}) => {
   })
   const [privacyBudget, setPrivacyBudget] = useState(1.0)
   const [realTimeDataUsage, setRealTimeDataUsage] = useState<Record<string, number>>({})
-  const [privacyAlerts, setPrivacyAlerts] = useState<any[]>([])
+  const [privacyAlerts, setPrivacyAlerts] = useState<PrivacyAlert[]>([])
 
   // Initialize privacy settings and budget
   useEffect(() => {
@@ -454,7 +463,7 @@ export const usePrivacy = (options: UsePrivacyOptions = {}) => {
 
   // Protect user data with privacy measures
   const protectUserData = useCallback(
-    <T extends Record<string, any>>(
+    <T extends Record<string, unknown>>(
       data: T[],
       options: {
         applyKAnonymity?: boolean
@@ -492,17 +501,18 @@ export const usePrivacy = (options: UsePrivacyOptions = {}) => {
           ) {
             // Apply noise to numeric fields
             protectedData = protectedData.map(record => {
-              const protectedRecord = { ...record }
+              const protectedRecord: Record<string, unknown> = { ...record }
 
               // Add noise to numeric fields
               Object.keys(protectedRecord).forEach(key => {
-                if (typeof protectedRecord[key] === 'number') {
-                  (protectedRecord as any)[key] += (Math.random() - 0.5) * 0.1 // Small noise
+                const value = protectedRecord[key]
+                if (typeof value === 'number') {
+                  protectedRecord[key] = value + (Math.random() - 0.5) * 0.1 // Small noise
                 }
               })
 
               return protectedRecord
-            })
+            }) as unknown as T[]
 
             hasDifferentialPrivacy = true
             privacyBudgetUsed = epsilonRequired
@@ -547,7 +557,7 @@ export const usePrivacy = (options: UsePrivacyOptions = {}) => {
 
   // Encrypt sensitive data
   const encryptSensitiveData = useCallback(
-    async (data: Record<string, any>, userId: string): Promise<EncryptedData | null> => {
+    async (data: Record<string, unknown>, userId: string): Promise<EncryptedData | null> => {
       if (!privacyContext.settings.endToEndEncryption) {
         return null
       }
@@ -574,7 +584,7 @@ export const usePrivacy = (options: UsePrivacyOptions = {}) => {
 
   // Decrypt sensitive data
   const decryptSensitiveData = useCallback(
-    async (encryptedData: EncryptedData, userId: string): Promise<Record<string, any> | null> => {
+    async (encryptedData: EncryptedData, userId: string): Promise<Record<string, unknown> | null> => {
       if (!privacyContext.settings.endToEndEncryption) {
         return null
       }
@@ -677,7 +687,7 @@ export const usePrivacy = (options: UsePrivacyOptions = {}) => {
   const generatePrivacyReport = useCallback((): {
     summary: string
     dataUsage: Record<string, number>
-    privacyMetrics: Record<string, any>
+    privacyMetrics: Record<string, unknown>
     recommendations: string[]
   } => {
     const summary =
