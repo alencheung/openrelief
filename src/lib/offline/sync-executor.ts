@@ -137,7 +137,7 @@ async function syncEmergencyCreate(action: ExecutableAction): Promise<SyncOutcom
     return classifyHttpFailure(response.status, body)
   }
 
-  const remoteId = (body && (body.data?.id || body.id)) as string | undefined
+  const remoteId = (body && ((body as { data?: { id?: string } }).data?.id || (body as { id?: string }).id)) as string | undefined
   return { status: 'synced', remoteId }
 }
 
@@ -151,9 +151,10 @@ async function syncEmergencyUpdate(action: ExecutableAction): Promise<SyncOutcom
     return { status: 'failed_permanently', reason: 'Missing event id for update' }
   }
 
+  const idStr = String(id)
   let response: Response
   try {
-    response = await fetch(`/api/emergency?id=${encodeURIComponent(id)}`, {
+    response = await fetch(`/api/emergency?id=${encodeURIComponent(idStr)}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updates || {})
@@ -166,7 +167,7 @@ async function syncEmergencyUpdate(action: ExecutableAction): Promise<SyncOutcom
   if (!response.ok) {
     return classifyHttpFailure(response.status, body)
   }
-  return { status: 'synced', remoteId: id }
+  return { status: 'synced', remoteId: idStr }
 }
 
 async function syncEmergencyDelete(action: ExecutableAction): Promise<SyncOutcome> {
@@ -175,13 +176,14 @@ async function syncEmergencyDelete(action: ExecutableAction): Promise<SyncOutcom
     return { status: 'failed_permanently', reason: 'Missing event id for delete' }
   }
 
+  const idStr = String(id)
   let response: Response
   try {
     // agentic-gate-ignore: not SQL — this is an HTTP fetch URL and `id` is
     // already passed through encodeURIComponent(). All DB access in this file
     // goes through the Supabase query builder (parameterized), so there is no
     // string-concatenated SQL here.
-    response = await fetch(`/api/emergency?id=${encodeURIComponent(id)}`, { method: 'DELETE' })
+    response = await fetch(`/api/emergency?id=${encodeURIComponent(idStr)}`, { method: 'DELETE' })
   } catch (err) {
     return { status: 'failed_transiently', reason: err instanceof Error ? err.message : 'Network error' }
   }
@@ -190,7 +192,7 @@ async function syncEmergencyDelete(action: ExecutableAction): Promise<SyncOutcom
   if (!response.ok) {
     return classifyHttpFailure(response.status, body)
   }
-  return { status: 'synced', remoteId: id }
+  return { status: 'synced', remoteId: idStr }
 }
 
 /**
@@ -210,6 +212,7 @@ async function syncConfirmation(
     }
   }
 
+  const loc = location as { lng?: number; lat?: number } | undefined
   try {
     const { data, error } = await supabase
       .from('event_confirmations')
@@ -217,7 +220,7 @@ async function syncConfirmation(
         event_id: eventId,
         user_id: userId,
         confirmation_type: confirmationType,
-        location: location ? `POINT(${location.lng} ${location.lat})` : null,
+        location: loc ? `POINT(${loc.lng} ${loc.lat})` : null,
         trust_weight: 0.1 // server-side trigger recomputes
       })
       .select()

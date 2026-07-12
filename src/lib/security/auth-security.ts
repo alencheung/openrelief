@@ -84,11 +84,19 @@ export class AuthSecurityManager {
       }
 
       // Get user from database
-      const { data: user, error } = await supabaseAdmin
+      const { data: userRaw, error } = await supabaseAdmin
         .from('user_profiles')
         .select('*')
         .eq('email', email)
         .single()
+
+      const user = userRaw as {
+        user_id: string
+        password_hash: string
+        status: string
+        mfa_enabled: boolean
+        mfa_methods?: string[]
+      } | null
 
       if (error || !user) {
         await this.recordLoginAttempt({
@@ -196,11 +204,16 @@ export class AuthSecurityManager {
       }
 
       // Get user MFA settings
-      const { data: user, error } = await supabaseAdmin
+      const { data: userRaw, error } = await supabaseAdmin
         .from('user_profiles')
         .select('mfa_secret, mfa_backup_codes, mfa_methods')
         .eq('user_id', session.userId)
         .single()
+
+      const user = userRaw as {
+        mfa_secret: string
+        mfa_backup_codes: string[]
+      } | null
 
       if (error || !user) {
         return { success: false, error: 'User not found' }

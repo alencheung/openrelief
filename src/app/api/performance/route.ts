@@ -26,25 +26,25 @@ function getPerformanceIntegration() {
   if (!_performanceIntegration) {
     _performanceIntegration = require('@/lib/performance/performance-integration').performanceIntegration
   }
-  return _performanceIntegration
+  return _performanceIntegration!
 }
 function getPerformanceDashboard() {
   if (!_performanceDashboard) {
     _performanceDashboard = require('@/lib/performance/performance-dashboard').performanceDashboard
   }
-  return _performanceDashboard
+  return _performanceDashboard!
 }
 function getLoadTestingFramework() {
   if (!_loadTestingFramework) {
     _loadTestingFramework = require('@/lib/testing/load-testing-framework').loadTestingFramework
   }
-  return _loadTestingFramework
+  return _loadTestingFramework!
 }
 function getPerformanceRegressionTesting() {
   if (!_performanceRegressionTesting) {
     _performanceRegressionTesting = require('@/lib/testing/performance-regression-testing').performanceRegressionTesting
   }
-  return _performanceRegressionTesting
+  return _performanceRegressionTesting!
 }
 
 // API response types
@@ -245,8 +245,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<Performanc
       case 'tests':
         data = {
           active: getLoadTestingFramework().getActiveTests(),
-          history: typeof (getLoadTestingFramework() as { getTestHistory?: (limit: number) => unknown[] }).getTestHistory === 'function'
-            ? (getLoadTestingFramework() as { getTestHistory: (limit: number) => unknown[] }).getTestHistory(50)
+          history: typeof (getLoadTestingFramework() as unknown as { getTestHistory?: (limit: number) => unknown[] }).getTestHistory === 'function'
+            ? (getLoadTestingFramework() as unknown as { getTestHistory: (limit: number) => unknown[] }).getTestHistory(50)
             : [],
           regression: getPerformanceRegressionTesting().getTestHistory(20)
         }
@@ -614,10 +614,10 @@ async function handlePerformanceTestAction(request: PerformanceTestRequest): Pro
 
     // Run 50K concurrency test
     if (request.emergency || (request.concurrency && request.concurrency >= 50000)) {
-      testId = await getLoadTestingFramework().execute50KConcurrencyTest()
+      testId = String(await getLoadTestingFramework().execute50KConcurrencyTest())
     } else {
       // Run custom test
-      testId = await getPerformanceIntegration().runPerformanceTest(request.scenario)
+      testId = String(await getPerformanceIntegration().runPerformanceTest(request.scenario))
     }
 
     return {
@@ -689,7 +689,11 @@ async function handleAlertManagementAction(request: AlertManagementRequest): Pro
       if (!request.alertData) {
         throw new Error('Alert data is required')
       }
-      const alertId = await getPerformanceDashboard().createAlert(request.alertData)
+      // alertData is a partial payload; createAlert expects the full Omit<Alert,...> shape.
+      // Cast through unknown to satisfy the parameter type at the call site.
+      const alertId = await getPerformanceDashboard().createAlert(
+        request.alertData as unknown as NonNullable<Parameters<ReturnType<typeof getPerformanceDashboard>['createAlert']>[0]>
+      )
       return {
         alertId,
         action: 'created',
@@ -749,8 +753,11 @@ async function handleConfigurationUpdateAction(request: ConfigurationUpdateReque
 
 async function handleBaselineUpdate(baselineData: Record<string, unknown>): Promise<Record<string, unknown>> {
   try {
-    const version = baselineData.version || `v${Date.now()}`
-    await getPerformanceRegressionTesting().updateBaseline(version, baselineData)
+    const version = String(baselineData.version || `v${Date.now()}`)
+    await getPerformanceRegressionTesting().updateBaseline(
+      version,
+      baselineData as unknown as Parameters<ReturnType<typeof getPerformanceRegressionTesting>['updateBaseline']>[1]
+    )
 
     return {
       version,
@@ -764,12 +771,13 @@ async function handleBaselineUpdate(baselineData: Record<string, unknown>): Prom
 
 async function handleThresholdsUpdate(thresholdsData: Record<string, unknown>): Promise<Record<string, unknown>> {
   try {
-    // Update thresholds in configuration
+    // Update thresholds in configuration. AlertingConfig's exact shape is not
+    // modelled with a free-form `thresholds` field, so cast through unknown.
     getPerformanceIntegration().updateConfig({
       alerting: {
         thresholds: thresholdsData
       }
-    })
+    } as unknown as Parameters<ReturnType<typeof getPerformanceIntegration>['updateConfig']>[0])
 
     return {
       thresholds: thresholdsData,

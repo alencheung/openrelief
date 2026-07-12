@@ -45,8 +45,8 @@ export const useUserProfile = (userId: string, options: { applyPrivacy?: boolean
           if (data.trust_score && data.updated_at) {
             data.trust_score =
               applyTemporalDecayToData?.(
-                data.trust_score,
-                new Date(data.updated_at),
+                data.trust_score as number,
+                new Date(data.updated_at as string),
                 'trustScore'
               ) || data.trust_score
           }
@@ -58,7 +58,7 @@ export const useUserProfile = (userId: string, options: { applyPrivacy?: boolean
             clusterUsers: false // Don't cluster single user profiles
           })
 
-          protectedData = protectedResult.data[0]
+          protectedData = protectedResult.data[0] as Record<string, unknown>
 
           // Encrypt sensitive fields if encryption is enabled
           if (privacyContext.settings.endToEndEncryption) {
@@ -84,7 +84,7 @@ export const useUserProfile = (userId: string, options: { applyPrivacy?: boolean
           userId,
           score: protectedData.trust_score,
           previousScore: protectedData.trust_score,
-          lastUpdated: new Date(protectedData.updated_at),
+          lastUpdated: new Date(protectedData.updated_at as string),
           history: [],
           factors: {
             reportingAccuracy: 0.5,
@@ -168,7 +168,7 @@ export const useCreateUserProfile = () => {
         throw error
       }
     },
-    onSuccess: data => {
+    onSuccess: (data: UserProfile) => {
       queryClient.invalidateQueries({ queryKey: ['user-profile'] })
       queryClient.setQueryData(['user-profile', data.user_id], data)
     }
@@ -230,7 +230,7 @@ export const useUpdateUserProfile = () => {
         throw error
       }
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (_: unknown, variables: { userId: string; updates: UserProfileUpdate }) => {
       queryClient.invalidateQueries({ queryKey: ['user-profile', variables.userId] })
     }
   })
@@ -375,7 +375,7 @@ export const useUpdateTrustScore = () => {
         throw error
       }
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (_: unknown, variables: { userId: string; eventId: string; actionType: string; outcome: string }) => {
       queryClient.invalidateQueries({ queryKey: ['trust-score', variables.userId] })
       queryClient.invalidateQueries({ queryKey: ['trust-history', variables.userId] })
     }
@@ -449,7 +449,7 @@ export const useSubscribeToTopic = () => {
         throw error
       }
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (_: unknown, variables: { userId: string; topicId: number }) => {
       queryClient.invalidateQueries({ queryKey: ['user-subscriptions', variables.userId] })
     }
   })
@@ -496,7 +496,7 @@ export const useUnsubscribeFromTopic = () => {
         throw error
       }
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (_: unknown, variables: { userId: string; topicId: number }) => {
       queryClient.invalidateQueries({ queryKey: ['user-subscriptions', variables.userId] })
     }
   })
@@ -566,7 +566,7 @@ export const useUpdateNotificationSettings = () => {
         throw error
       }
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (_: unknown, variables: { userId: string; topicId: number; settings: Partial<UserNotificationSettings> }) => {
       queryClient.invalidateQueries({ queryKey: ['user-notification-settings', variables.userId] })
     }
   })
@@ -632,7 +632,7 @@ export const useNearbyUsers = (
 
       // Apply privacy protection to results
       if (options.applyPrivacy && data) {
-        const protectedResult = protectUserData(data, {
+        const protectedResult = protectUserData(data as Record<string, unknown>[], {
           applyKAnonymity: privacyContext.settings.kAnonymity,
           applyDifferentialPrivacy: false // Already applied to location
         })

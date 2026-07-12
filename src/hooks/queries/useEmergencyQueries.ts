@@ -71,17 +71,17 @@ export const useEmergencyEvents = (filters?: {
       const realtimeActive = useEmergencyStore.getState().isRealtimeEnabled
       return realtimeActive ? false : 60 * 1000
     },
-    retry: (failureCount, error) => {
+    retry: (failureCount: number, error: unknown) => {
       // Don't retry on 4xx errors
       if (error && typeof error === 'object' && 'status' in error) {
         const status = (error as { status?: number }).status
-        if (status >= 400 && status < 500) {
+        if (status !== undefined && status >= 400 && status < 500) {
           return false
         }
       }
       return failureCount < 3
     },
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000)
+    retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000)
   })
 }
 
@@ -90,15 +90,22 @@ export const useInfiniteEmergencyEvents = (filters?: {
   status?: Database['public']['Enums']['emergency_events_status'][]
   type_ids?: number[]
 }) => {
-  return useInfiniteQuery({
+  return useInfiniteQuery<{
+    data: unknown[]
+    nextPage: number
+    hasMore: boolean
+  }, Error, {
+    data: unknown[]
+    nextPage: number
+    hasMore: boolean
+  }, string[], number>({
     queryKey: ['emergency-events-infinite', filters],
-    queryFn: async ({ pageParam = 0 }) => {
+    queryFn: async ({ pageParam }: { pageParam: number | undefined }) => {
+      const offset = pageParam ?? 0
       const params: Record<string, unknown> = {
         limit: filters?.limit || 20
       }
-      if (pageParam !== undefined) {
-        params.offset = pageParam
-      }
+      params.offset = offset
       if (filters?.status?.[0] !== undefined) {
         params.status = filters.status[0]
       }
@@ -106,16 +113,16 @@ export const useInfiniteEmergencyEvents = (filters?: {
         params.type_id = filters.type_ids[0]
       }
 
-      const data = await supabaseHelpers.getEmergencyEvents(params)
+      const data = (await supabaseHelpers.getEmergencyEvents(params)) as unknown[]
 
       return {
         data,
-        nextPage: pageParam + (filters?.limit || 20),
+        nextPage: offset + (filters?.limit || 20),
         hasMore: data.length === (filters?.limit || 20)
       }
     },
     initialPageParam: 0,
-    getNextPageParam: lastPage => (lastPage.hasMore ? lastPage.nextPage : undefined),
+    getNextPageParam: (lastPage: { hasMore: boolean; nextPage: number }) => (lastPage.hasMore ? lastPage.nextPage : undefined),
     staleTime: 30 * 1000
   })
 }
@@ -159,7 +166,7 @@ export const useEmergencyEvent = (id: string) => {
         return data
       } catch (error) {
         // Try cache first
-        const cachedEvent = useEmergencyStore.getState().events.find(e => e.id === id)
+        const cachedEvent = useEmergencyStore.getState().events.find((e: EmergencyEvent) => e.id === id)
         if (cachedEvent) {
           return cachedEvent
         }
@@ -332,7 +339,7 @@ export const useCreateEmergencyEvent = () => {
         throw error
       }
     },
-    onSuccess: data => {
+    onSuccess: (data: EmergencyEvent) => {
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: ['emergency-events'] })
       queryClient.setQueryData(['emergency-event', data.id], data)
@@ -343,7 +350,7 @@ export const useCreateEmergencyEvent = () => {
       }
       useEmergencyStore.getState().addEvent(data)
     },
-    onError: (error, variables) => {
+    onError: (error: unknown, variables: EmergencyEventInsert & { id?: string }) => {
       // Rollback optimistic update
       if (variables.id && variables.id.startsWith('temp-')) {
         useEmergencyStore.getState().removeEvent(variables.id)
@@ -362,7 +369,7 @@ export const useUpdateEmergencyEvent = () => {
     mutationFn: async ({ id, updates }: { id: string; updates: EmergencyEventUpdate }) => {
       try {
         // Optimistic update
-        const currentEvent = useEmergencyStore.getState().events.find(e => e.id === id)
+        const currentEvent = useEmergencyStore.getState().events.find((e: EmergencyEvent) => e.id === id)
         if (!currentEvent) {
           throw new Error('Event not found')
         }
@@ -406,11 +413,11 @@ export const useUpdateEmergencyEvent = () => {
         throw error
       }
     },
-    onSuccess: data => {
+    onSuccess: (data: EmergencyEvent) => {
       queryClient.invalidateQueries({ queryKey: ['emergency-events'] })
       queryClient.setQueryData(['emergency-event', data.id], data)
     },
-    onError: (error, variables) => {
+    onError: (error: unknown, variables: { id: string; updates: EmergencyEventUpdate }) => {
       // Rollback would require storing previous state
       console.error('Update emergency event mutation error:', error)
     }
@@ -497,11 +504,11 @@ export const useConfirmEvent = () => {
         throw error
       }
     },
-    onSuccess: (data, variables) => {
+    onSuccess: (data: unknown, variables: { eventId: string }) => {
       queryClient.invalidateQueries({ queryKey: ['emergency-event', variables.eventId] })
       queryClient.invalidateQueries({ queryKey: ['event-confirmations', variables.eventId] })
     },
-    onError: error => {
+    onError: (error: unknown) => {
       console.error('Confirm event mutation error:', error)
     }
   })
@@ -573,16 +580,19 @@ export const useNearbyEmergencyEvents = (
       }
 
       // Calculate distance for each event
-      const eventsWithDistance = ((data as Array<{ location: string } & Record<string, unknown>>) || []).map((event) => ({
-        ...event,
-        distance: calculateDistance(
-          center.lat,
-          center.lng,
-          parseFloat(event.location.split(' ')[1]),
-          parseFloat(event.location.split(' ')[0])
-        ),
-        isWithinRadius: true
-      }))
+      const eventsWithDistance = ((data as Array<{ location: string } & Record<string, unknown>>) || []).map((event) => {
+        const parts = event.location.split(' ')
+        return {
+          ...event,
+          distance: calculateDistance(
+            center.lat,
+            center.lng,
+            parseFloat(parts[1] ?? '0'),
+            parseFloat(parts[0] ?? '0')
+          ),
+          isWithinRadius: true
+        }
+      })
 
       return eventsWithDistance
     },
@@ -603,12 +613,8 @@ export const useUserEmergencyEvents = (
   return useQuery({
     queryKey: ['user-emergency-events', userId, status],
     queryFn: async () => {
-      type Builder = {
-        select: (cols: string) => Builder
-        eq: (col: string, val: unknown) => Builder
-        order: (col: string, opts: { ascending: boolean }) => PromiseLike<{ data: unknown[] | null; error: { message: string } | null }>
-      }
-      const query: Builder = (supabase.from('emergency_events') as unknown as Builder)
+      const result = await (supabase
+        .from('emergency_events')
         .select(
           `
           *,
@@ -622,13 +628,8 @@ export const useUserEmergencyEvents = (
         )
         .eq('reporter_id', userId)
         .eq('status', status || 'active')
-        .order('created_at', { ascending: false })
-      const { data, error } = await query
-      if (error) {
-        throw error
-      }
-      return data
-
+        .order('created_at', { ascending: false }) as unknown as PromiseLike<{ data: unknown[] | null; error: { message: string } | null }>)
+      const { data, error } = await result
       if (error) {
         throw error
       }

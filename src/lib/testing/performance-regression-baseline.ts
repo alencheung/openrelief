@@ -123,7 +123,7 @@ function compareAPIResponseTimes(
   results: PerformanceRegressionResults,
   baseline: { [endpoint: string]: ResponseTimeMetrics },
   current: { [endpoint: string]: ResponseTimeMetrics },
-  thresholds: PerformanceThresholds
+  thresholds: PerformanceThresholds['apiResponseTimes']
 ): void {
   for (const endpoint in current) {
     const baselineMetrics = baseline[endpoint]
@@ -187,7 +187,7 @@ function compareDatabaseQueries(
   results: PerformanceRegressionResults,
   baseline: { [query: string]: DatabaseMetrics },
   current: { [query: string]: DatabaseMetrics },
-  thresholds: PerformanceThresholds
+  thresholds: PerformanceThresholds['databaseQueries']
 ): void {
   for (const query in current) {
     const baselineMetrics = baseline[query]
@@ -251,7 +251,7 @@ function compareFrontendMetrics(
   results: PerformanceRegressionResults,
   baseline: FrontendMetrics,
   current: FrontendMetrics,
-  thresholds: PerformanceThresholds
+  thresholds: PerformanceThresholds['frontendMetrics']
 ): void {
   // Compare Core Web Vitals
   const vitals = ['lcp', 'fid', 'cls', 'fcp', 'ttfb'] as const
@@ -339,7 +339,7 @@ function compareAlertDispatchMetrics(
   results: PerformanceRegressionResults,
   baseline: AlertDispatchMetrics,
   current: AlertDispatchMetrics,
-  thresholds: PerformanceThresholds
+  thresholds: PerformanceThresholds['alertDispatchMetrics']
 ): void {
   // Compare dispatch latency
   const latencyMetrics = ['p95', 'p99'] as const
@@ -427,7 +427,7 @@ function compareEdgePerformanceMetrics(
   results: PerformanceRegressionResults,
   baseline: EdgePerformanceMetrics,
   current: EdgePerformanceMetrics,
-  thresholds: PerformanceThresholds
+  thresholds: PerformanceThresholds['edgePerformanceMetrics']
 ): void {
   // Compare cache hit rate
   const baselineCacheHitRate = baseline.cacheHitRate

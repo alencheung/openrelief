@@ -187,15 +187,15 @@ export function PWAStatus() {
 
           <div className="p-4 bg-gray-50 rounded-lg">
             <div className="text-sm text-gray-600 mb-1">Effective Type</div>
-            <div className={`text-lg font-medium ${getConnectionColor(networkQuality.effectiveType)}`}>
-              {networkQuality.effectiveType?.toUpperCase() || 'Unknown'}
+            <div className={`text-lg font-medium ${getConnectionColor(networkQuality?.effectiveType ?? 'unknown')}`}>
+              {networkQuality?.effectiveType?.toUpperCase() || 'Unknown'}
             </div>
           </div>
 
           <div className="p-4 bg-gray-50 rounded-lg">
             <div className="text-sm text-gray-600 mb-1">Downlink</div>
             <div className="text-lg font-medium">
-              {networkQuality.downlink ? `${networkQuality.downlink} Mbps` : 'Unknown'}
+              {networkQuality?.downlink ? `${networkQuality.downlink} Mbps` : 'Unknown'}
             </div>
           </div>
         </div>
@@ -308,9 +308,9 @@ export function PWAStatus() {
             <div className="text-sm text-gray-600 mb-1">Page Load Time</div>
             <div className="flex items-center space-x-2">
               <span className="text-lg font-medium">
-                {performance.loadComplete ? formatDuration(performance.loadComplete) : 'N/A'}
+                {performance?.loadComplete ? formatDuration(performance.loadComplete) : 'N/A'}
               </span>
-              {performance.loadComplete && (
+              {performance?.loadComplete && (
                 <span className={`text-sm font-medium ${getPerformanceGrade(performance.loadComplete).color}`}>
                   Grade {getPerformanceGrade(performance.loadComplete).grade}
                 </span>
@@ -321,21 +321,21 @@ export function PWAStatus() {
           <div className="p-4 bg-gray-50 rounded-lg">
             <div className="text-sm text-gray-600 mb-1">DOM Content Loaded</div>
             <div className="text-lg font-medium">
-              {performance.domContentLoaded ? formatDuration(performance.domContentLoaded) : 'N/A'}
+              {performance?.domContentLoaded ? formatDuration(performance.domContentLoaded) : 'N/A'}
             </div>
           </div>
 
           <div className="p-4 bg-gray-50 rounded-lg">
             <div className="text-sm text-gray-600 mb-1">First Contentful Paint</div>
             <div className="text-lg font-medium">
-              {performance.firstContentfulPaint ? formatDuration(performance.firstContentfulPaint) : 'N/A'}
+              {performance?.firstContentfulPaint ? formatDuration(performance.firstContentfulPaint) : 'N/A'}
             </div>
           </div>
 
           <div className="p-4 bg-gray-50 rounded-lg">
             <div className="text-sm text-gray-600 mb-1">Largest Contentful Paint</div>
             <div className="text-lg font-medium">
-              {performance.largestContentfulPaint ? formatDuration(performance.largestContentfulPaint) : 'N/A'}
+              {performance?.largestContentfulPaint ? formatDuration(performance.largestContentfulPaint) : 'N/A'}
             </div>
           </div>
         </div>

@@ -54,7 +54,8 @@ export function createViolation(
  */
 export async function checkDataRetention(rule: ComplianceRule): Promise<ComplianceViolation[]> {
   const violations: ComplianceViolation[] = []
-  const { maxRetentionDays, dataTypes } = rule.parameters
+  const dataTypes = rule.parameters.dataTypes as string[]
+  const maxRetentionDays = rule.parameters.maxRetentionDays as number
 
   for (const dataType of dataTypes) {
     const cutoffDate = new Date()
@@ -95,7 +96,8 @@ export async function checkDataRetention(rule: ComplianceRule): Promise<Complian
  */
 export async function checkPrivacyBudget(rule: ComplianceRule): Promise<ComplianceViolation[]> {
   const violations: ComplianceViolation[] = []
-  const { warningThreshold, criticalThreshold } = rule.parameters
+  const warningThreshold = rule.parameters.warningThreshold as number
+  const criticalThreshold = rule.parameters.criticalThreshold as number
 
   // Get users with high privacy budget usage
   const { data: users, error } = await supabaseAdmin
@@ -141,7 +143,7 @@ export async function checkPrivacyBudget(rule: ComplianceRule): Promise<Complian
  */
 export async function checkAccessControl(rule: ComplianceRule): Promise<ComplianceViolation[]> {
   const violations: ComplianceViolation[] = []
-  const { maxFailedAttempts } = rule.parameters
+  const maxFailedAttempts = rule.parameters.maxFailedAttempts as number
 
   // Check for recent unauthorized access attempts
   const { data: failedAttempts, error } = await supabaseAdmin
@@ -187,7 +189,7 @@ export async function checkAccessControl(rule: ComplianceRule): Promise<Complian
  */
 export async function checkConsentManagement(rule: ComplianceRule): Promise<ComplianceViolation[]> {
   const violations: ComplianceViolation[] = []
-  const { consentValidityDays } = rule.parameters
+  const consentValidityDays = rule.parameters.consentValidityDays as number
 
   // Check for expired consents
   const cutoffDate = new Date()
@@ -227,7 +229,8 @@ export async function checkConsentManagement(rule: ComplianceRule): Promise<Comp
  */
 export async function checkLegalRequestTimeline(rule: ComplianceRule): Promise<ComplianceViolation[]> {
   const violations: ComplianceViolation[] = []
-  const { maxResponseDays, warningDays } = rule.parameters
+  const maxResponseDays = rule.parameters.maxResponseDays as number
+  const warningDays = rule.parameters.warningDays as number
 
   // Get pending legal requests
   const { data: pendingRequests, error } = await supabaseAdmin

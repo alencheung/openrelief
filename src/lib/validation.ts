@@ -35,12 +35,13 @@ export const validators = {
   // Email validation
   email: (message = 'Please enter a valid email address'): ValidationRule => ({
     name: 'email',
-    validator: (value: string) => {
-      if (!value) {
+    validator: (value: unknown) => {
+      const str = value as string
+      if (!str) {
         return null
       }
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (!emailRegex.test(value)) {
+      if (!emailRegex.test(str)) {
         return message
       }
       return null
@@ -51,11 +52,12 @@ export const validators = {
   // Min length validation
   minLength: (min: number, message?: string): ValidationRule => ({
     name: 'minLength',
-    validator: (value: string) => {
-      if (!value) {
+    validator: (value: unknown) => {
+      const str = value as string
+      if (!str) {
         return null
       }
-      if (value.length < min) {
+      if (str.length < min) {
         return message || `Must be at least ${min} characters`
       }
       return null
@@ -66,11 +68,12 @@ export const validators = {
   // Max length validation
   maxLength: (max: number, message?: string): ValidationRule => ({
     name: 'maxLength',
-    validator: (value: string) => {
-      if (!value) {
+    validator: (value: unknown) => {
+      const str = value as string
+      if (!str) {
         return null
       }
-      if (value.length > max) {
+      if (str.length > max) {
         return message || `Must be no more than ${max} characters`
       }
       return null
@@ -81,11 +84,12 @@ export const validators = {
   // Min value validation
   min: (min: number, message?: string): ValidationRule => ({
     name: 'min',
-    validator: (value: number) => {
-      if (value === null || value === undefined) {
+    validator: (value: unknown) => {
+      const num = value as number
+      if (num === null || num === undefined) {
         return null
       }
-      if (value < min) {
+      if (num < min) {
         return message || `Must be at least ${min}`
       }
       return null
@@ -96,11 +100,12 @@ export const validators = {
   // Max value validation
   max: (max: number, message?: string): ValidationRule => ({
     name: 'max',
-    validator: (value: number) => {
-      if (value === null || value === undefined) {
+    validator: (value: unknown) => {
+      const num = value as number
+      if (num === null || num === undefined) {
         return null
       }
-      if (value > max) {
+      if (num > max) {
         return message || `Must be no more than ${max}`
       }
       return null
@@ -111,11 +116,12 @@ export const validators = {
   // Pattern validation
   pattern: (regex: RegExp, message: string): ValidationRule => ({
     name: 'pattern',
-    validator: (value: string) => {
-      if (!value) {
+    validator: (value: unknown) => {
+      const str = value as string
+      if (!str) {
         return null
       }
-      if (!regex.test(value)) {
+      if (!regex.test(str)) {
         return message
       }
       return null
@@ -126,12 +132,13 @@ export const validators = {
   // Phone validation
   phone: (message = 'Please enter a valid phone number'): ValidationRule => ({
     name: 'phone',
-    validator: (value: string) => {
-      if (!value) {
+    validator: (value: unknown) => {
+      const str = value as string
+      if (!str) {
         return null
       }
       const phoneRegex = /^\+?[\d\s-()]+$/
-      if (!phoneRegex.test(value)) {
+      if (!phoneRegex.test(str)) {
         return message
       }
       return null
@@ -142,12 +149,13 @@ export const validators = {
   // URL validation
   url: (message = 'Please enter a valid URL'): ValidationRule => ({
     name: 'url',
-    validator: (value: string) => {
-      if (!value) {
+    validator: (value: unknown) => {
+      const str = value as string
+      if (!str) {
         return null
       }
       try {
-        new URL(value)
+        new URL(str)
         return null
       } catch {
         return message
@@ -195,8 +203,9 @@ export const validators = {
     requireSpecial?: boolean
   }): ValidationRule => ({
     name: 'passwordStrength',
-    validator: (value: string) => {
-      if (!value) {
+    validator: (value: unknown) => {
+      const str = value as string
+      if (!str) {
         return null
       }
 
@@ -210,23 +219,23 @@ export const validators = {
 
       const errors: string[] = []
 
-      if (value.length < minLength) {
+      if (str.length < minLength) {
         errors.push(`At least ${minLength} characters`)
       }
 
-      if (requireUppercase && !/[A-Z]/.test(value)) {
+      if (requireUppercase && !/[A-Z]/.test(str)) {
         errors.push('One uppercase letter')
       }
 
-      if (requireLowercase && !/[a-z]/.test(value)) {
+      if (requireLowercase && !/[a-z]/.test(str)) {
         errors.push('One lowercase letter')
       }
 
-      if (requireNumbers && !/[0-9]/.test(value)) {
+      if (requireNumbers && !/[0-9]/.test(str)) {
         errors.push('One number')
       }
 
-      if (requireSpecial && !/[^A-Za-z0-9]/.test(value)) {
+      if (requireSpecial && !/[^A-Za-z0-9]/.test(str)) {
         errors.push('One special character')
       }
 
@@ -242,7 +251,8 @@ export const validators = {
     maxCount?: number
   }): ValidationRule => ({
     name: 'file',
-    validator: (files: File[] | FileList) => {
+    validator: (value: unknown) => {
+      const files = value as File[] | FileList
       if (!files || files.length === 0) {
         return null
       }
