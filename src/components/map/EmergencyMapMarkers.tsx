@@ -482,7 +482,7 @@ export function EmergencyMapView(props: EmergencyMapViewProps) {
           autoDismiss={autoDismissAlerts}
           onAlertClick={onAlertClick}
           onAlertDismiss={onAlertDismiss}
-          onDismissAll={onDismissAllAlerts}
+          onDismissAll={onDismissAll}
           onMarkAllRead={onMarkAllAlertsRead}
         />
       )}
