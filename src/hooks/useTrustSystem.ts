@@ -7,6 +7,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTrustStore, useTrustScore, useTrustActions, useTrustThresholds } from '@/store/trustStore'
+import type { TrustThresholds } from '@/store/trustStore'
 import { supabaseHelpers, supabase } from '@/lib/supabase'
 import { Database } from '@/types/database'
 
@@ -25,7 +26,7 @@ export interface TrustCalculationResult {
   userId: string
   score: number
   confidence: number
-  factors: any
+  factors: Record<string, unknown>
   lastUpdated: string
 }
 
@@ -39,7 +40,7 @@ export interface TrustHistoryEntry {
   newScore: number
   reason: string
   timestamp: string
-  metadata?: any
+  metadata?: Record<string, unknown>
 }
 
 export interface ConsensusParticipation {
@@ -119,7 +120,7 @@ export const useTrustSystem = (userId?: string) => {
         throw error
       }
       // Map snake_case DB columns to the camelCase shape consumers expect.
-      return (data || []).map((row: any) => ({
+      return (data || []).map((row: Record<string, unknown>) => ({
         ...row,
         actionType: row.action_type ?? row.actionType,
         trustChange: row.trust_change ?? row.trustChange,
@@ -153,17 +154,23 @@ export const useTrustSystem = (userId?: string) => {
       if (error) {
         throw error
       }
-      return data?.map((confirmation: any) => ({
-        eventId: confirmation.event_id,
-        userId: confirmation.user_id,
-        voteType: confirmation.confirmation_type as 'confirm' | 'dispute',
-        trustWeight: confirmation.trust_weight,
-        timestamp: confirmation.created_at,
-        location: confirmation.location ? {
-          lat: parseFloat(confirmation.location.split(' ')[1]),
-          lng: parseFloat(confirmation.location.split(' ')[0])
-        } : undefined
-      })) || []
+      return data?.map((confirmation: Record<string, unknown>) => {
+        const locationStr = typeof confirmation.location === 'string' ? confirmation.location : null
+        const location = locationStr
+          ? {
+              lat: parseFloat(locationStr.split(' ')[1] ?? ''),
+              lng: parseFloat(locationStr.split(' ')[0] ?? '')
+            }
+          : undefined
+        return {
+          eventId: confirmation.event_id,
+          userId: confirmation.user_id,
+          voteType: confirmation.confirmation_type as 'confirm' | 'dispute',
+          trustWeight: confirmation.trust_weight,
+          timestamp: confirmation.created_at,
+          location
+        }
+      }) || []
     },
     enabled: !!userId,
     staleTime: 2 * 60 * 1000 // 2 minutes
@@ -194,7 +201,7 @@ export const useTrustSystem = (userId?: string) => {
       eventId: string
       actionType: 'report' | 'confirm' | 'dispute'
       outcome: 'success' | 'failure' | 'pending'
-      metadata?: any
+      metadata?: Record<string, unknown>
     }) => {
       return await trustActions.updateTrustForAction(
         userId,
@@ -229,14 +236,15 @@ export const useTrustSystem = (userId?: string) => {
   })
 
   // Helper function to calculate confidence
-  const calculateConfidence = (trustData: any): number => {
-    if (!trustData.trust_score_factors) {
+  const calculateConfidence = (trustData: Record<string, unknown>): number => {
+    const rawFactors = trustData.trust_score_factors
+    if (!rawFactors || typeof rawFactors !== 'object') {
       return 0.5
     }
 
-    const factors = trustData.trust_score_factors
-    const factorCount = Object.keys(factors).filter(key =>
-      factors[key] !== null && factors[key] !== undefined
+    const factors = rawFactors as Record<string, number | null | undefined>
+    const factorCount = Object.keys(factors).filter(
+      key => factors[key] !== null && factors[key] !== undefined
     ).length
 
     // Base confidence on data completeness
@@ -244,8 +252,7 @@ export const useTrustSystem = (userId?: string) => {
 
     // Adjust based on consistency
     const consistency = 1 - Math.abs(
-      (factors.reporting_accuracy || 0.5)
-      - (factors.confirmation_accuracy || 0.5)
+      (factors.reporting_accuracy || 0.5) - (factors.confirmation_accuracy || 0.5)
     )
 
     return Math.max(0.1, Math.min(0.95, (dataCompleteness + consistency) / 2))
@@ -329,23 +336,23 @@ export const useTrustSystem = (userId?: string) => {
 }
 
 // Export utility functions
-export const canUserReport = (userScore: number | null, thresholds: any): boolean => {
+export const canUserReport = (userScore: number | null, thresholds: TrustThresholds): boolean => {
   return userScore !== null && userScore >= thresholds.reporting
 }
 
-export const canUserConfirm = (userScore: number | null, thresholds: any): boolean => {
+export const canUserConfirm = (userScore: number | null, thresholds: TrustThresholds): boolean => {
   return userScore !== null && userScore >= thresholds.confirming
 }
 
-export const canUserDispute = (userScore: number | null, thresholds: any): boolean => {
+export const canUserDispute = (userScore: number | null, thresholds: TrustThresholds): boolean => {
   return userScore !== null && userScore >= thresholds.disputing
 }
 
-export const isHighTrustUser = (userScore: number | null, thresholds: any): boolean => {
+export const isHighTrustUser = (userScore: number | null, thresholds: TrustThresholds): boolean => {
   return userScore !== null && userScore >= thresholds.highTrust
 }
 
-export const isLowTrustUser = (userScore: number | null, thresholds: any): boolean => {
+export const isLowTrustUser = (userScore: number | null, thresholds: TrustThresholds): boolean => {
   return userScore !== null && userScore <= thresholds.lowTrust
 }
 

@@ -1,28 +1,12 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import Image from 'next/image'
-import { motion } from 'framer-motion'
 import {
   WifiOff,
   Database,
-  Clock,
-  MapPin,
-  Camera,
-  Mic,
-  Save,
   Upload,
   RefreshCw,
-  CheckCircle,
-  AlertTriangle,
-  Info,
-  X,
-  Flame,
-  HeartPulse,
-  Shield,
-  CloudRain,
-  Zap,
-  Video
+  Info
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useOfflineStore, useOfflineActions } from '@/store'
@@ -31,58 +15,25 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { StatusIndicator } from '@/components/ui/StatusIndicator'
-import { EmergencyIndicator } from '@/components/ui/EmergencyIndicator'
-import { Textarea } from '@/components/ui/Textarea'
-import { Input } from '@/components/ui/Input'
 import { Switch } from '@/components/ui/Switch'
 
-interface OfflineEmergencyReportingProps {
-  className?: string
-  onReportSubmitted?: (report: any) => void
-  initialLocation?: { lat: number; lng: number }
-}
-
-interface OfflineReport {
-  id: string
-  type: string
-  severity: 'low' | 'medium' | 'high' | 'critical'
-  title: string
-  description: string
-  location: {
-    latitude: number
-    longitude: number
-    accuracy: number
-    address?: string
-  }
-  reporter: {
-    id: string
-    name: string
-    trustScore: number
-  }
-  timestamp: number
-  images: string[]
-  videos: string[]
-  audio?: string
-  metadata: {
-    deviceInfo?: string
-    batteryLevel?: number
-    networkStatus?: 'online' | 'offline' | 'poor'
-    gpsAccuracy?: number
-    estimatedDataSize?: number
-  }
-  status: 'draft' | 'queued' | 'syncing' | 'synced' | 'failed'
-  syncAttempts: number
-  lastSyncAttempt?: number
-}
-
-interface OfflineQueue {
-  reports: OfflineReport[]
-  totalSize: number
-  maxSize: number
-  compressionEnabled: boolean
-  autoSyncEnabled: boolean
-  lastSyncTime: number
-}
+// Re-export extracted types and helpers for backward compatibility
+export * from './offline-emergency-types'
+export * from './offline-emergency-helpers'
+import {
+  calculateTotalSize,
+  generateReportId,
+  getDefaultOfflineReports,
+  getDefaultQueue
+} from './offline-emergency-helpers'
+import { EmergencyReportForm } from './offline-emergency-form'
+import { OfflineQueueList } from './offline-emergency-queue-list'
+import type {
+  OfflineEmergencyReportingProps,
+  OfflineQueue,
+  OfflineReport,
+  ReportLocation
+} from './offline-emergency-types'
 
 export function OfflineEmergencyReporting({
   className,
@@ -109,88 +60,10 @@ export function OfflineEmergencyReporting({
   const [_isRecording, setIsRecording] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [_expandedSection, _setExpandedSection] = useState<string | null>(null)
-  const [queue, setQueue] = useState<OfflineQueue>({
-    reports: [],
-    totalSize: 0,
-    // 50MB
-    maxSize: 50 * 1024 * 1024,
-    compressionEnabled: true,
-    autoSyncEnabled: true,
-    lastSyncTime: 0
-  })
+  const [queue, setQueue] = useState<OfflineQueue>(getDefaultQueue())
 
   // Mock offline reports from storage
-  const [offlineReports, setOfflineReports] = useState<OfflineReport[]>([
-    {
-      id: 'offline-1',
-      type: 'medical',
-      severity: 'critical',
-      title: 'Medical Emergency - Downtown',
-      description: 'Person collapsed at intersection, requires immediate medical attention',
-      location: {
-        latitude: 37.7749,
-        longitude: -122.4194,
-        accuracy: 10,
-        address: 'Market St & 5th St, San Francisco, CA'
-      },
-      reporter: {
-        id: 'user-789',
-        name: 'John Doe',
-        trustScore: 0.92
-      },
-      // 5 minutes ago
-      timestamp: Date.now() - 300000,
-      images: ['image1.jpg'],
-      videos: [],
-      audio: 'audio1.mp3',
-      metadata: {
-        deviceInfo: 'iPhone 14 Pro',
-        batteryLevel: 85,
-        networkStatus: 'offline',
-        gpsAccuracy: 5,
-        // 2.5MB
-        estimatedDataSize: 2.5 * 1024 * 1024
-      },
-      status: 'queued',
-      syncAttempts: 3,
-      // 1 minute ago
-      lastSyncAttempt: Date.now() - 60000
-    },
-    {
-      id: 'offline-2',
-      type: 'fire',
-      severity: 'high',
-      title: 'Building Fire - Financial District',
-      description: 'Smoke visible from multiple floors, fire alarms active',
-      location: {
-        latitude: 37.789,
-        longitude: -122.401,
-        accuracy: 15,
-        address: '100 Pine St, San Francisco, CA'
-      },
-      reporter: {
-        id: 'user-456',
-        name: 'Jane Smith',
-        trustScore: 0.78
-      },
-      // 15 minutes ago
-      timestamp: Date.now() - 900000,
-      images: ['image2.jpg', 'image3.jpg'],
-      videos: ['video1.mp4'],
-      metadata: {
-        deviceInfo: 'Samsung Galaxy S23',
-        batteryLevel: 45,
-        networkStatus: 'poor',
-        gpsAccuracy: 25,
-        // 8.7MB
-        estimatedDataSize: 8.7 * 1024 * 1024
-      },
-      status: 'syncing',
-      syncAttempts: 1,
-      // 30 seconds ago
-      lastSyncAttempt: Date.now() - 30000
-    }
-  ])
+  const [offlineReports, setOfflineReports] = useState<OfflineReport[]>(getDefaultOfflineReports())
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
@@ -199,36 +72,20 @@ export function OfflineEmergencyReporting({
   // Update queue stats
   useEffect(() => {
     const reports = offlineReports.filter(report => report.status !== 'synced')
-    const totalSize = reports.reduce((sum, report) => {
-      // 1MB per image
-      const imageSize = (report.images?.length || 0) * 1024 * 1024
-      // 5MB per video
-      const videoSize = (report.videos?.length || 0) * 5 * 1024 * 1024
-      // 2MB for audio
-      const audioSize = report.audio ? 2 * 1024 * 1024 : 0
-      // 1KB for text data
-      const reportSize = imageSize + videoSize + audioSize + 1024
-      return sum + reportSize
-    }, 0)
+    const totalSize = calculateTotalSize(reports)
 
-    setQueue({
+    setQueue(prev => ({
       reports,
       totalSize,
-      maxSize: queue.maxSize,
-      compressionEnabled: queue.compressionEnabled,
-      autoSyncEnabled: queue.autoSyncEnabled,
-      lastSyncTime: queue.lastSyncTime
-    })
-  }, [
-    offlineReports,
-    queue.maxSize,
-    queue.compressionEnabled,
-    queue.autoSyncEnabled,
-    queue.lastSyncTime
-  ])
+      maxSize: prev.maxSize,
+      compressionEnabled: prev.compressionEnabled,
+      autoSyncEnabled: prev.autoSyncEnabled,
+      lastSyncTime: prev.lastSyncTime
+    }))
+  }, [offlineReports])
 
   // Get current location
-  const getCurrentLocation = () => {
+  const getCurrentLocation = (): ReportLocation => {
     if (userLocation && locationAccuracy) {
       return {
         latitude: userLocation.lat,
@@ -307,14 +164,15 @@ export function OfflineEmergencyReporting({
       return
     }
 
+    const location = getCurrentLocation()
     const report: OfflineReport = {
       ...currentReport,
-      id: `offline-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: generateReportId(),
       type: currentReport.type || 'fire',
       severity: currentReport.severity || 'high',
       title: currentReport.title || '',
       description: currentReport.description || '',
-      location: getCurrentLocation(),
+      location,
       reporter: {
         id: 'current-user',
         name: 'Current User',
@@ -330,7 +188,7 @@ export function OfflineEmergencyReporting({
         // Would need Battery API
         batteryLevel: undefined,
         networkStatus: navigator.onLine ? 'online' : 'offline',
-        gpsAccuracy: getCurrentLocation().accuracy,
+        gpsAccuracy: location.accuracy,
         estimatedDataSize:
           images.length * 1024 * 1024 +
           videos.length * 5 * 1024 * 1024 +
@@ -411,38 +269,6 @@ export function OfflineEmergencyReporting({
     return () => {}
   }, [queue.autoSyncEnabled, offlineReports])
 
-  // Get status color
-  const getStatusColor = (status: OfflineReport['status']) => {
-    switch (status) {
-      case 'synced':
-        return 'text-green-600'
-      case 'syncing':
-        return 'text-blue-600'
-      case 'queued':
-        return 'text-yellow-600'
-      case 'failed':
-        return 'text-red-600'
-      default:
-        return 'text-gray-600'
-    }
-  }
-
-  // Get status icon
-  const getStatusIcon = (status: OfflineReport['status']) => {
-    switch (status) {
-      case 'synced':
-        return CheckCircle
-      case 'syncing':
-        return RefreshCw
-      case 'queued':
-        return Clock
-      case 'failed':
-        return AlertTriangle
-      default:
-        return Clock
-    }
-  }
-
   return (
     <div className={cn('space-y-6', className)}>
       {/* Header */}
@@ -497,270 +323,23 @@ export function OfflineEmergencyReporting({
       </Card>
 
       {/* Emergency Report Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5" />
-            Create Emergency Report
-          </CardTitle>
-          <Badge variant="outline">Offline Mode</Badge>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            {/* Emergency Type */}
-            <div>
-              <label className="text-sm font-medium mb-2 block">Emergency Type</label>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                {[
-                  { type: 'fire', name: 'Fire', icon: Flame, color: 'red' },
-                  { type: 'medical', name: 'Medical', icon: HeartPulse, color: 'pink' },
-                  { type: 'security', name: 'Security', icon: Shield, color: 'blue' },
-                  { type: 'natural', name: 'Natural', icon: CloudRain, color: 'cyan' },
-                  { type: 'infrastructure', name: 'Infrastructure', icon: Zap, color: 'orange' }
-                ].map(({ type, name, icon: IconComponent, color }) => (
-                  <motion.button
-                    key={type}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className={cn(
-                      'p-4 rounded-lg border-2 transition-all duration-200',
-                      currentReport.type === type
-                        ? `${color}-100 border-${color}-500 bg-${color}-50`
-                        : 'border-gray-200 hover:border-gray-300'
-                    )}
-                    onClick={() => setCurrentReport(prev => ({ ...prev, type }))}
-                  >
-                    <IconComponent className="h-6 w-6 mx-auto mb-2" />
-                    <div className="text-sm font-medium">{name}</div>
-                  </motion.button>
-                ))}
-              </div>
-            </div>
-
-            {/* Severity */}
-            <div>
-              <label className="text-sm font-medium mb-2 block">Severity Level</label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {[
-                  { level: 'low', name: 'Low', color: 'blue' },
-                  { level: 'medium', name: 'Medium', color: 'yellow' },
-                  { level: 'high', name: 'High', color: 'orange' },
-                  { level: 'critical', name: 'Critical', color: 'red' }
-                ].map(({ level, name, color }) => (
-                  <motion.button
-                    key={level}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className={cn(
-                      'p-4 rounded-lg border-2 transition-all duration-200',
-                      currentReport.severity === level
-                        ? `${color}-100 border-${color}-500 bg-${color}-50`
-                        : 'border-gray-200 hover:border-gray-300'
-                    )}
-                    onClick={() =>
-                      setCurrentReport(prev => ({
-                        ...prev,
-                        severity: level as OfflineReport['severity']
-                      }))
-                    }
-                  >
-                    <div
-                      className={cn(
-                        'w-3 h-3 rounded-full mx-auto mb-2',
-                        currentReport.severity === level ? `bg-${color}-500` : 'bg-gray-400'
-                      )}
-                    />
-                    <div className="text-sm font-medium">{name}</div>
-                  </motion.button>
-                ))}
-              </div>
-            </div>
-
-            {/* Title and Description */}
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Title</label>
-                <Input
-                  value={currentReport.title || ''}
-                  onChange={e => setCurrentReport(prev => ({ ...prev, title: e.target.value }))}
-                  placeholder="Brief description of the emergency"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-2 block">Description</label>
-                <Textarea
-                  value={currentReport.description || ''}
-                  onChange={e =>
-                    setCurrentReport(prev => ({ ...prev, description: e.target.value }))
-                  }
-                  placeholder="Detailed description of the emergency situation"
-                  rows={4}
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Location */}
-            <div>
-              <label className="text-sm font-medium mb-2 block">Location</label>
-              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <div className="flex items-center gap-3 mb-3">
-                  <MapPin className="h-5 w-5 text-gray-600" />
-                  <div>
-                    <div className="text-sm font-medium">
-                      {currentReport.location
-                        ? currentReport.location.address ||
-                          `${currentReport.location.latitude.toFixed(6)}, ${currentReport.location.longitude.toFixed(6)}`
-                        : 'Location will be captured automatically'}
-                    </div>
-                    {currentReport.location && (
-                      <div className="text-xs text-muted-foreground">
-                        Accuracy: ±{currentReport.location.accuracy}m
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Media Capture */}
-            <div className="space-y-4">
-              {/* Images */}
-              <div>
-                <label className="text-sm font-medium mb-2 block">Photos (Max: 5)</label>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                  {images.map((image, index) => (
-                    <div key={index} className="relative">
-                      <Image
-                        src={image}
-                        alt={`Emergency photo ${index + 1}`}
-                        width={100}
-                        height={96}
-                        className="w-full h-24 object-cover rounded-lg border border-gray-200"
-                      />
-                      <button
-                        className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full"
-                        onClick={() => setImages(prev => prev.filter((_, i) => i !== index))}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-
-                  {images.length < 5 && (
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 transition-all duration-200"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <Camera className="h-6 w-6 mx-auto mb-2" />
-                      <div className="text-sm font-medium">Add Photo</div>
-                    </motion.button>
-                  )}
-                </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={e => handleImageCapture(e.target.files)}
-                />
-              </div>
-
-              {/* Videos */}
-              <div>
-                <label className="text-sm font-medium mb-2 block">Videos (Max: 2)</label>
-                <div className="grid grid-cols-2 gap-3">
-                  {videos.map((video, index) => (
-                    <div key={index} className="relative">
-                      <video
-                        src={video}
-                        className="w-full h-24 object-cover rounded-lg border border-gray-200"
-                        controls
-                      />
-                      <button
-                        className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full"
-                        onClick={() => setVideos(prev => prev.filter((_, i) => i !== index))}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-
-                  {videos.length < 2 && (
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 transition-all duration-200"
-                      onClick={() => videoInputRef.current?.click()}
-                    >
-                      <Video className="h-6 w-6 mx-auto mb-2" />
-                      <div className="text-sm font-medium">Add Video</div>
-                    </motion.button>
-                  )}
-                </div>
-                <input
-                  ref={videoInputRef}
-                  type="file"
-                  accept="video/*"
-                  multiple
-                  className="hidden"
-                  onChange={e => handleVideoCapture(e.target.files)}
-                />
-              </div>
-
-              {/* Audio */}
-              <div>
-                <label className="text-sm font-medium mb-2 block">Audio Recording</label>
-                <div className="flex items-center gap-4">
-                  {audioRecording ? (
-                    <div className="flex-1">
-                      <audio ref={audioRef} src={audioRecording} controls className="w-full" />
-                      <div className="mt-2 p-3 bg-red-50 rounded-lg border border-red-200">
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-                          <span className="text-sm font-medium text-red-800">Recording...</span>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="flex-1 p-4 border-2 border-gray-200 rounded-lg hover:border-gray-300 transition-all duration-200"
-                      onClick={startAudioRecording}
-                    >
-                      <Mic className="h-6 w-6" />
-                      <div className="text-left">
-                        <div className="text-sm font-medium">Start Recording</div>
-                        <div className="text-xs text-muted-foreground">Max: 60 seconds</div>
-                      </div>
-                    </motion.button>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Submit Button */}
-            <div className="flex justify-center">
-              <Button
-                onClick={submitOfflineReport}
-                disabled={isProcessing || !currentReport.title || !currentReport.description}
-                loading={isProcessing}
-                className="w-full md:w-auto px-8"
-                size="lg"
-              >
-                <Save className="h-5 w-5 mr-2" />
-                {isProcessing ? 'Submitting...' : 'Submit Offline Report'}
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <EmergencyReportForm
+        currentReport={currentReport}
+        onReportChange={setCurrentReport}
+        images={images}
+        onImagesChange={setImages}
+        videos={videos}
+        onVideosChange={setVideos}
+        audioRecording={audioRecording}
+        isProcessing={isProcessing}
+        fileInputRef={fileInputRef}
+        videoInputRef={videoInputRef}
+        audioRef={audioRef}
+        onImageCapture={handleImageCapture}
+        onVideoCapture={handleVideoCapture}
+        onStartAudioRecording={startAudioRecording}
+        onSubmit={submitOfflineReport}
+      />
 
       {/* Offline Queue */}
       <Card>
@@ -776,137 +355,7 @@ export function OfflineEmergencyReporting({
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {offlineReports.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium mb-2">No Offline Reports</p>
-                <p className="text-sm">Emergency reports created while offline will appear here</p>
-              </div>
-            ) : (
-              offlineReports.map((report, index) => (
-                <motion.div
-                  key={report.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="p-4 bg-gray-50 rounded-lg border border-gray-200"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <EmergencyIndicator
-                          type={(report.type as any) ?? 'fire'}
-                          label={report.type}
-                          severity={undefined}
-                          showSeverity
-                        />
-
-                        <div>
-                          <h4 className="font-semibold">{report.title}</h4>
-                          <p className="text-sm text-muted-foreground mt-1">{report.description}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <MapPin className="h-4 w-4" />
-                        <span>
-                          {report.location.address ||
-                            `${report.location.latitude.toFixed(4)}, ${report.location.longitude.toFixed(4)}`}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <div className={cn('w-3 h-3 rounded-full', getStatusColor(report.status))}>
-                        {getStatusIcon(report.status) &&
-                          React.createElement(getStatusIcon(report.status), {
-                            className: 'h-3 w-3'
-                          })}
-                      </div>
-
-                      <div className="text-right">
-                        <Badge variant="outline" className={getStatusColor(report.status)}>
-                          {report.status.toUpperCase()}
-                        </Badge>
-
-                        {report.status === 'queued' && (
-                          <div className="text-xs text-muted-foreground mt-1">Queued for sync</div>
-                        )}
-
-                        {report.status === 'syncing' && (
-                          <div className="text-xs text-muted-foreground mt-1">
-                            Syncing... ({report.syncAttempts} attempts)
-                          </div>
-                        )}
-
-                        {report.status === 'failed' && (
-                          <div className="text-xs text-muted-foreground mt-1">
-                            Failed after {report.syncAttempts} attempts
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Media Preview */}
-                  {(report.images?.length > 0 || report.videos?.length > 0 || report.audio) && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <div className="flex gap-2">
-                        {report.images?.map((image, imgIndex) => (
-                          <Image
-                            key={imgIndex}
-                            src={image}
-                            alt={`Report image ${imgIndex + 1}`}
-                            width={48}
-                            height={48}
-                            className="w-12 h-12 object-cover rounded border border-gray-200"
-                          />
-                        ))}
-
-                        {report.videos?.map((video, videoIndex) => (
-                          <video
-                            key={videoIndex}
-                            src={video}
-                            className="w-16 h-12 object-cover rounded border border-gray-200"
-                            controls
-                          />
-                        ))}
-
-                        {report.audio && (
-                          <div className="flex-1">
-                            <audio src={report.audio} controls className="w-full" />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Metadata */}
-                  <div className="mt-3 pt-3 border-t border-gray-200">
-                    <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
-                      <div>
-                        <span className="font-medium">Reported:</span>
-                        <div>{new Date(report.timestamp).toLocaleString()}</div>
-                      </div>
-                      <div>
-                        <span className="font-medium">Data Size:</span>
-                        <div>
-                          {Math.round((report.metadata?.estimatedDataSize ?? 0) / 1024 / 1024)}MB
-                        </div>
-                      </div>
-                      <div>
-                        <span className="font-medium">Network:</span>
-                        <div>{report.metadata?.networkStatus}</div>
-                      </div>
-                      <div>
-                        <span className="font-medium">GPS Accuracy:</span>
-                        <div>±{report.metadata?.gpsAccuracy}m</div>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              ))
-            )}
+            <OfflineQueueList reports={offlineReports} />
           </div>
         </CardContent>
       </Card>
