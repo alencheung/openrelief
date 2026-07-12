@@ -219,7 +219,7 @@ export const useCreateEmergencyEvent = () => {
 
         // Optimistic update
         const optimisticId = `temp-${Date.now()}`
-        const optimisticEvent: EmergencyEvent = {
+        const optimisticEvent = ({
           ...event,
           id: optimisticId,
           created_at: new Date().toISOString(),
@@ -234,7 +234,7 @@ export const useCreateEmergencyEvent = () => {
           expires_at: event.expires_at || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
           resolved_at: null,
           resolved_by: null
-        }
+        }) as EmergencyEvent
 
         // Add to local store immediately
         useEmergencyStore.getState().addEvent(optimisticEvent as EmergencyEvent)
