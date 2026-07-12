@@ -76,12 +76,13 @@ export const ScreenReaderOnly = forwardRef<HTMLElement, ScreenReaderOnlyProps>(
       atomic = false,
       relevant,
       busy = false,
-      as: Component = 'span' as string & React.ElementType,
+      as,
       aria = {},
       ...props
     },
     ref
   ) => {
+    const Component = (as ?? 'span') as React.ElementType
     return (
       <Component
         ref={ref}
@@ -90,7 +91,7 @@ export const ScreenReaderOnly = forwardRef<HTMLElement, ScreenReaderOnlyProps>(
           'sr-only',
 
           // Make focusable if requested
-          focusable && 'sr-only-focusable',
+          Boolean(focusable) && 'sr-only-focusable',
 
           // Custom class
           className as string | undefined

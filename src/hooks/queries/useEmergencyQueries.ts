@@ -231,7 +231,7 @@ export const useCreateEmergencyEvent = () => {
           description: event.description || null,
           radius_meters: event.radius_meters || 1000,
           severity: event.severity || 3,
-          expires_at: event.expires_at || null,
+          expires_at: event.expires_at || undefined,
           resolved_at: null,
           resolved_by: null
         }
