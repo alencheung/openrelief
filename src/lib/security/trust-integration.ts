@@ -8,7 +8,11 @@
  */
 
 import { createHash } from 'crypto'
-import { securityMonitor } from '@/lib/audit/security-monitor'
+import {
+  securityMonitor,
+  SecurityIncidentType,
+  IncidentSeverity
+} from '@/lib/audit/security-monitor'
 import { supabaseAdmin } from '@/lib/supabase'
 
 // Trust score interfaces
@@ -84,6 +88,35 @@ export interface AttackResistanceConfig {
   reputationThreshold: number
   adaptiveThresholds: boolean
   emergencyMode: boolean
+}
+
+/**
+ * Action context: free-form metadata describing the action being scored.
+ * Kept as `Record<string, unknown>` because callers (middleware, API routes)
+ * pass heterogeneous payloads that are persisted verbatim into history and
+ * logged for forensic review.
+ */
+export type ActionContext = Record<string, unknown>
+
+/**
+ * Impact of a scored action on a single trust factor.
+ */
+export interface ActionImpact {
+  impact: number
+  reason: string
+  factor: keyof TrustFactors
+}
+
+/**
+ * Data payload adjusted by attack-resistance. Includes optional trust-derived
+ * flags that downstream consumers read to gate behavior.
+ */
+export interface AdjustedData {
+  [key: string]: unknown
+  trustWarning?: string
+  requiresVerification?: boolean
+  trustLimited?: boolean
+  maxImpact?: number
 }
 
 // Trust score configuration
@@ -188,7 +221,7 @@ export class TrustScoreManager {
   async calculateTrustScore(
     userId: string,
     action: 'report' | 'confirm' | 'dispute' | 'endorse' | 'moderate' | 'penalty',
-    context: any
+    context: ActionContext
   ): Promise<{
     newScore: number
     previousScore: number
@@ -287,7 +320,7 @@ export class TrustScoreManager {
   async canPerformAction(
     userId: string,
     action: string,
-    context?: any
+    context?: ActionContext
   ): Promise<{
     allowed: boolean
     reason?: string
@@ -358,12 +391,12 @@ export class TrustScoreManager {
   async applyAttackResistance(
     userId: string,
     action: string,
-    data: any
+    data: Record<string, unknown>
   ): Promise<{
     allowed: boolean
     trustWeight: number
     resistance: string
-    adjustedData?: any
+    adjustedData?: AdjustedData
   }> {
     try {
       const trustScore = this.trustScores.get(userId)
@@ -414,7 +447,7 @@ export class TrustScoreManager {
       )
 
       // Adjust data based on trust level
-      let adjustedData = data
+      let adjustedData: AdjustedData | undefined = data
       if (trustScore.overall < this.attackResistanceConfig.sybilThreshold) {
         adjustedData = {
           ...data,
@@ -540,18 +573,14 @@ export class TrustScoreManager {
 
   private getActionImpact(
     action: string,
-    context: any
-  ): {
-    impact: number
-    reason: string
-    factor: keyof TrustFactors
-  } {
-    const penaltyImpact = {
+    _context: ActionContext
+  ): ActionImpact {
+    const penaltyImpact: ActionImpact = {
       impact: -0.05,
       reason: 'Penalty applied',
-      factor: 'penaltyScore' as keyof TrustFactors
+      factor: 'penaltyScore'
     }
-    const impacts: Record<string, { impact: number; reason: string; factor: keyof TrustFactors }> = {
+    const impacts: Record<string, ActionImpact> = {
       report: { impact: 0.02, reason: 'Emergency report submitted', factor: 'reportingAccuracy' },
       confirm: {
         impact: 0.03,
@@ -571,16 +600,16 @@ export class TrustScoreManager {
   private async updateTrustFactors(
     currentFactors: TrustFactors,
     action: string,
-    actionImpact: any
+    actionImpact: ActionImpact
   ): Promise<TrustFactors> {
     const updatedFactors = { ...currentFactors }
 
     // Update specific factor based on action
     if (actionImpact.factor) {
-      const factorKey = actionImpact.factor as keyof TrustFactors
+      const factorKey = actionImpact.factor
       const currentValue = (updatedFactors[factorKey] as number) || 0
       const newValue = Math.max(0, Math.min(1, currentValue + actionImpact.impact))
-      ;(updatedFactors as Record<string, unknown>)[actionImpact.factor] = newValue
+      ;(updatedFactors as Record<string, unknown>)[factorKey] = newValue
     }
 
     // Update contribution frequency
@@ -727,7 +756,7 @@ export class TrustScoreManager {
   private async checkRequirements(
     userId: string,
     requirements: string[],
-    context?: any
+    context?: ActionContext
   ): Promise<{ met: boolean; reason?: string }> {
     const trustScore = this.trustScores.get(userId)
     if (!trustScore) {
@@ -841,7 +870,7 @@ export class TrustScoreManager {
     userId: string,
     trustScore: TrustScore,
     action: string,
-    data: any
+    data: Record<string, unknown>
   ): string {
     // Apply consensus-based attack resistance
     if (action === 'vote' && trustScore.overall < this.attackResistanceConfig.consensusThreshold) {
@@ -883,8 +912,8 @@ export class TrustScoreManager {
     action: string
   ): Promise<void> {
     await securityMonitor.createAlert(
-      'trust_score_change' as any,
-      'low' as any,
+      SecurityIncidentType.ANOMALOUS_BEHAVIOR,
+      IncidentSeverity.LOW,
       `Trust score changed for user ${userId}`,
       `Previous: ${previousScore}, New: ${newScore}, Action: ${action}`,
       'trust_system',
@@ -964,7 +993,7 @@ export const trustScoreManager = new TrustScoreManager()
 export async function updateTrustScoreFromAction(
   userId: string,
   action: 'report' | 'confirm' | 'dispute' | 'endorse' | 'moderate' | 'penalty',
-  context: any
+  context: ActionContext
 ): Promise<{
   newScore: number
   previousScore: number

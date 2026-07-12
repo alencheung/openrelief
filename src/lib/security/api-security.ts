@@ -15,7 +15,8 @@ import {
   inputValidator,
   validateApiInput,
   ApiValidationResult,
-  SecurityFlag
+  SecurityFlag,
+  ValidationRule
 } from './input-validation'
 import { sybilPreventionEngine } from './sybil-prevention'
 import {
@@ -33,7 +34,7 @@ interface APISecurityConfig {
   minTrustScore?: number
   allowedRoles?: string[]
   rateLimitTier?: 'emergency' | 'auth' | 'api' | 'upload'
-  inputSchema?: Record<string, any[]>
+  inputSchema?: Record<string, ValidationRule[]>
   validateSybil?: boolean
   auditLevel?: 'low' | 'medium' | 'high' | 'critical'
   enableCORS?: boolean
@@ -567,7 +568,7 @@ export class APISecurityManager {
     message: string,
     status: number,
     code: string,
-    details?: any
+    details?: Record<string, unknown>
   ): NextResponse {
     const errorResponse = {
       error: message,
@@ -607,10 +608,10 @@ export class APISecurityManager {
 export function secureAPI(config?: APISecurityConfig) {
   const securityManager = APISecurityManager.getInstance()
 
-  return function (target: any, propertyName: string, descriptor: PropertyDescriptor) {
+  return function (target: unknown, propertyName: string, descriptor: PropertyDescriptor) {
     const method = descriptor.value
 
-    descriptor.value = async function (request: NextRequest, ...args: any[]) {
+    descriptor.value = async function (request: NextRequest, ...args: unknown[]) {
       return securityManager.secureEndpoint(request, method.bind(this, request, ...args), config)
     }
 
