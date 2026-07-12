@@ -116,7 +116,9 @@ export const estimateReportSize = (report: OfflineReport): number => {
 
 // Sum the estimated sizes of all non-synced reports.
 export const calculateTotalSize = (reports: OfflineReport[]): number =>
-  reports.filter(report => report.status !== 'synced').reduce(estimateReportSize, 0)
+  reports
+    .filter(report => report.status !== 'synced')
+    .reduce((total, report) => total + estimateReportSize(report), 0)
 
 // Generate a pseudo-random unique id for an offline report.
 export const generateReportId = (): string =>

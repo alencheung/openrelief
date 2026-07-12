@@ -79,7 +79,7 @@ export const useEmergencyEventsSubscription = () => {
         const errorInfo = classifyError(err, {
           action: 'emergency_event_processing',
           eventType: payload.eventType,
-          eventId: payload.new?.id || payload.old?.id
+          eventId: (payload.new?.id || payload.old?.id) as string | undefined
         })
         console.error('[Realtime] Emergency event processing error details:', errorInfo)
 

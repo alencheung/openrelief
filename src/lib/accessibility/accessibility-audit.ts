@@ -61,7 +61,7 @@ export class AccessibilityAuditor {
 
     for (const element of Array.from(elements)) {
       // Check 1.1.1 Non-text Content
-      if (!WCAG_GUIDELINES.perceivable['1.1.1'].check(element)) {
+      if (!WCAG_GUIDELINES.perceivable['1.1.1']!.check(element)) {
         this.addIssue({
           id: '1.1.1-' + Math.random().toString(36).substr(2, 9),
           guideline: '1.1 Perceivable',
@@ -77,7 +77,7 @@ export class AccessibilityAuditor {
       }
 
       // Check 1.3.1 Adaptable
-      if (!WCAG_GUIDELINES.perceivable['1.3.1'].check(element)) {
+      if (!WCAG_GUIDELINES.perceivable['1.3.1']!.check(element)) {
         this.addIssue({
           id: '1.3.1-' + Math.random().toString(36).substr(2, 9),
           guideline: '1.1 Perceivable',
@@ -93,7 +93,7 @@ export class AccessibilityAuditor {
       }
 
       // Check 1.3.5 Identify Input Purpose
-      if (!WCAG_GUIDELINES.perceivable['1.3.5'].check(element)) {
+      if (!WCAG_GUIDELINES.perceivable['1.3.5']!.check(element)) {
         this.addIssue({
           id: '1.3.5-' + Math.random().toString(36).substr(2, 9),
           guideline: '1.1 Perceivable',
@@ -109,7 +109,7 @@ export class AccessibilityAuditor {
       }
 
       // Check 1.4.3 Contrast (Minimum)
-      if (!WCAG_GUIDELINES.perceivable['1.4.3'].check(element)) {
+      if (!WCAG_GUIDELINES.perceivable['1.4.3']!.check(element)) {
         this.addIssue({
           id: '1.4.3-' + Math.random().toString(36).substr(2, 9),
           guideline: '1.1 Perceivable',
@@ -151,7 +151,7 @@ export class AccessibilityAuditor {
 
     for (const element of Array.from(elements)) {
       // Check 2.1.1 Keyboard
-      if (!WCAG_GUIDELINES.operable['2.1.1'].check(element)) {
+      if (!WCAG_GUIDELINES.operable['2.1.1']!.check(element)) {
         this.addIssue({
           id: '2.1.1-' + Math.random().toString(36).substr(2, 9),
           guideline: '2.1 Operable',
@@ -167,7 +167,7 @@ export class AccessibilityAuditor {
       }
 
       // Check 2.4.4 Link Purpose
-      if (!WCAG_GUIDELINES.operable['2.4.4'].check(element)) {
+      if (!WCAG_GUIDELINES.operable['2.4.4']!.check(element)) {
         this.addIssue({
           id: '2.4.4-' + Math.random().toString(36).substr(2, 9),
           guideline: '2.1 Operable',
@@ -183,7 +183,7 @@ export class AccessibilityAuditor {
       }
 
       // Check 2.4.6 Headings and Labels
-      if (!WCAG_GUIDELINES.operable['2.4.6'].check(element)) {
+      if (!WCAG_GUIDELINES.operable['2.4.6']!.check(element)) {
         this.addIssue({
           id: '2.4.6-' + Math.random().toString(36).substr(2, 9),
           guideline: '2.1 Operable',
@@ -223,7 +223,7 @@ export class AccessibilityAuditor {
    */
   private async checkUnderstandable(): Promise<void> {
     // Check 3.1.1 Language of Page
-    if (!WCAG_GUIDELINES.understandable['3.1.1'].check(document.documentElement)) {
+    if (!WCAG_GUIDELINES.understandable['3.1.1']!.check(document.documentElement)) {
       this.addIssue({
         id: '3.1.1-' + Math.random().toString(36).substr(2, 9),
         guideline: '3.1 Understandable',
@@ -241,7 +241,7 @@ export class AccessibilityAuditor {
     // Check form elements for 3.3.2 Labels or Instructions
     const formElements = document.querySelectorAll('input, select, textarea')
     for (const element of Array.from(formElements)) {
-      if (!WCAG_GUIDELINES.understandable['3.3.2'].check(element)) {
+      if (!WCAG_GUIDELINES.understandable['3.3.2']!.check(element)) {
         this.addIssue({
           id: '3.3.2-' + Math.random().toString(36).substr(2, 9),
           guideline: '3.1 Understandable',
@@ -284,7 +284,7 @@ export class AccessibilityAuditor {
 
     for (const element of Array.from(elements)) {
       // Check 4.1.2 Name, Role, Value
-      if (!WCAG_GUIDELINES.robust['4.1.2'].check(element)) {
+      if (!WCAG_GUIDELINES.robust['4.1.2']!.check(element)) {
         this.addIssue({
           id: '4.1.2-' + Math.random().toString(36).substr(2, 9),
           guideline: '4.1 Robust',
