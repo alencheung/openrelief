@@ -47,9 +47,9 @@ const severityLevels: Array<{
 
 export function OfflineEmergencyPage() {
   const { queueOfflineAction, getQueuedActions } = useOfflineActions()
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{ type: string; severity: 'low' | 'medium' | 'high' | 'critical'; description: string; location: string; contact: string }>({
     type: '',
-    severity: 'medium' as const,
+    severity: 'medium',
     description: '',
     location: '',
     contact: ''

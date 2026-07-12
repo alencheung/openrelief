@@ -153,11 +153,11 @@ export async function measureAlertDispatch(_config: Record<string, unknown>): Pr
 
   return {
     dispatchLatency: {
-      min: dispatchTimes[0],
-      max: dispatchTimes[dispatchTimes.length - 1],
-      p50: dispatchTimes[Math.floor(dispatchTimes.length * 0.5)],
-      p95: dispatchTimes[Math.floor(dispatchTimes.length * 0.95)],
-      p99: dispatchTimes[Math.floor(dispatchTimes.length * 0.99)],
+      min: dispatchTimes[0]!,
+      max: dispatchTimes[dispatchTimes.length - 1]!,
+      p50: dispatchTimes[Math.floor(dispatchTimes.length * 0.5)]!,
+      p95: dispatchTimes[Math.floor(dispatchTimes.length * 0.95)]!,
+      p99: dispatchTimes[Math.floor(dispatchTimes.length * 0.99)]!,
       mean: dispatchTimes.reduce((sum, time) => sum + time, 0) / dispatchTimes.length
     },
     throughput: 900 + Math.random() * 200, // 900-1100 alerts/sec
@@ -193,11 +193,11 @@ export async function measureEdgePerformance(_config: Record<string, unknown>): 
   return {
     cacheHitRate: 85 + Math.random() * 10, // 85-95%
     timeToFirstByte: {
-      min: ttfbTimes[0],
-      max: ttfbTimes[ttfbTimes.length - 1],
-      p50: ttfbTimes[Math.floor(ttfbTimes.length * 0.5)],
-      p95: ttfbTimes[Math.floor(ttfbTimes.length * 0.95)],
-      p99: ttfbTimes[Math.floor(ttfbTimes.length * 0.99)],
+      min: ttfbTimes[0]!,
+      max: ttfbTimes[ttfbTimes.length - 1]!,
+      p50: ttfbTimes[Math.floor(ttfbTimes.length * 0.5)]!,
+      p95: ttfbTimes[Math.floor(ttfbTimes.length * 0.95)]!,
+      p99: ttfbTimes[Math.floor(ttfbTimes.length * 0.99)]!,
       mean: ttfbTimes.reduce((sum, time) => sum + time, 0) / ttfbTimes.length
     },
     geographicLatency: {

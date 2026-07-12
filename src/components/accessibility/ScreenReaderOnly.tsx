@@ -53,6 +53,10 @@ export interface ScreenReaderOnlyProps {
    * Allow passthrough of host attributes (id, role, data-*, etc.)
    */
   [key: string]: unknown
+
+  // Explicitly type the fields used by cn() to override the index signature
+  focusable?: boolean
+  className?: string
 }
 
 /**
@@ -76,7 +80,7 @@ export const ScreenReaderOnly = forwardRef<HTMLElement, ScreenReaderOnlyProps>(
       atomic = false,
       relevant,
       busy = false,
-      as: Component = 'span' as React.ElementType,
+      as: Component = 'span',
       aria = {},
       ...props
     },

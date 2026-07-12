@@ -36,7 +36,7 @@ export const fetchUserTrustScore = async (
     overall: scoreData.overall_score,
     factors: scoreData.factors,
     history: scoreData.history || [],
-    reputation: scoreData.reputation || {},
+    reputation: (scoreData.reputation || {}) as Record<string, number>,
     lastUpdated: new Date(scoreData.updated_at),
     confidence: scoreData.confidence || 0.5
   }

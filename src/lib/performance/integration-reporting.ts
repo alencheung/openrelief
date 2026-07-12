@@ -142,8 +142,8 @@ export async function generateComplianceReport(): Promise<Record<string, unknown
 export async function generateTrendReport(ctx: IntegrationContext): Promise<Record<string, unknown> | unknown[] | null> {
   const dashboard = asComponent(ctx.components.get('performanceDashboard'))
   if (dashboard && typeof dashboard.getData === 'function') {
-    const data = dashboard.getData()
-    return data.trends
+    const data = dashboard.getData() as { trends?: unknown[] | Record<string, unknown> | null }
+    return data.trends ?? null
   }
   return null
 }
