@@ -286,7 +286,7 @@ export interface EmergencyMapViewProps {
   autoDismissAlerts: boolean
   onAlertClick: (alert: ProximityAlert) => void
   onAlertDismiss: (alertId: string) => void
-  onDismissAllAlerts: () => void
+  onDismissAll: () => void
   onMarkAllAlertsRead: () => void
   showSpatialInfo: boolean
   spatialInfoVisible: boolean
@@ -339,7 +339,7 @@ export function EmergencyMapView(props: EmergencyMapViewProps) {
     autoDismissAlerts,
     onAlertClick,
     onAlertDismiss,
-    onDismissAllAlerts,
+    onDismissAll,
     onMarkAllAlertsRead,
     showSpatialInfo,
     spatialInfoVisible,
