@@ -51,7 +51,20 @@ export interface AccessibilityMapFeaturesProps
   settings: AccessibilitySettings
   onSettingsChange: (settings: Partial<AccessibilitySettings>) => void
   // MapLibre GL JS map instance
-  mapInstance?: any
+  mapInstance?: {
+    getCanvas: () => HTMLCanvasElement
+    setStyle: (style: unknown) => void
+    getStyle: () => {
+      layers: Array<{
+        id: string
+        type: string
+        paint?: Record<string, unknown>
+        layout?: Record<string, unknown>
+      }>
+    }
+    getCenter: () => { lat: number; lng: number }
+    getZoom: () => number
+  }
   showControls?: boolean
   compactMode?: boolean
 }
@@ -257,7 +270,7 @@ const AccessibilityMapFeatures: React.FC<AccessibilityMapFeaturesProps> = ({
       // Apply high contrast style - using map instance directly
       const currentStyle = mapInstance.getStyle()
       if (currentStyle && currentStyle.layers) {
-        const highContrastLayers = currentStyle.layers.map((layer: any) => ({
+        const highContrastLayers = currentStyle.layers.map((layer) => ({
           ...layer,
           paint: {
             ...layer.paint,

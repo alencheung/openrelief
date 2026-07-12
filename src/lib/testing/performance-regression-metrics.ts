@@ -14,9 +14,9 @@ import { ResponseTimeMetrics, DatabaseMetrics } from './performance-regression-t
  * Measure response time for one or more API endpoints.
  * Mirrors the original executeAPITest private method.
  */
-export async function measureResponseTime(config: any): Promise<{ [endpoint: string]: ResponseTimeMetrics }> {
+export async function measureResponseTime(config: Record<string, unknown>): Promise<{ [endpoint: string]: ResponseTimeMetrics }> {
   // Simulate API performance test
-  const endpoints = config.endpoints || ['/api/emergency']
+  const endpoints = (config.endpoints as string[]) || ['/api/emergency']
   const metrics: { [endpoint: string]: ResponseTimeMetrics } = {}
 
   for (const endpoint of endpoints) {
@@ -53,9 +53,9 @@ export async function measureResponseTime(config: any): Promise<{ [endpoint: str
  * Measure database query performance for one or more queries.
  * Mirrors the original executeDatabaseTest private method.
  */
-export async function measureDatabasePerformance(config: any): Promise<{ [query: string]: DatabaseMetrics }> {
+export async function measureDatabasePerformance(config: Record<string, unknown>): Promise<{ [query: string]: DatabaseMetrics }> {
   // Simulate database performance test
-  const queries = config.queries || ['emergency_spatial_query']
+  const queries = (config.queries as string[]) || ['emergency_spatial_query']
   const metrics: { [query: string]: DatabaseMetrics } = {}
 
   for (const query of queries) {
@@ -99,7 +99,7 @@ export async function measureDatabasePerformance(config: any): Promise<{ [query:
  * Measure frontend performance metrics (Core Web Vitals, bundle size).
  * Mirrors the original executeFrontendTest private method.
  */
-export async function measureFrontendMetrics(_config: any): Promise<any> {
+export async function measureFrontendMetrics(_config: Record<string, unknown>): Promise<FrontendMetrics> {
   // Simulate frontend performance test using Lighthouse
   return new Promise((resolve) => {
     // In a real implementation, this would use Lighthouse API
@@ -135,7 +135,7 @@ export async function measureFrontendMetrics(_config: any): Promise<any> {
  * Measure alert dispatch performance metrics.
  * Mirrors the original executeAlertTest private method.
  */
-export async function measureAlertDispatch(_config: any): Promise<any> {
+export async function measureAlertDispatch(_config: Record<string, unknown>): Promise<AlertDispatchMetrics> {
   // Simulate alert dispatch performance test
   const dispatchTimes = []
 
@@ -174,7 +174,7 @@ export async function measureAlertDispatch(_config: any): Promise<any> {
  * Measure edge performance metrics (cache hit rate, TTFB, geo latency).
  * Mirrors the original executeEdgeTest private method.
  */
-export async function measureEdgePerformance(_config: any): Promise<any> {
+export async function measureEdgePerformance(_config: Record<string, unknown>): Promise<EdgePerformanceMetrics> {
   // Simulate edge performance test
   const ttfbTimes = []
 

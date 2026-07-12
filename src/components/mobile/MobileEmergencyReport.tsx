@@ -47,7 +47,7 @@ export interface EmergencyReportData {
   location: { lat: number; lng: number }
   images: File[]
   audio?: File
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 const _emergencyTypes: EmergencyType[] = [

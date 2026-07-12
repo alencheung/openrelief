@@ -12,10 +12,21 @@ import { Request, Response, ExecutionContext, ScheduledEvent } from '@cloudflare
 // ambient globals KVNamespace/D1Database, which require tsconfig `types`
 // configuration) so this file type-checks in any project configuration.
 interface EdgeKV {
-  get(key: string, options?: any): Promise<string | null>
-  put(key: string, value: string, options?: any): Promise<void>
+  get(key: string, options?: Record<string, unknown>): Promise<string | null>
+  put(key: string, value: string, options?: Record<string, unknown>): Promise<void>
   delete(key: string): Promise<void>
   list(options?: { prefix?: string }): Promise<{ keys: Array<{ name: string }> }>
+}
+
+// Minimal structural shape for a Cloudflare D1 binding. Kept loose because the
+// worker does not currently issue D1 queries directly; if that changes, expand
+// this interface rather than reaching for `unknown`.
+interface EdgeD1 {
+  prepare: (query: string) => {
+    bind: (...values: unknown[]) => unknown
+    all: () => Promise<{ results: unknown[] }>
+    run: () => Promise<{ meta: unknown }>
+  }
 }
 
 // Worker bindings / env vars.
@@ -31,7 +42,7 @@ interface Env {
   TARGETS_KV: EdgeKV
   ANALYTICS_KV: EdgeKV
   DISPATCH_METRICS: EdgeKV
-  EMERGENCY_DB?: any
+  EMERGENCY_DB?: EdgeD1
   ENVIRONMENT?: string
   LOG_LEVEL?: string
 }
@@ -51,7 +62,7 @@ interface EmergencyEvent {
   trustWeight: number
   timestamp: number
   requiresAction: boolean
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 interface UserLocation {
@@ -80,7 +91,7 @@ interface AlertTarget {
     maxDistance: number
   }
   lastActive: number
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 interface DispatchResult {
@@ -142,7 +153,16 @@ function getEdgeRegion(latitude: number, longitude: number): string {
 }
 
 // Check if user is in quiet hours
-function isInQuietHours(userPreferences: any, timestamp: number): boolean {
+function isInQuietHours(
+  userPreferences: {
+    quietHours: {
+      enabled: boolean
+      start: string
+      end: string
+    }
+  },
+  timestamp: number
+): boolean {
   if (!userPreferences.quietHours.enabled) {
     return false
   }
@@ -243,7 +263,7 @@ function filterTargets(
 async function sendPushNotification(
   target: AlertTarget,
   emergency: EmergencyEvent,
-  env: any
+  env: Env
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const payload = {
@@ -479,7 +499,7 @@ export default {
   },
 
   // Scheduled handler for cleanup and maintenance
-  async scheduled(event: ScheduledEvent, env: any, ctx: ExecutionContext): Promise<void> {
+  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
     try {
       // Clean up old analytics data
       const cutoffTime = Date.now() - 30 * 24 * 60 * 60 * 1000 // 30 days ago
@@ -519,7 +539,7 @@ export default {
 }
 
 // Health check endpoint
-export async function healthCheck(request: Request, env: any): Promise<Response> {
+export async function healthCheck(request: Request, env: Env): Promise<Response> {
   const health = {
     status: 'healthy',
     timestamp: Date.now(),
@@ -534,7 +554,7 @@ export async function healthCheck(request: Request, env: any): Promise<Response>
 }
 
 // Metrics endpoint
-export async function getMetrics(request: Request, env: any): Promise<Response> {
+export async function getMetrics(request: Request, env: Env): Promise<Response> {
   try {
     const url = new URL(request.url)
     const timeRange = url.searchParams.get('range') || '1h' // Default to 1 hour

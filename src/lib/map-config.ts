@@ -19,9 +19,9 @@ export interface EmergencyLayerConfig {
   id: string
   type: 'circle' | 'symbol' | 'fill' | 'line' | 'heatmap'
   source: string
-  filter?: any[]
-  paint?: any
-  layout?: any
+  filter?: unknown[]
+  paint?: Record<string, unknown>
+  layout?: Record<string, unknown>
   minzoom?: number
   maxzoom?: number
 }

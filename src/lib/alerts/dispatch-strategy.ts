@@ -406,7 +406,7 @@ export class AlertDeliveryStrategy {
    * Send via the WebSocket connection pool.
    * Placeholder implementation.
    */
-  private async sendViaWebSocketPool(userId: string, data: any): Promise<boolean> {
+  private async sendViaWebSocketPool(userId: string, data: Record<string, unknown>): Promise<boolean> {
     // Implementation would use WebSocket connection pool
     // For now, return true as placeholder
     return true

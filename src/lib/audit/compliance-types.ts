@@ -36,7 +36,7 @@ export interface ComplianceRule {
   enabled: boolean;
   severity: ViolationSeverity;
   checkInterval: number; // minutes
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   lastChecked?: Date;
   violationThreshold?: number;
   gracePeriod?: number; // minutes
@@ -59,7 +59,7 @@ export interface ComplianceViolation {
   resolvedBy?: string;
   resolvedAt?: Date;
   resolution?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 // Compliance status overview

@@ -99,7 +99,7 @@ interface ConsensusAction {
   type: 'confirm' | 'dispute' | 'join' | 'leave' | 'timeout'
   participantId: string
   timestamp: string
-  metadata?: any
+  metadata?: Record<string, unknown>
 }
 
 export function ConsensusEngineUI({ className, emergencyId }: ConsensusEngineUIProps) {

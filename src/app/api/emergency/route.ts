@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { withAPISecurity, API_SECURITY_CONFIGS } from '@/lib/security/api-security'
 import { inputValidator, VALIDATION_SCHEMAS } from '@/lib/security/input-validation'
 import { sybilPreventionEngine } from '@/lib/security/sybil-prevention'
@@ -29,19 +29,23 @@ import {
 // Build-safe Supabase client: returns a real client when env vars are present,
 // otherwise a minimal stub so module-load during the Next.js build page-data
 // collection doesn't throw "supabaseUrl is required".
-function safeCreateClient(url?: string, key?: string, opts?: any): import('@supabase/supabase-js').SupabaseClient {
+function safeCreateClient(
+  url?: string,
+  key?: string,
+  opts?: Record<string, unknown>
+): SupabaseClient {
   // In test mode, use the mock client from @/lib/supabase (which tests
   // override via jest.mock). This lets test mocks control query results.
   if (process.env.NODE_ENV === 'test') {
     try {
       const { supabase } = require('@/lib/supabase')
-      return supabase as any
+      return supabase as SupabaseClient
     } catch {
       // fall through to stub
     }
   }
   if (url && key) {
-    return createClient(url, key, opts)
+    return createClient(url, key, opts as ConstructorParameters<typeof createClient>[2])
   }
   const noop = () => chain
     const chain = {
@@ -49,18 +53,18 @@ function safeCreateClient(url?: string, key?: string, opts?: any): import('@supa
       eq: noop, neq: noop, in: noop, gte: noop, lte: noop, gt: noop, lt: noop,
       like: noop, ilike: noop, contains: noop, not: noop, is: noop, or: noop,
       filter: noop, order: noop, limit: noop, range: noop, single: noop,
-      maybeSingle: noop, then: (resolve: any) => resolve({ data: [], error: null })
+      maybeSingle: noop, then: (resolve: (value: { data: unknown[]; error: null }) => void) => resolve({ data: [], error: null })
     }
-  return { from: () => chain, auth: { getUser: async () => ({ data: { user: null }, error: null }) } } as any
+  return { from: () => chain, auth: { getUser: async () => ({ data: { user: null }, error: null }) } } as unknown as SupabaseClient
 }
 
 
 // Lazy Supabase client — re-evaluated on each access so test mocks that
 // reset between tests always get the current mock instance.
-let _supabase: any = null
-function getSupabase() {
+let _supabase: SupabaseClient | null = null
+function getSupabase(): SupabaseClient {
   if (process.env.NODE_ENV === 'test') {
-    try { return require('@/lib/supabase').supabase } catch {}
+    try { return require('@/lib/supabase').supabase as SupabaseClient } catch {}
   }
   if (!_supabase) {
     _supabase = safeCreateClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -588,8 +592,8 @@ export const PUT = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
         'api_security',
         {
           userId: context.userId ?? 'unknown',
-          eventId
-        } as any
+          metadata: { eventId }
+        }
       )
 
       return NextResponse.json(
@@ -691,8 +695,8 @@ export const DELETE = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
         'api_security',
         {
           userId: context.userId ?? 'unknown',
-          eventId
-        } as any
+          metadata: { eventId }
+        }
       )
 
       return NextResponse.json({ error: 'Failed to archive emergency event' }, { status: 500 })
@@ -714,8 +718,8 @@ export const DELETE = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
         'api_security',
         {
           userId: context.userId ?? 'unknown',
-          eventId
-        } as any
+          metadata: { eventId }
+        }
       )
 
       return NextResponse.json({ error: 'Failed to delete emergency event' }, { status: 500 })

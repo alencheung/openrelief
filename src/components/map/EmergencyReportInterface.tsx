@@ -35,7 +35,11 @@ interface EmergencyReportInterfaceProps {
   ) => void | Promise<void>
   initialLocation?: { lat: number; lng: number }
   // MapLibre GL map instance
-  mapInstance?: any
+  mapInstance?: {
+    getCanvas: () => { style: { cursor: string } }
+    on: (event: string, handler: (e: { lngLat: { lat: number; lng: number } }) => void) => void
+    off: (event: string, handler: (e: { lngLat: { lat: number; lng: number } }) => void) => void
+  }
 }
 
 interface EmergencyType {
@@ -114,8 +118,8 @@ export default function EmergencyReportInterface({
   const [location, setLocation] = useState(initialLocation || null)
   const [locationAddress, setLocationAddress] = useState<string | null>(null)
   const [radius, setRadius] = useState(500)
-  const [audioRecording, setAudioRecording] = useState<any>(null)
-  const [images, setImages] = useState<any[]>([])
+  const [audioRecording, setAudioRecording] = useState<{ url: string; blob: Blob } | null>(null)
+  const [images, setImages] = useState<{ id: string; url: string; file: File }[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [mapPreview, setMapPreview] = useState(false)
   const [_audioPermission, setAudioPermission] = useState<'granted' | 'denied' | 'prompt' | null>(
@@ -320,7 +324,7 @@ export default function EmergencyReportInterface({
     mapInstance.getCanvas().style.cursor = 'crosshair'
     announcePolite('Click on the map to select emergency location')
 
-    const handleMapClick = (e: any) => {
+    const handleMapClick = (e: { lngLat: { lat: number; lng: number } }) => {
       const coords = e.lngLat
       setLocation({
         lat: coords.lat,
@@ -338,16 +342,16 @@ export default function EmergencyReportInterface({
   }
 
   // Handle file uploads
-  const handleImageUpload = (files: File[], previews: any[]) => {
+  const handleImageUpload = (files: File[], previews: { id: string; url: string; file: File }[]) => {
     // Limit to 5 images
     setImages(prev => [...prev, ...previews].slice(0, 5))
   }
 
-  const handleImageRemove = (imageId: string, _image: any) => {
+  const handleImageRemove = (imageId: string, _image: { id: string; url: string; file: File }) => {
     setImages(prev => prev.filter(img => img.id !== imageId))
   }
 
-  const handleAudioRecording = (recording: any) => {
+  const handleAudioRecording = (recording: { url: string; blob: Blob }) => {
     setAudioRecording(recording)
   }
 

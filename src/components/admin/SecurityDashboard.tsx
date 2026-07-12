@@ -14,16 +14,16 @@ import { Shield, AlertTriangle, Users, Activity, Lock, Eye, Database } from 'luc
 import { apiGetJson, apiSendJson } from '@/lib/api/api-client'
 
 // Tabs/Alert primitives are not yet provided under @/components/ui. Typed as
-// any locally so this dashboard compiles and renders; swap for the real
-// components once they are added to the UI layer.
-type AnyComp = React.ComponentType<React.HTMLAttributes<HTMLElement> & { [key: string]: any }>
-const Tabs: AnyComp = ((props: any) => <div {...props} />) as any
-const TabsContent: AnyComp = ((props: any) => <div {...props} />) as any
-const TabsList: AnyComp = ((props: any) => <div {...props} />) as any
-const TabsTrigger: AnyComp = ((props: any) => <button {...props} />) as any
-const Alert: AnyComp = ((props: any) => <div {...props} />) as any
-const AlertDescription: AnyComp = ((props: any) => <div {...props} />) as any
-const AlertTitle: AnyComp = ((props: any) => <h5 {...props} />) as any
+// minimal local stand-ins so this dashboard compiles and renders; swap for
+// the real components once they are added to the UI layer.
+type AnyComp = React.ComponentType<React.HTMLAttributes<HTMLElement> & Record<string, unknown>>
+const Tabs: AnyComp = (props) => <div {...props} />
+const TabsContent: AnyComp = (props) => <div {...props} />
+const TabsList: AnyComp = (props) => <div {...props} />
+const TabsTrigger: AnyComp = (props) => <button {...props} />
+const Alert: AnyComp = (props) => <div {...props} />
+const AlertDescription: AnyComp = (props) => <div {...props} />
+const AlertTitle: AnyComp = (props) => <h5 {...props} />
 
 // Security dashboard interfaces
 interface SecurityMetrics {
@@ -50,7 +50,7 @@ interface SecurityAlert {
   status: 'active' | 'investigating' | 'resolved' | 'false_positive'
   userId?: string
   ipAddress?: string
-  metadata?: any
+  metadata?: Record<string, unknown>
 }
 
 interface TrustMetrics {
@@ -99,7 +99,7 @@ interface SuspiciousActivity {
   ipAddress?: string
   timestamp: Date
   status: 'active' | 'investigating' | 'mitigated'
-  details: any
+  details: Record<string, unknown>
 }
 
 export default function SecurityDashboard() {

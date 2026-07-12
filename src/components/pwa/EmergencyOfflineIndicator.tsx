@@ -220,7 +220,21 @@ export function EmergencyOfflineIndicator() {
     const monitorBattery = async () => {
       if ('getBattery' in navigator) {
         try {
-          const battery = await (navigator as any).getBattery()
+            const battery = await (
+              navigator as unknown as {
+                getBattery?: () => Promise<{
+                  level: number
+                  charging: boolean
+                  addEventListener: (
+                    event: string,
+                    handler: () => void
+                  ) => void
+                }>
+              }
+            ).getBattery?.()
+            if (!battery) {
+              return
+            }
           setBatteryLevel(battery.level * 100)
           setIsCharging(battery.charging)
 

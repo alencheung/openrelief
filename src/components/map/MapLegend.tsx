@@ -50,7 +50,7 @@ export interface MapLegendProps
     color: string
   }>
   trustLevels?: Array<{
-    level: string
+    level: 'excellent' | 'good' | 'moderate' | 'low' | 'critical'
     label: string
     color: string
   }>
@@ -295,7 +295,7 @@ const MapLegend: React.FC<MapLegendProps> = ({
             <div className="space-y-2">
               {emergencyTypes.map(type => (
                 <div key={type.type} className="flex items-center gap-2">
-                  <EmergencyIndicator type={type.type as any} size="sm" variant="subtle" label="" />
+                  <EmergencyIndicator type={type.type} size="sm" variant="subtle" label="" />
                   <span className="text-xs text-foreground flex-1">{type.name}</span>
                   {type.count !== undefined && (
                     <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
@@ -344,7 +344,7 @@ const MapLegend: React.FC<MapLegendProps> = ({
                 {trustLevels.map(trust => (
                   <div key={trust.level} className="flex items-center gap-2">
                     <TrustBadge
-                      level={trust.level as any}
+                      level={trust.level}
                       score={getTrustScore(trust.level)}
                       size="sm"
                       showPercentage={false}

@@ -10,8 +10,8 @@ export interface PushNotification {
   image?: string
   badge?: string
   tag?: string
-  data?: any
-  actions?: any[]
+  data?: Record<string, unknown>
+  actions?: Array<{ action: string; title: string; icon?: string }>
   timestamp: number
   read: boolean
 }
@@ -114,7 +114,7 @@ export function usePushNotifications() {
       const registration = await navigator.serviceWorker.ready
       const pushSubscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!) as any
+        applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!) as BufferSource
       })
 
       setSubscription(pushSubscription)
@@ -145,7 +145,7 @@ export function usePushNotifications() {
     }
   }, [subscription])
 
-  const sendTestNotification = useCallback(async (title: string, body: string, options?: any) => {
+  const sendTestNotification = useCallback(async (title: string, body: string, options?: Record<string, unknown>) => {
     if (!isSupported || permission !== 'granted') {
       throw new Error('Push notifications are not permitted')
     }

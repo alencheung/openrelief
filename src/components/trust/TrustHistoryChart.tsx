@@ -113,7 +113,15 @@ export function TrustHistoryChart({
     }
   }
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({
+    active,
+    payload,
+    label
+  }: {
+    active?: boolean
+    payload?: Array<{ payload: { score: number; change: number; actionType?: string } }>
+    label?: string | number
+  }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload
       return (
@@ -185,9 +193,13 @@ export function TrustHistoryChart({
                 dataKey="score"
                 stroke="#3b82f6"
                 strokeWidth={2}
-                dot={(props: any) => {
+                dot={(props: {
+                  cx?: number
+                  cy?: number
+                  payload?: { actionType?: string }
+                }) => {
                   const { cx, cy, payload } = props
-                  if (payload.actionType) {
+                  if (payload?.actionType && cx !== undefined && cy !== undefined) {
                     return (
                       <circle
                         cx={cx}

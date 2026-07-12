@@ -9,12 +9,19 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { NextRequest, NextResponse } from 'next/server'
 import { timingSafeEqual } from 'crypto'
+import type { performanceIntegration as PerformanceIntegrationInstance } from '@/lib/performance/performance-integration'
+import type { performanceDashboard as PerformanceDashboardInstance } from '@/lib/performance/performance-dashboard'
+import type { loadTestingFramework as LoadTestingFrameworkInstance } from '@/lib/testing/load-testing-framework'
+import type { performanceRegressionTesting as PerformanceRegressionTestingInstance } from '@/lib/testing/performance-regression-testing'
 
 // Lazy accessors: these performance/testing modules reference browser-only
 // globals (window/document) and Supabase env vars at module-load time, which
 // throws during the Next.js build's page-data collection. Deferring the
 // require() to first request keeps the build green.
-let _performanceIntegration: any, _performanceDashboard: any, _loadTestingFramework: any, _performanceRegressionTesting: any
+let _performanceIntegration: typeof PerformanceIntegrationInstance | undefined
+let _performanceDashboard: typeof PerformanceDashboardInstance | undefined
+let _loadTestingFramework: typeof LoadTestingFrameworkInstance | undefined
+let _performanceRegressionTesting: typeof PerformanceRegressionTestingInstance | undefined
 function getPerformanceIntegration() {
   if (!_performanceIntegration) {
     _performanceIntegration = require('@/lib/performance/performance-integration').performanceIntegration
@@ -41,7 +48,7 @@ function getPerformanceRegressionTesting() {
 }
 
 // API response types
-export interface PerformanceAPIResponse<T = any> {
+export interface PerformanceAPIResponse<T = unknown> {
   success: boolean
   data?: T
   error?: string
@@ -80,7 +87,7 @@ export interface PerformanceTestRequest {
 // Optimization request
 export interface OptimizationRequest {
   strategy: string
-  parameters?: Record<string, any>
+  parameters?: Record<string, unknown>
   force?: boolean
 }
 
@@ -93,7 +100,7 @@ export interface AlertManagementRequest {
     type: string
     title: string
     description: string
-    metrics?: Record<string, any>
+    metrics?: Record<string, unknown>
   }
   acknowledgedBy?: string
   resolvedBy?: string
@@ -115,7 +122,7 @@ export interface ReportRequest {
 // Configuration update request
 export interface ConfigurationUpdateRequest {
   component: 'monitoring' | 'optimization' | 'testing' | 'alerting' | 'reporting'
-  config: Record<string, any>
+  config: Record<string, unknown>
 }
 
 // Generate request ID
@@ -206,7 +213,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<Performanc
     const components = searchParams.get('components')?.split(',')
     const format = (searchParams.get('format') as 'json' | 'csv') || 'json'
 
-    let data: any
+    let data: unknown
 
     switch (endpoint) {
       case 'status':
@@ -238,8 +245,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<Performanc
       case 'tests':
         data = {
           active: getLoadTestingFramework().getActiveTests(),
-          history: (getLoadTestingFramework() as any).getTestHistory(50),
-          regression: (getPerformanceRegressionTesting() as any).getTestHistory(20)
+          history: typeof (getLoadTestingFramework() as { getTestHistory?: (limit: number) => unknown[] }).getTestHistory === 'function'
+            ? (getLoadTestingFramework() as { getTestHistory: (limit: number) => unknown[] }).getTestHistory(50)
+            : [],
+          regression: getPerformanceRegressionTesting().getTestHistory(20)
         }
         break
 
@@ -324,7 +333,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<Performan
     const { searchParams } = new URL(request.url)
     const action = searchParams.get('action') || 'unknown'
 
-    let data: any
+    let data: unknown
 
     switch (action) {
       case 'emergency':
@@ -427,11 +436,11 @@ export async function PUT(request: NextRequest): Promise<NextResponse<Performanc
     const { searchParams } = new URL(request.url)
     const resource = searchParams.get('resource') || 'unknown'
 
-    let data: any
+    let data: unknown
 
     switch (resource) {
       case 'baseline':
-        const baselineData = await parseRequestBody<any>(request)
+        const baselineData = await parseRequestBody<Record<string, unknown>>(request)
         if (!baselineData) {
           return NextResponse.json(
             createAPIResponse(false, null, 'Invalid baseline data', requestId),
@@ -442,7 +451,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse<Performanc
         break
 
       case 'thresholds':
-        const thresholdsData = await parseRequestBody<any>(request)
+        const thresholdsData = await parseRequestBody<Record<string, unknown>>(request)
         if (!thresholdsData) {
           return NextResponse.json(
             createAPIResponse(false, null, 'Invalid thresholds data', requestId),
@@ -487,7 +496,7 @@ export async function DELETE(request: NextRequest): Promise<NextResponse<Perform
     const resource = searchParams.get('resource') || 'unknown'
     const resourceId = searchParams.get('id')
 
-    let data: any
+    let data: unknown
 
     switch (resource) {
       case 'cache':
@@ -533,7 +542,7 @@ export async function DELETE(request: NextRequest): Promise<NextResponse<Perform
 
 // Helper functions for handling different actions
 
-async function getPerformanceMetrics(request: PerformanceMetricsRequest): Promise<any> {
+async function getPerformanceMetrics(request: PerformanceMetricsRequest): Promise<Record<string, unknown>> {
   const dashboardData = getPerformanceDashboard().getData()
 
   // Filter by time range if specified
@@ -549,7 +558,7 @@ async function getPerformanceMetrics(request: PerformanceMetricsRequest): Promis
 
   // Filter by specific metrics if specified
   if (request.metrics && request.metrics.length > 0) {
-    const filteredData: any = {}
+    const filteredData: Record<string, unknown> = {}
 
     request.metrics.forEach(metric => {
       if (dashboardData[metric as keyof typeof dashboardData]) {
@@ -569,7 +578,7 @@ async function getPerformanceMetrics(request: PerformanceMetricsRequest): Promis
   }
 }
 
-async function handleEmergencyModeAction(request: EmergencyModeRequest): Promise<any> {
+async function handleEmergencyModeAction(request: EmergencyModeRequest): Promise<Record<string, unknown>> {
   switch (request.action) {
     case 'activate':
       await getPerformanceIntegration().activateEmergencyMode(request.reason)
@@ -599,7 +608,7 @@ async function handleEmergencyModeAction(request: EmergencyModeRequest): Promise
   }
 }
 
-async function handlePerformanceTestAction(request: PerformanceTestRequest): Promise<any> {
+async function handlePerformanceTestAction(request: PerformanceTestRequest): Promise<Record<string, unknown>> {
   try {
     let testId: string
 
@@ -624,7 +633,7 @@ async function handlePerformanceTestAction(request: PerformanceTestRequest): Pro
   }
 }
 
-async function handleOptimizationAction(request: OptimizationRequest): Promise<any> {
+async function handleOptimizationAction(request: OptimizationRequest): Promise<Record<string, unknown>> {
   try {
     await getPerformanceIntegration().applyOptimization(request.strategy)
 
@@ -639,7 +648,7 @@ async function handleOptimizationAction(request: OptimizationRequest): Promise<a
   }
 }
 
-async function handleAlertManagementAction(request: AlertManagementRequest): Promise<any> {
+async function handleAlertManagementAction(request: AlertManagementRequest): Promise<Record<string, unknown>> {
   switch (request.action) {
     case 'list':
       return {
@@ -693,7 +702,7 @@ async function handleAlertManagementAction(request: AlertManagementRequest): Pro
   }
 }
 
-async function handleReportGenerationAction(request: ReportRequest): Promise<any> {
+async function handleReportGenerationAction(request: ReportRequest): Promise<Record<string, unknown>> {
   try {
     const report = await getPerformanceIntegration().generateReport(request.type)
 
@@ -721,7 +730,7 @@ async function handleReportGenerationAction(request: ReportRequest): Promise<any
   }
 }
 
-async function handleConfigurationUpdateAction(request: ConfigurationUpdateRequest): Promise<any> {
+async function handleConfigurationUpdateAction(request: ConfigurationUpdateRequest): Promise<Record<string, unknown>> {
   try {
     getPerformanceIntegration().updateConfig({
       [request.component]: request.config
@@ -738,7 +747,7 @@ async function handleConfigurationUpdateAction(request: ConfigurationUpdateReque
   }
 }
 
-async function handleBaselineUpdate(baselineData: any): Promise<any> {
+async function handleBaselineUpdate(baselineData: Record<string, unknown>): Promise<Record<string, unknown>> {
   try {
     const version = baselineData.version || `v${Date.now()}`
     await getPerformanceRegressionTesting().updateBaseline(version, baselineData)
@@ -753,7 +762,7 @@ async function handleBaselineUpdate(baselineData: any): Promise<any> {
   }
 }
 
-async function handleThresholdsUpdate(thresholdsData: any): Promise<any> {
+async function handleThresholdsUpdate(thresholdsData: Record<string, unknown>): Promise<Record<string, unknown>> {
   try {
     // Update thresholds in configuration
     getPerformanceIntegration().updateConfig({
@@ -772,7 +781,7 @@ async function handleThresholdsUpdate(thresholdsData: any): Promise<any> {
   }
 }
 
-async function handleCacheClear(cacheId?: string): Promise<any> {
+async function handleCacheClear(cacheId?: string): Promise<Record<string, unknown>> {
   try {
     if (cacheId === 'all') {
       // Clear all caches
@@ -797,7 +806,7 @@ async function handleCacheClear(cacheId?: string): Promise<any> {
   }
 }
 
-async function handleAlertDelete(alertId: string): Promise<any> {
+async function handleAlertDelete(alertId: string): Promise<Record<string, unknown>> {
   try {
     await getPerformanceDashboard().resolveAlert(alertId, 'system', 'Deleted via API')
 
@@ -811,7 +820,7 @@ async function handleAlertDelete(alertId: string): Promise<any> {
   }
 }
 
-async function handleTestStop(testId: string): Promise<any> {
+async function handleTestStop(testId: string): Promise<Record<string, unknown>> {
   try {
     const results = await getLoadTestingFramework().stopLoadTest(testId)
 
@@ -826,7 +835,7 @@ async function handleTestStop(testId: string): Promise<any> {
   }
 }
 
-async function getSystemHealth(): Promise<any> {
+async function getSystemHealth(): Promise<Record<string, unknown>> {
   const status = getPerformanceIntegration().getStatus()
 
   return {
@@ -838,15 +847,16 @@ async function getSystemHealth(): Promise<any> {
   }
 }
 
-function convertToCSV(data: any): string {
+function convertToCSV(data: unknown): string {
   // Simple CSV conversion - in a real implementation, this would be more sophisticated
-  const headers = Object.keys(data.metrics || {})
+  const metrics = (data as { metrics?: Record<string, unknown> } | null)?.metrics || {}
+  const headers = Object.keys(metrics)
   const rows = [headers.join(',')]
 
   // Add data row
   const values = headers.map(header => {
-    const value = data.metrics[header]
-    if (typeof value === 'object') {
+    const value = metrics[header]
+    if (typeof value === 'object' && value !== null) {
       return JSON.stringify(value)
     }
     return value

@@ -34,7 +34,11 @@ const emergencyTypes = [
   { value: 'other', label: 'Other Emergency', icon: '⚠️' }
 ]
 
-const severityLevels = [
+const severityLevels: Array<{
+  value: 'low' | 'medium' | 'high' | 'critical'
+  label: string
+  color: string
+}> = [
   { value: 'low', label: 'Low', color: 'bg-yellow-100 text-yellow-800' },
   { value: 'medium', label: 'Medium', color: 'bg-orange-100 text-orange-800' },
   { value: 'high', label: 'High', color: 'bg-red-100 text-red-800' },
@@ -111,8 +115,10 @@ export function OfflineEmergencyPage() {
     try {
       const actions = await getQueuedActions()
       const reports = actions
-        .filter((action: any) => action.table === 'emergency_events' && action.type === 'create')
-        .map((action: any) => action.data as EmergencyReport)
+        .filter(
+          action => action.table === 'emergency_events' && action.type === 'create'
+        )
+        .map(action => action.data as unknown as EmergencyReport)
       setQueuedReports(reports)
     } catch (error) {
       console.error('Failed to load queued reports:', error)
@@ -190,7 +196,7 @@ export function OfflineEmergencyPage() {
                   <button
                     key={level.value}
                     type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, severity: level.value as any }))}
+                    onClick={() => setFormData(prev => ({ ...prev, severity: level.value }))}
                     className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
                       formData.severity === level.value
                         ? level.color

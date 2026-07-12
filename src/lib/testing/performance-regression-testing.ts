@@ -220,7 +220,7 @@ class PerformanceRegressionTesting {
     results.summary.totalTests++
 
     try {
-      let testMetrics: any
+      let testMetrics: unknown
 
       switch (test.type) {
         case 'api':
@@ -272,7 +272,7 @@ class PerformanceRegressionTesting {
     }
   }
 
-  private storeTestMetrics(testId: string, testType: string, metrics: any): void {
+  private storeTestMetrics(testId: string, testType: string, metrics: unknown): void {
     const results = this.activeTests.get(testId)
     if (!results) {
       return

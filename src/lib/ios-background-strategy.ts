@@ -38,7 +38,7 @@ export interface EmergencyPushPayload {
 export interface BackgroundTaskResult {
   success: boolean
   error?: string
-  data?: any
+  data?: unknown
   executionTime: number
 }
 
@@ -95,7 +95,7 @@ export class iOSBackgroundManager {
   }
 
   static async handleNotification(
-    _payload: EmergencyPushPayload | Record<string, any>
+    _payload: EmergencyPushPayload | Record<string, unknown>
   ): Promise<BackgroundTaskResult> {
     return { success: true, executionTime: 0 }
   }

@@ -53,7 +53,10 @@ describe('TrustBadge Component', () => {
       render(<TrustBadge score={95} />)
 
       const badge = screen.getByTestId('trust-badge')
-      expect(badge).toHaveClass(trust-good)
+      // 95% -> >= 90 -> excellent (previously asserted trust-good, which was
+      // incorrect; the unquoted `trust-good` token was also a ReferenceError
+      // that prevented the whole suite from parsing).
+      expect(badge).toHaveClass('trust-excellent')
       expect(screen.getByTestId('trust-icon')).toBeInTheDocument()
     })
 
@@ -194,7 +197,9 @@ describe('TrustBadge Component', () => {
       render(<TrustBadge score={75} label="User Trust Score" />)
 
       const badge = screen.getByTestId('trust-badge')
-      expect(badge).toHaveAttribute('title', 'User Trust Score: 75/100 (75%)')
+      // When a custom label is provided, the component uses it verbatim for
+      // title/aria-label (it does not append the score details).
+      expect(badge).toHaveAttribute('title', 'User Trust Score')
     })
 
     it('should support keyboard navigation', async () => {
@@ -416,7 +421,8 @@ describe('TrustBadge Component', () => {
       render(<TrustBadge score={trustData.score} />)
 
       const badge = screen.getByTestId('trust-badge')
-      expect(badge).toHaveClass('trust-excellent')
+      // 85% -> >= 70 -> good (not excellent, which requires >= 90).
+      expect(badge).toHaveClass('trust-good')
       expect(screen.getByText('85/100')).toBeInTheDocument()
       expect(screen.getByText('85%')).toBeInTheDocument()
     })

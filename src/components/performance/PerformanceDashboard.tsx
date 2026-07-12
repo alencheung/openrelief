@@ -35,6 +35,7 @@ import {
   usePerformanceAlerts,
   usePerformanceActions
 } from '@/lib/performance-monitor'
+import type { PerformanceReport } from '@/lib/performance-monitor-types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -58,7 +59,7 @@ export function PerformanceDashboard({
 
   const [isMonitoring, setIsMonitoring] = useState(false)
   const [timeRange, setTimeRange] = useState<'1h' | '24h' | '7d' | '30d'>('1h')
-  const [report, setReport] = useState<any>(null)
+  const [report, setReport] = useState<PerformanceReport | null>(null)
   const [isGeneratingReport, setIsGeneratingReport] = useState(false)
 
   // Auto-refresh effect

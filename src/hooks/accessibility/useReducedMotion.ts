@@ -277,7 +277,7 @@ export function useReducedMotion(
 /**
  * Hook for reduced motion animations
  */
-export function useReducedMotionAnimation<T extends Record<string, any>>(
+export function useReducedMotionAnimation<T extends Record<string, unknown>>(
   animationName: string,
   keyframes: T,
   options: {
@@ -412,7 +412,7 @@ export function useReducedMotionAnimationFrame() {
       if (isReduced) {
         // For reduced motion, use setTimeout with longer delay
         callbackRef.current = callback
-        animationFrameRef.current = window.setTimeout(callback, 16) as any
+        animationFrameRef.current = window.setTimeout(callback, 16) as unknown as number
       } else {
         // Use standard requestAnimationFrame
         callbackRef.current = callback

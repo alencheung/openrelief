@@ -403,7 +403,7 @@ export function mapRuleData(ruleData: Record<string, unknown>): ComplianceRule {
     enabled: ruleData.enabled as boolean,
     severity: ruleData.severity as ViolationSeverity,
     checkInterval: ruleData.check_interval as number,
-    parameters: ruleData.parameters as Record<string, any>,
+    parameters: ruleData.parameters as Record<string, unknown>,
     violationThreshold: ruleData.violation_threshold as number | undefined,
     gracePeriod: ruleData.grace_period as number | undefined,
     lastChecked: ruleData.last_checked ? new Date(ruleData.last_checked as string) : undefined

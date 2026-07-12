@@ -92,7 +92,7 @@ export class Widget {
     this.config = config
   }
 
-  getData(data: DashboardData): any {
+  getData(data: DashboardData): unknown {
     switch (this.config.type) {
       case WidgetType.SYSTEM_STATUS:
         return this.getSystemStatusData(data)
@@ -107,7 +107,7 @@ export class Widget {
     }
   }
 
-  private getSystemStatusData(data: DashboardData): any {
+  private getSystemStatusData(data: DashboardData): Record<string, unknown> {
     return {
       health: data.system.health,
       uptime: data.system.uptime,
@@ -117,7 +117,7 @@ export class Widget {
     }
   }
 
-  private getLineChartData(data: DashboardData): any {
+  private getLineChartData(data: DashboardData): Record<string, unknown> {
     const metric = this.config.config.metric
     const timeRange = this.config.config.timeRange
 
@@ -170,7 +170,7 @@ export class Widget {
     }
   }
 
-  private getAlertListData(data: DashboardData): any {
+  private getAlertListData(data: DashboardData): Record<string, unknown> {
     return {
       alerts: data.alerts.recent.slice(0, this.config.config.maxItems || 10),
       total: data.alerts.active,
@@ -178,7 +178,7 @@ export class Widget {
     }
   }
 
-  private getGeographicMapData(data: DashboardData): any {
+  private getGeographicMapData(data: DashboardData): Record<string, unknown> {
     return {
       usersByRegion: data.geographic.usersByRegion,
       latencyByRegion: data.geographic.latencyByRegion,

@@ -26,7 +26,7 @@ export const useEmergencyEvents = (filters?: {
     queryFn: async () => {
       try {
         // Try online first
-        const params: any = {}
+        const params: Record<string, unknown> = {}
         if (filters?.limit !== undefined) {
           params.limit = filters.limit
         }
@@ -74,7 +74,7 @@ export const useEmergencyEvents = (filters?: {
     retry: (failureCount, error) => {
       // Don't retry on 4xx errors
       if (error && typeof error === 'object' && 'status' in error) {
-        const status = (error as any).status
+        const status = (error as { status?: number }).status
         if (status >= 400 && status < 500) {
           return false
         }
@@ -93,7 +93,7 @@ export const useInfiniteEmergencyEvents = (filters?: {
   return useInfiniteQuery({
     queryKey: ['emergency-events-infinite', filters],
     queryFn: async ({ pageParam = 0 }) => {
-      const params: any = {
+      const params: Record<string, unknown> = {
         limit: filters?.limit || 20
       }
       if (pageParam !== undefined) {
@@ -216,7 +216,7 @@ export const useCreateEmergencyEvent = () => {
 
         // Optimistic update
         const optimisticId = `temp-${Date.now()}`
-        const optimisticEvent: any = {
+        const optimisticEvent: Record<string, unknown> = {
           ...event,
           id: optimisticId,
           created_at: new Date().toISOString(),
@@ -291,12 +291,12 @@ export const useCreateEmergencyEvent = () => {
         if (!response.ok) {
           const errBody = await response.json().catch(() => ({}))
           throw new Error(
-            (errBody && (errBody as any).error) ||
+            (errBody && (errBody as { error?: string }).error) ||
               `Failed to create emergency event (${response.status})`
           )
         }
 
-        const data: any = await response.json()
+        const data = await response.json() as { data?: Record<string, unknown> } & Record<string, unknown>
         const created = data.data ?? data
 
         // Update trust score
@@ -560,7 +560,7 @@ export const useNearbyEmergencyEvents = (
   return useQuery({
     queryKey: ['nearby-emergency-events', center, radius, filters],
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)('get_nearby_emergency_events', {
+      const { data, error } = await (supabase.rpc as (fn: string, params: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>)('get_nearby_emergency_events', {
         p_lat: center.lat,
         p_lng: center.lng,
         p_radius_meters: radius,
@@ -573,7 +573,7 @@ export const useNearbyEmergencyEvents = (
       }
 
       // Calculate distance for each event
-      const eventsWithDistance = (data as any[]).map((event: any) => ({
+      const eventsWithDistance = ((data as Array<{ location: string } & Record<string, unknown>>) || []).map((event) => ({
         ...event,
         distance: calculateDistance(
           center.lat,
@@ -603,8 +603,12 @@ export const useUserEmergencyEvents = (
   return useQuery({
     queryKey: ['user-emergency-events', userId, status],
     queryFn: async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const query: any = (supabase.from('emergency_events') as any)
+      type Builder = {
+        select: (cols: string) => Builder
+        eq: (col: string, val: unknown) => Builder
+        order: (col: string, opts: { ascending: boolean }) => PromiseLike<{ data: unknown[] | null; error: { message: string } | null }>
+      }
+      const query: Builder = (supabase.from('emergency_events') as unknown as Builder)
         .select(
           `
           *,

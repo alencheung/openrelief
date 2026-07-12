@@ -8,9 +8,16 @@
 
 import type { BackgroundSyncConfig } from './sw-types'
 
+export interface SyncOperation {
+  type: string
+  data: Record<string, unknown>
+  timestamp?: number
+  retryCount?: number
+}
+
 export class BackgroundSyncManager {
   private config: BackgroundSyncConfig
-  private syncQueue: Map<string, any[]> = new Map()
+  private syncQueue: Map<string, SyncOperation[]> = new Map()
   private retryTimers: Map<string, NodeJS.Timeout> = new Map()
 
   constructor(config: BackgroundSyncConfig) {
@@ -34,7 +41,7 @@ export class BackgroundSyncManager {
     }
   }
 
-  async queue(operation: any): Promise<void> {
+  async queue(operation: SyncOperation): Promise<void> {
     try {
       const { type, data } = operation
 
@@ -73,8 +80,8 @@ export class BackgroundSyncManager {
         return
       }
 
-      const successfulOperations: any[] = []
-      const failedOperations: any[] = []
+      const successfulOperations: SyncOperation[] = []
+      const failedOperations: SyncOperation[] = []
 
       for (const operation of operations) {
         try {
@@ -138,7 +145,7 @@ export class BackgroundSyncManager {
     }
   }
 
-  private async executeOperation(type: string, operation: any): Promise<void> {
+  private async executeOperation(type: string, operation: SyncOperation): Promise<void> {
     switch (type) {
       case 'emergency-reports':
         return this.executeEmergencyReport(operation)
@@ -151,7 +158,7 @@ export class BackgroundSyncManager {
     }
   }
 
-  private async executeEmergencyReport(operation: any): Promise<void> {
+  private async executeEmergencyReport(operation: SyncOperation): Promise<void> {
     const response = await fetch('/api/emergency', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -163,7 +170,7 @@ export class BackgroundSyncManager {
     }
   }
 
-  private async executeUserLocationUpdate(operation: any): Promise<void> {
+  private async executeUserLocationUpdate(operation: SyncOperation): Promise<void> {
     const response = await fetch('/api/user/location', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -175,7 +182,7 @@ export class BackgroundSyncManager {
     }
   }
 
-  private async executeAlertStatusUpdate(operation: any): Promise<void> {
+  private async executeAlertStatusUpdate(operation: SyncOperation): Promise<void> {
     const response = await fetch('/api/alerts/status', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },

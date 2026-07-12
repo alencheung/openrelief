@@ -252,7 +252,7 @@ export function useIOSSpecificFeatures() {
     if ('getBattery' in navigator) {
       const monitorBattery = async () => {
         try {
-          const battery = await (navigator as any).getBattery()
+          const battery = await (navigator as { getBattery?: () => Promise<{ level: number; charging: boolean; addEventListener: (event: string, cb: () => void) => void }> }).getBattery!()
 
           setBatteryLevel(battery.level * 100)
           setIsCharging(battery.charging)

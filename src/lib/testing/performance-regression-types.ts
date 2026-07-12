@@ -146,8 +146,8 @@ export interface PerformanceTestSuite {
 export interface PerformanceTest {
   name: string
   type: 'api' | 'database' | 'frontend' | 'alert' | 'edge'
-  config: any
-  expectedMetrics: any
+  config: Record<string, unknown>
+  expectedMetrics: Record<string, unknown>
   skipOnFailure?: boolean
 }
 
@@ -193,7 +193,7 @@ export interface PerformanceRegressionResults {
     jsonReport?: string
     htmlReport?: string
     markdownReport?: string
-    trendData?: any
+    trendData?: unknown
   }
 }
 

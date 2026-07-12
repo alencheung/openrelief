@@ -13,7 +13,7 @@
 import { performanceMonitor } from '../performance/performance-monitor'
 import { edgeOptimizer } from '../edge/edge-optimizer'
 import { CacheManager } from './cache-manager'
-import { BackgroundSyncManager } from './sw-background-sync'
+import { BackgroundSyncManager, SyncOperation } from './sw-background-sync'
 import { PushNotificationManager } from './sw-push-handler'
 import { EmergencyModeManager } from './sw-emergency-mode'
 import { SWPerformanceMonitor } from './sw-performance-monitor'
@@ -219,7 +219,7 @@ class ServiceWorkerOptimizer {
   /**
    * Queue background sync operation
    */
-  async queueBackgroundSync(operation: any): Promise<void> {
+  async queueBackgroundSync(operation: SyncOperation): Promise<void> {
     try {
       await this.backgroundSyncManager.queue(operation)
 
@@ -236,7 +236,7 @@ class ServiceWorkerOptimizer {
   /**
    * Send push notification with optimization
    */
-  async sendPushNotification(notification: any): Promise<void> {
+  async sendPushNotification(notification: Record<string, unknown>): Promise<void> {
     try {
       await this.pushNotificationManager.send(notification)
 

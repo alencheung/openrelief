@@ -104,7 +104,7 @@ export interface SecurityIncident {
   // Metadata
   tags?: string[]
   relatedIncidents?: string[]
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 
   // Timestamps
   createdAt: Date
@@ -137,7 +137,7 @@ export interface SecurityAlert {
   userId?: string
   ipAddress?: string
   userAgent?: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
   acknowledged: boolean
   acknowledgedBy?: string
   acknowledgedAt?: Date

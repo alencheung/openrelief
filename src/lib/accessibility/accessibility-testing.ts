@@ -856,7 +856,9 @@ export async function runDefaultAccessibilityTests(): Promise<AccessibilityTestR
 export async function runCIAccessibilityTests(): Promise<AccessibilityTestResult> {
   const ciConfig: AccessibilityTestConfig = {
     ...defaultTestConfig,
-    environment: process.env.NODE_ENV as any || 'development'
+    environment: (process.env.NODE_ENV === 'staging' || process.env.NODE_ENV === 'production')
+      ? process.env.NODE_ENV
+      : 'development'
   }
 
   const testSuite = new AccessibilityTestSuite(ciConfig)

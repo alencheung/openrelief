@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { withAPISecurity, API_SECURITY_CONFIGS } from '@/lib/security/api-security'
-import { securityMonitor } from '@/lib/audit/security-monitor'
+import { securityMonitor, SecurityIncidentType, IncidentSeverity } from '@/lib/audit/security-monitor'
 import { trustScoreManager } from '@/lib/security/trust-integration'
 import { z } from 'zod'
+
+interface EventConfirmationRow {
+  id: string
+  event_id: string
+  user_id: string
+  confirmation_type: 'confirm' | 'dispute'
+  trust_weight: number
+  user?: { user_id: string; trust_score: number } | null
+}
 
 // Validation schema for a consensus vote (confirm/dispute) on an event.
 const consensusVoteSchema = z.object({
@@ -23,7 +32,11 @@ const consensusVoteSchema = z.object({
 // Build-safe Supabase client: returns a real client when env vars are present,
 // otherwise a minimal stub so module-load during the Next.js build page-data
 // collection doesn't throw "supabaseUrl is required".
-function safeCreateClient(url?: string, key?: string, opts?: any): import('@supabase/supabase-js').SupabaseClient {
+function safeCreateClient(
+  url?: string,
+  key?: string,
+  opts?: Record<string, unknown>
+): SupabaseClient {
   // In test mode, use the mock client from @/lib/supabase
 
   if (process.env.NODE_ENV === 'test') {
@@ -32,14 +45,14 @@ function safeCreateClient(url?: string, key?: string, opts?: any): import('@supa
 
       const { supabase } = require('@/lib/supabase')
 
-      return supabase as any
+      return supabase as SupabaseClient
 
     } catch {}
 
   }
 
   if (url && key) {
-    return createClient(url, key, opts)
+    return createClient(url, key, opts as ConstructorParameters<typeof createClient>[2])
   }
   const noop = () => chain
     const chain = {
@@ -47,9 +60,9 @@ function safeCreateClient(url?: string, key?: string, opts?: any): import('@supa
       eq: noop, neq: noop, in: noop, gte: noop, lte: noop, gt: noop, lt: noop,
       like: noop, ilike: noop, contains: noop, not: noop, is: noop, or: noop,
       filter: noop, order: noop, limit: noop, range: noop, single: noop,
-      maybeSingle: noop, then: (resolve: any) => resolve({ data: [], error: null })
+      maybeSingle: noop, then: (resolve: (value: { data: unknown[]; error: null }) => void) => resolve({ data: [], error: null })
     }
-  return { from: () => chain, auth: { getUser: async () => ({ data: { user: null }, error: null }) } } as any
+  return { from: () => chain, auth: { getUser: async () => ({ data: { user: null }, error: null }) } } as unknown as SupabaseClient
 }
 
 const supabase = safeCreateClient(
@@ -100,11 +113,11 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
       return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
-    const confirmVotes = confirmations?.filter((c: any) => c.confirmation_type === 'confirm') || []
-    const disputeVotes = confirmations?.filter((c: any) => c.confirmation_type === 'dispute') || []
+    const confirmVotes = confirmations?.filter((c: EventConfirmationRow) => c.confirmation_type === 'confirm') || []
+    const disputeVotes = confirmations?.filter((c: EventConfirmationRow) => c.confirmation_type === 'dispute') || []
 
-    const weightedConfirmScore = confirmVotes.reduce((sum: number, c: any) => sum + (c.trust_weight || 0), 0)
-    const weightedDisputeScore = disputeVotes.reduce((sum: number, c: any) => sum + (c.trust_weight || 0), 0)
+    const weightedConfirmScore = confirmVotes.reduce((sum: number, c: EventConfirmationRow) => sum + (c.trust_weight || 0), 0)
+    const weightedDisputeScore = disputeVotes.reduce((sum: number, c: EventConfirmationRow) => sum + (c.trust_weight || 0), 0)
 
     const totalWeightedScore = weightedConfirmScore + weightedDisputeScore
     const confirmRatio = totalWeightedScore > 0 ? weightedConfirmScore / totalWeightedScore : 0
@@ -189,8 +202,8 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
       }
 
       await securityMonitor.createAlert(
-        'api_access' as any,
-        'low' as any,
+        SecurityIncidentType.API_ACCESS,
+        IncidentSeverity.LOW,
         `User ${context.userId} changed confirmation for event ${event_id}`,
         `Changed from ${existingConfirmation.confirmation_type} to ${confirmation_type}`,
         'consensus'

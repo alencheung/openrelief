@@ -128,7 +128,7 @@ export interface StrategyCondition {
 export interface OptimizationAction {
   type: 'scale' | 'cache' | 'compress' | 'prioritize' | 'throttle' | 'redirect'
   target: string
-  parameters: any
+  parameters: Record<string, unknown>
 }
 
 // Optimization limits
@@ -161,7 +161,7 @@ export interface TestingSchedule {
 export interface TestScenario {
   name: string
   type: 'load' | 'stress' | 'spike' | 'volume' | 'endurance'
-  config: any
+  config: Record<string, unknown>
   enabled: boolean
   priority: number
 }
@@ -203,7 +203,7 @@ export interface AlertingConfig {
 export interface AlertChannelConfig {
   type: 'email' | 'slack' | 'webhook' | 'sms' | 'push'
   enabled: boolean
-  config: any
+  config: Record<string, unknown>
   filters: AlertFilter[]
 }
 
@@ -211,7 +211,7 @@ export interface AlertChannelConfig {
 export interface AlertFilter {
   field: string
   operator: string
-  value: any
+  value: unknown
 }
 
 // Alert rule
@@ -292,7 +292,7 @@ export interface ReportTemplate {
 export interface ReportSection {
   name: string
   type: 'chart' | 'table' | 'metric' | 'text'
-  config: any
+  config: Record<string, unknown>
 }
 
 // Performance integration status
@@ -311,7 +311,7 @@ export interface ComponentStatus {
   enabled: boolean
   healthy: boolean
   lastUpdate: Date
-  metrics: any
+  metrics: Record<string, unknown>
   errors: string[]
 }
 
@@ -340,7 +340,7 @@ export interface IntegrationAlert {
   severity: 'low' | 'medium' | 'high' | 'critical'
   component: string
   message: string
-  metrics: any
+  metrics: Record<string, unknown>
 }
 
 // Active optimizations
@@ -370,7 +370,7 @@ export interface IntegrationContext {
   config: PerformanceIntegrationConfig
   status: PerformanceIntegrationStatus
   emergencyMode: boolean
-  components: Map<string, any>
+  components: Map<string, unknown>
   optimizationHistory: OptimizationDetail[]
   alertHistory: IntegrationAlert[]
 }

@@ -366,10 +366,28 @@ export function MobileEmergencyControls({
   disabled = false,
   className
 }: {
-  emergencies: any[]
-  selectedEmergency?: any
-  onEmergencySelect?: (emergency: any) => void
-  onNavigate?: (emergency: any) => void
+  emergencies: Array<{
+    id: string
+    type: 'fire' | 'medical' | 'security' | 'natural' | 'infrastructure' | string
+    title: string
+    distance: string
+    time: string
+  }>
+  selectedEmergency?: { id: string }
+  onEmergencySelect?: (emergency: {
+    id: string
+    type: string
+    title: string
+    distance: string
+    time: string
+  }) => void
+  onNavigate?: (emergency: {
+    id: string
+    type: string
+    title: string
+    distance: string
+    time: string
+  }) => void
   onFilter?: () => void
   disabled?: boolean
   className?: string

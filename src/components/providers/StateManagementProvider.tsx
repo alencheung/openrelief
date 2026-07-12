@@ -24,10 +24,21 @@ import { globalErrorBoundary, classifyError, reportError } from '@/lib/errorHand
 import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 
 // Create context for state management
+interface StoreHealthEntry {
+  name: string
+  healthy: boolean
+  error: { message?: string } | null
+}
+
+interface StoreHealthReport {
+  overall: boolean
+  stores: StoreHealthEntry[]
+}
+
 interface StateManagementContextValue {
   isInitialized: boolean
-  storeHealth: any
-  error: any
+  storeHealth: StoreHealthReport
+  error: Error | null
   retry: () => void
 }
 
@@ -78,7 +89,7 @@ export const StateManagementProvider: React.FC<StateManagementProviderProps> = (
 }) => {
   const [queryClient] = useState(() => createQueryClient())
   const [isInitialized, setIsInitialized] = useState(false)
-  const [error, setError] = useState<any>(null)
+  const [error, setError] = useState<Error | null>(null)
   const { isOnline } = useNetworkStatus()
 
   // Initialize stores
@@ -344,6 +355,7 @@ export const useStateManagement = () => {
 }
 
 import { useQueryClient } from '@tanstack/react-query'
+import type { Query } from '@tanstack/query-core'
 
 // Performance monitoring hook
 export const useStateManagementPerformance = () => {
@@ -358,15 +370,15 @@ export const useStateManagementPerformance = () => {
     const monitorPerformance = () => {
       // Monitor query performance
       const queryCache = queryClient.getQueryCache()
-      const queries = queryCache.getAll()
+      const queries = queryCache.getAll() as Query[]
 
       const performance = {
         totalQueries: queries.length,
-        activeQueries: queries.filter((q: any) => q.state.fetchStatus === 'fetching').length,
-        staleQueries: queries.filter((q: any) => q.isStale()).length,
-        errorQueries: queries.filter((q: any) => q.state.status === 'error').length,
+        activeQueries: queries.filter(q => q.state.fetchStatus === 'fetching').length,
+        staleQueries: queries.filter(q => q.isStale()).length,
+        errorQueries: queries.filter(q => q.state.status === 'error').length,
         averageQueryTime:
-          queries.reduce((acc: number, q: any) => acc + (q.state.dataFetchTime || 0), 0) /
+          queries.reduce((acc: number, q) => acc + (q.state.dataFetchTime || 0), 0) /
           queries.length
       }
 

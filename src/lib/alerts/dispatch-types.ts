@@ -80,7 +80,7 @@ export interface EmergencyAlert {
   message: string
   priority: AlertPriority
   channels: DeliveryChannel[]
-  data: Record<string, any>
+  data: Record<string, unknown>
   createdAt: Date
   expiresAt?: Date
   retryCount: number
@@ -168,7 +168,7 @@ export interface SpatialFilter {
 export interface UserFilters {
   trustScore?: number
   maxDistance?: number
-  notificationPreferences?: Record<string, any>
+  notificationPreferences?: Record<string, unknown>
 }
 
 /**

@@ -7,8 +7,8 @@ export interface RealtimeLogEntry {
     component: string
     action: string
     message: string
-    data?: any
-    error?: any
+    data?: unknown
+    error?: unknown
     context?: {
         table?: string
         eventId?: string
@@ -26,23 +26,23 @@ class RealtimeLogger {
   private subscribers: Array<(logs: RealtimeLogEntry[]) => void> = []
 
   // Core logging methods
-  debug(component: string, action: string, message: string, data?: any, context?: RealtimeLogEntry['context']) {
+  debug(component: string, action: string, message: string, data?: unknown, context?: RealtimeLogEntry['context']) {
     this.log('debug', component, action, message, data, undefined, context)
   }
 
-  info(component: string, action: string, message: string, data?: any, context?: RealtimeLogEntry['context']) {
+  info(component: string, action: string, message: string, data?: unknown, context?: RealtimeLogEntry['context']) {
     this.log('info', component, action, message, data, undefined, context)
   }
 
-  warn(component: string, action: string, message: string, data?: any, error?: any, context?: RealtimeLogEntry['context']) {
+  warn(component: string, action: string, message: string, data?: unknown, error?: unknown, context?: RealtimeLogEntry['context']) {
     this.log('warn', component, action, message, data, error, context)
   }
 
-  error(component: string, action: string, message: string, data?: any, error?: any, context?: RealtimeLogEntry['context']) {
+  error(component: string, action: string, message: string, data?: unknown, error?: unknown, context?: RealtimeLogEntry['context']) {
     this.log('error', component, action, message, data, error, context)
   }
 
-  critical(component: string, action: string, message: string, data?: any, error?: any, context?: RealtimeLogEntry['context']) {
+  critical(component: string, action: string, message: string, data?: unknown, error?: unknown, context?: RealtimeLogEntry['context']) {
     this.log('critical', component, action, message, data, error, context)
   }
 
@@ -52,8 +52,8 @@ class RealtimeLogger {
     component: string,
     action: string,
     message: string,
-    data?: any,
-    error?: any,
+    data?: unknown,
+    error?: unknown,
     context?: RealtimeLogEntry['context']
   ) {
     // Create log entry
@@ -246,7 +246,7 @@ export const logSubscriptionSuccess = (component: string, table: string, retryCo
   })
 }
 
-export const logSubscriptionError = (component: string, table: string, error: any, attempt: number) => {
+export const logSubscriptionError = (component: string, table: string, error: unknown, attempt: number) => {
   const errorInfo = classifyError(error, {
     action: 'subscription',
     table,
@@ -280,7 +280,7 @@ export const logBroadcastSuccess = (component: string, channel: string, eventId?
   })
 }
 
-export const logBroadcastError = (component: string, channel: string, error: any, eventId?: string) => {
+export const logBroadcastError = (component: string, channel: string, error: unknown, eventId?: string) => {
   const errorInfo = classifyError(error, {
     action: 'broadcast',
     channel,

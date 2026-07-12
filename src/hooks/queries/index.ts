@@ -1,4 +1,6 @@
 // Export all query hooks for easy importing
+import type { QueryClient } from '@tanstack/react-query'
+
 export {
   useEmergencyEvents,
   useInfiniteEmergencyEvents,
@@ -68,11 +70,11 @@ export type {
 } from './useRealtimeSubscriptions'
 
 // Utility functions for query management
-export const invalidateAllQueries = async (queryClient: any) => {
+export const invalidateAllQueries = async (queryClient: QueryClient) => {
   await queryClient.invalidateQueries()
 }
 
-export const prefetchCriticalData = async (queryClient: any, userId?: string) => {
+export const prefetchCriticalData = async (queryClient: QueryClient, userId?: string) => {
   // Prefetch emergency types
   await queryClient.prefetchQuery({
     queryKey: ['emergency-types'],
@@ -107,15 +109,15 @@ export const prefetchCriticalData = async (queryClient: any, userId?: string) =>
 }
 
 // Query health check
-export const checkQueryHealth = (queryClient: any) => {
+export const checkQueryHealth = (queryClient: QueryClient) => {
   const cache = queryClient.getQueryCache()
   const queries = cache.getAll()
 
   const health = {
     totalQueries: queries.length,
-    activeQueries: queries.filter((q: any) => q.state.fetchStatus === 'fetching').length,
-    staleQueries: queries.filter((q: any) => q.isStale()).length,
-    errorQueries: queries.filter((q: any) => q.state.status === 'error').length,
+    activeQueries: queries.filter(q => q.state.fetchStatus === 'fetching').length,
+    staleQueries: queries.filter(q => q.isStale()).length,
+    errorQueries: queries.filter(q => q.state.status === 'error').length,
     cacheSize: cache.size
   }
 
@@ -126,11 +128,11 @@ export const checkQueryHealth = (queryClient: any) => {
 }
 
 // Query optimization utilities
-export const optimizeQueryCache = (queryClient: any) => {
+export const optimizeQueryCache = (queryClient: QueryClient) => {
   const cache = queryClient.getQueryCache()
 
   // Remove old and unused queries
-  cache.getAll().forEach((query: any) => {
+  cache.getAll().forEach(query => {
     const age = Date.now() - new Date(query.state.dataUpdatedAt).getTime()
     const isOld = age > 10 * 60 * 1000 // 10 minutes
     const isInactive = query.getObserversCount() === 0
@@ -142,10 +144,10 @@ export const optimizeQueryCache = (queryClient: any) => {
 }
 
 // Query performance monitoring
-export const trackQueryPerformance = (queryClient: any) => {
+export const trackQueryPerformance = (queryClient: QueryClient) => {
   const cache = queryClient.getQueryCache()
 
-  cache.subscribe((event: any) => {
+  cache.subscribe(event => {
     if (event.type === 'observerAdded') {
       console.log(`[Query] Observer added to ${event.query.queryKey[0]}`)
     } else if (event.type === 'observerRemoved') {

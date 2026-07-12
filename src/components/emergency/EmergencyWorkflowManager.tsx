@@ -79,6 +79,8 @@ interface EmergencyEvent {
     tags?: string[]
     source?: string
     deviceInfo?: string
+    escalated?: boolean
+    escalated_at?: string
   }
   consensus?: {
     status: 'gathering' | 'reached' | 'failed'
@@ -295,7 +297,7 @@ export function EmergencyWorkflowManager({ className }: EmergencyWorkflowManager
               escalated: true,
               escalated_at: new Date().toISOString()
             }
-          } as any)
+          })
           break
         }
 
@@ -367,7 +369,9 @@ export function EmergencyWorkflowManager({ className }: EmergencyWorkflowManager
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setSelectedEvent(emergency as any)}
+                onClick={() =>
+                  setSelectedEvent(emergency as unknown as StoreEmergencyEvent)
+                }
               >
                 View Details
               </Button>

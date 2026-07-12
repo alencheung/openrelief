@@ -42,7 +42,7 @@ export interface TestEndpoint {
   method: 'GET' | 'POST' | 'PUT' | 'DELETE'
   weight: number // Relative frequency
   headers?: Record<string, string>
-  body?: any
+  body?: Record<string, unknown>
   expectedStatus: number
   timeout: number
   retryCount: number

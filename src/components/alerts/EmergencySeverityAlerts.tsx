@@ -63,7 +63,7 @@ interface AlertAction {
   description?: string
   icon: React.ComponentType<{ className?: string }>
   url?: string
-  data?: any
+  data?: Record<string, unknown>
   primary?: boolean
 }
 

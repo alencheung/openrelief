@@ -318,22 +318,43 @@ export function MotorAccessibility({
 
     if (!isVoiceActive) {
       if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-        const SpeechRecognition =
-          (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+        type SpeechRecognitionResult = {
+          results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }>
+          resultIndex: number
+        }
+        type SpeechRecognitionCtor = new () => {
+          continuous: boolean
+          interimResults: boolean
+          lang: string
+          onresult: (event: SpeechRecognitionResult) => void
+          onerror: (event: { error: string }) => void
+          onend: () => void
+          start: () => void
+          stop: () => void
+        }
+        const w = window as unknown as {
+          SpeechRecognition?: SpeechRecognitionCtor
+          webkitSpeechRecognition?: SpeechRecognitionCtor
+        }
+        const SpeechRecognition = w.SpeechRecognition || w.webkitSpeechRecognition
+        if (!SpeechRecognition) {
+          announcePolite('Voice control not supported')
+          return
+        }
         const recognition = new SpeechRecognition()
 
         recognition.continuous = true
         recognition.interimResults = true
         recognition.lang = 'en-US'
 
-        recognition.onresult = (event: any) => {
+        recognition.onresult = (event: SpeechRecognitionResult) => {
           const last = event.results.length - 1
           const transcript = event.results[last][0].transcript.toLowerCase()
 
           processVoiceCommand(transcript)
         }
 
-        recognition.onerror = (event: any) => {
+        recognition.onerror = (event: { error: string }) => {
           console.error('Voice recognition error:', event.error)
           setIsVoiceActive(false)
           announcePolite('Voice control failed')
@@ -461,7 +482,10 @@ export function MotorAccessibility({
         return
       }
 
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+      const AudioContextCtor: typeof AudioContext =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+      const audioContext = new AudioContextCtor()
       const oscillator = audioContext.createOscillator()
       const gainNode = audioContext.createGain()
 
@@ -590,7 +614,12 @@ export function MotorAccessibility({
               {Object.entries(touchTargetSizes).map(([key, config]) => (
                 <button
                   key={key}
-                  onClick={() => updateSetting('touchTargetSize', key as any)}
+                  onClick={() =>
+                    updateSetting(
+                      'touchTargetSize',
+                      key as 'small' | 'medium' | 'large' | 'extra-large'
+                    )
+                  }
                   className={cn(
                     'p-3 rounded flex flex-col items-center justify-between transition-colors',
                     settings.touchTargetSize === key

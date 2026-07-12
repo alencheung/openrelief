@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { Navigation, Crosshair, Activity, Shield, AlertTriangle, Eye, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useLocationStore, useEmergencyStore } from '@/store'
+import type { EmergencyEvent } from '@/store/emergencyStore'
 import { LocationPoint, Geofence } from '@/types'
 import { usePrivacy } from '@/hooks/usePrivacy'
 
@@ -12,7 +13,11 @@ interface LocationTrackerProps {
   onLocationUpdate?: (location: LocationPoint) => void
   onGeofenceEnter?: (geofence: Geofence) => void
   onGeofenceExit?: (geofence: Geofence) => void
-  onProximityAlert?: (alert: any) => void
+  onProximityAlert?: (alert: {
+    event: EmergencyEvent
+    distance: number
+    severity: number
+  }) => void
   enableHighAccuracy?: boolean
   updateInterval?: number
   showAccuracy?: boolean
@@ -190,11 +195,17 @@ export default function LocationTracker({
       }
 
       // Apply privacy protection to location data
-      const protectedLocation = protectLocationData(rawLocation as any, {
-        applyDifferentialPrivacy: privacyContext.settings.differentialPrivacy,
-        applyAnonymization: privacyContext.settings.anonymizeData,
-        precisionLevel: privacyContext.settings.locationPrecision
-      })
+      const protectedLocation = protectLocationData(
+        {
+          latitude: rawLocation.lat,
+          longitude: rawLocation.lng
+        },
+        {
+          applyDifferentialPrivacy: privacyContext.settings.differentialPrivacy,
+          applyAnonymization: privacyContext.settings.anonymizeData,
+          precisionLevel: privacyContext.settings.locationPrecision
+        }
+      )
 
       // Update privacy info for UI display
       setPrivacyInfo({

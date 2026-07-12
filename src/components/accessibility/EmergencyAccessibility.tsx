@@ -239,15 +239,36 @@ export function EmergencyAccessibility({
 
       // Start speech recognition
       if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-        const SpeechRecognition =
-          (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+        type SpeechRecognitionResult = {
+          results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }>
+          resultIndex: number
+        }
+        type SpeechRecognitionCtor = new () => {
+          continuous: boolean
+          interimResults: boolean
+          lang: string
+          onresult: (event: SpeechRecognitionResult) => void
+          onerror: (event: { error: string }) => void
+          start: () => void
+          stop: () => void
+        }
+        const w = window as unknown as {
+          SpeechRecognition?: SpeechRecognitionCtor
+          webkitSpeechRecognition?: SpeechRecognitionCtor
+        }
+        const SpeechRecognition = w.SpeechRecognition || w.webkitSpeechRecognition
+        if (!SpeechRecognition) {
+          setIsRecording(false)
+          announcePolite('Voice recognition not supported')
+          return
+        }
         const recognition = new SpeechRecognition()
 
         recognition.continuous = true
         recognition.interimResults = true
         recognition.lang = 'en-US'
 
-        recognition.onresult = (event: any) => {
+        recognition.onresult = (event: SpeechRecognitionResult) => {
           const last = event.results.length - 1
           const transcript = event.results[last][0].transcript
 
@@ -257,7 +278,7 @@ export function EmergencyAccessibility({
           }
         }
 
-        recognition.onerror = (event: any) => {
+        recognition.onerror = (event: { error: string }) => {
           console.error('Speech recognition error:', event.error)
           setIsRecording(false)
           announcePolite('Voice recording failed')

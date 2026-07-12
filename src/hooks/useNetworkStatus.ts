@@ -2,6 +2,15 @@
 
 import { useState, useEffect, useCallback } from 'react'
 
+interface NetworkConnection {
+  type?: string
+  effectiveType?: string
+  downlink?: number
+  rtt?: number
+  addEventListener: (type: string, listener: () => void) => void
+  removeEventListener: (type: string, listener: () => void) => void
+}
+
 interface NetworkStatus {
   isOnline: boolean
   isOffline: boolean
@@ -62,7 +71,7 @@ export function useNetworkStatus(): NetworkStatus {
   // Get connection information from Network Information API
   function getConnectionType(): string | undefined {
     if (typeof navigator !== 'undefined' && 'connection' in navigator) {
-      const connection = (navigator as any).connection
+      const connection = (navigator as { connection?: NetworkConnection }).connection
       return connection?.type || connection?.effectiveType
     }
     return undefined
@@ -70,21 +79,21 @@ export function useNetworkStatus(): NetworkStatus {
 
   function getEffectiveType(): string | undefined {
     if (typeof navigator !== 'undefined' && 'connection' in navigator) {
-      return (navigator as any).connection?.effectiveType
+      return (navigator as { connection?: NetworkConnection }).connection?.effectiveType
     }
     return undefined
   }
 
   function getDownlink(): number | undefined {
     if (typeof navigator !== 'undefined' && 'connection' in navigator) {
-      return (navigator as any).connection?.downlink
+      return (navigator as { connection?: NetworkConnection }).connection?.downlink
     }
     return undefined
   }
 
   function getRtt(): number | undefined {
     if (typeof navigator !== 'undefined' && 'connection' in navigator) {
-      return (navigator as any).connection?.rtt
+      return (navigator as { connection?: NetworkConnection }).connection?.rtt
     }
     return undefined
   }
@@ -135,8 +144,8 @@ export function useNetworkStatus(): NetworkStatus {
 
       // Trigger service worker sync if available
       if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
-        navigator.serviceWorker.ready.then((registration: any) => {
-          registration.sync.register('emergency-offline-sync')
+        navigator.serviceWorker.ready.then((registration: { sync?: { register: (tag: string) => Promise<void> } }) => {
+          registration.sync?.register('emergency-offline-sync')
         })
       }
     }
@@ -156,7 +165,7 @@ export function useNetworkStatus(): NetworkStatus {
 
     // Listen for connection changes if Network Information API is available
     if (typeof navigator !== 'undefined' && 'connection' in navigator) {
-      const connection = (navigator as any).connection
+      const connection = (navigator as { connection?: NetworkConnection }).connection
       connection.addEventListener('change', handleConnectionChange)
     }
 
@@ -220,7 +229,7 @@ export function useNetworkStatus(): NetworkStatus {
       window.removeEventListener('offline', handleOffline)
 
       if (typeof navigator !== 'undefined' && 'connection' in navigator) {
-        const connection = (navigator as any).connection
+        const connection = (navigator as { connection?: NetworkConnection }).connection
         connection.removeEventListener('change', handleConnectionChange)
       }
 
@@ -237,7 +246,7 @@ export function useOfflineActions() {
 
   const queueOfflineAction = useCallback(async (action: {
     type: string
-    data: any
+    data: Record<string, unknown>
     endpoint: string
     method?: string
   }) => {
@@ -256,8 +265,8 @@ export function useOfflineActions() {
 
       // Register for background sync
       if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
-        const registration: any = await navigator.serviceWorker.ready
-        await registration.sync.register('emergency-offline-sync')
+        const registration = await navigator.serviceWorker.ready as { sync?: { register: (tag: string) => Promise<void> } }
+        await registration.sync?.register('emergency-offline-sync')
       }
 
       return { success: true, id: generateId() }
@@ -273,12 +282,12 @@ export function useOfflineActions() {
       const transaction = db.transaction(['actions'], 'readonly')
       const store = transaction.objectStore('actions')
       const request = store.getAll()
-      const actions = await new Promise<any[]>((resolve, reject) => {
-        request.onsuccess = () => resolve(request.result)
+      const actions = await new Promise<Array<{ synced?: boolean } & Record<string, unknown>>>((resolve, reject) => {
+        request.onsuccess = () => resolve(request.result as Array<{ synced?: boolean } & Record<string, unknown>>)
         request.onerror = () => reject(request.error)
       })
 
-      return actions.filter((action: any) => !action.synced)
+      return actions.filter((action: { synced?: boolean }) => !action.synced)
     } catch (error) {
       console.error('Failed to get queued actions:', error)
       return []

@@ -1,331 +1,20 @@
 import { create } from 'zustand'
 import { persist, subscribeWithSelector } from 'zustand/middleware'
+export * from './notificationStore-types'
+export * from './notificationStore-helpers'
+import type {
+  Notification,
+  NotificationSettings,
+  NotificationQueue,
+  NotificationStore
+} from './notificationStore-types'
+import {
+  defaultSettings,
+  generateId,
+  isInQuietHours as isInQuietHoursHelper,
+  calculateStats
+} from './notificationStore-helpers'
 
-// Types
-export interface Notification {
-  id: string
-  type: 'emergency' | 'trust_update' | 'geofence' | 'system' | 'reminder' | 'acknowledgment'
-  title: string
-  message: string
-  severity: 'info' | 'warning' | 'critical' | 'success'
-  timestamp: Date
-  read: boolean
-  acknowledged: boolean
-  data?: unknown
-  actions?: NotificationAction[]
-  expiresAt?: Date
-  priority: 'low' | 'medium' | 'high' | 'urgent'
-  channels: {
-    inApp: boolean
-    push: boolean
-    email: boolean
-    sms: boolean
-  }
-  metadata?: {
-    eventId?: string
-    userId?: string
-    geofenceId?: string
-    source?: string
-    category?: string
-  }
-}
-
-export interface NotificationAction {
-  id: string
-  label: string
-  action: 'view' | 'confirm' | 'dispute' | 'navigate' | 'dismiss' | 'custom'
-  url?: string
-  data?: unknown
-  style?: 'primary' | 'secondary' | 'danger'
-}
-
-export interface NotificationSettings {
-  enabled: boolean
-  quietHours: {
-    enabled: boolean
-    start: string // HH:mm format
-    end: string // HH:mm format
-    timezone: string
-  }
-  channels: {
-    inApp: boolean
-    push: boolean
-    email: boolean
-    sms: boolean
-  }
-  categories: {
-    emergency: boolean
-    trust_update: boolean
-    geofence: boolean
-    system: boolean
-    reminder: boolean
-    acknowledgment: boolean
-  }
-  severity: {
-    info: boolean
-    warning: boolean
-    critical: boolean
-    success: boolean
-  }
-  proximity: {
-    enabled: boolean
-    threshold: number // meters
-    types: string[] // event types to monitor
-  }
-  batching: {
-    enabled: boolean
-    interval: number // minutes
-    maxBatch: number
-  }
-}
-
-export interface NotificationQueue {
-  id: string
-  notification: Omit<Notification, 'id' | 'timestamp' | 'read' | 'acknowledged'>
-  scheduledFor: Date
-  retryCount: number
-  maxRetries: number
-  status: 'pending' | 'sent' | 'failed' | 'cancelled'
-  channels: string[]
-  lastAttempt?: Date
-  error?: string
-}
-
-export interface NotificationStats {
-  total: number
-  unread: number
-  unacknowledged: number
-  byType: Record<Notification['type'], number>
-  bySeverity: Record<Notification['severity'], number>
-  byChannel: {
-    inApp: number
-    push: number
-    email: number
-    sms: number
-  }
-  recent: Notification[]
-}
-
-// Notification Store State
-interface NotificationState {
-  // Notifications
-  notifications: Notification[]
-  queue: NotificationQueue[]
-
-  // Settings
-  settings: NotificationSettings
-
-  // UI State
-  isPanelOpen: boolean
-  selectedNotification: Notification | null
-  filter: {
-    type?: Notification['type']
-    severity?: Notification['severity']
-    read?: boolean
-    acknowledged?: boolean
-    dateRange?: {
-      start: Date
-      end: Date
-    }
-  }
-
-  // Push notification state
-  pushSupported: boolean
-  pushPermission: NotificationPermission
-  pushSubscription: PushSubscription | null
-
-  // Real-time
-  isRealtimeEnabled: boolean
-  lastSyncTime: Date | null
-
-  // Performance
-  loading: boolean
-  error: string | null
-  stats: NotificationStats
-}
-
-// Notification Store Actions
-interface NotificationActions {
-  // Notification management
-  addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read' | 'acknowledged'>) => string
-  updateNotification: (id: string, updates: Partial<Notification>) => void
-  removeNotification: (id: string) => void
-  markAsRead: (id: string) => void
-  markAsAcknowledged: (id: string) => void
-  markAllAsRead: () => void
-  clearNotifications: (filter?: (notification: Notification) => boolean) => void
-
-  // Queue management
-  addToQueue: (notification: Omit<NotificationQueue, 'id' | 'scheduledFor' | 'retryCount' | 'status'>) => string
-  removeFromQueue: (id: string) => void
-  updateQueueItem: (id: string, updates: Partial<NotificationQueue>) => void
-  processQueue: () => Promise<void>
-  retryFailed: () => Promise<void>
-
-  // Settings management
-  updateSettings: (settings: Partial<NotificationSettings>) => void
-  resetSettings: () => void
-
-  // UI management
-  setPanelOpen: (open: boolean) => void
-  setSelectedNotification: (notification: Notification | null) => void
-  setFilter: (filter: Partial<NotificationState['filter']>) => void
-  clearFilter: () => void
-
-  // Push notification management
-  requestPushPermission: () => Promise<NotificationPermission>
-  subscribeToPush: () => Promise<PushSubscription | null>
-  unsubscribeFromPush: () => Promise<void>
-
-  // Emergency-specific notifications
-  createEmergencyNotification: (data: {
-    eventId: string
-    type: string
-    severity: Notification['severity']
-    title: string
-    message: string
-    location?: string
-    actions?: NotificationAction[]
-  }) => string
-
-  createTrustNotification: (data: {
-    userId: string
-    scoreChange: number
-    newScore: number
-    reason?: string
-  }) => string
-
-  createGeofenceNotification: (data: {
-    geofenceId: string
-    action: 'enter' | 'exit'
-    geofenceName: string
-    severity?: Notification['severity']
-  }) => string
-
-  createProximityNotification: (data: {
-    targetId: string
-    targetType: 'event' | 'user'
-    distance: number
-    threshold: number
-  }) => string
-
-  // Utility functions
-  getFilteredNotifications: () => Notification[]
-  updateStats: () => void
-  isInQuietHours: () => boolean
-  shouldSendNotification: (notification: Notification) => boolean
-
-  // Error handling
-  setError: (error: string | null) => void
-  clearError: () => void
-  reset: () => void
-}
-
-type NotificationStore = NotificationState & NotificationActions
-
-// Default settings
-const defaultSettings: NotificationSettings = {
-  enabled: true,
-  quietHours: {
-    enabled: false,
-    start: '22:00',
-    end: '07:00',
-    timezone: 'UTC'
-  },
-  channels: {
-    inApp: true,
-    push: true,
-    email: false,
-    sms: false
-  },
-  categories: {
-    emergency: true,
-    trust_update: true,
-    geofence: true,
-    system: true,
-    reminder: true,
-    acknowledgment: true
-  },
-  severity: {
-    info: true,
-    warning: true,
-    critical: true,
-    success: true
-  },
-  proximity: {
-    enabled: true,
-    threshold: 1000,
-    types: []
-  },
-  batching: {
-    enabled: false,
-    interval: 15,
-    maxBatch: 5
-  }
-}
-
-// Utility functions
-const generateId = (): string => {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-}
-
-const isInQuietHours = (quietHours: NotificationSettings['quietHours']): boolean => {
-  if (!quietHours.enabled) {
-    return false
-  }
-
-  const now = new Date()
-  const currentTime = now.getHours() * 60 + now.getMinutes()
-
-  const [startHour, startMin] = quietHours.start.split(':').map(Number)
-  const [endHour, endMin] = quietHours.end.split(':').map(Number)
-
-  if (startHour === undefined || startMin === undefined || endHour === undefined || endMin === undefined) {
-    return false
-  }
-
-  const startTime = startHour * 60 + startMin
-  const endTime = endHour * 60 + endMin
-
-  if (startTime <= endTime) {
-    // Same day range (e.g., 22:00 to 07:00)
-    return currentTime >= startTime && currentTime <= endTime
-  } else {
-    // Overnight range (e.g., 22:00 to 07:00 next day)
-    return currentTime >= startTime || currentTime <= endTime
-  }
-}
-
-const calculateStats = (notifications: Notification[]): NotificationStats => {
-  const stats: NotificationStats = {
-    total: notifications.length,
-    unread: notifications.filter(n => !n.read).length,
-    unacknowledged: notifications.filter(n => !n.acknowledged).length,
-    byType: {} as Record<Notification['type'], number>,
-    bySeverity: {} as Record<Notification['severity'], number>,
-    byChannel: {
-      inApp: notifications.filter(n => n.channels.inApp).length,
-      push: notifications.filter(n => n.channels.push).length,
-      email: notifications.filter(n => n.channels.email).length,
-      sms: notifications.filter(n => n.channels.sms).length
-    },
-    recent: notifications.slice(0, 10)
-  }
-
-  // Calculate by type
-  notifications.forEach(n => {
-    stats.byType[n.type] = (stats.byType[n.type] || 0) + 1
-  })
-
-  // Calculate by severity
-  notifications.forEach(n => {
-    stats.bySeverity[n.severity] = (stats.bySeverity[n.severity] || 0) + 1
-  })
-
-  return stats
-}
-
-// Create Store
 export const useNotificationStore = create<NotificationStore>()(
   subscribeWithSelector(
     persist(
@@ -729,7 +418,7 @@ export const useNotificationStore = create<NotificationStore>()(
         },
 
         isInQuietHours: () => {
-          return isInQuietHours(get().settings.quietHours)
+          return isInQuietHoursHelper(get().settings.quietHours)
         },
 
         shouldSendNotification: (notification) => {
@@ -781,8 +470,6 @@ export const useNotificationStore = create<NotificationStore>()(
     )
   )
 )
-
-// Selectors for common use cases
 export const useNotifications = () => useNotificationStore(state => ({
   notifications: state.notifications,
   filteredNotifications: state.getFilteredNotifications(),
@@ -791,13 +478,11 @@ export const useNotifications = () => useNotificationStore(state => ({
 }))
 
 export const useNotificationSettings = () => useNotificationStore(state => state.settings)
-
 export const useNotificationUI = () => useNotificationStore(state => ({
   isPanelOpen: state.isPanelOpen,
   selectedNotification: state.selectedNotification,
   filter: state.filter
 }))
-
 export const useNotificationActions = () => useNotificationStore(state => ({
   addNotification: state.addNotification,
   markAsRead: state.markAsRead,
@@ -812,8 +497,4 @@ export const useNotificationActions = () => useNotificationStore(state => ({
   createTrustNotification: state.createTrustNotification,
   createGeofenceNotification: state.createGeofenceNotification
 }))
-
 export const useUnreadCount = () => useNotificationStore(state => state.stats.unread)
-
-// Utility exports
-export { isInQuietHours }

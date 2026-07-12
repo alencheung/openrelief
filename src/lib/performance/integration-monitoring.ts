@@ -37,7 +37,7 @@ export async function collectMetrics(ctx: IntegrationContext): Promise<void> {
 /**
  * Update metrics for a single component's status entry.
  */
-export function updateComponentMetrics(ctx: IntegrationContext, componentName: string, metrics: any): void {
+export function updateComponentMetrics(ctx: IntegrationContext, componentName: string, metrics: Record<string, unknown>): void {
   const componentStatus = ctx.status.components.find(c => c.name === componentName)
   if (componentStatus) {
     componentStatus.metrics = metrics

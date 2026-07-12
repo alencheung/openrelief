@@ -7,7 +7,7 @@
 
 export class SWPerformanceMonitor {
   private startTime: number = 0
-  private metrics: any = {}
+  private metrics: Record<string, unknown> = {}
   private monitoringInterval: NodeJS.Timeout | null = null
 
   start(): void {
@@ -23,7 +23,7 @@ export class SWPerformanceMonitor {
   getMemoryUsage(): number {
     // Estimate memory usage
     if ('memory' in performance) {
-      return (performance as any).memory.usedJSHeapSize
+      return (performance as { memory?: { usedJSHeapSize?: number } }).memory?.usedJSHeapSize ?? 0
     }
     return 0
   }

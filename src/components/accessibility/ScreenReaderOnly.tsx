@@ -52,7 +52,7 @@ export interface ScreenReaderOnlyProps {
   /**
    * Allow passthrough of host attributes (id, role, data-*, etc.)
    */
-  [key: string]: any
+  [key: string]: unknown
 }
 
 /**

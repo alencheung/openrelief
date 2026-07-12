@@ -120,7 +120,7 @@ export const FocusTrap = forwardRef<HTMLDivElement, FocusTrapProps>(
      * Merge refs
      */
     const setRefs = (element: HTMLDivElement | null) => {
-      (containerRef as any).current = element
+      ;(containerRef as React.MutableRefObject<HTMLElement | null>).current = element
       if (typeof ref === 'function') {
         ref(element)
       } else if (ref) {
@@ -248,7 +248,7 @@ export function useFocusTrapElement(
  * Higher-order component for adding focus trap to existing components
  */
 export function withFocusTrap<P extends object>(Component: React.ComponentType<P>) {
-  const WrappedComponent = React.forwardRef<any, P & FocusTrapProps>(
+  const WrappedComponent = React.forwardRef<HTMLElement, P & FocusTrapProps>(
     (
       {
         active,

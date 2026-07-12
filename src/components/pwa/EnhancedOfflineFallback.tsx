@@ -380,7 +380,7 @@ export function EnhancedOfflineFallback() {
           ].map(tab => (
             <button
               key={tab.id}
-              onClick={() => setSelectedTab(tab.id as any)}
+              onClick={() => setSelectedTab(tab.id as 'actions' | 'capabilities' | 'status')}
               className={`
                 flex-1 px-4 py-3 text-center font-medium transition-colors
                 border-b-2 -mb-px

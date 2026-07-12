@@ -93,8 +93,12 @@ async function getRedisClient(): Promise<RedisClient | null> {
           const IORedis = await import(/* webpackIgnore: true */ 'ioredis').then(
             m => m.default || m
           )
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const redis = new (IORedis as any)(redisUrl)
+          const redis = new (IORedis as new (url: string) => {
+            get: (key: string) => Promise<string | null>
+            setex: (key: string, ttl: number, value: string) => Promise<void>
+            del: (key: string) => Promise<number>
+            keys: (pattern: string) => Promise<string[]>
+          })(redisUrl)
           redisClient = {
             get: key => redis.get(key),
             setex: (key, ttl, value) => redis.setex(key, ttl, value),

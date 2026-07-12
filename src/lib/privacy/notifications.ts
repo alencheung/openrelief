@@ -36,7 +36,7 @@ export interface PrivacyNotification {
   requiresAction: boolean;
   actionUrl?: string;
   actionLabel?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   expiresAt?: Date;
   category: 'privacy' | 'security' | 'legal' | 'system';
 }
@@ -210,7 +210,7 @@ export class PrivacyNotificationManager {
     type: PrivacyNotificationType,
     customMessage?: string,
     customTitle?: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): PrivacyNotification {
     const template = notificationTemplates.find(t => t.type === type)
 
@@ -271,7 +271,7 @@ export class PrivacyNotificationManager {
   }
 
   // Process template string with metadata
-  private processTemplate(template: string, metadata?: Record<string, any>): string {
+  private processTemplate(template: string, metadata?: Record<string, unknown>): string {
     if (!metadata) {
       return template
     }

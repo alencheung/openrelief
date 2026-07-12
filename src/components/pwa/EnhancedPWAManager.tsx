@@ -119,7 +119,7 @@ export function EnhancedPWAManager({
       // Check if running as standalone PWA
       const isStandalone =
         window.matchMedia('(display-mode: standalone)').matches ||
-        (window.navigator as any).standalone ||
+        (window.navigator as unknown as { standalone?: boolean }).standalone ||
         document.referrer.includes('android-app://')
 
       // Detect platform

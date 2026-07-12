@@ -279,27 +279,27 @@ export function getAlertsToCleanup(
   return ids
 }
 
-async function sendEmailAlert(alert: Alert, config: any): Promise<void> {
+async function sendEmailAlert(alert: Alert, config: Record<string, unknown>): Promise<void> {
   // Implementation for sending email alerts
   console.log(`[PerformanceDashboard] Email alert sent for ${alert.id}`)
 }
 
-async function sendSlackAlert(alert: Alert, config: any): Promise<void> {
+async function sendSlackAlert(alert: Alert, config: Record<string, unknown>): Promise<void> {
   // Implementation for sending Slack alerts
   console.log(`[PerformanceDashboard] Slack alert sent for ${alert.id}`)
 }
 
-async function sendWebhookAlert(alert: Alert, config: any): Promise<void> {
+async function sendWebhookAlert(alert: Alert, config: Record<string, unknown>): Promise<void> {
   // Implementation for sending webhook alerts
   console.log(`[PerformanceDashboard] Webhook alert sent for ${alert.id}`)
 }
 
-async function sendSMSAlert(alert: Alert, config: any): Promise<void> {
+async function sendSMSAlert(alert: Alert, config: Record<string, unknown>): Promise<void> {
   // Implementation for sending SMS alerts
   console.log(`[PerformanceDashboard] SMS alert sent for ${alert.id}`)
 }
 
-async function sendPushAlert(alert: Alert, config: any): Promise<void> {
+async function sendPushAlert(alert: Alert, config: Record<string, unknown>): Promise<void> {
   // Implementation for sending push notifications
   console.log(`[PerformanceDashboard] Push alert sent for ${alert.id}`)
 }

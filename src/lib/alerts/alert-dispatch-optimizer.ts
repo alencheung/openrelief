@@ -20,7 +20,7 @@
 
 import { performanceMonitor } from '../performance/performance-monitor'
 import { queryOptimizer } from '../database/query-optimizer'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
 import {
   AlertPriority,
@@ -63,13 +63,13 @@ class AlertDispatchOptimizer {
   private alertQueues: Map<AlertPriority, EmergencyAlert[]> = new Map()
   private processingAlerts: Map<string, EmergencyAlert> = new Map()
   private deliveryWorkers: Map<DeliveryChannel, Worker[]> = new Map()
-  private connectionPools: Map<DeliveryChannel, any[]> = new Map()
+  private connectionPools: Map<DeliveryChannel, unknown[]> = new Map()
   private metrics: DispatchMetrics
   private config: QueueConfig
   // Lazily created so module-load (e.g. during the Next.js build) doesn't throw
   // when env vars are absent.
-  private _supabase: any = null
-  private get supabase(): any {
+  private _supabase: SupabaseClient | null = null
+  private get supabase(): SupabaseClient {
     if (!this._supabase) {
       const url = process.env.NEXT_PUBLIC_SUPABASE_URL
       const key = process.env.SUPABASE_SERVICE_ROLE_KEY

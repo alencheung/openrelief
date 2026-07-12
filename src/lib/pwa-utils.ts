@@ -20,7 +20,7 @@ export interface CacheInfo {
 export interface OfflineAction {
   id: string
   type: string
-  data: any
+  data: Record<string, unknown>
   endpoint: string
   method: string
   timestamp: number
@@ -225,7 +225,7 @@ export class OfflineStorage {
     })
   }
 
-  async saveEmergencyData(data: any): Promise<void> {
+  async saveEmergencyData(data: Record<string, unknown>): Promise<void> {
     await this.initDB()
 
     return new Promise((resolve, reject) => {
@@ -242,7 +242,7 @@ export class OfflineStorage {
     })
   }
 
-  async getEmergencyData(type?: string): Promise<any[]> {
+  async getEmergencyData(type?: string): Promise<Record<string, unknown>[]> {
     await this.initDB()
 
     return new Promise((resolve, reject) => {
@@ -252,10 +252,10 @@ export class OfflineStorage {
 
       request.onerror = () => reject(request.error)
       request.onsuccess = () => {
-        let data = request.result
+        let data = (request.result as Record<string, unknown>[]) || []
 
         if (type) {
-          data = data.filter((item: any) => item.type === type)
+          data = data.filter((item: Record<string, unknown>) => item.type === type)
         }
 
         resolve(data)
@@ -272,7 +272,7 @@ export class NetworkUtils {
 
   static getConnectionType(): string | null {
     if ('connection' in navigator) {
-      const connection = (navigator as any).connection
+      const connection = (navigator as { connection?: { effectiveType?: string; type?: string } }).connection
       return connection?.effectiveType || connection?.type || null
     }
     return null
@@ -297,12 +297,12 @@ export class NetworkUtils {
     saveData: boolean
   }> {
     if ('connection' in navigator) {
-      const connection = (navigator as any).connection
+      const connection = (navigator as { connection?: { effectiveType?: string; downlink?: number; rtt?: number; saveData?: boolean } }).connection
       return {
-        effectiveType: connection.effectiveType || 'unknown',
-        downlink: connection.downlink || 0,
-        rtt: connection.rtt || 0,
-        saveData: connection.saveData || false
+        effectiveType: connection?.effectiveType || 'unknown',
+        downlink: connection?.downlink || 0,
+        rtt: connection?.rtt || 0,
+        saveData: connection?.saveData || false
       }
     }
 
@@ -320,7 +320,7 @@ export class PWAInstallUtils {
   static isInstalled(): boolean {
     return (
       window.matchMedia('(display-mode: standalone)').matches
-      || (window.navigator as any).standalone
+      || (window.navigator as { standalone?: boolean }).standalone
       || document.referrer.includes('android-app://')
     )
   }

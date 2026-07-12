@@ -100,7 +100,7 @@ export interface EmergencyModeConfig {
 // Emergency trigger
 export interface EmergencyTrigger {
   type: 'push' | 'network' | 'geolocation' | 'manual'
-  condition: any
+  condition: Record<string, unknown>
   action: 'activate' | 'prepare' | 'notify'
 }
 

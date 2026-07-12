@@ -24,6 +24,11 @@ const config = {
   testRegex: '(/__tests__/.*|(\\.|/)(test|spec))\\.(ts|tsx)$',
   moduleNameMapper: {
     '^@/(.*)$': cwd + '/src/$1',
+    // @testing-library/user-event is frequently corrupted on network-mapped
+    // drives (only LICENSE present, no package.json/dist), which breaks every
+    // test file that imports it. Map it to a local shim built on
+    // @testing-library/dom's fireEvent (always present) so suites load.
+    '^@testing-library/user-event$': cwd + '/__mocks__/user-event-shim.js',
     '\\.(css|less|scss|sass)$': cwd + '/__mocks__/styleMock.js',
     '\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$':
       cwd + '/__mocks__/fileMock.js'

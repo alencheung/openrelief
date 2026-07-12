@@ -35,7 +35,7 @@ export function shouldGenerateReport(ctx: IntegrationContext): boolean {
  */
 export async function generateScheduledReport(
   ctx: IntegrationContext,
-  generateReport: (type: 'performance' | 'testing' | 'compliance' | 'trend') => Promise<any>
+  generateReport: (type: 'performance' | 'testing' | 'compliance' | 'trend') => Promise<unknown>
 ): Promise<void> {
   try {
     const report = await generateReport('performance')
@@ -52,7 +52,7 @@ export async function generateScheduledReport(
  * Send a generated report to a recipient. Real delivery (email/etc.) is not
  * implemented here; this logs the recipient.
  */
-export async function sendReport(report: any, recipient: string): Promise<void> {
+export async function sendReport(report: unknown, recipient: string): Promise<void> {
   console.log(`[PerformanceIntegration] Report sent to ${recipient}`)
 }
 
@@ -63,7 +63,7 @@ export async function sendReport(report: any, recipient: string): Promise<void> 
 export async function generateReport(
   type: 'performance' | 'testing' | 'compliance' | 'trend',
   ctx: IntegrationContext
-): Promise<any> {
+): Promise<Record<string, unknown> | unknown[] | null> {
   try {
     switch (type) {
       case 'performance':
@@ -86,7 +86,7 @@ export async function generateReport(
 /**
  * Snapshot the current dashboard data as a performance report.
  */
-export async function generatePerformanceReport(ctx: IntegrationContext): Promise<any> {
+export async function generatePerformanceReport(ctx: IntegrationContext): Promise<Record<string, unknown> | unknown[] | null> {
   const dashboard = ctx.components.get('performanceDashboard')
   if (dashboard && typeof dashboard.getData === 'function') {
     return dashboard.getData()
@@ -97,7 +97,7 @@ export async function generatePerformanceReport(ctx: IntegrationContext): Promis
 /**
  * Summarize the latest load and regression test history as a testing report.
  */
-export async function generateTestingReport(ctx: IntegrationContext): Promise<any> {
+export async function generateTestingReport(ctx: IntegrationContext): Promise<Record<string, unknown> | unknown[] | null> {
   const loadTesting = ctx.components.get('loadTestingFramework')
   const regressionTesting = ctx.components.get('performanceRegressionTesting')
 
@@ -110,7 +110,7 @@ export async function generateTestingReport(ctx: IntegrationContext): Promise<an
 /**
  * Static compliance report against the configured SLA targets.
  */
-export async function generateComplianceReport(): Promise<any> {
+export async function generateComplianceReport(): Promise<Record<string, unknown> | unknown[] | null> {
   return {
     sla: {
       availability: 99.9,
@@ -128,7 +128,7 @@ export async function generateComplianceReport(): Promise<any> {
 /**
  * Trend report sourced from the dashboard's trends data.
  */
-export async function generateTrendReport(ctx: IntegrationContext): Promise<any> {
+export async function generateTrendReport(ctx: IntegrationContext): Promise<Record<string, unknown> | unknown[] | null> {
   const dashboard = ctx.components.get('performanceDashboard')
   if (dashboard && typeof dashboard.getData === 'function') {
     const data = dashboard.getData()

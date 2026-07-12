@@ -413,7 +413,7 @@ class LoadTestingFramework {
    * Public API methods
    */
 
-  async getTestReport(testId: string): Promise<any> {
+  async getTestReport(testId: string): Promise<Record<string, unknown>> {
     const metrics = this.activeTests.get(testId)
     if (!metrics || metrics.status !== 'completed') {
       throw new Error(`Test ${testId} not completed`)

@@ -33,7 +33,7 @@ interface OfflineAction {
   id: string
   type: 'create' | 'update' | 'delete' | 'confirm' | 'dispute'
   table: string
-  data: any
+  data: Record<string, unknown>
   timestamp: number
   synced: boolean
   retryCount: number
