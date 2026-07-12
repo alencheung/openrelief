@@ -166,7 +166,10 @@ const AudioRecorder = React.forwardRef<HTMLDivElement, AudioRecorderProps>(
     // Initialize audio analyzer
     const initializeAnalyzer = (stream: MediaStream) => {
       try {
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+        const AudioContextCtor: typeof AudioContext =
+          window.AudioContext ||
+          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+        const audioContext = new AudioContextCtor()
         const source = audioContext.createMediaStreamSource(stream)
         const analyser = audioContext.createAnalyser()
 

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, type MutableRefObject, type RefObject } from 'react'
 import maplibregl, { Map, LngLatBounds } from 'maplibre-gl'
+import type { LayerSpecification } from 'maplibre-gl'
 import { mapConfiguration } from '@/lib/map-config'
 import {
   clusterEmergencyEvents,
@@ -78,7 +79,7 @@ export function useInitializeEmergencyLayers(
     if (map.getLayer(layer.id)) {
       return
     }
-    map.addLayer(layer as any)
+    map.addLayer(layer as LayerSpecification)
   })
 }
 
@@ -127,7 +128,7 @@ export function useEmergencyMapLayers(args: EmergencyMapLayersArgs) {
     const bounds = map.getBounds()
     const zoom = map.getZoom()
 
-    let features: any[]
+    let features: GeoJSON.Feature<GeoJSON.Geometry>[]
     const rawFeatures = buildEmergencyFeatures(events)
 
     if (enableClustering) {
@@ -140,8 +141,10 @@ export function useEmergencyMapLayers(args: EmergencyMapLayersArgs) {
       features = clusterEmergencyEvents(filteredEvents, bounds, zoom, cluster)
     }
 
-    const source = map.getSource('emergency-events') as any
-    if (source) {
+    const source = map.getSource('emergency-events') as unknown as {
+      setData?: (data: unknown) => void
+    }
+    if (source?.setData) {
       source.setData({
         type: 'FeatureCollection',
         features
@@ -159,8 +162,10 @@ export function useEmergencyMapLayers(args: EmergencyMapLayersArgs) {
 
     const geofenceFeatures = geofences.map(geofence => createGeofenceBuffer(geofence))
 
-    const source = mapInstanceRef.current.getSource('geofences') as any
-    if (source) {
+    const source = mapInstanceRef.current.getSource('geofences') as unknown as {
+      setData?: (data: unknown) => void
+    }
+    if (source?.setData) {
       source.setData({
         type: 'FeatureCollection',
         features: geofenceFeatures
@@ -178,8 +183,10 @@ export function useEmergencyMapLayers(args: EmergencyMapLayersArgs) {
 
     const heatmapData = generateEmergencyHeatmap(filteredEvents)
 
-    const source = mapInstanceRef.current.getSource('emergency-heatmap') as any
-    if (source) {
+    const source = mapInstanceRef.current.getSource('emergency-heatmap') as unknown as {
+      setData?: (data: unknown) => void
+    }
+    if (source?.setData) {
       source.setData(heatmapData)
     }
   }, [filteredEvents, enableHeatmap, mapInstanceRef])
@@ -208,7 +215,7 @@ export interface UseEmergencyMapInstanceArgs {
   offlineCacheRef: MutableRefObject<OfflineTileCache | null>
   emergencyRouterRef: MutableRefObject<EmergencyRouter | null>
   accessibilityManagerRef: MutableRefObject<MapAccessibilityManager | null>
-  mapStyle: any
+  mapStyle: string | maplibregl.StyleSpecification
   initialCenter: [number, number]
   initialZoom: number
   showControls: boolean
@@ -256,34 +263,43 @@ export function useEmergencyMapInstance(args: UseEmergencyMapInstanceArgs) {
 
   // Handle map click — expands clusters or selects an individual emergency.
   const handleMapClick = useCallback(
-    (e: any) => {
+    (e: {
+      target: Map
+      point: { x: number; y: number }
+    }) => {
       const features = e.target.queryRenderedFeatures(e.point, {
         layers: ['emergency-events', 'emergency-clusters']
       })
 
       if (features.length > 0) {
         const feature = features[0]
-        if (feature.properties.cluster) {
+        if ((feature.properties as { cluster?: boolean }).cluster) {
           // Handle cluster click - zoom to cluster bounds
-          const clusterId = feature.properties.cluster_id
-          const source = e.target.getSource('emergency-events') as any
-          const clusterLeaves = source.getClusterLeaves(clusterId, Infinity, 0)
+          const clusterId = (feature.properties as { cluster_id?: number }).cluster_id
+          const source = e.target.getSource('emergency-events') as unknown as {
+            getClusterLeaves?: (
+              id: number,
+              limit: number,
+              offset: number
+            ) => GeoJSON.Feature<GeoJSON.Geometry>[]
+          }
+          const clusterLeaves = source?.getClusterLeaves?.(clusterId as number, Infinity, 0)
 
-          if (clusterLeaves.length > 0) {
+          if (clusterLeaves && clusterLeaves.length > 0) {
             const bounds = new LngLatBounds()
-            clusterLeaves.forEach((leaf: any) => {
-              const coords = leaf.geometry.coordinates
+            clusterLeaves.forEach((leaf) => {
+              const coords = leaf.geometry.coordinates as [number, number]
               bounds.extend([coords[0], coords[1]])
             })
             e.target.fitBounds(bounds, { padding: 50 })
           }
         } else {
           // Handle individual emergency click
-          const emergencyId = feature.properties.id
+          const emergencyId = (feature.properties as { id?: string }).id
           const emergency = events.find(ev => ev.id === emergencyId)
           if (emergency) {
             setSelectedEmergency(emergency)
-            setSelectedEventOnMap(emergencyId)
+            setSelectedEventOnMap(emergencyId as string)
             onEmergencyClick?.(emergency)
           }
         }
@@ -327,7 +343,7 @@ export function useEmergencyMapInstance(args: UseEmergencyMapInstanceArgs) {
 
     const map = new maplibregl.Map({
       container: mapRef.current,
-      style: mapStyle as any,
+      style: mapStyle,
       center: initialCenter,
       zoom: initialZoom,
       pitch: mapConfiguration.default.pitch,
@@ -419,8 +435,10 @@ export function useEmergencyMapInstance(args: UseEmergencyMapInstanceArgs) {
       }
     }
 
-    const source = mapInstanceRef.current.getSource('user-location') as any
-    if (source) {
+    const source = mapInstanceRef.current.getSource('user-location') as unknown as {
+      setData?: (data: unknown) => void
+    }
+    if (source?.setData) {
       source.setData({
         type: 'FeatureCollection',
         features: [userLocationFeature]

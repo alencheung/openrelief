@@ -3,6 +3,7 @@ import { supabaseHelpers, supabase } from '@/lib/supabase'
 import { Database } from '@/types/database'
 import { useTrustStore, useNotificationStore, useOfflineStore } from '@/store'
 import { usePrivacy } from '@/hooks/usePrivacy'
+import type { LocationData } from '@/hooks/usePrivacy-types'
 
 // Types
 export type UserProfile = Database['public']['Tables']['user_profiles']['Row']
@@ -12,6 +13,11 @@ export type UserTrustHistory = Database['public']['Tables']['user_trust_history'
 export type UserSubscription = Database['public']['Tables']['user_subscriptions']['Row']
 export type UserNotificationSettings =
   Database['public']['Tables']['user_notification_settings']['Row']
+
+// Custom RPC functions are not modelled in the generated Database types, so we
+// call them through this loosely typed adapter that still surfaces errors.
+type RpcResult = { data: unknown; error: { message: string } | null }
+type RpcFn = (fn: string, params: Record<string, unknown>) => Promise<RpcResult>
 
 // User profile queries with privacy protection
 export const useUserProfile = (userId: string, options: { applyPrivacy?: boolean } = {}) => {
@@ -30,7 +36,7 @@ export const useUserProfile = (userId: string, options: { applyPrivacy?: boolean
     queryKey: ['user-profile', userId, options.applyPrivacy],
     queryFn: async () => {
       try {
-        const data: any = await supabaseHelpers.getUserProfile(userId)
+        const data = await supabaseHelpers.getUserProfile(userId) as Record<string, unknown>
 
         // Apply privacy protection if requested
         let protectedData = data
@@ -177,7 +183,7 @@ export const useUpdateUserProfile = () => {
     mutationFn: async ({ userId, updates }: { userId: string; updates: UserProfileUpdate }) => {
       try {
         // Optimistic update
-        queryClient.setQueryData(['user-profile', userId], (old: any) =>
+        queryClient.setQueryData(['user-profile', userId], (old: Record<string, unknown> | undefined) =>
           old ? { ...old, ...updates, updated_at: new Date().toISOString() } : old
         )
 
@@ -236,7 +242,7 @@ export const useTrustScore = (userId: string) => {
     queryKey: ['trust-score', userId],
     queryFn: async () => {
       try {
-        const { data, error } = await (supabase.rpc as any)('calculate_trust_score', {
+        const { data, error } = await (supabase.rpc as RpcFn)('calculate_trust_score', {
           p_user_id: userId
         })
 
@@ -275,15 +281,15 @@ export const useTrustHistory = (userId?: string, limit: number = 50) => {
   return useQuery({
     queryKey: ['trust-history', userId, limit],
     queryFn: async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let query: any = (supabase.from('user_trust_history') as any)
+      const baseQuery = supabase
+        .from('user_trust_history')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(limit)
 
-      if (userId) {
-        query = query.eq('user_id', userId)
-      }
+      const query = userId
+        ? baseQuery.eq('user_id', userId)
+        : baseQuery
 
       const { data, error } = await query
       if (error) {
@@ -317,7 +323,7 @@ export const useUpdateTrustScore = () => {
       eventId: string
       actionType: 'report' | 'confirm' | 'dispute'
       outcome: 'success' | 'failure' | 'pending'
-      metadata?: any
+      metadata?: Record<string, unknown>
     }) => {
       try {
         // Update local trust score immediately
@@ -355,7 +361,7 @@ export const useUpdateTrustScore = () => {
             previous_score: 0, // Will be filled by trigger
             new_score: 0, // Will be filled by trigger
             reason: `${actionType} ${outcome}`
-          } as any)
+          } satisfies Database['public']['Tables']['user_trust_history']['Insert'])
           .select()
           .single()
 
@@ -537,7 +543,7 @@ export const useUpdateNotificationSettings = () => {
             user_id: userId,
             topic_id: topicId,
             ...settings
-          } as any)
+          } satisfies Database['public']['Tables']['user_notification_settings']['Insert'])
           .select()
           .single()
 
@@ -571,7 +577,7 @@ export const useUserStats = (userId: string) => {
   return useQuery({
     queryKey: ['user-stats', userId],
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)('get_user_stats', {
+      const { data, error } = await (supabase.rpc as unknown as RpcFn)('get_user_stats', {
         p_user_id: userId
       })
 
@@ -600,16 +606,22 @@ export const useNearbyUsers = (
     queryFn: async () => {
       // Apply privacy protection to center location
       const protectedCenter = options.applyPrivacy
-        ? protectLocationData({ latitude: center.lat, longitude: center.lng } as any, {
-            applyDifferentialPrivacy: privacyContext.settings.differentialPrivacy,
-            applyAnonymization: privacyContext.settings.anonymizeData
-          })
-        : { data: center }
+        ? protectLocationData(
+            {
+              latitude: center.lat,
+              longitude: center.lng
+            } as LocationData,
+            {
+              applyDifferentialPrivacy: privacyContext.settings.differentialPrivacy,
+              applyAnonymization: privacyContext.settings.anonymizeData
+            }
+          )
+        : { data: { latitude: center.lat, longitude: center.lng } }
 
-      const centerData = protectedCenter.data as any
-      const { data, error } = await (supabase.rpc as any)('get_nearby_users', {
-        p_lat: centerData.lat ?? centerData.latitude,
-        p_lng: centerData.lng ?? centerData.longitude,
+      const centerData = protectedCenter.data as { latitude: number; longitude: number }
+      const { data, error } = await (supabase.rpc as unknown as RpcFn)('get_nearby_users', {
+        p_lat: centerData.latitude,
+        p_lng: centerData.longitude,
         p_radius_meters: radius,
         p_limit: limit
       })
@@ -640,7 +652,7 @@ export const useUserExpertise = (userId: string) => {
   return useQuery({
     queryKey: ['user-expertise', userId],
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)('get_user_expertise', {
+      const { data, error } = await (supabase.rpc as unknown as RpcFn)('get_user_expertise', {
         p_user_id: userId
       })
 

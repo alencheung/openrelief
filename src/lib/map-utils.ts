@@ -80,7 +80,7 @@ export function clusterEmergencyEvents(
   }))
 
   // Load features into cluster
-  cluster.load(features as any)
+  cluster.load(features as GeoJSON.Feature<GeoJSON.Point>[])
 
   // Get clusters within bounds
   const bboxArray = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()] as [
@@ -184,10 +184,9 @@ export class MapPerformanceManager {
 
   private detectDevicePerformance() {
     // Simple heuristic for low-end device detection
-    const navigator = window.navigator as any
     const hardwareConcurrency = navigator.hardwareConcurrency || 4
-    const deviceMemory = navigator.deviceMemory || 4
-    const connection = (navigator as any).connection
+    const deviceMemory = (navigator as { deviceMemory?: number }).deviceMemory || 4
+    const connection = (navigator as { connection?: { effectiveType?: string } }).connection
 
     this.isLowEndDevice =
       hardwareConcurrency <= 2 ||
@@ -299,7 +298,7 @@ export class MapPerformanceManager {
   destroy() {
     console.log('[MapPerformanceManager] Destroying performance manager')
     this.isMonitoring = false
-    this.map = null as any
+    this.map = null as unknown as maplibregl.Map
   }
 }
 

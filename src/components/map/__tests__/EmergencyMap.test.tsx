@@ -347,15 +347,9 @@ describe('EmergencyMap', () => {
     const centerButton = screen.getByRole('button', { name: /center on user location/i })
     await user.click(centerButton)
 
-    // Should announce location centering
-    const { announcePolite } = jest
-      .mocked(require('@/hooks/accessibility').useAriaAnnouncer())
-      .mockReturnValue({
-        announcePolite: jest.fn(),
-        announceAssertive: jest.fn()
-      })
-
-    expect(announcePolite).toHaveBeenCalledWith('Centered map on your location')
+    // Should announce location centering. Assert on the shared mock fn that
+    // the component actually invoked (not a freshly-created one).
+    expect(mockAnnouncePolite).toHaveBeenCalledWith('Centered map on your location')
   })
 
   it('handles heatmap toggle click', async () => {
@@ -365,14 +359,8 @@ describe('EmergencyMap', () => {
     const heatmapButton = screen.getByRole('button', { name: /toggle heatmap/i })
     await user.click(heatmapButton)
 
-    const { announcePolite } = jest
-      .mocked(require('@/hooks/accessibility').useAriaAnnouncer())
-      .mockReturnValue({
-        announcePolite: jest.fn(),
-        announceAssertive: jest.fn()
-      })
-
-    expect(announcePolite).toHaveBeenCalled()
+    // Assert on the shared mock fn that the component invoked.
+    expect(mockAnnouncePolite).toHaveBeenCalled()
   })
 
   it('handles emergency click event', async () => {
@@ -395,7 +383,8 @@ describe('EmergencyMap', () => {
   it('updates when emergency events change', () => {
     const { rerender } = renderWithProviders(<EmergencyMap />)
 
-    // Update with new events
+    // Update with new events, preserving the rest of the store mock shape so
+    // the component doesn't crash accessing mapState/setMapState on rerender.
     const newEvents = [
       ...mockEmergencyEvents,
       createMockEmergencyEvent({
@@ -405,9 +394,15 @@ describe('EmergencyMap', () => {
     ]
 
     jest.mocked(useEmergencyStore).mockReturnValue({
-      ...jest.mocked(useEmergencyStore).mockReturnValue,
       events: newEvents,
-      filteredEvents: newEvents
+      filteredEvents: newEvents,
+      mapState: {
+        center: { lat: 40.7128, lng: -74.006 },
+        zoom: 10,
+        bounds: null
+      },
+      setMapState: mockSetMapState,
+      setSelectedEventOnMap: mockSetSelectedEventOnMap
     } as any)
 
     rerender(<EmergencyMap />)
@@ -419,15 +414,19 @@ describe('EmergencyMap', () => {
   it('updates when location changes', () => {
     const { rerender } = renderWithProviders(<EmergencyMap />)
 
-    // Update with new location
+    // Update with new location, preserving the rest of the store mock shape.
     const newLocation = createMockLocation({
       lat: 40.7589,
       lng: -73.9851
     })
 
     jest.mocked(useLocationStore).mockReturnValue({
-      ...jest.mocked(useLocationStore).mockReturnValue,
-      currentLocation: newLocation
+      currentLocation: newLocation,
+      isTracking: true,
+      geofences: mockGeofences,
+      proximityAlerts: mockProximityAlerts,
+      startTracking: jest.fn(),
+      stopTracking: jest.fn()
     } as any)
 
     rerender(<EmergencyMap />)
@@ -436,31 +435,25 @@ describe('EmergencyMap', () => {
   })
 
   it('handles keyboard navigation', () => {
-    const { registerShortcut } = jest
-      .mocked(require('@/hooks/accessibility').useKeyboardNavigation())
-      .mockReturnValue({
-        registerShortcut: jest.fn(),
-        unregisterShortcut: jest.fn()
-      })
-
     renderWithProviders(<EmergencyMap />)
 
-    // Should register keyboard shortcuts
-    expect(registerShortcut).toHaveBeenCalledWith(
+    // Assert on the shared mock fns that the component actually invoked when
+    // it registered its keyboard shortcuts during render.
+    expect(mockRegisterShortcut).toHaveBeenCalledWith(
       expect.objectContaining({
         key: '+',
         description: 'Zoom in on map'
       })
     )
 
-    expect(registerShortcut).toHaveBeenCalledWith(
+    expect(mockRegisterShortcut).toHaveBeenCalledWith(
       expect.objectContaining({
         key: '=',
         description: 'Zoom out on map'
       })
     )
 
-    expect(registerShortcut).toHaveBeenCalledWith(
+    expect(mockRegisterShortcut).toHaveBeenCalledWith(
       expect.objectContaining({
         key: 'c',
         description: 'Center map on user location'
@@ -630,16 +623,10 @@ describe('EmergencyMap', () => {
   })
 
   it('handles accessibility announcements', () => {
-    const { announcePolite } = jest
-      .mocked(require('@/hooks/accessibility').useAriaAnnouncer())
-      .mockReturnValue({
-        announcePolite: jest.fn(),
-        announceAssertive: jest.fn()
-      })
-
     renderWithProviders(<EmergencyMap />)
 
-    // Should have accessibility announcer
-    expect(announcePolite).toBeDefined()
+    // The component wires up the accessibility announcer during render.
+    // Assert the shared mock is in place (the component invoked useAriaAnnouncer).
+    expect(mockAnnouncePolite).toBeDefined()
   })
 })

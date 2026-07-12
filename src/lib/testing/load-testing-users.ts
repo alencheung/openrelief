@@ -174,7 +174,7 @@ export function executeRequestWithWorker(
   worker: Worker,
   endpoint: TestEndpoint,
   virtualUser: VirtualUser
-): Promise<any> {
+): Promise<unknown> {
   return new Promise((resolve, reject) => {
     const requestData = {
       endpoint,

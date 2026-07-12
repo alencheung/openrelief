@@ -33,7 +33,7 @@ import {
 interface FormField {
   id: string
   name: string
-  value: any
+  value: unknown
   required: boolean
   valid: boolean
   dirty: boolean
@@ -62,8 +62,8 @@ interface FormOfflineStatusProps {
   formId: string
   formName: string
   fields: FormField[]
-  onSubmit?: (data: any) => Promise<void>
-  onFieldChange?: (fieldId: string, value: any) => void
+  onSubmit?: (data: Record<string, unknown>) => Promise<void>
+  onFieldChange?: (fieldId: string, value: unknown) => void
   onValidationChange?: (fieldId: string, isValid: boolean) => void
   showOfflineIndicator?: boolean
   position?: 'top' | 'bottom' | 'inline'
@@ -156,7 +156,7 @@ export function FormOfflineStatusIndicator({
           acc[field.id] = field.value
           return acc
         },
-        {} as Record<string, any>
+        {} as Record<string, unknown>
       )
 
       // Add to offline queue
@@ -200,7 +200,7 @@ export function FormOfflineStatusIndicator({
   }
 
   // Handle form submission
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (data: Record<string, unknown>) => {
     setFormStatus(prev => ({
       ...prev,
       isSubmitting: true
@@ -277,7 +277,7 @@ export function FormOfflineStatusIndicator({
           acc[field.id] = field.value
           return acc
         },
-        {} as Record<string, any>
+        {} as Record<string, unknown>
       )
 
       await handleSubmit(formData)

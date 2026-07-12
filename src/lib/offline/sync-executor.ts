@@ -33,7 +33,7 @@ export interface ExecutableAction {
   id: string
   type: 'create' | 'update' | 'delete' | 'confirm' | 'dispute'
   table: string
-  data: any
+  data: Record<string, unknown>
   retryCount: number
   maxRetries: number
   dependencies?: string[]
@@ -47,7 +47,7 @@ const NON_RETRYABLE = new Set([400, 401, 403, 404, 409, 422])
 function classifyHttpFailure(status: number, body: unknown): SyncOutcome {
   const message =
     body && typeof body === 'object' && 'error' in body
-      ? String((body as any).error)
+      ? String((body as { error: unknown }).error)
       : `Request failed with status ${status}`
 
   if (status === 409) {
@@ -61,7 +61,7 @@ function classifyHttpFailure(status: number, body: unknown): SyncOutcome {
   // 429 / 5xx — transient. Honour Retry-After when present.
   const retryAfterHeader =
     body && typeof body === 'object' && 'retryAfter' in body
-      ? Number((body as any).retryAfter)
+      ? Number((body as { retryAfter: number | string }).retryAfter)
       : undefined
   return {
     status: 'failed_transiently',
@@ -70,7 +70,7 @@ function classifyHttpFailure(status: number, body: unknown): SyncOutcome {
   }
 }
 
-async function parseBody(response: Response): Promise<any> {
+async function parseBody(response: Response): Promise<unknown> {
   const text = await response.text()
   try {
     return text ? JSON.parse(text) : {}
@@ -247,7 +247,7 @@ async function syncConfirmation(
  */
 async function syncGeneric(action: ExecutableAction): Promise<SyncOutcome> {
   try {
-    let result: any
+    let result: { data: { id?: string } | null; error: { message?: string } | null }
     if (action.type === 'create') {
       const { data, error } = await supabase.from(action.table).insert(action.data).select().single()
       result = { data, error }

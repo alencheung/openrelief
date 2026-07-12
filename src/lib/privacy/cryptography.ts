@@ -282,13 +282,13 @@ export function verifySaltedHash(
  * @returns Proof object
  */
 export function createIdentityProof(
-  identityData: Record<string, any>,
+  identityData: Record<string, unknown>,
   secret: string
 ): {
   commitment: string;
   challenge: string;
   response: string;
-  publicData: Record<string, any>;
+  publicData: Record<string, unknown>;
 } {
   // Create commitment (hash of secret)
   const commitment = createHashDigest(secret)
@@ -324,7 +324,7 @@ export function verifyIdentityProof(
     commitment: string;
     challenge: string;
     response: string;
-    publicData: Record<string, any>;
+    publicData: Record<string, unknown>;
   },
   secret: string
 ): boolean {
@@ -348,7 +348,7 @@ export function verifyIdentityProof(
  */
 export async function encryptUserData(
   userId: string,
-  data: Record<string, any>,
+  data: Record<string, unknown>,
   masterKey: Buffer
 ): Promise<EncryptedData> {
   // Generate a new key for this data
@@ -378,7 +378,7 @@ export async function decryptUserData(
   userId: string,
   encryptedData: EncryptedData,
   masterKey: Buffer
-): Promise<Record<string, any> | null> {
+): Promise<Record<string, unknown> | null> {
   // Retrieve the data key
   const dataKey = await retrieveUserKey(userId, encryptedData.keyId, masterKey)
   if (!dataKey) {

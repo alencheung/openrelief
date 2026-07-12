@@ -110,8 +110,8 @@ export function AccessibilityPanel({
   className,
   showAdvanced = false
 }: AccessibilityPanelProps) {
-  const motionState = useReducedMotion() as any
-  const prefersReducedMotion = motionState.prefersReducedMotion ?? false
+  const motionState = useReducedMotion()
+  const prefersReducedMotion = motionState.isReduced ?? false
   const { announcePolite } = useAriaAnnouncer()
 
   const [localSettings, setLocalSettings] = useState(settings)

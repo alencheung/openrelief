@@ -196,7 +196,7 @@ const PrivacySettingsPage: React.FC = () => {
     )
   }
 
-  const updateLocalSetting = (key: keyof PrivacySettings, value: any) => {
+  const updateLocalSetting = (key: keyof PrivacySettings, value: unknown) => {
     setLocalSettings(prev => ({
       ...prev,
       [key]: value

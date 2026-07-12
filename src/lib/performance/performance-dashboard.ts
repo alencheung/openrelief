@@ -139,7 +139,7 @@ class PerformanceDashboard {
   /**
    * Get widget data
    */
-  getWidgetData(widgetId: string): any {
+  getWidgetData(widgetId: string): unknown {
     const widget = this.widgets.get(widgetId)
     if (!widget) {
       return null

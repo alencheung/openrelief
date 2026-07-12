@@ -3,7 +3,15 @@
 import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { PWACacheManager, OfflineStorage, NetworkUtils, PWAPerformance, formatFileSize, formatDuration } from '@/lib/pwa-utils'
+import {
+  PWACacheManager,
+  OfflineStorage,
+  NetworkUtils,
+  PWAPerformance,
+  formatFileSize,
+  formatDuration,
+  type OfflineAction
+} from '@/lib/pwa-utils'
 import {
   WifiIcon,
   WifiOffIcon,
@@ -34,9 +42,19 @@ export function PWAStatus() {
   const [isOnline, setIsOnline] = useState(true)
   const [cacheStatus, setCacheStatus] = useState<CacheStatus[]>([])
   const [storageStatus, setStorageStatus] = useState<StorageStatus>({ used: 0, quota: 0, percentage: 0 })
-  const [networkQuality, setNetworkQuality] = useState<any>({})
-  const [performance, setPerformance] = useState<any>({})
-  const [queuedActions, setQueuedActions] = useState<any[]>([])
+  const [networkQuality, setNetworkQuality] = useState<{
+    effectiveType: string
+    downlink: number
+    rtt: number
+    saveData: boolean
+  } | null>(null)
+  const [performance, setPerformance] = useState<{
+    domContentLoaded: number
+    loadComplete: number
+    firstContentfulPaint?: number
+    largestContentfulPaint?: number
+  } | null>(null)
+  const [queuedActions, setQueuedActions] = useState<OfflineAction[]>([])
   const [isRefreshing, setIsRefreshing] = useState(false)
 
   useEffect(() => {
@@ -77,7 +95,7 @@ export function PWAStatus() {
       // Load queued actions
       const offlineStorage = OfflineStorage.getInstance()
       const actions = await offlineStorage.getActions()
-      setQueuedActions(actions.filter((action: any) => !action.synced))
+      setQueuedActions(actions.filter(action => !action.synced))
     } catch (error) {
       console.error('Failed to load PWA status:', error)
     }

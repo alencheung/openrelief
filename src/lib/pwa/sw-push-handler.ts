@@ -47,7 +47,7 @@ export class PushNotificationManager {
     }
   }
 
-  async send(notification: any): Promise<void> {
+  async send(notification: Record<string, unknown>): Promise<void> {
     try {
       // Check quiet hours
       if (this.config.quietHours.enabled && this.isInQuietHours()) {

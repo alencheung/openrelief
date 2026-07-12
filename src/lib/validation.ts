@@ -8,7 +8,7 @@ import {
 // Validation rule types
 export interface ValidationRule {
   name: string
-  validator: (value: any, formData?: Record<string, any>) => string | null
+  validator: (value: unknown, formData?: Record<string, unknown>) => string | null
   message?: string
 }
 
@@ -23,7 +23,7 @@ export const validators = {
   // Required field validation
   required: (message = 'This field is required'): ValidationRule => ({
     name: 'required',
-    validator: (value: any) => {
+    validator: (value: unknown) => {
       if (value === null || value === undefined || value === '') {
         return message
       }
@@ -159,7 +159,7 @@ export const validators = {
   // Number validation
   number: (message = 'Please enter a valid number'): ValidationRule => ({
     name: 'number',
-    validator: (value: any) => {
+    validator: (value: unknown) => {
       if (value === null || value === undefined || value === '') {
         return null
       }
@@ -174,7 +174,7 @@ export const validators = {
   // Integer validation
   integer: (message = 'Please enter a whole number'): ValidationRule => ({
     name: 'integer',
-    validator: (value: any) => {
+    validator: (value: unknown) => {
       if (value === null || value === undefined || value === '') {
         return null
       }
@@ -288,7 +288,7 @@ export const validators = {
 }
 
 // Validation utility functions
-export const validateField = (value: any, rules: ValidationRule[]): string | null => {
+export const validateField = (value: unknown, rules: ValidationRule[]): string | null => {
   for (const rule of rules) {
     const error = rule.validator(value)
     if (error) {
@@ -299,7 +299,7 @@ export const validateField = (value: any, rules: ValidationRule[]): string | nul
 }
 
 export const validateForm = (
-  data: Record<string, any>,
+  data: Record<string, unknown>,
   fieldRules: Record<string, ValidationRule[]>
 ): ValidationResult => {
   const errors: Record<string, string> = {}
@@ -328,7 +328,7 @@ export const validateForm = (
 
 // Real-time validation hook
 export const useValidation = (
-  data: Record<string, any>,
+  data: Record<string, unknown>,
   fieldRules: Record<string, ValidationRule[]>,
   validateOnChange = true
 ) => {
@@ -418,7 +418,7 @@ export const validationSchemas = {
       validators.required('Please confirm your password'),
       {
         name: 'passwordMatch',
-        validator: (value: any, formData?: Record<string, any>) => {
+        validator: (value: unknown, formData?: Record<string, unknown>) => {
           if (!value || !formData?.password) {
             return null
           }

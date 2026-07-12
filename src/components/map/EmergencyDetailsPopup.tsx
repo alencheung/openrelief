@@ -23,6 +23,7 @@ import {
   Icon,
   EnhancedButton
 } from '@/components/ui'
+import { toEmergencyIndicatorType } from './emergency-map-helpers'
 
 const emergencyDetailsVariants = cva(
   'absolute bg-card rounded-xl shadow-xl border transition-all duration-normal z-20',
@@ -348,7 +349,7 @@ const EmergencyDetailsPopup: React.FC<EmergencyDetailsPopupProps> = ({
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
             <EmergencyIndicator
-              type={emergency.emergencyType as any}
+              type={toEmergencyIndicatorType(emergency.emergencyType)}
               size="sm"
               variant="subtle"
               showSeverity

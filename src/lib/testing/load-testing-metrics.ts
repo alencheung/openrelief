@@ -43,7 +43,7 @@ export function categorizeError(status: number, message?: string): string {
 export function updateRequestMetrics(
   metrics: LoadTestMetrics,
   responseTime: number,
-  response: any,
+  response: { status?: number; data?: unknown },
   endpoint: TestEndpoint,
   virtualUser: VirtualUser
 ): void {
@@ -110,7 +110,7 @@ export function updateRequestMetrics(
  */
 export function updateErrorMetrics(
   metrics: LoadTestMetrics,
-  error: any,
+  error: unknown,
   virtualUser: VirtualUser
 ): void {
   metrics.requests.failed++
@@ -300,7 +300,7 @@ export function createPerformanceAlert(
   testId: string,
   type: string,
   message: string,
-  data: any
+  data: Record<string, unknown>
 ): void {
   console.error(`[LoadTest Alert] ${testId} - ${type}: ${message}`, data)
 }

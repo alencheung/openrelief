@@ -273,15 +273,15 @@ export interface EmergencyMapViewProps {
   enableEnhancedDetails: boolean
   enhancedEmergencyDetails: EmergencyDetails | null
   showLegend: boolean
-  legendPosition: string
-  legendSize: string
+  legendPosition: 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right'
+  legendSize: 'sm' | 'md' | 'lg' | 'xl'
   legendCollapsed: boolean
   onLegendToggle: (collapsed: boolean) => void
   events: EmergencyEvent[]
   showProximityAlerts: boolean
   enhancedProximityAlerts: ProximityAlert[]
-  alertsPosition: string
-  alertsSize: string
+  alertsPosition: 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right'
+  alertsSize: 'sm' | 'md' | 'lg' | 'xl'
   maxVisibleAlerts: number
   autoDismissAlerts: boolean
   onAlertClick: (alert: ProximityAlert) => void
@@ -291,14 +291,14 @@ export interface EmergencyMapViewProps {
   showSpatialInfo: boolean
   spatialInfoVisible: boolean
   setSpatialInfoVisible: (visible: boolean) => void
-  spatialPosition: string
+  spatialPosition: 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right'
   spatialInfo: SpatialInfo
   currentUnitSystem: 'metric' | 'imperial'
   onUnitChange: (unit: 'metric' | 'imperial') => void
   accessibilitySettings: AccessibilitySettings
   onAccessibilitySettingsChange: (settings: Partial<AccessibilitySettings>) => void
-  onBreakpointChange: (bp: string) => void
-  onOrientationChange: (ori: string) => void
+  onBreakpointChange: (bp: 'mobile' | 'tablet' | 'desktop') => void
+  onOrientationChange: (ori: 'portrait' | 'landscape') => void
 }
 
 export function EmergencyMapView(props: EmergencyMapViewProps) {
@@ -362,8 +362,8 @@ export function EmergencyMapView(props: EmergencyMapViewProps) {
   return (
     <ResponsiveMapContainer
       className={cn('map-container relative', className)}
-      onBreakpointChange={onBreakpointChange as any}
-      onOrientationChange={onOrientationChange as any}
+      onBreakpointChange={onBreakpointChange}
+      onOrientationChange={onOrientationChange}
     >
       {/* MapLibre GL JS container */}
       <div
@@ -454,8 +454,8 @@ export function EmergencyMapView(props: EmergencyMapViewProps) {
       {/* Enhanced Map Legend */}
       {showLegend && (
         <MapLegend
-          position={legendPosition as any}
-          size={legendSize as any}
+          position={legendPosition}
+          size={legendSize}
           variant={isMobile ? 'compact' : 'default'}
           emergencyTypes={legendEmergencyTypes}
           showLayerControls={!isMobile}
@@ -472,8 +472,8 @@ export function EmergencyMapView(props: EmergencyMapViewProps) {
       {showProximityAlerts && enhancedProximityAlerts.length > 0 && (
         <ProximityAlertsDisplay
           alerts={enhancedProximityAlerts}
-          position={alertsPosition as any}
-          size={alertsSize as any}
+          position={alertsPosition}
+          size={alertsSize}
           variant={isMobile ? 'compact' : 'default'}
           maxVisible={maxVisibleAlerts}
           showDismissAll={!isMobile}
@@ -490,8 +490,8 @@ export function EmergencyMapView(props: EmergencyMapViewProps) {
       {/* Spatial Information Overlay */}
       {showSpatialInfo && spatialInfoVisible && (
         <SpatialInformationOverlay
-          spatialInfo={spatialInfo as any}
-          position={spatialPosition as any}
+          spatialInfo={spatialInfo}
+          position={spatialPosition}
           size="sm"
           variant={isMobile ? 'minimal' : 'compact'}
           showDistance={true}

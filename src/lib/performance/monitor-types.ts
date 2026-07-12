@@ -13,7 +13,7 @@ export interface PerformanceMetric {
   value: number
   unit: 'ms' | 'bytes' | 'count' | 'percentage' | 'requests_per_second'
   tags?: Record<string, string>
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 // Core Web Vitals interface

@@ -206,7 +206,7 @@ export const checkStoreHealth = () => {
   const health = stores.map(({ name, store }) => ({
     name,
     healthy: store !== null && typeof store === 'object',
-    error: (store as any)?.error || null
+    error: (store as { error?: unknown })?.error || null
   }))
 
   return {
@@ -217,7 +217,13 @@ export const checkStoreHealth = () => {
 
 // Store reset utility
 export const resetAllStores = () => {
-  (useAuthStore.getState() as any).reset()
+  useAuthStore.setState({
+    user: null,
+    isAuthenticated: false,
+    isLoading: false,
+    error: null,
+    session: null
+  })
   useEmergencyStore.getState().reset()
   useTrustStore.getState().reset()
   useLocationStore.getState().reset()
@@ -239,26 +245,26 @@ export const exportStoreData = () => {
   }
 }
 
-export const importStoreData = (data: any) => {
+export const importStoreData = (data: Record<string, unknown>) => {
   if (data.auth) {
-    useAuthStore.setState(data.auth)
+    useAuthStore.setState(data.auth as Partial<AuthStore>)
   }
   if (data.emergency) {
-    useEmergencyStore.setState(data.emergency)
+    useEmergencyStore.setState(data.emergency as Partial<EmergencyStore>)
   }
   if (data.trust) {
-    useTrustStore.setState(data.trust)
+    useTrustStore.setState(data.trust as Partial<TrustStore>)
   }
   if (data.location) {
-    useLocationStore.setState(data.location)
+    useLocationStore.setState(data.location as Partial<LocationStore>)
   }
   if (data.notification) {
-    useNotificationStore.setState(data.notification)
+    useNotificationStore.setState(data.notification as Partial<NotificationStore>)
   }
   if (data.offline) {
-    useOfflineStore.setState(data.offline)
+    useOfflineStore.setState(data.offline as Partial<OfflineStore>)
   }
   if (data.checkIn) {
-    useCheckInStore.setState(data.checkIn)
+    useCheckInStore.setState(data.checkIn as Partial<CheckInStore>)
   }
 }

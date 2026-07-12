@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { withAPISecurity, API_SECURITY_CONFIGS } from '@/lib/security/api-security'
 import { inputValidator } from '@/lib/security/input-validation'
-import { securityMonitor } from '@/lib/audit/security-monitor'
+import { securityMonitor, SecurityIncidentType, IncidentSeverity } from '@/lib/audit/security-monitor'
 
 // Build-safe Supabase client: returns a real client when env vars are present,
 // otherwise a minimal stub so module-load during the Next.js build page-data
 // collection doesn't throw "supabaseUrl is required".
-function safeCreateClient(url?: string, key?: string, opts?: any): import('@supabase/supabase-js').SupabaseClient {
+function safeCreateClient(
+  url?: string,
+  key?: string,
+  opts?: Record<string, unknown>
+): SupabaseClient {
   // In test mode, use the mock client from @/lib/supabase
 
   if (process.env.NODE_ENV === 'test') {
@@ -16,14 +20,14 @@ function safeCreateClient(url?: string, key?: string, opts?: any): import('@supa
 
       const { supabase } = require('@/lib/supabase')
 
-      return supabase as any
+      return supabase as SupabaseClient
 
     } catch {}
 
   }
 
   if (url && key) {
-    return createClient(url, key, opts)
+    return createClient(url, key, opts as ConstructorParameters<typeof createClient>[2])
   }
   const noop = () => chain
     const chain = {
@@ -31,9 +35,9 @@ function safeCreateClient(url?: string, key?: string, opts?: any): import('@supa
       eq: noop, neq: noop, in: noop, gte: noop, lte: noop, gt: noop, lt: noop,
       like: noop, ilike: noop, contains: noop, not: noop, is: noop, or: noop,
       filter: noop, order: noop, limit: noop, range: noop, single: noop,
-      maybeSingle: noop, then: (resolve: any) => resolve({ data: [], error: null })
+      maybeSingle: noop, then: (resolve: (value: { data: unknown[]; error: null }) => void) => resolve({ data: [], error: null })
     }
-  return { from: () => chain, auth: { getUser: async () => ({ data: { user: null }, error: null }) } } as any
+  return { from: () => chain, auth: { getUser: async () => ({ data: { user: null }, error: null }) } } as unknown as SupabaseClient
 }
 
 
@@ -172,8 +176,8 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
       }
 
       await securityMonitor.createAlert(
-        'api_access' as any,
-        'low' as any,
+        SecurityIncidentType.API_ACCESS,
+        IncidentSeverity.LOW,
         `Push subscription registered for user ${context.userId}`,
         `Endpoint: ${sub.endpoint.substring(0, 50)}...`,
         'notifications'

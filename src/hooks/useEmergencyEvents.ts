@@ -67,7 +67,7 @@ export const useCreateEmergencyEvent = () => {
     mutationFn: async (event: EmergencyEventInsert) => {
       return await supabaseHelpers.createEmergencyEvent(event)
     },
-    onSuccess: (newEvent: any) => {
+    onSuccess: (newEvent: { id: string } & Record<string, unknown>) => {
       queryClient.invalidateQueries({ queryKey: ['emergency-events'] })
       queryClient.setQueryData(['emergency-event', newEvent.id], newEvent)
     },
@@ -84,7 +84,7 @@ export const useUpdateEmergencyEvent = () => {
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<EmergencyEvent> }) => {
       return await supabaseHelpers.updateEmergencyEvent(id, updates)
     },
-    onSuccess: (updatedEvent: any) => {
+    onSuccess: (updatedEvent: { id: string } & Record<string, unknown>) => {
       queryClient.invalidateQueries({ queryKey: ['emergency-events'] })
       queryClient.setQueryData(['emergency-event', updatedEvent.id], updatedEvent)
     },
@@ -141,7 +141,7 @@ export const useEmergencyTypes = () => {
 }
 
 // Real-time subscriptions
-export const useEmergencyEventsSubscription = (callback: (payload: any) => void) => {
+export const useEmergencyEventsSubscription = (callback: (payload: Record<string, unknown>) => void) => {
   return useQuery({
     queryKey: ['emergency-events-subscription'],
     queryFn: () => {

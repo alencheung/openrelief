@@ -377,7 +377,7 @@ const TransparencyReport: React.FC = () => {
             <label className="text-sm text-gray-600">Date Range:</label>
             <select
               value={dateRange}
-              onChange={e => setDateRange(e.target.value as any)}
+              onChange={e => setDateRange(e.target.value as '7d' | '30d' | '90d' | '1y')}
               className="border rounded px-3 py-1 text-sm"
             >
               <option value="7d">Last 7 days</option>

@@ -242,7 +242,9 @@ export function calculateDistance(
 // consumed by MapLibre's `emergency-events` source. Kept pure so the layer
 // controller can hand the same array to either the GPU clustering path or the
 // CPU Supercluster fallback without rebuilding it twice.
-export function buildEmergencyFeatures(events: EmergencyEvent[]): any[] {
+export function buildEmergencyFeatures(
+  events: EmergencyEvent[]
+): GeoJSON.Feature<GeoJSON.Point>[] {
   return events.map(event => ({
     type: 'Feature',
     properties: {
@@ -295,13 +297,31 @@ export function calculateSpatialInfo(
 // Map legend
 // ---------------------------------------------------------------------------
 
+export type EmergencyIndicatorType = 'fire' | 'medical' | 'security' | 'natural' | 'infrastructure'
+
+const VALID_EMERGENCY_INDICATOR_TYPES: ReadonlyArray<EmergencyIndicatorType> = [
+  'fire',
+  'medical',
+  'security',
+  'natural',
+  'infrastructure'
+]
+
+// Narrows an arbitrary string to an EmergencyIndicatorType, falling back to
+// 'fire' for unknown values so the indicator always renders a known style.
+export function toEmergencyIndicatorType(value: string): EmergencyIndicatorType {
+  return VALID_EMERGENCY_INDICATOR_TYPES.includes(value as EmergencyIndicatorType)
+    ? (value as EmergencyIndicatorType)
+    : 'fire'
+}
+
 export interface LegendEmergencyType {
-  type: string
+  type: EmergencyIndicatorType
   name: string
   count: number
 }
 
-const LEGEND_EMERGENCY_TYPES: Array<{ type: string; name: string }> = [
+const LEGEND_EMERGENCY_TYPES: Array<{ type: EmergencyIndicatorType; name: string }> = [
   { type: 'fire', name: 'Fire Emergency' },
   { type: 'medical', name: 'Medical Emergency' },
   { type: 'security', name: 'Security Threat' },

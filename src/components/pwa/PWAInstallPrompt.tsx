@@ -5,7 +5,11 @@ import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { X, DownloadIcon, Smartphone } from 'lucide-react'
 
-declare const gtag: any
+declare const gtag: (
+  command: 'event',
+  eventName: string,
+  params?: Record<string, unknown>
+) => void
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[]
@@ -28,14 +32,14 @@ export function PWAInstallPrompt() {
     const checkInstalled = () => {
       // Check if running as standalone PWA
       const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches
-        || (window.navigator as any).standalone
+        || (window.navigator as unknown as { standalone?: boolean }).standalone
         || document.referrer.includes('android-app://')
 
       setIsStandalone(isStandaloneMode)
 
       // Check if already installed (for iOS)
       const isInStandaloneMode
-        = ('standalone' in window.navigator && (window.navigator as any).standalone)
+        = ('standalone' in window.navigator && (window.navigator as unknown as { standalone?: boolean }).standalone)
         || window.matchMedia('(display-mode: standalone)').matches
 
       setIsInstalled(isInStandaloneMode)
@@ -242,7 +246,7 @@ export function usePWAInstall() {
   useEffect(() => {
     const checkInstallStatus = () => {
       const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches
-        || (window.navigator as any).standalone
+        || (window.navigator as unknown as { standalone?: boolean }).standalone
         || document.referrer.includes('android-app://')
       setIsInstalled(isStandaloneMode)
     }

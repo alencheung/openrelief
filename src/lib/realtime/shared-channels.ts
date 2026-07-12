@@ -60,23 +60,22 @@ export function sharedChannelName(key: SharedChannelKey): string {
  */
 export function acquireSharedChannel(
   key: SharedChannelKey,
-  onMessage: (payload: any) => void
+  onMessage: (payload: Record<string, unknown>) => void
 ): { channel: RealtimeChannel; release: () => void } {
   const name = keyToString(key)
   let entry = channelRegistry.get(name)
 
   if (!entry) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const channel: any = supabase.channel(name)
+    const channel = supabase.channel(name)
     channel.on(
-      'postgres_changes' as any,
+      'postgres_changes',
       {
         event: key.event || '*',
         schema: 'public',
         table: key.table,
         filter: key.filter
       },
-      (payload: any) => {
+      (payload: Record<string, unknown>) => {
         // Dispatch to the per-channel listener set maintained below.
         const listeners = listenersByChannel.get(name)
         if (listeners) {
@@ -124,7 +123,7 @@ export function acquireSharedChannel(
   }
 }
 
-const listenersByChannel = new Map<string, Set<(payload: any) => void>>()
+const listenersByChannel = new Map<string, Set<(payload: Record<string, unknown>) => void>>()
 
 /**
  * Inspect the registry — primarily for tests and observability.

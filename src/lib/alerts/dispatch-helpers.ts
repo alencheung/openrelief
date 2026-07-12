@@ -54,7 +54,15 @@ export const GET_USERS_FOR_ALERT_SQL = `
 /**
  * Map a raw user_profiles row into an AlertUser, resolving preferred channels.
  */
-export function mapUserRowToAlertUser(user: any): AlertUser {
+export function mapUserRowToAlertUser(user: {
+  user_id: string
+  fcm_token?: string | null
+  email?: string | null
+  phone?: string | null
+  distance?: number
+  trust_score?: number
+  notification_preferences?: Record<string, unknown> | null
+}): AlertUser {
   return {
     userId: user.user_id,
     fcmToken: user.fcm_token,
@@ -62,7 +70,7 @@ export function mapUserRowToAlertUser(user: any): AlertUser {
     phone: user.phone,
     distance: user.distance,
     trustScore: user.trust_score,
-    preferredChannels: getPreferredChannels(user.notification_preferences)
+    preferredChannels: getPreferredChannels(user.notification_preferences || {})
   }
 }
 
@@ -253,7 +261,7 @@ export function getAPNSExpiration(priority: AlertPriority): string {
 /**
  * Resolve a user's preferred delivery channels from their notification prefs.
  */
-export function getPreferredChannels(preferences: Record<string, any>): DeliveryChannel[] {
+export function getPreferredChannels(preferences: Record<string, unknown>): DeliveryChannel[] {
   if (!preferences) {
     return [DeliveryChannel.IN_APP, DeliveryChannel.PUSH_NOTIFICATION]
   }

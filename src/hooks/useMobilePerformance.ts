@@ -70,7 +70,10 @@ export function useMobilePerformance(options: PerformanceOptions = {}) {
       return undefined
     }
 
-    const memory = (performance as any).memory
+    const memory = (performance as { memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } }).memory
+    if (!memory) {
+      return undefined
+    }
     return {
       used: memory.usedJSHeapSize,
       total: memory.totalJSHeapSize,
@@ -86,7 +89,7 @@ export function useMobilePerformance(options: PerformanceOptions = {}) {
     }
 
     try {
-      const battery = await (navigator as any).getBattery()
+      const battery = await (navigator as { getBattery?: () => Promise<{ level: number; charging: boolean }> }).getBattery!()
       return {
         level: battery.level,
         charging: battery.charging
@@ -103,12 +106,12 @@ export function useMobilePerformance(options: PerformanceOptions = {}) {
       return { type: undefined, effectiveType: undefined }
     }
 
-    const connection = (navigator as any).connection
+    const connection = (navigator as { connection?: { type?: string; effectiveType?: string; downlink?: number; rtt?: number } }).connection
     return {
-      type: connection.type,
-      effectiveType: connection.effectiveType,
-      downlink: connection.downlink,
-      rtt: connection.rtt
+      type: connection?.type,
+      effectiveType: connection?.effectiveType,
+      downlink: connection?.downlink,
+      rtt: connection?.rtt
     }
   }, [opts.enableConnectionMonitoring])
 
@@ -229,7 +232,7 @@ export function useMobilePerformance(options: PerformanceOptions = {}) {
   const cleanupMemory = useCallback(() => {
     // Force garbage collection if available
     if ('gc' in window) {
-      (window as any).gc()
+      (window as { gc?: () => void }).gc?.()
     }
 
     // Clear any cached data that might be large

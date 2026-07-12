@@ -34,7 +34,7 @@ export interface EmergencyPushPayload {
 export interface BackgroundTaskResult {
   success: boolean
   error?: string
-  data?: any
+  data?: unknown
   executionTime: number
 }
 

@@ -156,7 +156,7 @@ export function PWAManager({ children }: PWAManagerProps) {
 export function usePWAStatus() {
   const [isReady, setIsReady] = useState(false)
   const [hasUpdate, setHasUpdate] = useState(false)
-  const [cacheInfo, setCacheInfo] = useState<any>(null)
+  const [cacheInfo, setCacheInfo] = useState<unknown>(null)
 
   useEffect(() => {
     // Check PWA readiness

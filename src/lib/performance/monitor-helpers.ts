@@ -338,7 +338,7 @@ export function mapMetricRow(row: Record<string, unknown>): PerformanceMetric {
     value: row.value as number,
     unit: row.unit as PerformanceMetric['unit'],
     tags: row.tags as Record<string, string> | undefined,
-    metadata: row.metadata as Record<string, any> | undefined
+    metadata: row.metadata as Record<string, unknown> | undefined
   } as PerformanceMetric
 }
 

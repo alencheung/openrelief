@@ -78,7 +78,7 @@ class DatabaseQueryOptimizer {
     // none). Use a placeholder client that will be replaced on first real use.
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-    this.supabase = url && key ? createClient(url, key) : (null as any)
+    this.supabase = url && key ? createClient(url, key) : (null as unknown as SupabaseClient)
 
     this.poolManager = PoolManager.getInstance(
       {

@@ -9,7 +9,17 @@ import { Geofence } from '@/types'
 interface GeofenceManagerProps {
   className?: string
   // MapLibre GL map instance
-  mapInstance?: any
+  mapInstance?: {
+    getCanvas: () => { style: { cursor: string } }
+    on: (
+      event: string,
+      handler: (e: { lngLat: { lat: number; lng: number } }) => void
+    ) => void
+    off: (
+      event: string,
+      handler: (e: { lngLat: { lat: number; lng: number } }) => void
+    ) => void
+  }
   onGeofenceCreate?: (geofence: Geofence) => void
   onGeofenceUpdate?: (geofenceId: string, updates: Partial<Geofence>) => void
   onGeofenceDelete?: (geofenceId: string) => void
@@ -35,7 +45,11 @@ const geofenceTypes = [
   { value: 'custom', label: 'Custom Zone', color: '#888888', icon: '📍' }
 ]
 
-const severityLevels = [
+const severityLevels: Array<{
+  value: 'low' | 'medium' | 'high' | 'critical'
+  label: string
+  color: string
+}> = [
   { value: 'low', label: 'Low', color: '#44ff44' },
   { value: 'medium', label: 'Medium', color: '#ffaa00' },
   { value: 'high', label: 'High', color: '#ff8800' },
@@ -64,7 +78,9 @@ export default function GeofenceManager({
   })
   const [isSelectingLocation, setIsSelectingLocation] = useState(false)
   const [showForm, setShowForm] = useState(false)
-  const mapClickHandlerRef = useRef<((e: any) => void) | null>(null)
+  const mapClickHandlerRef = useRef<((e: { lngLat: { lat: number; lng: number } }) => void) | null>(
+    null
+  )
 
   const {
     geofences,
@@ -110,7 +126,7 @@ export default function GeofenceManager({
     setIsSelectingLocation(true)
     mapInstance.getCanvas().style.cursor = 'crosshair'
 
-    const handleMapClick = (e: any) => {
+    const handleMapClick = (e: { lngLat: { lat: number; lng: number } }) => {
       const coords = e.lngLat
       setFormData(prev => ({
         ...prev,
@@ -495,7 +511,7 @@ export default function GeofenceManager({
                     <button
                       key={severity.value}
                       onClick={() =>
-                        setFormData(prev => ({ ...prev, severity: severity.value as any }))
+                        setFormData(prev => ({ ...prev, severity: severity.value }))
                       }
                       className={cn(
                         'p-2 rounded-lg border-2 transition-all text-xs font-medium',

@@ -69,11 +69,11 @@ export interface AlgorithmicDecision {
   userId?: string
   algorithm: string
   decision: string
-  factors: {
+    factors: {
     name: string
     weight: number
-    value: any
-  }[]
+    value: unknown
+    }[]
   confidence: number
   explanation: string
   impact: 'positive' | 'negative' | 'neutral'
@@ -590,7 +590,7 @@ const assessUserRightsFulfillment = (legalRequests: LegalRequest[]) => {
 
 // Export transparency report to different formats
 export const exportTransparencyReport = (
-  report: any,
+  report: { dataProcessingActivities: DataProcessingActivity[] },
   format: 'json' | 'csv' | 'pdf'
 ): string | Blob => {
   switch (format) {
@@ -610,7 +610,7 @@ export const exportTransparencyReport = (
 }
 
 // Convert report to CSV format
-const convertToCSV = (report: any): string => {
+const convertToCSV = (report: { dataProcessingActivities: DataProcessingActivity[] }): string => {
   const headers = [
     'Timestamp',
     'User ID',

@@ -50,7 +50,12 @@ const PrivacyPage: React.FC = () => {
   const { privacyContext, privacyAlerts, clearPrivacyAlert } = usePrivacy()
   const [activeTab, setActiveTab] = useState<TabId>('dashboard')
 
-  const tabs = [
+  const tabs: Array<{
+    id: TabId
+    label: string
+    icon: React.ComponentType<{ className?: string }>
+    description: string
+  }> = [
     {
       id: 'dashboard',
       label: 'Privacy Dashboard',
@@ -254,7 +259,7 @@ const PrivacyPage: React.FC = () => {
             {tabs.map(tab => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center space-x-2 py-4 px-3 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
                   activeTab === tab.id
                     ? 'border-blue-500 text-blue-600'

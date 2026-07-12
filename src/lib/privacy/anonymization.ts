@@ -128,7 +128,7 @@ export function generalizeTimestamp(
  * @param config K-anonymity configuration
  * @returns True if dataset satisfies k-anonymity
  */
-export function checkKAnonymity<T extends Record<string, any>>(
+export function checkKAnonymity<T extends Record<string, unknown>>(
   data: T[],
   config: KAnonymityConfig
 ): boolean {
@@ -162,7 +162,7 @@ export function checkKAnonymity<T extends Record<string, any>>(
  * @param config K-anonymity configuration
  * @returns K-anonymous dataset
  */
-export function enforceKAnonymity<T extends Record<string, any>>(
+export function enforceKAnonymity<T extends Record<string, unknown>>(
   data: T[],
   config: KAnonymityConfig
 ): T[] {
@@ -269,7 +269,7 @@ export function applyTemporalDecay(
  * @param aggregations Aggregation functions for each field
  * @returns Aggregated dataset
  */
-export function aggregateData<T extends Record<string, any>>(
+export function aggregateData<T extends Record<string, unknown>>(
   data: T[],
   groupBy: string[],
   aggregations: Record<string, 'sum' | 'avg' | 'count' | 'min' | 'max'>
@@ -337,7 +337,7 @@ export function aggregateData<T extends Record<string, any>>(
  * @param k Minimum cluster size
  * @returns Clustered user data
  */
-export function createUserClusters<T extends Record<string, any>>(
+export function createUserClusters<T extends Record<string, unknown>>(
   users: T[],
   k: number = 5
 ): Array<{ cluster: T[]; representative: T }> {
@@ -424,7 +424,7 @@ function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
  * @param options Anonymization options
  * @returns Anonymized user data
  */
-export function anonymizeUserData<T extends Record<string, any>>(
+export function anonymizeUserData<T extends Record<string, unknown>>(
   userData: T[],
   options: {
     locationPrecision?: number;

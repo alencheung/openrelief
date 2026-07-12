@@ -8,154 +8,27 @@
  * - Log analysis and reporting capabilities
  */
 
-import { createHash, createHmac } from 'crypto'
 import { supabase, supabaseAdmin } from '@/lib/supabase'
 
-// Audit event types
-export enum AuditEventType {
-  // Data access events
-  DATA_ACCESS = 'data_access',
-  DATA_EXPORT = 'data_export',
-  DATA_DELETION = 'data_deletion',
-  DATA_MODIFICATION = 'data_modification',
-
-  // Authentication events
-  LOGIN_SUCCESS = 'login_success',
-  LOGIN_FAILURE = 'login_failure',
-  LOGOUT = 'logout',
-  PASSWORD_CHANGE = 'password_change',
-
-  // Privacy events
-  PRIVACY_SETTINGS_CHANGE = 'privacy_settings_change',
-  PRIVACY_BUDGET_CONSUMED = 'privacy_budget_consumed',
-  CONSENT_GRANTED = 'consent_granted',
-  CONSENT_REVOKED = 'consent_revoked',
-
-  // Legal and compliance events
-  LEGAL_REQUEST_RECEIVED = 'legal_request_received',
-  LEGAL_REQUEST_PROCESSED = 'legal_request_processed',
-  DATA_RETENTION_POLICY_APPLIED = 'data_retention_policy_applied',
-  COMPLIANCE_CHECK = 'compliance_check',
-
-  // Security events
-  SECURITY_INCIDENT = 'security_incident',
-  UNAUTHORIZED_ACCESS_ATTEMPT = 'unauthorized_access_attempt',
-  SUSPICIOUS_ACTIVITY = 'suspicious_activity',
-
-  // System events
-  SYSTEM_ERROR = 'system_error',
-  SYSTEM_MAINTENANCE = 'system_maintenance',
-  BACKUP_COMPLETED = 'backup_completed',
-
-  // Emergency response events
-  EMERGENCY_REPORT_CREATED = 'emergency_report_created',
-  EMERGENCY_REPORT_CONFIRMED = 'emergency_report_confirmed',
-  EMERGENCY_REPORT_DISPUTED = 'emergency_report_disputed',
-  EMERGENCY_DATA_SHARED = 'emergency_data_shared'
-}
-
-// Audit event severity levels
-export enum AuditSeverity {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high',
-  CRITICAL = 'critical'
-}
-
-// Compliance frameworks
-export enum ComplianceFramework {
-  GDPR = 'gdpr',
-  CCPA = 'ccpa',
-  HIPAA = 'hipaa',
-  SOX = 'sox'
-}
-
-// Enhanced audit log entry interface
-export interface AuditLogEntry {
-  id: string
-  timestamp: Date
-  eventType: AuditEventType
-  severity: AuditSeverity
-  userId?: string
-  sessionId?: string
-  ipAddress?: string
-  userAgent?: string
-
-  // Event details
-  action: string
-  resource: string
-  resourceId?: string
-
-  // Data context
-  dataType?: string
-  dataTypes?: string[]
-  dataSubjects?: number
-  dataVolume?: number
-
-  // Privacy and compliance
-  privacyImpact: 'low' | 'medium' | 'high'
-  legalBasis?: string
-  complianceFrameworks?: ComplianceFramework[]
-  retentionPeriod?: number
-
-  // Security and integrity
-  previousHash?: string
-  currentHash: string
-  signature?: string
-
-  // Metadata
-  metadata?: Record<string, any>
-  tags?: string[]
-
-  // Processing information
-  processed: boolean
-  archived: boolean
-  createdAt: Date
-  updatedAt: Date
-}
-
-// Audit log query options
-export interface AuditLogQuery {
-  userId?: string
-  eventType?: AuditEventType
-  severity?: AuditSeverity
-  startDate?: Date
-  endDate?: Date
-  resource?: string
-  dataType?: string
-  complianceFramework?: ComplianceFramework
-  tags?: string[]
-  limit?: number
-  offset?: number
-  orderBy?: 'timestamp' | 'severity' | 'eventType'
-  orderDirection?: 'asc' | 'desc'
-}
-
-// Audit statistics
-export interface AuditStatistics {
-  totalEvents: number
-  eventsByType: Record<AuditEventType, number>
-  eventsBySeverity: Record<AuditSeverity, number>
-  eventsByUser: Record<string, number>
-  complianceEvents: Record<ComplianceFramework, number>
-  privacyImpacts: Record<'low' | 'medium' | 'high', number>
-  timeRange: {
-    start: Date
-    end: Date
-  }
-}
-
-// Audit logger configuration
-export interface AuditLoggerConfig {
-  enableHashChaining: boolean
-  enableDigitalSignatures: boolean
-  retentionPeriod: number // days
-  archivalThreshold: number // days
-  compressionEnabled: boolean
-  encryptionEnabled: boolean
-  batchSize: number
-  flushInterval: number // milliseconds
-}
+// Re-export types and helpers for backward compatibility
+export * from './audit-logger-types'
+export * from './audit-logger-helpers'
+import {
+  AuditEventType,
+  AuditSeverity,
+  ComplianceFramework
+} from './audit-logger-types'
+import type {
+  AuditLogEntry,
+  AuditLogQuery,
+  AuditStatistics,
+  AuditLoggerConfig
+} from './audit-logger-types'
+import {
+  calculateAuditHash,
+  generateAuditId,
+  convertLogsToCSV
+} from './audit-logger-helpers'
 
 class AuditLogger {
   private config: AuditLoggerConfig
@@ -492,28 +365,14 @@ class AuditLogger {
    * Calculate hash for log entry
    */
   private calculateHash(entry: AuditLogEntry, previousHash?: string | null): string {
-    const hashData = {
-      id: entry.id,
-      timestamp: entry.timestamp.toISOString(),
-      eventType: entry.eventType,
-      severity: entry.severity,
-      userId: entry.userId,
-      action: entry.action,
-      resource: entry.resource,
-      resourceId: entry.resourceId,
-      privacyImpact: entry.privacyImpact,
-      previousHash: previousHash || entry.previousHash
-    }
-
-    const dataString = JSON.stringify(hashData, Object.keys(hashData).sort())
-    return createHash('sha256').update(dataString).digest('hex')
+    return calculateAuditHash(entry, previousHash)
   }
 
   /**
    * Generate unique ID
    */
   private generateId(): string {
-    return `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    return generateAuditId()
   }
 
   /**
@@ -567,44 +426,7 @@ class AuditLogger {
    * Convert logs to CSV format
    */
   private convertToCSV(logs: AuditLogEntry[]): string {
-    const headers = [
-      'id',
-      'timestamp',
-      'event_type',
-      'severity',
-      'user_id',
-      'action',
-      'resource',
-      'privacy_impact',
-      'data_type',
-      'legal_basis',
-      'compliance_frameworks',
-      'tags'
-    ]
-
-    const csvRows = [
-      headers.join(','),
-      ...logs.map(log =>
-        [
-          log.id,
-          log.timestamp.toISOString(),
-          log.eventType,
-          log.severity,
-          log.userId || '',
-          log.action,
-          log.resource,
-          log.privacyImpact,
-          log.dataType || '',
-          log.legalBasis || '',
-          log.complianceFrameworks?.join(';') || '',
-          log.tags?.join(';') || ''
-        ]
-          .map(field => `"${field}"`)
-          .join(',')
-      )
-    ]
-
-    return csvRows.join('\n')
+    return convertLogsToCSV(logs)
   }
 
   /**
@@ -664,90 +486,12 @@ class AuditLogger {
 // Global audit logger instance
 export const auditLogger = new AuditLogger()
 
-// Convenience functions for common audit events
-export const logDataAccess = async (
-  userId: string,
-  resource: string,
-  dataType: string,
-  privacyImpact: 'low' | 'medium' | 'high' = 'medium',
-  metadata?: Record<string, any>
-) => {
-  return auditLogger.logEvent({
-    timestamp: new Date(),
-    eventType: AuditEventType.DATA_ACCESS,
-    severity: AuditSeverity.LOW,
-    userId,
-    action: 'access',
-    resource,
-    dataType,
-    privacyImpact,
-    legalBasis: 'user_consent',
-    complianceFrameworks: [ComplianceFramework.GDPR] as ComplianceFramework[],
-    metadata
-  })
-}
-
-export const logPrivacySettingsChange = async (
-  userId: string,
-  changes: Record<string, any>,
-  privacyImpact: 'low' | 'medium' | 'high' = 'medium'
-) => {
-  return auditLogger.logEvent({
-    timestamp: new Date(),
-    eventType: AuditEventType.PRIVACY_SETTINGS_CHANGE,
-    severity: AuditSeverity.MEDIUM,
-    userId,
-    action: 'update',
-    resource: 'privacy_settings',
-    privacyImpact,
-    legalBasis: 'user_consent',
-    complianceFrameworks: [ComplianceFramework.GDPR] as ComplianceFramework[],
-    metadata: { changes }
-  })
-}
-
-export const logSecurityIncident = async (
-  incidentType: string,
-  severity: AuditSeverity,
-  description: string,
-  affectedUsers?: string[],
-  metadata?: Record<string, any>
-) => {
-  return auditLogger.logEvent({
-    timestamp: new Date(),
-    eventType: AuditEventType.SECURITY_INCIDENT,
-    severity,
-    action: 'incident_detected',
-    resource: 'system',
-    privacyImpact: 'high',
-    dataSubjects: affectedUsers?.length || 0,
-    legalBasis: 'legal_obligation',
-    complianceFrameworks: [
-      ComplianceFramework.GDPR,
-      ComplianceFramework.CCPA
-    ] as ComplianceFramework[],
-    metadata: { incidentType, description, affectedUsers, ...metadata }
-  })
-}
-
-export const logLegalRequest = async (
-  requestType: string,
-  userId?: string,
-  severity: AuditSeverity = AuditSeverity.HIGH,
-  metadata?: Record<string, any>
-) => {
-  return auditLogger.logEvent({
-    timestamp: new Date(),
-    eventType: AuditEventType.LEGAL_REQUEST_RECEIVED,
-    severity,
-    userId,
-    action: 'legal_request',
-    resource: 'legal_system',
-    privacyImpact: 'high',
-    legalBasis: 'legal_obligation',
-    complianceFrameworks: [ComplianceFramework.GDPR] as ComplianceFramework[],
-    metadata: { requestType, ...metadata }
-  })
-}
+// Convenience functions moved to a separate module; re-exported for compatibility
+export {
+  logDataAccess,
+  logPrivacySettingsChange,
+  logSecurityIncident,
+  logLegalRequest
+} from './audit-logger-functions'
 
 export default auditLogger

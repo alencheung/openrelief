@@ -290,7 +290,7 @@ class PerformanceIntegration {
   /**
    * Generate performance report
    */
-  async generateReport(type: 'performance' | 'testing' | 'compliance' | 'trend'): Promise<any> {
+  async generateReport(type: 'performance' | 'testing' | 'compliance' | 'trend'): Promise<Record<string, unknown> | unknown[] | null> {
     return generateTypedReport(type, this.getContext())
   }
 

@@ -32,7 +32,7 @@ export interface AlertingConfig {
 // Alert channel
 export interface AlertChannel {
   type: 'email' | 'slack' | 'webhook' | 'sms' | 'push' | 'console'
-  config: any
+  config: Record<string, unknown>
   enabled: boolean
   severity: ('low' | 'medium' | 'high' | 'critical')[]
 }
@@ -106,7 +106,7 @@ export interface WidgetConfig {
   size: 'small' | 'medium' | 'large' | 'full'
   position: { x: number; y: number }
   refreshRate: number // seconds
-  config: any
+  config: Record<string, unknown>
   filters?: string[]
 }
 
@@ -198,7 +198,7 @@ export interface SlowQuery {
   query: string
   executionTime: number
   timestamp: Date
-  parameters: any
+  parameters: Record<string, unknown>
   frequency: number
 }
 
@@ -221,7 +221,7 @@ export interface Alert {
   title: string
   description: string
   source: string
-  metrics: any
+  metrics: Record<string, unknown>
   status: 'active' | 'acknowledged' | 'resolved' | 'escalated'
   acknowledgedBy?: string
   resolvedBy?: string
@@ -258,7 +258,7 @@ export interface TestResult {
   status: 'passed' | 'failed' | 'running'
   duration: number
   timestamp: Date
-  metrics: any
+  metrics: Record<string, unknown>
 }
 
 // Regression metrics

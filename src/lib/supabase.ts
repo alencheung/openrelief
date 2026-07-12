@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { Database } from '@/types/database'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
@@ -58,12 +58,19 @@ export const supabaseAdmin = shouldUseMockClient
     })
 
 // Mock Supabase client for test environment only
-function createMockSupabaseClient() {
+function createMockSupabaseClient(): SupabaseClient<Database> {
   if (process.env.NODE_ENV !== 'test' && process.env.NODE_ENV !== 'development') {
     console.warn('Warning: Mock Supabase client should not be used in production')
   }
 
-  return {
+  // A self-referential query-builder chain that mimics Supabase's fluent
+  // builder API enough for tests/builds to load without a real backend. Typed
+  // loosely and cast to the real client type at the end.
+  type MockChain = Record<string, (...args: unknown[]) => unknown> & {
+    then: (resolve: (value: { data: unknown[]; error: null }) => void) => void
+  }
+
+  const mockClient = {
     auth: {
       signInWithPassword: async ({ email, password }: { email: string; password: string }) => {
         await new Promise(resolve => setTimeout(resolve, 1000))
@@ -134,58 +141,60 @@ function createMockSupabaseClient() {
     },
 
     from: (_table: string) => {
-      const makeChain = (): Record<string, any> => {
-        const chain: Record<string, any> = {}
-        chain.select = (..._args: any[]) => chain
-        chain.insert = (..._args: any[]) => chain
-        chain.update = (..._args: any[]) => chain
-        chain.upsert = (..._args: any[]) => chain
+      const makeChain = (): MockChain => {
+        const chain = {} as MockChain
+        chain.select = (..._args: unknown[]) => chain
+        chain.insert = (..._args: unknown[]) => chain
+        chain.update = (..._args: unknown[]) => chain
+        chain.upsert = (..._args: unknown[]) => chain
         chain.delete = () => chain
-        chain.eq = (..._args: any[]) => chain
-        chain.neq = (..._args: any[]) => chain
-        chain.in = (..._args: any[]) => chain
-        chain.gte = (..._args: any[]) => chain
-        chain.lte = (..._args: any[]) => chain
-        chain.gt = (..._args: any[]) => chain
-        chain.lt = (..._args: any[]) => chain
-        chain.like = (..._args: any[]) => chain
-        chain.ilike = (..._args: any[]) => chain
-        chain.contains = (..._args: any[]) => chain
-        chain.containedBy = (..._args: any[]) => chain
-        chain.not = (..._args: any[]) => chain
-        chain.is = (..._args: any[]) => chain
-        chain.or = (..._args: any[]) => chain
-        chain.filter = (..._args: any[]) => chain
-        chain.order = (..._args: any[]) => chain
-        chain.limit = (..._args: any[]) => chain
-        chain.range = (..._args: any[]) => chain
+        chain.eq = (..._args: unknown[]) => chain
+        chain.neq = (..._args: unknown[]) => chain
+        chain.in = (..._args: unknown[]) => chain
+        chain.gte = (..._args: unknown[]) => chain
+        chain.lte = (..._args: unknown[]) => chain
+        chain.gt = (..._args: unknown[]) => chain
+        chain.lt = (..._args: unknown[]) => chain
+        chain.like = (..._args: unknown[]) => chain
+        chain.ilike = (..._args: unknown[]) => chain
+        chain.contains = (..._args: unknown[]) => chain
+        chain.containedBy = (..._args: unknown[]) => chain
+        chain.not = (..._args: unknown[]) => chain
+        chain.is = (..._args: unknown[]) => chain
+        chain.or = (..._args: unknown[]) => chain
+        chain.filter = (..._args: unknown[]) => chain
+        chain.order = (..._args: unknown[]) => chain
+        chain.limit = (..._args: unknown[]) => chain
+        chain.range = (..._args: unknown[]) => chain
         chain.single = () => Promise.resolve({ data: null, error: null })
         chain.maybeSingle = () => Promise.resolve({ data: null, error: null })
-        chain.then = (resolve: any) => resolve({ data: [], error: null })
+        chain.then = (resolve: (value: { data: unknown[]; error: null }) => void) => resolve({ data: [], error: null })
         return chain
       }
       return makeChain()
     },
 
-    rpc: (fnName: string, params: any) => {
+    rpc: (_fnName: string, _params: Record<string, unknown>) => {
       return Promise.resolve({ data: null, error: null })
     },
 
     channel: (_channelName: string) => {
-      const mockChannel: Record<string, any> = {
-        on: (..._args: any[]) => mockChannel,
-        subscribe: (_callback?: any) => mockChannel,
+      const mockChannel: Record<string, (...args: unknown[]) => unknown> = {
+        on: (..._args: unknown[]) => mockChannel,
+        subscribe: (..._args: unknown[]) => mockChannel,
         unsubscribe: () => {},
-        track: (_state: any) => Promise.resolve({}),
+        track: (_state: unknown) => Promise.resolve({}),
         untrack: () => Promise.resolve({}),
         presenceState: () => ({}),
-        send: (_message: any) => Promise.resolve({})
+        send: (_message: unknown) => Promise.resolve({})
       }
       return mockChannel
     },
 
-    removeChannel: (_channel: any) => Promise.resolve({ data: null, error: null })
+    removeChannel: (_channel: unknown) => Promise.resolve({ data: null, error: null })
   }
+
+  return mockClient as unknown as SupabaseClient<Database>
 }
 
 // Helper functions for common operations
@@ -204,7 +213,7 @@ export const supabaseHelpers = {
     return data
   },
 
-  async updateUserProfile(userId: string, updates: any) {
+  async updateUserProfile(userId: string, updates: Record<string, unknown>) {
     const { data, error } = await supabase
       .from('user_profiles')
       .update(updates)
@@ -218,7 +227,7 @@ export const supabaseHelpers = {
     return data
   },
 
-  async createUserProfile(profile: any) {
+  async createUserProfile(profile: Record<string, unknown>) {
     const { data, error } = await supabase.from('user_profiles').insert(profile).select().single()
 
     if (error) {
@@ -264,7 +273,7 @@ export const supabaseHelpers = {
     return data
   },
 
-  async createEmergencyEvent(event: any) {
+  async createEmergencyEvent(event: Record<string, unknown>) {
     const { data, error } = await supabase
       .from('emergency_events')
       .insert(event)
@@ -286,7 +295,7 @@ export const supabaseHelpers = {
     return data
   },
 
-  async updateEmergencyEvent(eventId: string, updates: any) {
+  async updateEmergencyEvent(eventId: string, updates: Record<string, unknown>) {
     const { data, error } = await supabase
       .from('emergency_events')
       .update(updates)
@@ -411,7 +420,7 @@ export const supabaseHelpers = {
   },
 
   // Real-time subscriptions
-  subscribeToEmergencyEvents(callback: (payload: any) => void) {
+  subscribeToEmergencyEvents(callback: (payload: Record<string, unknown>) => void) {
     return supabase
       .channel('emergency_events')
       .on(
@@ -426,7 +435,7 @@ export const supabaseHelpers = {
       .subscribe()
   },
 
-  subscribeToUserLocation(callback: (payload: any) => void) {
+  subscribeToUserLocation(callback: (payload: Record<string, unknown>) => void) {
     return supabase
       .channel('user_profiles')
       .on(
