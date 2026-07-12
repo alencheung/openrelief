@@ -42,7 +42,7 @@
       }
     },
     {
-      "files": ["src/lib/security/**", "src/lib/testing/**"],
+      "files": ["src/lib/testing/**"],
       "rules": {
         "@typescript-eslint/no-explicit-any": "off"
       }
