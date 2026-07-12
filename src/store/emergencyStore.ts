@@ -48,7 +48,7 @@ export interface OfflineEmergencyAction {
   id: string
   type: 'create' | 'update' | 'confirm' | 'dispute'
   eventId?: string
-  data: any
+  data: Record<string, unknown>
   timestamp: number
   synced: boolean
   retryCount: number
@@ -177,6 +177,26 @@ const initialState: EmergencyState = {
 // string like 'high', location as {latitude, longitude}, type as a string,
 // reportedAt timestamp). The store accepts both so filtering works regardless
 // of where the event object originated.
+// Loose event shape accepted by the helper functions below. Events may arrive
+// from the database (snake_case columns, location as a WKT string) or from
+// client-side payloads, so the shape is intentionally permissive.
+type LooseEmergencyEvent = {
+  severity?: number | string
+  type_id?: number
+  type?: string
+  location?: string | { latitude?: number; longitude?: number; lat?: number; lng?: number }
+  created_at?: string
+  reportedAt?: string
+  updated_at?: string
+  status?: string
+  title?: string
+  description?: string
+  trust_weight?: number
+  trustScore?: number
+  emergency_types?: { name?: string }
+  [key: string]: unknown
+}
+
 const SEVERITY_STRING_TO_NUM: Record<string, number> = {
   low: 1,
   medium: 3,
@@ -184,7 +204,7 @@ const SEVERITY_STRING_TO_NUM: Record<string, number> = {
   critical: 5
 }
 
-function getEventSeverity(event: any): number {
+function getEventSeverity(event: LooseEmergencyEvent): number {
   if (typeof event.severity === 'number') return event.severity
   if (typeof event.severity === 'string') {
     return SEVERITY_STRING_TO_NUM[event.severity.toLowerCase()] ?? 3
@@ -192,7 +212,7 @@ function getEventSeverity(event: any): number {
   return 3
 }
 
-function getEventTypeId(event: any): number | undefined {
+function getEventTypeId(event: LooseEmergencyEvent): number | undefined {
   if (typeof event.type_id === 'number') return event.type_id
   if (typeof event.type === 'string') {
     const map: Record<string, number> = {
@@ -211,7 +231,7 @@ function getEventTypeId(event: any): number | undefined {
   return undefined
 }
 
-function getEventCoordinates(event: any): { lat: number; lng: number } | null {
+function getEventCoordinates(event: LooseEmergencyEvent): { lat: number; lng: number } | null {
   // WKT string: 'lng lat' or 'POINT(lng lat)'
   if (typeof event.location === 'string') {
     const cleaned = event.location.replace('POINT(', '').replace(')', '').trim()
@@ -232,7 +252,7 @@ function getEventCoordinates(event: any): { lat: number; lng: number } | null {
   return null
 }
 
-function getEventTimestamp(event: any): string {
+function getEventTimestamp(event: LooseEmergencyEvent): string {
   return event.created_at || event.reportedAt || event.updated_at || new Date(0).toISOString()
 }
 
@@ -243,7 +263,7 @@ const filterEvents = (
   _userLocation?: { lat: number; lng: number } | null
 ): EmergencyEvent[] => {
   return events.filter(event => {
-    const e = event as any
+    const e = event as unknown as LooseEmergencyEvent
 
     // Status filter
     if (filters.status && !filters.status.includes(e.status)) {
