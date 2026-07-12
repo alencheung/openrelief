@@ -11,7 +11,7 @@ export interface Notification {
   timestamp: Date
   read: boolean
   acknowledged: boolean
-  data?: any
+  data?: unknown
   actions?: NotificationAction[]
   expiresAt?: Date
   priority: 'low' | 'medium' | 'high' | 'urgent'
@@ -35,7 +35,7 @@ export interface NotificationAction {
   label: string
   action: 'view' | 'confirm' | 'dispute' | 'navigate' | 'dismiss' | 'custom'
   url?: string
-  data?: any
+  data?: unknown
   style?: 'primary' | 'secondary' | 'danger'
 }
 
