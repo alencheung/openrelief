@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, type RefObject } from 'react'
+import { useCallback, useEffect, type MutableRefObject, type RefObject } from 'react'
 import maplibregl, { Map, LngLatBounds } from 'maplibre-gl'
 import { mapConfiguration } from '@/lib/map-config'
 import {
@@ -133,7 +133,11 @@ export function useEmergencyMapLayers(args: EmergencyMapLayersArgs) {
     if (enableClustering) {
       features = rawFeatures
     } else {
-      features = clusterEmergencyEvents(filteredEvents, bounds, zoom, clusterRef.current)
+      const cluster = clusterRef.current
+      if (!cluster) {
+        return
+      }
+      features = clusterEmergencyEvents(filteredEvents, bounds, zoom, cluster)
     }
 
     const source = map.getSource('emergency-events') as any
@@ -199,11 +203,11 @@ type SetMapState = (state: Partial<{
 
 export interface UseEmergencyMapInstanceArgs {
   mapRef: RefObject<HTMLDivElement | null>
-  mapInstanceRef: RefObject<Map | null>
-  performanceManagerRef: RefObject<MapPerformanceManager | null>
-  offlineCacheRef: RefObject<OfflineTileCache | null>
-  emergencyRouterRef: RefObject<EmergencyRouter | null>
-  accessibilityManagerRef: RefObject<MapAccessibilityManager | null>
+  mapInstanceRef: MutableRefObject<Map | null>
+  performanceManagerRef: MutableRefObject<MapPerformanceManager | null>
+  offlineCacheRef: MutableRefObject<OfflineTileCache | null>
+  emergencyRouterRef: MutableRefObject<EmergencyRouter | null>
+  accessibilityManagerRef: MutableRefObject<MapAccessibilityManager | null>
   mapStyle: any
   initialCenter: [number, number]
   initialZoom: number
@@ -236,6 +240,7 @@ export function useEmergencyMapInstance(args: UseEmergencyMapInstanceArgs) {
     initialZoom,
     showControls,
     enableOffline,
+    isTracking,
     events,
     currentLocation,
     mapStateCenter,

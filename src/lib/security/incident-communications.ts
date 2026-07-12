@@ -12,10 +12,9 @@ import type {
   CommunicationPlan,
   CommunicationSender,
   IncidentResponsePlan,
-  MessageData,
-  Priority
+  MessageData
 } from './incident-types'
-import { INCIDENT_RESPONSE_CONFIG } from './incident-types'
+import { INCIDENT_RESPONSE_CONFIG, Priority } from './incident-types'
 
 /**
  * Build the default set of communication templates used when sending

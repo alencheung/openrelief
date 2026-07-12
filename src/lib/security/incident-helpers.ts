@@ -14,3 +14,8 @@
 // (see ./incident-response.ts). As pure helpers are identified they should
 // be moved here so they can be unit tested in isolation and reused
 // without instantiating the manager.
+
+// Ensure this file is treated as a module so that `export * from
+// './incident-helpers'` in incident-response.ts resolves. Remove once a
+// real helper is exported here.
+export {}

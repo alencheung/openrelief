@@ -160,7 +160,7 @@ const SEVERITY_SIZES = ['w-6 h-6', 'w-8 h-8', 'w-10 h-10', 'w-12 h-12', 'w-14 h-
 // largest available size.
 export function getSeveritySize(severity: number): string {
   const index = Math.min(severity - 1, SEVERITY_SIZES.length - 1)
-  return SEVERITY_SIZES[index] || SEVERITY_SIZES[0]
+  return SEVERITY_SIZES[index] || SEVERITY_SIZES[0] || ''
 }
 
 // Buckets a 0..1 trust weight into a human-readable level label.

@@ -243,5 +243,5 @@ export async function loadActiveResponsePlans(): Promise<IncidentResponsePlan[]>
     throw error
   }
 
-  return (data || []).map(planData => planData.plan_data as IncidentResponsePlan)
+  return (data || []).map((planData: Record<string, unknown>) => planData.plan_data as IncidentResponsePlan)
 }

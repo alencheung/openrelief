@@ -367,7 +367,7 @@ export function EmergencyMapView(props: EmergencyMapViewProps) {
     >
       {/* MapLibre GL JS container */}
       <div
-        ref={mapRef}
+        ref={mapRef as React.LegacyRef<HTMLDivElement>}
         className={cn(
           'absolute inset-0',
           // Enable touch gestures
