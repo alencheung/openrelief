@@ -53,10 +53,6 @@ export interface ScreenReaderOnlyProps {
    * Allow passthrough of host attributes (id, role, data-*, etc.)
    */
   [key: string]: unknown
-
-  // Explicitly type the fields used by cn() to override the index signature
-  focusable?: boolean
-  className?: string
 }
 
 /**
@@ -80,7 +76,7 @@ export const ScreenReaderOnly = forwardRef<HTMLElement, ScreenReaderOnlyProps>(
       atomic = false,
       relevant,
       busy = false,
-      as: Component = 'span',
+      as: Component = 'span' as string & React.ElementType,
       aria = {},
       ...props
     },
@@ -97,7 +93,7 @@ export const ScreenReaderOnly = forwardRef<HTMLElement, ScreenReaderOnlyProps>(
           focusable && 'sr-only-focusable',
 
           // Custom class
-          className
+          className as string | undefined
         )}
         // ARIA live region
         aria-live={live}

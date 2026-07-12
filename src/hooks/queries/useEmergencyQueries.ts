@@ -219,7 +219,7 @@ export const useCreateEmergencyEvent = () => {
 
         // Optimistic update
         const optimisticId = `temp-${Date.now()}`
-        const optimisticEvent = {
+        const optimisticEvent: EmergencyEvent = {
           ...event,
           id: optimisticId,
           created_at: new Date().toISOString(),
