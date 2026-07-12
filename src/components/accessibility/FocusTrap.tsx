@@ -120,7 +120,8 @@ export const FocusTrap = forwardRef<HTMLDivElement, FocusTrapProps>(
      * Merge refs
      */
     const setRefs = (element: HTMLDivElement | null) => {
-      ;(containerRef as React.MutableRefObject<HTMLElement | null>).current = element
+      const mutableRef = containerRef as React.MutableRefObject<HTMLDivElement | null>
+      mutableRef.current = element
       if (typeof ref === 'function') {
         ref(element)
       } else if (ref) {
