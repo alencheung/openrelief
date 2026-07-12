@@ -136,7 +136,9 @@ export async function createIntegrationAlert(
     && a.timestamp.getTime() > (Date.now() - 24 * 60 * 60 * 1000)
   ).length
 
-  const dashboard = ctx.components.get('performanceDashboard')
+  const dashboard = (ctx.components.get('performanceDashboard') ?? {}) as {
+    createAlert?: (alert: Record<string, unknown>) => Promise<void>
+  }
   if (dashboard && typeof dashboard.createAlert === 'function') {
     await dashboard.createAlert({
       severity: alert.severity,

@@ -110,7 +110,8 @@ export async function checkPrivacyBudget(rule: ComplianceRule): Promise<Complian
     return violations
   }
 
-  for (const user of users || []) {
+  const budgetUsers = (users || []) as { user_id: string; used_budget: number; total_budget: number }[]
+  for (const user of budgetUsers) {
     const usagePercentage = user.used_budget / user.total_budget
     let severity = ViolationSeverity.LOW
 
@@ -159,7 +160,7 @@ export async function checkAccessControl(rule: ComplianceRule): Promise<Complian
 
   // Group by IP address
   const attemptsByIP = new Map<string, number>()
-  for (const attempt of failedAttempts || []) {
+  for (const attempt of (failedAttempts || []) as { ip_address?: string }[]) {
     const ip = attempt.ip_address || 'unknown'
     attemptsByIP.set(ip, (attemptsByIP.get(ip) || 0) + 1)
   }
@@ -245,7 +246,13 @@ export async function checkLegalRequestTimeline(rule: ComplianceRule): Promise<C
 
   const now = new Date()
 
-  for (const request of pendingRequests || []) {
+  const requests = (pendingRequests || []) as {
+    id: string
+    user_id: string
+    type: string
+    created_at: string
+  }[]
+  for (const request of requests) {
     const daysSinceCreation = Math.floor(
       (now.getTime() - new Date(request.created_at).getTime()) / (1000 * 60 * 60 * 24)
     )
@@ -537,7 +544,7 @@ export async function saveRuleToDatabase(rule: ComplianceRule): Promise<void> {
         grace_period: rule.gracePeriod,
         last_checked: rule.lastChecked?.toISOString(),
         updated_at: new Date().toISOString()
-      })
+      } as never)
   } catch (error) {
     console.error('Error saving rule:', error)
   }
@@ -568,7 +575,7 @@ export async function saveViolationToDatabase(violation: ComplianceViolation): P
         resolution: violation.resolution,
         metadata: violation.metadata,
         created_at: new Date().toISOString()
-      })
+      } as never)
   } catch (error) {
     console.error('Error saving violation:', error)
   }
@@ -590,7 +597,7 @@ export async function saveComplianceStatusToDatabase(status: ComplianceStatus): 
         critical_violations: status.criticalViolations,
         last_updated: status.lastUpdated.toISOString(),
         created_at: new Date().toISOString()
-      })
+      } as never)
   } catch (error) {
     console.error('Error saving compliance status:', error)
   }

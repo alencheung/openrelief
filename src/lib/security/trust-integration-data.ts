@@ -22,14 +22,23 @@ export const fetchUserTrustScore = async (
     return createDefaultTrustScore(userId)
   }
 
+  const scoreData = data as unknown as {
+    overall_score: number
+    factors: TrustScore['factors']
+    history: TrustScore['history'] | null
+    reputation: TrustScore['reputation'] | null
+    updated_at: string
+    confidence: number | null
+  }
+
   return {
     userId,
-    overall: data.overall_score,
-    factors: data.factors,
-    history: data.history || [],
-    reputation: data.reputation || {},
-    lastUpdated: new Date(data.updated_at),
-    confidence: data.confidence || 0.5
+    overall: scoreData.overall_score,
+    factors: scoreData.factors,
+    history: scoreData.history || [],
+    reputation: scoreData.reputation || {},
+    lastUpdated: new Date(scoreData.updated_at),
+    confidence: scoreData.confidence || 0.5
   }
 }
 
@@ -48,7 +57,7 @@ export const saveTrustScoreToDb = async (trustScore: TrustScore): Promise<void> 
       confidence: trustScore.confidence,
       history: trustScore.history,
       updated_at: new Date().toISOString()
-    })
+    } as never)
   } catch (error) {
     console.error('Error persisting trust score:', error)
   }
@@ -86,5 +95,5 @@ export const checkMFAEnabled = async (userId: string): Promise<boolean> => {
     .eq('user_id', userId)
     .single()
 
-  return (!error && data?.mfa_enabled) || false
+  return (!error && (data as unknown as { mfa_enabled?: boolean } | null)?.mfa_enabled) || false
 }

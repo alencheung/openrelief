@@ -295,7 +295,7 @@ const MapLegend: React.FC<MapLegendProps> = ({
             <div className="space-y-2">
               {emergencyTypes.map(type => (
                 <div key={type.type} className="flex items-center gap-2">
-                  <EmergencyIndicator type={type.type} size="sm" variant="subtle" label="" />
+                  <EmergencyIndicator type={type.type as 'fire' | 'medical' | 'security' | 'natural' | 'infrastructure'} size="sm" variant="subtle" label="" />
                   <span className="text-xs text-foreground flex-1">{type.name}</span>
                   {type.count !== undefined && (
                     <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">

@@ -2,7 +2,7 @@
 
 import { useRef, useState, useCallback, useMemo } from 'react'
 import './map-styles.css'
-import { Map } from 'maplibre-gl'
+import { Map, type StyleSpecification } from 'maplibre-gl'
 import { mapConfiguration } from '@/lib/map-config'
 import { useKeyboardNavigation, useAriaAnnouncer, useReducedMotion } from '@/hooks/accessibility'
 import {
@@ -148,7 +148,7 @@ export default function EmergencyMap({
     offlineCacheRef,
     emergencyRouterRef,
     accessibilityManagerRef,
-    mapStyle,
+    mapStyle: mapStyle as string | maplibregl.StyleSpecification,
     initialCenter,
     initialZoom,
     showControls,

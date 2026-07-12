@@ -232,7 +232,7 @@ export class AuthSecurityManager {
             const updatedCodes = user.mfa_backup_codes.filter((code: string) => code !== token)
             await supabaseAdmin
               .from('user_profiles')
-              .update({ mfa_backup_codes: updatedCodes })
+              .update({ mfa_backup_codes: updatedCodes } as never)
               .eq('user_id', session.userId)
           }
           break

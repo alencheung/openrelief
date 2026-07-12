@@ -80,7 +80,7 @@ export function clusterEmergencyEvents(
   }))
 
   // Load features into cluster
-  cluster.load(features as GeoJSON.Feature<GeoJSON.Point>[])
+  cluster.load(features as unknown as Parameters<typeof cluster.load>[0])
 
   // Get clusters within bounds
   const bboxArray = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()] as [
@@ -188,12 +188,13 @@ export class MapPerformanceManager {
     const deviceMemory = (navigator as { deviceMemory?: number }).deviceMemory || 4
     const connection = (navigator as { connection?: { effectiveType?: string } }).connection
 
-    this.isLowEndDevice =
+    this.isLowEndDevice = Boolean(
       hardwareConcurrency <= 2 ||
       deviceMemory <= 2 ||
       (connection &&
         connection.effectiveType &&
         ['slow-2g', '2g', '3g'].includes(connection.effectiveType))
+    )
   }
 
   private setupPerformanceMonitoring() {

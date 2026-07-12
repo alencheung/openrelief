@@ -330,7 +330,7 @@ export class APISecurityManager {
       .eq('user_id', userId)
       .maybeSingle()
 
-    const trustScore = userProfile?.trust_score ?? 0.1
+    const trustScore = (userProfile as { trust_score?: number } | null)?.trust_score ?? 0.1
     const role =
       (userProfile as { role?: string } | null)?.role ?? 'citizen'
     const profilePermissions =

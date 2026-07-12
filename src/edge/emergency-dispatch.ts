@@ -173,8 +173,8 @@ function isInQuietHours(
   const [startHour, startMin] = userPreferences.quietHours.start.split(':').map(Number)
   const [endHour, endMin] = userPreferences.quietHours.end.split(':').map(Number)
 
-  const startTime = startHour * 60 + startMin
-  const endTime = endHour * 60 + endMin
+  const startTime = (startHour ?? 0) * 60 + (startMin ?? 0)
+  const endTime = (endHour ?? 0) * 60 + (endMin ?? 0)
 
   if (startTime <= endTime) {
     return currentTime >= startTime && currentTime <= endTime
@@ -286,7 +286,7 @@ async function sendPushNotification(
 
     // Use Cloudflare Workers to send push via appropriate service
     const pushService = env.PUSH_SERVICE_URL
-    const response = await fetch(pushService, {
+    const response = await fetch(pushService as string, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -506,7 +506,7 @@ export default {
       const analyticsList = await env.ANALYTICS_KV.list({ prefix: 'analytics:' })
 
       for (const key of analyticsList.keys) {
-        const timestamp = parseInt(key.name.split(':')[1])
+        const timestamp = parseInt(key.name.split(':')[1] ?? '')
         if (timestamp < cutoffTime) {
           await env.ANALYTICS_KV.delete(key.name)
         }
@@ -571,7 +571,7 @@ export async function getMetrics(request: Request, env: Env): Promise<Response> 
     const relevantMetrics = []
 
     for (const key of metricsList.keys) {
-      const timestamp = parseInt(key.name.split(':')[1])
+      const timestamp = parseInt(key.name.split(':')[1] ?? '')
       if (timestamp >= cutoffTime) {
         const metricData = await env.DISPATCH_METRICS.get(key.name)
         if (metricData) {

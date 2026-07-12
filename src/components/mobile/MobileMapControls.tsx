@@ -451,7 +451,7 @@ export function MobileEmergencyControls({
                 >
                   <div className="flex items-start gap-3">
                     <EmergencyIndicator
-                      type={emergency.type}
+                      type={emergency.type as 'fire' | 'medical' | 'security' | 'natural' | 'infrastructure'}
                       size="sm"
                       className="mt-1"
                       label={emergency.type}

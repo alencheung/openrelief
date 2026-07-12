@@ -173,8 +173,8 @@ export function enforceKAnonymity<T extends Record<string, unknown>>(
   if (config.quasiIdentifiers.includes('latitude') || config.quasiIdentifiers.includes('longitude')) {
     generalizedData = generalizedData.map(record => ({
       ...record,
-      latitude: record.latitude ? createPrivacyGrid(record.latitude, record.longitude, 2).latitude : record.latitude,
-      longitude: record.longitude ? createPrivacyGrid(record.latitude, record.longitude, 2).longitude : record.longitude
+      latitude: record.latitude ? createPrivacyGrid(record.latitude as number, record.longitude as number, 2).latitude : record.latitude,
+      longitude: record.longitude ? createPrivacyGrid(record.latitude as number, record.longitude as number, 2).longitude : record.longitude
     }))
   }
 
@@ -182,7 +182,7 @@ export function enforceKAnonymity<T extends Record<string, unknown>>(
   if (config.quasiIdentifiers.includes('timestamp')) {
     generalizedData = generalizedData.map(record => ({
       ...record,
-      timestamp: record.timestamp ? generalizeTimestamp(record.timestamp, 'day') : record.timestamp
+      timestamp: record.timestamp ? generalizeTimestamp(record.timestamp as Date, 'day') : record.timestamp
     }))
   }
 
@@ -362,10 +362,10 @@ export function createUserClusters<T extends Record<string, unknown>>(
         seed.longitude
       ) {
         const distance = calculateDistance(
-          seed.latitude,
-          seed.longitude,
-          user.latitude,
-          user.longitude
+          seed.latitude as number,
+          seed.longitude as number,
+          user.latitude as number,
+          user.longitude as number
         )
 
         if (distance < 10) {
@@ -385,9 +385,9 @@ export function createUserClusters<T extends Record<string, unknown>>(
       const representative = { ...seed } as Record<string, unknown> as T
       if (cluster.every(u => u.latitude && u.longitude)) {
         const avgLat =
-          cluster.reduce((sum, u) => sum + (u.latitude ?? 0), 0) / cluster.length
+          cluster.reduce((sum, u) => sum + ((u.latitude as number) ?? 0), 0) / cluster.length
         const avgLng =
-          cluster.reduce((sum, u) => sum + (u.longitude ?? 0), 0) / cluster.length
+          cluster.reduce((sum, u) => sum + ((u.longitude as number) ?? 0), 0) / cluster.length
         ;(representative as Record<string, unknown>).latitude = avgLat
         ;(representative as Record<string, unknown>).longitude = avgLng
       }
@@ -446,8 +446,8 @@ export function anonymizeUserData<T extends Record<string, unknown>>(
     anonymized = anonymized.map(record => {
       if (record.latitude && record.longitude) {
         const reduced = reduceLocationPrecision(
-          record.latitude,
-          record.longitude,
+          record.latitude as number,
+          record.longitude as number,
           options.locationPrecision
         )
         return { ...record, ...reduced }
@@ -460,7 +460,7 @@ export function anonymizeUserData<T extends Record<string, unknown>>(
   if (options.generalizeAge) {
     anonymized = anonymized.map(record => {
       if (record.age) {
-        return { ...record, age: generalizeAge(record.age, options.ageRangeSize) }
+        return { ...record, age: generalizeAge(record.age as number, options.ageRangeSize) }
       }
       return record
     })
@@ -470,7 +470,7 @@ export function anonymizeUserData<T extends Record<string, unknown>>(
   if (options.generalizeTimestamp) {
     anonymized = anonymized.map(record => {
       if (record.timestamp) {
-        return { ...record, timestamp: generalizeTimestamp(record.timestamp, options.timestampGranularity) }
+        return { ...record, timestamp: generalizeTimestamp(record.timestamp as Date, options.timestampGranularity) }
       }
       return record
     })
@@ -485,7 +485,7 @@ export function anonymizeUserData<T extends Record<string, unknown>>(
   if (options.applyDifferentialPrivacy) {
     anonymized = anonymized.map(record => {
       if (record.latitude && record.longitude) {
-        const noisy = addNoiseToLocation(record.latitude, record.longitude)
+        const noisy = addNoiseToLocation(record.latitude as number, record.longitude as number)
         return { ...record, ...noisy }
       }
       return record

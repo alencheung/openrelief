@@ -349,7 +349,11 @@ export function MotorAccessibility({
 
         recognition.onresult = (event: SpeechRecognitionResult) => {
           const last = event.results.length - 1
-          const transcript = event.results[last][0].transcript.toLowerCase()
+          const result = event.results[last]
+          if (!result) {
+            return
+          }
+          const transcript = (result[0]?.transcript ?? '').toLowerCase()
 
           processVoiceCommand(transcript)
         }

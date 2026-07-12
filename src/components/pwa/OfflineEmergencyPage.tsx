@@ -83,7 +83,7 @@ export function OfflineEmergencyPage() {
       // Queue for offline sync
       await queueOfflineAction({
         type: 'emergency_report',
-        data: report,
+        data: report as unknown as Record<string, unknown>,
         endpoint: '/api/emergencies',
         method: 'POST'
       })
@@ -196,7 +196,7 @@ export function OfflineEmergencyPage() {
                   <button
                     key={level.value}
                     type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, severity: level.value }))}
+                    onClick={() => setFormData(prev => ({ ...prev, severity: level.value as 'low' | 'medium' | 'high' | 'critical' }))}
                     className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
                       formData.severity === level.value
                         ? level.color

@@ -123,7 +123,11 @@ export function TrustHistoryChart({
     label?: string | number
   }) => {
     if (active && payload && payload.length) {
-      const data = payload[0].payload
+      const entry = payload[0]
+      if (!entry) {
+        return null
+      }
+      const data = entry.payload
       return (
         <div className="bg-white p-3 border rounded-lg shadow-lg">
           <p className="text-sm font-medium">{label}</p>

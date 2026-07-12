@@ -476,7 +476,7 @@ export async function applyRetentionForPolicy(policy: RetentionPolicy): Promise<
         .update({
           archived: true,
           archived_at: new Date().toISOString()
-        })
+        } as never)
         .lt('timestamp', archivalDate.toISOString())
         .eq('archived', false)
 

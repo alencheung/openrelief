@@ -240,5 +240,5 @@ export async function logProcedureExecution(
     executor,
     result,
     executed_at: new Date().toISOString()
-  })
+  } as never)
 }

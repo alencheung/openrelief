@@ -432,7 +432,7 @@ export async function saveIncidentToDatabase(incident: SecurityIncident): Promis
       metadata: incident.metadata,
       created_at: incident.createdAt.toISOString(),
       updated_at: incident.updatedAt.toISOString()
-    })
+    } as never)
   } catch (error) {
     console.error('Error saving incident:', error)
   }
@@ -461,7 +461,7 @@ export async function saveAlertToDatabase(alert: SecurityAlert): Promise<void> {
       false_positive: alert.falsePositive,
       resolved: alert.resolved,
       resolved_at: alert.resolvedAt?.toISOString()
-    })
+    } as never)
   } catch (error) {
     console.error('Error saving alert:', error)
   }
@@ -483,7 +483,7 @@ export async function saveEvidenceToDatabase(evidence: SecurityEvidence): Promis
       timestamp: evidence.timestamp.toISOString(),
       collected_by: evidence.collectedBy,
       preserved: evidence.preserved
-    })
+    } as never)
   } catch (error) {
     console.error('Error saving evidence:', error)
   }

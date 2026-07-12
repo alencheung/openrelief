@@ -72,7 +72,7 @@ export async function logCommunication(
     recipients,
     message,
     sent_at: new Date().toISOString()
-  })
+  } as never)
 }
 
 /**

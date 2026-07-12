@@ -286,7 +286,7 @@ export const createSecureSessionRecord = async (sessionData: {
     is_active: true,
     mfa_verified: false,
     trust_level: sessionData.trustLevel
-  })
+  } as never)
 
   return sessionId
 }
@@ -299,20 +299,21 @@ export const checkDeviceFingerprintRecord = async (
   trustLevel: 'low' | 'medium' | 'high'
   isTrusted: boolean
 }> => {
-  const { data: device, error } = await supabaseAdmin
+  const { data: deviceRaw, error } = await supabaseAdmin
     .from('device_fingerprints')
     .select('*')
     .eq('user_id', userId)
     .eq('fingerprint_id', fingerprint)
     .single()
 
-  if (error || !device) {
+  if (error || !deviceRaw) {
     return {
       trustLevel: 'low',
       isTrusted: false
     }
   }
 
+  const device = deviceRaw as unknown as { is_trusted: boolean; trust_score: number }
   const isTrusted =
     device.is_trusted &&
     device.trust_score > AUTH_SECURITY_CONFIG.deviceFingerprinting.trustThreshold
@@ -343,7 +344,7 @@ export const invalidateSessionRecord = async (
       is_active: false,
       invalidated_at: new Date().toISOString(),
       invalidation_reason: reason
-    })
+    } as never)
     .eq('session_id', sessionId)
 
   await securityMonitor.createAlert(
@@ -360,17 +361,23 @@ export const checkConcurrentSessions = async (
   invalidateFn: (sessionId: string, reason: string) => Promise<void>
 ): Promise<void> => {
   try {
-    const { data: sessions, error } = await supabaseAdmin
+    const { data: sessionsRaw, error } = await supabaseAdmin
       .from('auth_sessions')
       .select('*')
       .eq('is_active', true)
       .gt('expires_at', new Date().toISOString())
 
-    if (error || !sessions) {
+    if (error || !sessionsRaw) {
       return
     }
 
-    const userSessions = new Map<string, typeof sessions>()
+    type SessionRow = {
+      session_id: string
+      user_id: string
+      created_at: string
+    }
+    const sessions = (sessionsRaw ?? []) as SessionRow[]
+    const userSessions = new Map<string, SessionRow[]>()
     for (const session of sessions) {
       const userSessionList = userSessions.get(session.user_id) || []
       userSessionList.push(session)
@@ -380,7 +387,7 @@ export const checkConcurrentSessions = async (
     for (const [, userSessionList] of userSessions.entries()) {
       if (userSessionList.length > AUTH_SECURITY_CONFIG.session.maxConcurrentSessions) {
         const sortedSessions = userSessionList.sort(
-          (a: { created_at: string }, b: { created_at: string }) =>
+          (a, b) =>
             new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         )
         const sessionsToInvalidate = sortedSessions.slice(

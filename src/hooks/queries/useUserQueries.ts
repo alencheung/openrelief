@@ -82,8 +82,8 @@ export const useUserProfile = (userId: string, options: { applyPrivacy?: boolean
         // Update trust store
         useTrustStore.getState().setUserScore(userId, {
           userId,
-          score: protectedData.trust_score,
-          previousScore: protectedData.trust_score,
+          score: protectedData.trust_score as number,
+          previousScore: protectedData.trust_score as number,
           lastUpdated: new Date(protectedData.updated_at as string),
           history: [],
           factors: {
@@ -127,7 +127,7 @@ export const useCreateUserProfile = () => {
   const { addNotification } = useNotificationStore.getState()
 
   return useMutation({
-    mutationFn: async (profile: UserProfileInsert) => {
+    mutationFn: async (profile: UserProfileInsert): Promise<UserProfile> => {
       try {
         // Add to offline queue if needed
         if (!navigator.onLine) {
@@ -148,7 +148,7 @@ export const useCreateUserProfile = () => {
             channels: { inApp: true, push: false, email: false, sms: false }
           })
 
-          return profile
+          return profile as UserProfile
         }
 
         const data = await supabaseHelpers.createUserProfile(profile)
@@ -242,7 +242,7 @@ export const useTrustScore = (userId: string) => {
     queryKey: ['trust-score', userId],
     queryFn: async () => {
       try {
-        const { data, error } = await (supabase.rpc as RpcFn)('calculate_trust_score', {
+        const { data, error } = await (supabase.rpc as unknown as RpcFn)('calculate_trust_score', {
           p_user_id: userId
         })
 
@@ -254,7 +254,7 @@ export const useTrustScore = (userId: string) => {
         const currentScore = useTrustStore.getState().getUserScore(userId)
         if (currentScore) {
           useTrustStore.getState().updateUserScore({
-            score: data,
+            score: Number(data) || 0,
             previousScore: currentScore.score,
             lastUpdated: new Date()
           })
@@ -311,7 +311,17 @@ export const useUpdateTrustScore = () => {
   const queryClient = useQueryClient()
   const { updateTrustForAction } = useTrustStore.getState()
 
-  return useMutation({
+  return useMutation<
+    unknown,
+    Error,
+    {
+      userId: string
+      eventId: string
+      actionType: 'report' | 'confirm' | 'dispute'
+      outcome: 'success' | 'failure' | 'pending'
+      metadata?: Record<string, unknown>
+    }
+  >({
     mutationFn: async ({
       userId,
       eventId,
@@ -361,7 +371,7 @@ export const useUpdateTrustScore = () => {
             previous_score: 0, // Will be filled by trigger
             new_score: 0, // Will be filled by trigger
             reason: `${actionType} ${outcome}`
-          } satisfies Database['public']['Tables']['user_trust_history']['Insert'])
+          } as never)
           .select()
           .single()
 
@@ -375,7 +385,7 @@ export const useUpdateTrustScore = () => {
         throw error
       }
     },
-    onSuccess: (_: unknown, variables: { userId: string; eventId: string; actionType: string; outcome: string }) => {
+    onSuccess: (_: unknown, variables: { userId: string; eventId: string; actionType: 'report' | 'confirm' | 'dispute'; outcome: 'success' | 'failure' | 'pending' }) => {
       queryClient.invalidateQueries({ queryKey: ['trust-score', variables.userId] })
       queryClient.invalidateQueries({ queryKey: ['trust-history', variables.userId] })
     }
@@ -543,7 +553,7 @@ export const useUpdateNotificationSettings = () => {
             user_id: userId,
             topic_id: topicId,
             ...settings
-          } satisfies Database['public']['Tables']['user_notification_settings']['Insert'])
+          } as never)
           .select()
           .single()
 

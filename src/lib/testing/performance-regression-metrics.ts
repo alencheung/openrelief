@@ -8,7 +8,7 @@
  * kept behavior-identical to the originals.
  */
 
-import { ResponseTimeMetrics, DatabaseMetrics } from './performance-regression-types'
+import { ResponseTimeMetrics, DatabaseMetrics, FrontendMetrics, AlertDispatchMetrics, EdgePerformanceMetrics } from './performance-regression-types'
 
 /**
  * Measure response time for one or more API endpoints.

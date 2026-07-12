@@ -318,7 +318,7 @@ export const useMultipleRealtimeSubscriptions = (configs: SubscriptionConfig[]) 
           event: config.event,
           filter: config.filter
         },
-        listener as (payload: RealtimePayload) => void
+        listener as unknown as (payload: Record<string, unknown>) => void
       )
       releases.push(release)
       console.log(`[Realtime] Subscribed to ${config.table}`)

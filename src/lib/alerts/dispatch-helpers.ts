@@ -65,11 +65,11 @@ export function mapUserRowToAlertUser(user: {
 }): AlertUser {
   return {
     userId: user.user_id,
-    fcmToken: user.fcm_token,
-    email: user.email,
-    phone: user.phone,
-    distance: user.distance,
-    trustScore: user.trust_score,
+    fcmToken: user.fcm_token ?? undefined,
+    email: user.email ?? undefined,
+    phone: user.phone ?? undefined,
+    distance: user.distance ?? 0,
+    trustScore: user.trust_score ?? 0,
     preferredChannels: getPreferredChannels(user.notification_preferences || {})
   }
 }

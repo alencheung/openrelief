@@ -8,6 +8,17 @@
 
 import { IntegrationContext } from './integration-types'
 
+// Minimal shape of a registered integration component. The components map is
+// typed as Map<string, unknown>, so reporting helpers cast to this when needed.
+interface IntegrationComponent {
+  getData?(): Record<string, unknown>
+  getTestHistory?(): unknown[]
+}
+
+function asComponent(value: unknown): IntegrationComponent {
+  return (value ?? {}) as IntegrationComponent
+}
+
 /**
  * Whether a scheduled report should be generated right now. Returns true when
  * the current time is within one hour of the configured reporting time.
@@ -87,7 +98,7 @@ export async function generateReport(
  * Snapshot the current dashboard data as a performance report.
  */
 export async function generatePerformanceReport(ctx: IntegrationContext): Promise<Record<string, unknown> | unknown[] | null> {
-  const dashboard = ctx.components.get('performanceDashboard')
+  const dashboard = asComponent(ctx.components.get('performanceDashboard'))
   if (dashboard && typeof dashboard.getData === 'function') {
     return dashboard.getData()
   }
@@ -98,12 +109,12 @@ export async function generatePerformanceReport(ctx: IntegrationContext): Promis
  * Summarize the latest load and regression test history as a testing report.
  */
 export async function generateTestingReport(ctx: IntegrationContext): Promise<Record<string, unknown> | unknown[] | null> {
-  const loadTesting = ctx.components.get('loadTestingFramework')
-  const regressionTesting = ctx.components.get('performanceRegressionTesting')
+  const loadTesting = asComponent(ctx.components.get('loadTestingFramework'))
+  const regressionTesting = asComponent(ctx.components.get('performanceRegressionTesting'))
 
   return {
-    loadTesting: loadTesting ? loadTesting.getTestHistory() : [],
-    regressionTesting: regressionTesting ? regressionTesting.getTestHistory() : []
+    loadTesting: loadTesting?.getTestHistory?.() ?? [],
+    regressionTesting: regressionTesting?.getTestHistory?.() ?? []
   }
 }
 
@@ -129,7 +140,7 @@ export async function generateComplianceReport(): Promise<Record<string, unknown
  * Trend report sourced from the dashboard's trends data.
  */
 export async function generateTrendReport(ctx: IntegrationContext): Promise<Record<string, unknown> | unknown[] | null> {
-  const dashboard = ctx.components.get('performanceDashboard')
+  const dashboard = asComponent(ctx.components.get('performanceDashboard'))
   if (dashboard && typeof dashboard.getData === 'function') {
     const data = dashboard.getData()
     return data.trends

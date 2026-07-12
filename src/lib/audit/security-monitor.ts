@@ -393,7 +393,7 @@ class SecurityMonitor {
         ...intelligence
       }
 
-      await supabaseAdmin.from('threat_intelligence').insert(threatIntelligence)
+      await supabaseAdmin.from('threat_intelligence').insert(threatIntelligence as never)
 
       this.threatIntelligence.set(id, threatIntelligence)
 

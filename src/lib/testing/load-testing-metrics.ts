@@ -56,7 +56,7 @@ export function updateRequestMetrics(
     metrics.requests.failed++
 
     // Add to error details
-    const errorType = categorizeError(response.status, response.error)
+    const errorType = categorizeError(response.status ?? 0, (response as { error?: string }).error)
     const existingError = metrics.requests.errors.find(e => e.type === errorType)
 
     if (existingError) {
@@ -115,7 +115,8 @@ export function updateErrorMetrics(
 ): void {
   metrics.requests.failed++
 
-  const errorType = categorizeError(0, error.message)
+  const errorMessage = error instanceof Error ? error.message : String(error)
+  const errorType = categorizeError(0, errorMessage)
   const existingError = metrics.requests.errors.find(e => e.type === errorType)
 
   if (existingError) {
@@ -124,7 +125,7 @@ export function updateErrorMetrics(
     metrics.requests.errors.push({
       type: errorType,
       count: 1,
-      samples: [error.message]
+      samples: [errorMessage]
     })
   }
   // Reference virtualUser so the signature stays compatible with the

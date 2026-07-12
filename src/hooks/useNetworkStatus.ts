@@ -144,8 +144,8 @@ export function useNetworkStatus(): NetworkStatus {
 
       // Trigger service worker sync if available
       if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
-        navigator.serviceWorker.ready.then((registration: { sync?: { register: (tag: string) => Promise<void> } }) => {
-          registration.sync?.register('emergency-offline-sync')
+        navigator.serviceWorker.ready.then((registration: ServiceWorkerRegistration) => {
+          (registration as unknown as { sync?: { register: (tag: string) => Promise<void> } }).sync?.register('emergency-offline-sync')
         })
       }
     }
@@ -166,7 +166,7 @@ export function useNetworkStatus(): NetworkStatus {
     // Listen for connection changes if Network Information API is available
     if (typeof navigator !== 'undefined' && 'connection' in navigator) {
       const connection = (navigator as { connection?: NetworkConnection }).connection
-      connection.addEventListener('change', handleConnectionChange)
+      connection?.addEventListener('change', handleConnectionChange)
     }
 
     // Periodic connection check (every 30 seconds)
@@ -230,7 +230,7 @@ export function useNetworkStatus(): NetworkStatus {
 
       if (typeof navigator !== 'undefined' && 'connection' in navigator) {
         const connection = (navigator as { connection?: NetworkConnection }).connection
-        connection.removeEventListener('change', handleConnectionChange)
+        connection?.removeEventListener('change', handleConnectionChange)
       }
 
       clearInterval(connectionCheckInterval)

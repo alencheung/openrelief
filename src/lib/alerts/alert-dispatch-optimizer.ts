@@ -223,7 +223,7 @@ class AlertDispatchOptimizer {
       )
 
       const executionTime = performanceMonitor.endTimer(timerId, 'database', 'get_users_for_alert')
-      const users = (result.data || []).map(mapUserRowToAlertUser)
+      const users = ((result.data as Record<string, unknown>[]) || []).map(mapUserRowToAlertUser as (row: Record<string, unknown>) => ReturnType<typeof mapUserRowToAlertUser>)
 
       return { users, count: users.length, executionTime }
     } catch (error) {

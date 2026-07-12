@@ -287,7 +287,7 @@ export async function processQueueActions(
       id: action.id,
       type: action.type,
       table: action.table,
-      data: action.data,
+      data: action.data as Record<string, unknown>,
       retryCount: action.retryCount,
       maxRetries: action.maxRetries,
       dependencies: action.dependencies

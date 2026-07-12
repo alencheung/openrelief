@@ -208,6 +208,6 @@ export async function suspendUser(
       status: 'suspended',
       suspension_reason: reason,
       suspended_at: new Date().toISOString()
-    })
+    } as never)
     .eq('user_id', userId)
 }

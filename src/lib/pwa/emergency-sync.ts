@@ -338,7 +338,7 @@ class EmergencySyncManager {
         ...report.data,
         created_at: new Date(report.timestamp).toISOString(),
         updated_at: new Date().toISOString()
-      })
+      } as never)
       .select('id')
       .single()
 
@@ -346,17 +346,18 @@ class EmergencySyncManager {
       throw new Error(`Failed to create server record: ${error.message}`)
     }
 
-    report.serverId = data.id
+    const serverId = (data as unknown as { id: string }).id
+    report.serverId = serverId
     report.syncStatus = 'pending'
     await this.deleteReport(report.id)
     this.pendingReports.delete(report.id)
 
-    this.notifyListeners({ type: 'report_synced', reportId: report.id, serverId: data.id })
+    this.notifyListeners({ type: 'report_synced', reportId: report.id, serverId })
 
     return {
       success: true,
       reportId: report.id,
-      serverId: data.id
+      serverId
     }
   }
 
@@ -372,7 +373,7 @@ class EmergencySyncManager {
       .update({
         ...resolvedData,
         updated_at: new Date().toISOString()
-      })
+      } as never)
       .eq('id', report.serverId)
       .select('id')
       .single()
@@ -381,15 +382,16 @@ class EmergencySyncManager {
       throw new Error(`Failed to update server record: ${error.message}`)
     }
 
+    const serverId = (data as unknown as { id: string }).id
     await this.deleteReport(report.id)
     this.pendingReports.delete(report.id)
 
-    this.notifyListeners({ type: 'report_synced', reportId: report.id, serverId: data.id })
+    this.notifyListeners({ type: 'report_synced', reportId: report.id, serverId })
 
     return {
       success: true,
       reportId: report.id,
-      serverId: data.id
+      serverId
     }
   }
 

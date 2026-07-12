@@ -222,7 +222,7 @@ async function syncConfirmation(
         confirmation_type: confirmationType,
         location: loc ? `POINT(${loc.lng} ${loc.lat})` : null,
         trust_weight: 0.1 // server-side trigger recomputes
-      })
+      } as never)
       .select()
       .single()
 
@@ -235,7 +235,7 @@ async function syncConfirmation(
       return { status: 'failed_transiently', reason: error.message }
     }
 
-    return { status: 'synced', remoteId: data?.id }
+    return { status: 'synced', remoteId: (data as unknown as { id?: string } | null)?.id }
   } catch (err) {
     return {
       status: 'failed_transiently',
@@ -252,23 +252,27 @@ async function syncGeneric(action: ExecutableAction): Promise<SyncOutcome> {
   try {
     let result: { data: { id?: string } | null; error: { message?: string } | null }
     if (action.type === 'create') {
-      const { data, error } = await supabase.from(action.table).insert(action.data).select().single()
-      result = { data, error }
-    } else if (action.type === 'update') {
-      const { id, updates } = action.data || {}
       const { data, error } = await supabase
-        .from(action.table)
-        .update(updates || {})
-        .eq('id', id)
+        .from(action.table as never)
+        .insert(action.data as never)
         .select()
         .single()
-      result = { data, error }
+      result = { data: data as { id?: string } | null, error: error as { message?: string } | null }
+    } else if (action.type === 'update') {
+      const { id, updates } = (action.data || {}) as { id?: string; updates?: Record<string, unknown> }
+      const { data, error } = await supabase
+        .from(action.table as never)
+        .update((updates || {}) as never)
+        .eq('id', id as string)
+        .select()
+        .single()
+      result = { data: data as { id?: string } | null, error: error as { message?: string } | null }
     } else if (action.type === 'delete') {
       const { error } = await supabase
-        .from(action.table)
+        .from(action.table as never)
         .delete()
-        .eq('id', action.data?.id)
-      result = { data: null, error }
+        .eq('id', (action.data as { id?: string } | null)?.id as string)
+      result = { data: null, error: error as { message?: string } | null }
     } else {
       return {
         status: 'failed_permanently',

@@ -517,7 +517,7 @@ export function EmergencyMapView(props: EmergencyMapViewProps) {
         variant="minimal"
         settings={accessibilitySettings}
         onSettingsChange={onAccessibilitySettingsChange}
-        mapInstance={mapInstance}
+        mapInstance={mapInstance as unknown as React.ComponentProps<typeof AccessibilityMapFeatures>['mapInstance']}
         showControls={true}
         compactMode={isMobile}
       />

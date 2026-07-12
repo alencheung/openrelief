@@ -118,7 +118,7 @@ export const checkQueryHealth = (queryClient: QueryClient) => {
     activeQueries: queries.filter(q => q.state.fetchStatus === 'fetching').length,
     staleQueries: queries.filter(q => q.isStale()).length,
     errorQueries: queries.filter(q => q.state.status === 'error').length,
-    cacheSize: cache.size
+    cacheSize: queries.length
   }
 
   return {
@@ -152,11 +152,12 @@ export const trackQueryPerformance = (queryClient: QueryClient) => {
       console.log(`[Query] Observer added to ${event.query.queryKey[0]}`)
     } else if (event.type === 'observerRemoved') {
       console.log(`[Query] Observer removed from ${event.query.queryKey[0]}`)
-    } else if (event.type === 'queryUpdated') {
-      console.log(`[Query] ${event.query.queryKey[0]} updated`, {
-        fetchStatus: event.query.state.fetchStatus,
-        status: event.query.state.status,
-        dataUpdatedAt: event.query.state.dataUpdatedAt
+    } else if (event.type === 'updated') {
+      const updatedEvent = event as typeof event & { query: { queryKey: unknown[]; state: { fetchStatus: string; status: string; dataUpdatedAt: number } } }
+      console.log(`[Query] ${updatedEvent.query.queryKey[0]} updated`, {
+        fetchStatus: updatedEvent.query.state.fetchStatus,
+        status: updatedEvent.query.state.status,
+        dataUpdatedAt: updatedEvent.query.state.dataUpdatedAt
       })
     }
   })

@@ -280,7 +280,7 @@ class ComplianceMonitor {
           status: 'acknowledged',
           acknowledged_by: userId,
           acknowledged_at: new Date().toISOString()
-        })
+        } as never)
         .eq('id', violationId)
 
       if (error) {
@@ -323,7 +323,7 @@ class ComplianceMonitor {
           resolved_by: userId,
           resolved_at: new Date().toISOString(),
           resolution
-        })
+        } as never)
         .eq('id', violationId)
 
       if (error) {

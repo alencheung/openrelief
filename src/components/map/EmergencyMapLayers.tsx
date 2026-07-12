@@ -267,12 +267,15 @@ export function useEmergencyMapInstance(args: UseEmergencyMapInstanceArgs) {
       target: Map
       point: { x: number; y: number }
     }) => {
-      const features = e.target.queryRenderedFeatures(e.point, {
+      const features = e.target.queryRenderedFeatures(e.point as unknown as maplibregl.PointLike, {
         layers: ['emergency-events', 'emergency-clusters']
       })
 
       if (features.length > 0) {
         const feature = features[0]
+        if (!feature) {
+          return
+        }
         if ((feature.properties as { cluster?: boolean }).cluster) {
           // Handle cluster click - zoom to cluster bounds
           const clusterId = (feature.properties as { cluster_id?: number }).cluster_id
@@ -288,8 +291,8 @@ export function useEmergencyMapInstance(args: UseEmergencyMapInstanceArgs) {
           if (clusterLeaves && clusterLeaves.length > 0) {
             const bounds = new LngLatBounds()
             clusterLeaves.forEach((leaf) => {
-              const coords = leaf.geometry.coordinates as [number, number]
-              bounds.extend([coords[0], coords[1]])
+              const coords = (leaf.geometry as GeoJSON.Point).coordinates as [number, number]
+              bounds.extend([coords[0] ?? 0, coords[1] ?? 0])
             })
             e.target.fitBounds(bounds, { padding: 50 })
           }

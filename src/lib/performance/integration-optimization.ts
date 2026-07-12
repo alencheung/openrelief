@@ -230,15 +230,21 @@ export async function notifyEmergencyModeChange(
   try {
     for (const [name, component] of ctx.components.entries()) {
       try {
-        if (active && typeof component.optimizeForEmergency === 'function') {
-          await component.optimizeForEmergency()
+        const comp = (component ?? {}) as {
+          optimizeForEmergency?: () => Promise<void>
+        }
+        if (active && typeof comp.optimizeForEmergency === 'function') {
+          await comp.optimizeForEmergency()
         }
       } catch (error) {
         console.error(`[PerformanceIntegration] Failed to notify ${name} about emergency mode:`, error)
       }
     }
 
-    const dashboard = ctx.components.get('performanceDashboard')
+    const dashboard = (ctx.components.get('performanceDashboard') ?? {}) as {
+      activateEmergencyMode?: () => Promise<void>
+      deactivateEmergencyMode?: () => Promise<void>
+    }
     if (dashboard && typeof dashboard.activateEmergencyMode === 'function' && active) {
       await dashboard.activateEmergencyMode()
     } else if (dashboard && typeof dashboard.deactivateEmergencyMode === 'function' && !active) {

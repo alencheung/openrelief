@@ -52,7 +52,7 @@ function safeCreateClient(
   }
 
   if (url && key) {
-    return createClient(url, key, opts as ConstructorParameters<typeof createClient>[2])
+    return createClient(url, key, opts as Parameters<typeof createClient>[2])
   }
   const noop = () => chain
     const chain = {

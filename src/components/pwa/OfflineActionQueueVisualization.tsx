@@ -150,7 +150,7 @@ export function OfflineActionQueueVisualization() {
       filtered = filtered.filter(action => action.retryCount > 0)
     }
 
-    return sortActions(filtered)
+    return sortActions(filtered as unknown as OfflineAction[])
   }
 
   // Get priority color

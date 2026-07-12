@@ -90,17 +90,13 @@ export const useInfiniteEmergencyEvents = (filters?: {
   status?: Database['public']['Enums']['emergency_events_status'][]
   type_ids?: number[]
 }) => {
-  return useInfiniteQuery<{
-    data: unknown[]
-    nextPage: number
-    hasMore: boolean
-  }, Error, {
-    data: unknown[]
-    nextPage: number
-    hasMore: boolean
-  }, string[], number>({
+  return useInfiniteQuery({
     queryKey: ['emergency-events-infinite', filters],
-    queryFn: async ({ pageParam }: { pageParam: number | undefined }) => {
+    queryFn: async ({ pageParam }: { pageParam: number | undefined }): Promise<{
+      data: unknown[]
+      nextPage: number
+      hasMore: boolean
+    }> => {
       const offset = pageParam ?? 0
       const params: Record<string, unknown> = {
         limit: filters?.limit || 20
@@ -186,7 +182,7 @@ export const useCreateEmergencyEvent = () => {
   const { updateTrustForAction, getUserScore, thresholds } = useTrustStore.getState()
 
   return useMutation({
-    mutationFn: async (event: EmergencyEventInsert) => {
+    mutationFn: async (event: EmergencyEventInsert): Promise<EmergencyEvent> => {
       const userId = event.reporter_id
 
       try {
@@ -241,7 +237,7 @@ export const useCreateEmergencyEvent = () => {
         }
 
         // Add to local store immediately
-        useEmergencyStore.getState().addEvent(optimisticEvent)
+        useEmergencyStore.getState().addEvent(optimisticEvent as EmergencyEvent)
 
         // Add to offline queue if needed
         if (!navigator.onLine) {
@@ -304,10 +300,10 @@ export const useCreateEmergencyEvent = () => {
         }
 
         const data = await response.json() as { data?: Record<string, unknown> } & Record<string, unknown>
-        const created = data.data ?? data
+        const created = (data.data ?? data) as Record<string, unknown>
 
         // Update trust score
-        await updateTrustForAction(userId, created.id, 'report', 'pending', {
+        await updateTrustForAction(userId, created.id as string, 'report', 'pending', {
           severity: event.severity,
           type: event.type_id
         })
@@ -320,10 +316,10 @@ export const useCreateEmergencyEvent = () => {
           severity: 'success',
           priority: 'high',
           channels: { inApp: true, push: true, email: false, sms: false },
-          metadata: { eventId: data.id, category: 'emergency' }
+          metadata: { eventId: data.id as string | undefined, category: 'emergency' }
         })
 
-        return data
+        return data as unknown as EmergencyEvent
       } catch (error) {
         console.error('Failed to create emergency event:', error)
 
@@ -429,7 +425,16 @@ export const useConfirmEvent = () => {
   const { addNotification } = useNotificationStore.getState()
   const { updateTrustForAction } = useTrustStore.getState()
 
-  return useMutation({
+  return useMutation<
+    unknown,
+    Error,
+    {
+      eventId: string
+      userId: string
+      confirmationType: 'confirm' | 'dispute'
+      location?: { lat: number; lng: number }
+    }
+  >({
     mutationFn: async ({
       eventId,
       userId,
@@ -504,7 +509,12 @@ export const useConfirmEvent = () => {
         throw error
       }
     },
-    onSuccess: (data: unknown, variables: { eventId: string }) => {
+    onSuccess: (data: unknown, variables: {
+      eventId: string
+      userId: string
+      confirmationType: 'confirm' | 'dispute'
+      location?: { lat: number; lng: number }
+    }) => {
       queryClient.invalidateQueries({ queryKey: ['emergency-event', variables.eventId] })
       queryClient.invalidateQueries({ queryKey: ['event-confirmations', variables.eventId] })
     },
@@ -567,7 +577,7 @@ export const useNearbyEmergencyEvents = (
   return useQuery({
     queryKey: ['nearby-emergency-events', center, radius, filters],
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as (fn: string, params: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>)('get_nearby_emergency_events', {
+      const { data, error } = await (supabase.rpc as unknown as (fn: string, params: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>)('get_nearby_emergency_events', {
         p_lat: center.lat,
         p_lng: center.lng,
         p_radius_meters: radius,

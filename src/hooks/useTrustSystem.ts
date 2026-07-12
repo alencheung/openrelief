@@ -88,12 +88,19 @@ export const useTrustSystem = (userId?: string) => {
         return null
       }
 
+      const scoreRow = data as {
+        user_id: string
+        overall_score: number
+        confidence: number | null
+        factors: Record<string, unknown>
+        updated_at: string
+      }
       return {
-        userId: data.user_id,
-        score: typeof data.overall_score === 'number' ? data.overall_score : Number(data.overall_score) || 0,
-        confidence: data.confidence ?? calculateConfidence(data),
-        factors: data.factors,
-        lastUpdated: data.updated_at
+        userId: scoreRow.user_id,
+        score: typeof scoreRow.overall_score === 'number' ? scoreRow.overall_score : Number(scoreRow.overall_score) || 0,
+        confidence: scoreRow.confidence ?? calculateConfidence(scoreRow),
+        factors: scoreRow.factors,
+        lastUpdated: scoreRow.updated_at
       }
     },
     enabled: !!userId,
@@ -299,7 +306,7 @@ export const useTrustSystem = (userId?: string) => {
   const currentScoreValue = currentUserScore?.score ?? trustCalculation?.score ?? 0
   const trustLevel = getTrustLevel(currentScoreValue)
   const trustTrend = Array.isArray(trustHistory)
-    ? getTrustTrend(trustHistory as TrustHistoryEntry[])
+    ? getTrustTrend(trustHistory as unknown as TrustHistoryEntry[])
     : 'stable'
 
   return {

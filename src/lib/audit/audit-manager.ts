@@ -459,7 +459,7 @@ class AuditTrailManager {
           active: config.active,
           created_at: config.createdAt.toISOString(),
           updated_at: config.updatedAt.toISOString()
-        })
+        } as never)
     } catch (error) {
       console.error('Error saving report config:', error)
     }
@@ -483,7 +483,7 @@ class AuditTrailManager {
           file_size: report.fileSize,
           download_url: report.downloadUrl,
           expires_at: report.expiresAt?.toISOString()
-        })
+        } as never)
     } catch (error) {
       console.error('Error saving report:', error)
     }

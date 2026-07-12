@@ -341,7 +341,7 @@ class AuditLogger {
       }))
 
       // Insert into database
-      const { error } = await supabaseAdmin.from('enhanced_audit_log').insert(dbLogs)
+      const { error } = await supabaseAdmin.from('enhanced_audit_log').insert(dbLogs as never)
 
       if (error) {
         throw error
@@ -400,7 +400,7 @@ class AuditLogger {
         .single()
 
       if (!error && data) {
-        this.previousHash = data.previous_hash
+        this.previousHash = (data as unknown as { previous_hash: string }).previous_hash
       }
     } catch (error) {
       console.error('Failed to load previous hash:', error)
@@ -416,7 +416,7 @@ class AuditLogger {
         key: 'last_hash',
         previous_hash: this.previousHash,
         updated_at: new Date().toISOString()
-      })
+      } as never)
     } catch (error) {
       console.error('Failed to save previous hash:', error)
     }
@@ -440,7 +440,7 @@ class AuditLogger {
       // Archive old logs
       const { error: archiveError } = await supabaseAdmin
         .from('enhanced_audit_log')
-        .update({ archived: true })
+        .update({ archived: true } as never)
         .lt('timestamp', cutoffDate.toISOString())
         .eq('archived', false)
 

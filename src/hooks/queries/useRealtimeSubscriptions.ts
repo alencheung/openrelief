@@ -139,7 +139,7 @@ export const useRealtimeSubscription = (
             event: config.event,
             filter: config.filter
           },
-          listener as (payload: RealtimePayload) => void
+          listener as unknown as (payload: Record<string, unknown>) => void
         )
 
         channelReleaseRef.current = release

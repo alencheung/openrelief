@@ -67,14 +67,14 @@ export function acquireSharedChannel(
 
   if (!entry) {
     const channel = supabase.channel(name)
-    channel.on(
+    ;(channel.on as unknown as (...args: unknown[]) => typeof channel)(
       'postgres_changes',
       {
         event: key.event || '*',
         schema: 'public',
         table: key.table,
         filter: key.filter
-      },
+      } as never,
       (payload: Record<string, unknown>) => {
         // Dispatch to the per-channel listener set maintained below.
         const listeners = listenersByChannel.get(name)

@@ -16,7 +16,12 @@ import {
   PerformanceRegressionResults,
   PerformanceBaseline,
   PerformanceTest,
-  PerformanceTestSuite
+  PerformanceTestSuite,
+  ResponseTimeMetrics,
+  DatabaseMetrics,
+  FrontendMetrics,
+  AlertDispatchMetrics,
+  EdgePerformanceMetrics
 } from './performance-regression-types'
 import {
   createDefaultBaseline,
@@ -283,31 +288,31 @@ class PerformanceRegressionTesting {
       case 'api':
         results.current.metrics = {
           ...results.current.metrics,
-          apiResponseTimes: metrics
+          apiResponseTimes: metrics as { [endpoint: string]: ResponseTimeMetrics }
         }
         break
       case 'database':
         results.current.metrics = {
           ...results.current.metrics,
-          databaseQueries: metrics
+          databaseQueries: metrics as { [query: string]: DatabaseMetrics }
         }
         break
       case 'frontend':
         results.current.metrics = {
           ...results.current.metrics,
-          frontendMetrics: metrics
+          frontendMetrics: metrics as FrontendMetrics
         }
         break
       case 'alert':
         results.current.metrics = {
           ...results.current.metrics,
-          alertDispatchMetrics: metrics
+          alertDispatchMetrics: metrics as AlertDispatchMetrics
         }
         break
       case 'edge':
         results.current.metrics = {
           ...results.current.metrics,
-          edgePerformanceMetrics: metrics
+          edgePerformanceMetrics: metrics as EdgePerformanceMetrics
         }
         break
     }

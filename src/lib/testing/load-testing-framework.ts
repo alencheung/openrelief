@@ -306,7 +306,7 @@ class LoadTestingFramework {
       const responseTime = endTime - startTime
 
       // Update metrics
-      applyRequestMetrics(metrics, responseTime, response, endpoint, virtualUser)
+      applyRequestMetrics(metrics, responseTime, response as unknown as { status?: number; data?: unknown }, endpoint, virtualUser)
 
       // Update concurrency
       metrics.concurrency.current--
@@ -419,7 +419,7 @@ class LoadTestingFramework {
       throw new Error(`Test ${testId} not completed`)
     }
 
-    return buildTestReport(metrics)
+    return buildTestReport(metrics) as unknown as Record<string, unknown>
   }
 
   async getActiveTestsSummary(): Promise<ActiveTestsSummary> {

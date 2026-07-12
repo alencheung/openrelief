@@ -64,6 +64,8 @@ export interface AccessibilityMapFeaturesProps
     }
     getCenter: () => { lat: number; lng: number }
     getZoom: () => number
+    on: (event: string, handler: () => void) => void
+    off: (event: string, handler: () => void) => void
   }
   showControls?: boolean
   compactMode?: boolean

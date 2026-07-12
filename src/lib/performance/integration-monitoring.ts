@@ -8,6 +8,19 @@
 
 import { IntegrationContext, ComponentStatus } from './integration-types'
 
+// Minimal shape of a registered integration component. The components map is
+// typed as Map<string, unknown> for flexibility, so helpers cast to this when
+// they need to read dashboard data or per-component metrics.
+interface IntegrationComponent {
+  getMetrics?(): Record<string, unknown>
+  getData?(): Record<string, unknown>
+  getTestHistory?(): unknown[]
+}
+
+function asComponent(value: unknown): IntegrationComponent {
+  return (value ?? {}) as IntegrationComponent
+}
+
 /**
  * Refresh the uptime timestamp and collect metrics from every registered
  * component, then recompute aggregated metrics.
@@ -19,8 +32,9 @@ export async function collectMetrics(ctx: IntegrationContext): Promise<void> {
 
     for (const [name, component] of ctx.components.entries()) {
       try {
-        if (typeof component.getMetrics === 'function') {
-          const componentMetrics = component.getMetrics()
+        const comp = asComponent(component)
+        if (typeof comp.getMetrics === 'function') {
+          const componentMetrics = comp.getMetrics()
           updateComponentMetrics(ctx, name, componentMetrics)
         }
       } catch (error) {
@@ -49,9 +63,11 @@ export function updateComponentMetrics(ctx: IntegrationContext, componentName: s
  * Recompute aggregated metrics from the performance dashboard data.
  */
 export function updateAggregatedMetrics(ctx: IntegrationContext): void {
-  const dashboard = ctx.components.get('performanceDashboard')
+  const dashboard = asComponent(ctx.components.get('performanceDashboard'))
   if (dashboard && typeof dashboard.getData === 'function') {
-    const data = dashboard.getData()
+    const data = dashboard.getData() as {
+      api: { requestsPerSecond: number; averageResponseTime: number; errorRate: number }
+    }
 
     ctx.status.metrics.totalRequests = data.api.requestsPerSecond * ctx.status.metrics.uptime / 1000
     ctx.status.metrics.averageResponseTime = data.api.averageResponseTime
@@ -65,9 +81,13 @@ export function updateAggregatedMetrics(ctx: IntegrationContext): void {
  */
 export async function getMetricValue(ctx: IntegrationContext, metric: string): Promise<number | null> {
   try {
-    const dashboard = ctx.components.get('performanceDashboard')
+    const dashboard = asComponent(ctx.components.get('performanceDashboard'))
     if (dashboard && typeof dashboard.getData === 'function') {
-      const data = dashboard.getData()
+      const data = dashboard.getData() as {
+        api: { p95ResponseTime: number; errorRate: number }
+        system: { activeUsers: number }
+        database: { queryPerformance: { p95Time: number } }
+      }
 
       switch (metric) {
         case 'response_time_p95':
@@ -103,8 +123,9 @@ export async function updateComponentStatus(ctx: IntegrationContext): Promise<vo
 
       try {
         // Check component health
-        if (typeof component.getMetrics === 'function') {
-          const metrics = component.getMetrics()
+        const comp = asComponent(component)
+        if (typeof comp.getMetrics === 'function') {
+          const metrics = comp.getMetrics()
           // Simple health check - in real implementation, this would be more sophisticated
           healthy = true
         }

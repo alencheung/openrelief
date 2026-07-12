@@ -16,7 +16,7 @@ const shouldUseMockClient =
 
 export const supabase = shouldUseMockClient
   ? createMockSupabaseClient()
-  : createClient(supabaseUrl, supabaseAnonKey, {
+  : createClient<Database>(supabaseUrl, supabaseAnonKey, {
       auth: {
         autoRefreshToken: true,
         persistSession: true,
@@ -50,7 +50,7 @@ export const supabase = shouldUseMockClient
 // this pass to avoid breaking existing imports of `supabase`.
 export const supabaseAdmin = shouldUseMockClient
   ? createMockSupabaseClient()
-  : createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY || '', {
+  : createClient<Database>(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY || '', {
       auth: {
         autoRefreshToken: false,
         persistSession: false
@@ -216,7 +216,7 @@ export const supabaseHelpers = {
   async updateUserProfile(userId: string, updates: Record<string, unknown>) {
     const { data, error } = await supabase
       .from('user_profiles')
-      .update(updates)
+      .update(updates as never)
       .eq('user_id', userId)
       .select()
       .single()
@@ -228,7 +228,11 @@ export const supabaseHelpers = {
   },
 
   async createUserProfile(profile: Record<string, unknown>) {
-    const { data, error } = await supabase.from('user_profiles').insert(profile).select().single()
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .insert(profile as never)
+      .select()
+      .single()
 
     if (error) {
       throw error
@@ -276,7 +280,7 @@ export const supabaseHelpers = {
   async createEmergencyEvent(event: Record<string, unknown>) {
     const { data, error } = await supabase
       .from('emergency_events')
-      .insert(event)
+      .insert(event as never)
       .select(
         `
         *,
@@ -298,7 +302,7 @@ export const supabaseHelpers = {
   async updateEmergencyEvent(eventId: string, updates: Record<string, unknown>) {
     const { data, error } = await supabase
       .from('emergency_events')
-      .update(updates)
+      .update(updates as never)
       .eq('id', eventId)
       .select()
       .single()
@@ -324,7 +328,7 @@ export const supabaseHelpers = {
         confirmation_type: confirmationType,
         location: location ? `POINT(${location.lng} ${location.lat})` : null,
         trust_weight: 0.1 // Will be updated by trigger
-      })
+      } as never)
       .select()
       .single()
 
@@ -380,7 +384,7 @@ export const supabaseHelpers = {
         user_id: userId,
         topic_id: topicId,
         is_active: true
-      })
+      } as never)
       .select()
       .single()
 
@@ -393,7 +397,7 @@ export const supabaseHelpers = {
   async unsubscribeFromTopic(userId: string, topicId: number) {
     const { data, error } = await supabase
       .from('user_subscriptions')
-      .update({ is_active: false })
+      .update({ is_active: false } as never)
       .eq('user_id', userId)
       .eq('topic_id', topicId)
       .select()

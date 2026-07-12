@@ -76,7 +76,7 @@ export const ScreenReaderOnly = forwardRef<HTMLElement, ScreenReaderOnlyProps>(
       atomic = false,
       relevant,
       busy = false,
-      as: Component = 'span',
+      as: Component = 'span' as React.ElementType,
       aria = {},
       ...props
     },
@@ -101,8 +101,8 @@ export const ScreenReaderOnly = forwardRef<HTMLElement, ScreenReaderOnlyProps>(
         aria-relevant={relevant}
         aria-busy={busy || undefined}
         // Custom ARIA attributes
-        {...aria}
-        {...props}
+        {...(aria as Record<string, string | boolean>)}
+        {...(props as Record<string, unknown>)}
       >
         {children}
       </Component>

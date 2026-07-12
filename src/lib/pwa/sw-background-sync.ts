@@ -50,7 +50,8 @@ export class BackgroundSyncManager {
       }
 
       this.syncQueue.get(type)!.push({
-        ...data,
+        type,
+        data,
         timestamp: Date.now(),
         retryCount: 0
       })
@@ -88,9 +89,9 @@ export class BackgroundSyncManager {
           await this.executeOperation(type, operation)
           successfulOperations.push(operation)
         } catch (error) {
-          operation.retryCount++
+          operation.retryCount = (operation.retryCount ?? 0) + 1
 
-          if (operation.retryCount < this.config.maxRetries) {
+          if ((operation.retryCount ?? 0) < this.config.maxRetries) {
             failedOperations.push(operation)
           } else {
             console.error(`[BackgroundSyncManager] Operation failed after ${this.config.maxRetries} retries:`, error)
@@ -132,7 +133,7 @@ export class BackgroundSyncManager {
 
       for (const [type, operations] of this.syncQueue.entries()) {
         const filteredOperations = operations.filter(op =>
-          (now - op.timestamp) < maxAge
+          (now - (op.timestamp ?? now)) < maxAge
         )
         this.syncQueue.set(type, filteredOperations)
       }

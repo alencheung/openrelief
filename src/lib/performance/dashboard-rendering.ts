@@ -172,7 +172,7 @@ export class Widget {
 
   private getAlertListData(data: DashboardData): Record<string, unknown> {
     return {
-      alerts: data.alerts.recent.slice(0, this.config.config.maxItems || 10),
+      alerts: data.alerts.recent.slice(0, (this.config.config.maxItems as number) || 10),
       total: data.alerts.active,
       showResolved: this.config.config.showResolved || false
     }

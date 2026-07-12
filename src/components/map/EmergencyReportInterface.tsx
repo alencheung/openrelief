@@ -736,7 +736,7 @@ export default function EmergencyReportInterface({
                     maxSize={5 * 1024 * 1024}
                     showPreviews
                     onFilesChange={handleImageUpload}
-                    onFileRemove={handleImageRemove}
+                    onFileRemove={handleImageRemove as unknown as (fileId: string, file: File) => void}
                   />
 
                   <AudioRecorder
@@ -807,7 +807,7 @@ export default function EmergencyReportInterface({
                       )}
                       {audioRecording && (
                         <div className="text-sm text-muted-foreground">
-                          Audio recording attached ({Math.round(audioRecording.duration)}s)
+                          Audio recording attached
                         </div>
                       )}
                       {images.length === 0 && !audioRecording && (

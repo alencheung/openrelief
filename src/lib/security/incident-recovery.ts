@@ -178,7 +178,7 @@ export async function saveResponsePlan(plan: IncidentResponsePlan): Promise<void
     plan_data: plan,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
-  })
+  } as never)
 }
 
 /**
@@ -193,7 +193,7 @@ export async function archiveResponsePlan(
     plan_data: plan,
     final_report: finalReport,
     archived_at: new Date().toISOString()
-  })
+  } as never)
 }
 
 /**
@@ -225,7 +225,7 @@ export async function scheduleFollowUpActions(
       responsible: action.responsible,
       status: 'pending',
       created_at: new Date().toISOString()
-    })
+    } as never)
   }
 }
 
@@ -234,9 +234,9 @@ export async function scheduleFollowUpActions(
  * hydrating the manager's active-incident map on startup.
  */
 export async function loadActiveResponsePlans(): Promise<IncidentResponsePlan[]> {
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await (supabaseAdmin
     .from('incident_response_plans')
-    .select('*')
+    .select('*') as unknown as { is: (column: string, value: unknown) => Promise<{ data: Record<string, unknown>[] | null; error: { message: string } | null }> })
     .is('status', 'active')
 
   if (error) {

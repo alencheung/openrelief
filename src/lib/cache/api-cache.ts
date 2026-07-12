@@ -102,7 +102,9 @@ async function getRedisClient(): Promise<RedisClient | null> {
           redisClient = {
             get: key => redis.get(key),
             setex: (key, ttl, value) => redis.setex(key, ttl, value),
-            del: key => redis.del(key),
+            del: async key => {
+              await redis.del(key)
+            },
             keys: pattern => redis.keys(pattern)
           }
         } catch {

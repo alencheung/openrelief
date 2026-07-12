@@ -58,6 +58,16 @@ import {
   useCheckInActions
 } from './checkInStore'
 
+// State shapes for each store, derived from the zustand hooks so the import
+// helper can type its partial-restore casts without hand-maintained copies.
+type AuthStoreState = ReturnType<typeof useAuthStore.getState>
+type EmergencyStoreState = ReturnType<typeof useEmergencyStore.getState>
+type TrustStoreState = ReturnType<typeof useTrustStore.getState>
+type LocationStoreState = ReturnType<typeof useLocationStore.getState>
+type NotificationStoreState = ReturnType<typeof useNotificationStore.getState>
+type OfflineStoreState = ReturnType<typeof useOfflineStore.getState>
+type CheckInStoreState = ReturnType<typeof useCheckInStore.getState>
+
 export { useAuthStore, useAuth, useAuthActions }
 export {
   useEmergencyStore,
@@ -247,24 +257,24 @@ export const exportStoreData = () => {
 
 export const importStoreData = (data: Record<string, unknown>) => {
   if (data.auth) {
-    useAuthStore.setState(data.auth as Partial<AuthStore>)
+    useAuthStore.setState(data.auth as Partial<AuthStoreState>)
   }
   if (data.emergency) {
-    useEmergencyStore.setState(data.emergency as Partial<EmergencyStore>)
+    useEmergencyStore.setState(data.emergency as Partial<EmergencyStoreState>)
   }
   if (data.trust) {
-    useTrustStore.setState(data.trust as Partial<TrustStore>)
+    useTrustStore.setState(data.trust as Partial<TrustStoreState>)
   }
   if (data.location) {
-    useLocationStore.setState(data.location as Partial<LocationStore>)
+    useLocationStore.setState(data.location as Partial<LocationStoreState>)
   }
   if (data.notification) {
-    useNotificationStore.setState(data.notification as Partial<NotificationStore>)
+    useNotificationStore.setState(data.notification as Partial<NotificationStoreState>)
   }
   if (data.offline) {
-    useOfflineStore.setState(data.offline as Partial<OfflineStore>)
+    useOfflineStore.setState(data.offline as Partial<OfflineStoreState>)
   }
   if (data.checkIn) {
-    useCheckInStore.setState(data.checkIn as Partial<CheckInStore>)
+    useCheckInStore.setState(data.checkIn as Partial<CheckInStoreState>)
   }
 }

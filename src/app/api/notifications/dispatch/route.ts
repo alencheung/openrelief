@@ -62,12 +62,23 @@ export async function POST(request: NextRequest) {
   }
 
   // Pull a batch of pending notifications, oldest first.
-  const { data: pending, error } = await supabaseAdmin
+  const { data: pendingRaw, error } = await supabaseAdmin
     .from('notification_queue')
     .select('id, user_id, title, message, data, attempts, max_attempts')
     .eq('status', 'pending')
     .order('scheduled_at', { ascending: true })
     .limit(50)
+
+  type PendingNotification = {
+    id: string
+    user_id: string
+    title: string
+    message: string
+    data: Record<string, unknown> | null
+    attempts: number
+    max_attempts: number
+  }
+  const pending = (pendingRaw ?? []) as PendingNotification[]
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
@@ -78,7 +89,7 @@ export async function POST(request: NextRequest) {
   let noSubscribers = 0
   const expiredEndpoints: string[] = []
 
-  for (const item of pending ?? []) {
+  for (const item of pending) {
     // Fetch this user's push subscriptions (separate p256dh/auth columns).
     const { data: subs } = await supabaseAdmin
       .from('push_subscriptions')
@@ -98,13 +109,13 @@ export async function POST(request: NextRequest) {
       // endpoint, so the issue is observable instead of silently swallowed.
       await supabaseAdmin
         .from('notification_queue')
-        .update({ status: 'no_subscribers', sent_at: new Date().toISOString() })
+        .update({ status: 'no_subscribers', sent_at: new Date().toISOString() } as never)
         .eq('id', item.id)
       noSubscribers++
       continue
     }
 
-    const itemData = (item.data as Record<string, unknown> | null) ?? {}
+    const itemData = item.data ?? {}
     const result = await broadcastWebPush(subscriptions, {
       title: item.title,
       body: item.message,
@@ -130,7 +141,7 @@ export async function POST(request: NextRequest) {
         attempts: item.attempts + 1,
         sent_at: fullyDelivered ? new Date().toISOString() : null,
         error_message: fullyDelivered ? null : `${result.failed} subscription(s) failed`
-      })
+      } as never)
       .eq('id', item.id)
   }
 

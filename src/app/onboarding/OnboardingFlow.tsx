@@ -95,7 +95,7 @@ export default function OnboardingFlow() {
 
       const { error: updateError } = await supabase
         .from('user_profiles')
-        .update(update)
+        .update(update as never)
         .eq('user_id', user.id)
 
       if (updateError) {

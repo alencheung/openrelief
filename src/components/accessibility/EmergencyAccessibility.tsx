@@ -249,6 +249,7 @@ export function EmergencyAccessibility({
           lang: string
           onresult: (event: SpeechRecognitionResult) => void
           onerror: (event: { error: string }) => void
+          onend: () => void
           start: () => void
           stop: () => void
         }
@@ -270,9 +271,13 @@ export function EmergencyAccessibility({
 
         recognition.onresult = (event: SpeechRecognitionResult) => {
           const last = event.results.length - 1
-          const transcript = event.results[last][0].transcript
+          const result = event.results[last]
+          if (!result) {
+            return
+          }
+          const transcript = result[0]?.transcript ?? ''
 
-          if (event.results[last].isFinal) {
+          if (result.isFinal) {
             // Process voice command
             processVoiceCommand(transcript.toLowerCase())
           }

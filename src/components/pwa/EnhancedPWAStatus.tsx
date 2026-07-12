@@ -221,8 +221,8 @@ export function EnhancedPWAStatus() {
         {activeTab === 'overview' && (
           <OverviewTab
             isOnline={isOnline}
-            connectionType={connectionType}
-            downlink={downlink}
+            connectionType={connectionType ?? null}
+            downlink={downlink ?? null}
             isSyncing={isSyncing}
             pendingActions={pendingActions}
             storageQuota={storageQuota}

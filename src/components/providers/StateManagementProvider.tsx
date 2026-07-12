@@ -111,7 +111,7 @@ export const StateManagementProvider: React.FC<StateManagementProviderProps> = (
         const unsubscribe = globalErrorBoundary.subscribe(state => {
           if (state.hasError && state.error) {
             console.error('[StateManagement] Error boundary triggered:', state.error)
-            setError(state.error)
+            setError(state.error as unknown as Error)
 
             // Report error
             reportError(state.error)
@@ -122,7 +122,7 @@ export const StateManagementProvider: React.FC<StateManagementProviderProps> = (
         setIsInitialized(true)
       } catch (err) {
         console.error('[StateManagement] Failed to initialize:', err)
-        setError(classifyError(err))
+        setError(classifyError(err) as unknown as Error)
       }
     }
 
@@ -312,11 +312,11 @@ export const StateManagementProvider: React.FC<StateManagementProviderProps> = (
           <div className="text-red-600 text-6xl mb-4">⚠️</div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Initialization Failed</h2>
           <p className="text-gray-600 mb-4">{error.message}</p>
-          {error.suggestions && error.suggestions.length > 0 && (
+          {(error as unknown as { suggestions?: string[] }).suggestions && (error as unknown as { suggestions?: string[] }).suggestions!.length > 0 && (
             <div className="text-left bg-gray-50 p-4 rounded-lg mb-4">
               <p className="font-medium text-gray-900 mb-2">Suggestions:</p>
               <ul className="list-disc list-inside text-gray-600 space-y-1">
-                {error.suggestions.map((suggestion: string, index: number) => (
+                {(error as unknown as { suggestions?: string[] }).suggestions!.map((suggestion: string, index: number) => (
                   <li key={index}>{suggestion}</li>
                 ))}
               </ul>
@@ -378,7 +378,7 @@ export const useStateManagementPerformance = () => {
         staleQueries: queries.filter(q => q.isStale()).length,
         errorQueries: queries.filter(q => q.state.status === 'error').length,
         averageQueryTime:
-          queries.reduce((acc: number, q) => acc + (q.state.dataFetchTime || 0), 0) /
+          queries.reduce((acc: number, q) => acc + ((q.state as unknown as { dataFetchTime?: number }).dataFetchTime || 0), 0) /
           queries.length
       }
 
