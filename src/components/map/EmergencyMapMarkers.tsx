@@ -251,7 +251,7 @@ export function useEmergencyMapMarkers(args: UseEmergencyMapMarkersArgs) {
 
 export interface EmergencyMapViewProps {
   className?: string
-  mapRef: React.RefObject<HTMLDivElement | null>
+  mapRef: React.RefObject<HTMLDivElement>
   mapInstance: Map | null
   isMapLoaded: boolean
   isMobile: boolean
