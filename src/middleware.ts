@@ -492,7 +492,7 @@ function securityHeadersMiddleware(response: NextResponse): NextResponse {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https: blob:",
-    "connect-src 'self' https://api.openrelief.org https://openrelief.supabase.co https://dispatch.openrelief.org wss://openrelief.supabase.co",
+    "connect-src 'self' https://api.openrelief.org https://openrelief.supabase.co https://dispatch.openrelief.org wss://openrelief.supabase.co https://o*.ingest.sentry.io",
     "media-src 'self' blob:",
     "object-src 'none'",
     "child-src 'self'",
@@ -502,7 +502,8 @@ function securityHeadersMiddleware(response: NextResponse): NextResponse {
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
-    'upgrade-insecure-requests'
+    'upgrade-insecure-requests',
+    'report-uri /api/csp-violation'
   ].join('; ')
 
   response.headers.set('Content-Security-Policy', csp)

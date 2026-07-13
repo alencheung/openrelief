@@ -235,57 +235,12 @@ const nextConfig = {
           }
         ]
       },
-      // Content Security Policy headers
-      // VULN-004: Removed unsafe-eval, added strict-dynamic with nonce support for production
-      {
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              `script-src 'self' ${process.env.NODE_ENV === 'development' ? "'unsafe-inline'" : "'strict-dynamic' 'nonce-{{nonce}}'"} https://cdn.vercel-insights.com https://browser.sentry-cdn.com`,
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: https: blob:",
-              "connect-src 'self' https://api.openrelief.org https://openrelief.supabase.co https://dispatch.openrelief.org wss://openrelief.supabase.co https://o*.ingest.sentry.io",
-              "media-src 'self' blob:",
-              "object-src 'none'",
-              "child-src 'self'",
-              "frame-src 'none'",
-              "worker-src 'self' blob:",
-              "manifest-src 'self'",
-              "base-uri 'self'",
-              "form-action 'self'",
-              "frame-ancestors 'none'",
-              'upgrade-insecure-requests',
-              'report-uri /api/csp-violation'
-            ].join('; ')
-          },
-          {
-            key: 'Content-Security-Policy-Report-Only',
-            value: [
-              "default-src 'self'",
-              `script-src 'self' ${process.env.NODE_ENV === 'development' ? "'unsafe-inline'" : "'strict-dynamic' 'nonce-{{nonce}}'"} https://cdn.vercel-insights.com https://browser.sentry-cdn.com`,
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: https: blob:",
-              "connect-src 'self' https://api.openrelief.org https://openrelief.supabase.co https://dispatch.openrelief.org wss://openrelief.supabase.co https://o*.ingest.sentry.io",
-              "media-src 'self' blob:",
-              "object-src 'none'",
-              "child-src 'self'",
-              "frame-src 'none'",
-              "worker-src 'self' blob:",
-              "manifest-src 'self'",
-              "base-uri 'self'",
-              "form-action 'self'",
-              "frame-ancestors 'none'",
-              'upgrade-insecure-requests',
-              'report-uri /api/csp-violation'
-            ].join('; ')
-          }
-        ]
-      },
+      // NOTE: Content-Security-Policy is set in src/middleware.ts at runtime.
+      // Do NOT also set CSP headers here: Next.js merges headers from next.config.js
+      // (static, build-time) and middleware (runtime), causing duplicate/conflicting
+      // policies. A previous static CSP here used a literal `nonce-{{nonce}}`
+      // placeholder that was never substituted, which broke all inline scripts.
+      // See src/middleware.ts -> securityHeadersMiddleware() for the active policy.
       // HSTS headers (production only)
       ...(process.env.NODE_ENV === 'production'
         ? [
