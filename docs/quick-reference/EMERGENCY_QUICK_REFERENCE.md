@@ -1,5 +1,10 @@
 # OpenRelief Emergency Quick Reference Guide
 
+> **Note:** Voice-assistant reporting (Siri, Google Assistant, Alexa) and mesh
+> networking are **planned** features (see
+> [CHANGELOG.md roadmap](../../CHANGELOG.md)) and may not be available in your
+> version yet.
+
 ## Table of Contents
 
 1. [Emergency Quick Actions](#emergency-quick-actions)

@@ -1,5 +1,12 @@
 # OpenRelief User Onboarding Guide
 
+> **Note on feature availability:** This guide describes the full vision for
+> OpenRelief. Most features are available today (reporting, map, trust,
+> offline, privacy). A few — **mesh networking, Apple Watch, and voice-assistant
+> (Siri/Google Assistant/Alexa) reporting** — are **planned** for future
+> releases (see the [roadmap in CHANGELOG.md](../../CHANGELOG.md)) and may not
+> be available in your version yet.
+
 ## Table of Contents
 
 1. [Getting Started](#getting-started)

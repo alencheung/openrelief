@@ -520,7 +520,6 @@ After each deployment, update:
 
 ---
 
-**Version**: 1.0.0  
-**Last Updated**: 2024-01-15  
-**Next Review**: 2024-02-15  
+**Version**: 1.1.0
+**Last Updated**: 2026-07
 **Approved By**: DevOps Team Lead

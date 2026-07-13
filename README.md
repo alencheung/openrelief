@@ -178,7 +178,7 @@ OpenRelief is a **three-tier** system:
 | State | Zustand (persist + subscribeWithSelector) |
 | Data Fetching | TanStack Query v5 |
 | Styling | Tailwind CSS + CVA + Radix UI |
-| Maps | MapLibre GL + Leaflet |
+| Maps | MapLibre GL JS |
 | Spatial | Turf.js + geolib |
 | Edge Functions | Cloudflare Workers |
 | Monitoring | Sentry (client/server/edge) |
@@ -261,12 +261,15 @@ Read the full [**Contributing Guide**](CONTRIBUTING.md) and
 
 ## 📚 Documentation
 
-- [Architecture deep-dive](docs/architecture/)
-- [API reference](docs/api/)
-- [Database schema](docs/database/)
-- [Deployment guide](docs/deployment/)
-- [Security policy](SECURITY.md)
-- [Getting started](docs/getting-started/)
+The full documentation index lives at **[docs/index.md](docs/index.md)**.
+Quick links:
+
+- [Architecture](docs/architecture/overview.md) — as-built overview, diagrams, data model, trust & consensus
+- [API reference](docs/api/) — endpoints, auth, realtime
+- [Database schema](docs/database/schema.md) — full DDL, RLS, functions
+- [Deployment](docs/deployment/overview.md) — Vercel + Supabase + Cloudflare
+- [Security](SECURITY.md) · [Privacy](docs/privacy/Privacy_Implementation_Guide.md)
+- [Getting started](docs/getting-started/) · [Contributing](CONTRIBUTING.md)
 
 ## 🆘 Getting Help
 

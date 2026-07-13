@@ -1,5 +1,12 @@
 # OpenRelief Legal Framework Analysis: Executive Summary
 
+> **Cross-reference:** The "zero-knowledge" and "distributed trust"
+> recommendations below remain **proposed future work** (see
+> [Architecture → Future Vision](../architecture/future-vision.md)). What is
+> actually built today is documented in
+> [Security Architecture](../architecture/security-architecture.md) (RLS,
+> differential privacy, k-anonymity, E2E encryption, audit logging).
+
 ## Key Findings
 
 ### Critical Legal Vulnerabilities Identified

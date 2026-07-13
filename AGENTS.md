@@ -76,7 +76,7 @@ npm run format:check  # Check formatting
 - **State**: Zustand (with persist + subscribeWithSelector middleware)
 - **Data Fetching**: TanStack Query v5
 - **Styling**: Tailwind CSS + CVA (class-variance-authority) + Radix UI
-- **Maps**: MapLibre GL + Leaflet (dual map support)
+- **Maps**: MapLibre GL JS
 - **Spatial**: Turf.js + geolib
 - **Edge Functions**: Cloudflare Workers (see `src/edge/`)
 - **Monitoring**: Sentry (client/server/edge)

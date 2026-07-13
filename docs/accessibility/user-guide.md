@@ -1,4 +1,9 @@
-# OpenRelief User Accessibility Guide
+# Accessibility — User Guide
+
+This guide explains how to **use** OpenRelief's accessibility features as an
+end user (with a screen reader, keyboard, mobile device, etc.). For the
+developer-facing implementation guide, see
+[`developer-guide.md`](developer-guide.md).
 
 ## Table of Contents
 

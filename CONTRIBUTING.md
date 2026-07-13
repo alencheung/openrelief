@@ -204,28 +204,29 @@ const EmergencyAlert: React.FC<{ event: EmergencyEvent }> = ({ event }) => {
 
 ### CSS/Styling
 
-- Use **CSS Modules** or **styled-components**
-- Follow **BEM** methodology for class names
+- Use **Tailwind CSS** utility classes for styling
+- Use **CVA** (class-variance-authority) for component variants, merged with
+  `cn()` from `@/lib/utils` (clsx + tailwind-merge)
+- Prefer **Radix UI** primitives for accessible interactive components
 - Ensure **mobile-first** responsive design
 - Follow **WCAG 2.1 AA** accessibility guidelines
 
-```css
-/* CSS Modules example */
-.container {
-  display: flex;
-  flex-direction: column;
-  padding: 1rem;
-}
+```tsx
+// Component variant example (CVA + cn)
+import { cva } from 'class-variance-authority'
+import { cn } from '@/lib/utils'
 
-.alert {
-  background-color: var(--color-alert);
-  border-radius: 0.5rem;
-  padding: 1rem;
-}
+const alertVariants = cva('rounded-lg p-4', {
+  variants: {
+    severity: {
+      info: 'bg-blue-100 text-blue-900',
+      critical: 'bg-red-100 text-red-900 border-2 border-red-500',
+    },
+  },
+})
 
-.alert--critical {
-  background-color: var(--color-critical);
-  border: 2px solid var(--color-critical-border);
+export function Alert({ severity, className, ...props }) {
+  return <div className={cn(alertVariants({ severity }), className)} {...props} />
 }
 ```
 

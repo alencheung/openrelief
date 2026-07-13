@@ -18,17 +18,39 @@ The OpenRelief database uses PostgreSQL 15+ with PostGIS 3.3+ for spatial data h
 ```
 supabase/
 ├── config.toml                 # Supabase configuration
-├── migrations/                  # Database migration files
-│   ├── 20240101000001_initial_schema.sql
-│   ├── 20240101000002_performance_indexes.sql
-│   ├── 20240101000003_database_views.sql
-│   ├── 20240101000004_database_functions.sql
-│   ├── 20240101000005_rls_policies.sql
-│   ├── 20240101000006_database_triggers.sql
-│   └── 20240101000007_cleanup_functions.sql
+├── migrations/                  # Database migration files (24 total — see below)
 ├── seed.sql                     # Initial data seeding
 └── README.md                    # This file
 ```
+
+### Migrations (in order)
+
+| Date | Migration | Purpose |
+| --- | --- | --- |
+| 2023-12-05 | `20231205_enhanced_audit_system.sql` | Enhanced audit logging |
+| 2024-01-01 | `20240101000001_initial_schema.sql` | Core tables (`user_profiles`, `emergency_events`, etc.) |
+| 2024-01-01 | `20240101000002_performance_indexes.sql` | Spatial + composite indexes |
+| 2024-01-01 | `20240101000003_database_views.sql` | Database views |
+| 2024-01-01 | `20240101000004_database_functions.sql` | Trust/consensus/dispatch functions |
+| 2024-01-01 | `20240101000005_rls_policies.sql` | Row Level Security policies |
+| 2024-01-01 | `20240101000006_database_triggers.sql` | Trust/consensus/audit triggers |
+| 2024-01-01 | `20240101000007_cleanup_functions.sql` | Expired-event cleanup |
+| 2024-01-01 | `20240101000008_privacy_features.sql` | Privacy tables (settings, budget, audit) |
+| 2024-01-15 | `20240115000009_production_optimizations.sql` | Production tuning |
+| 2024-01-15 | `20240115000010_spatial_functions.sql` | Spatial dispatch functions |
+| 2024-01-15 | `20240115000011_spatial_indexes.sql` | Spatial index tuning |
+| 2024-01-16 | `20240116000001_push_subscriptions.sql` | Web Push token storage |
+| 2024-01-17 | `20240117000001_user_onboarding_and_trust.sql` | Onboarding + trust integration |
+| 2024-06-20 | `20240620000001_batched_consensus.sql` | Queue-based consensus work |
+| 2024-06-20 | `20240620000002_rls_no_geography.sql` | RLS without geography dep |
+| 2024-06-20 | `20240620000003_pooling_partitioning.sql` | Pooling + notification partitioning |
+| 2024-06-20 | `20240620000004_incremental_sybil.sql` | Incremental Sybil detection |
+| 2024-06-22 | `20240622000002_privacy_settings_extended.sql` | Extended privacy settings |
+| 2024-06-22 | `20240622000003_user_legal_requests.sql` | Legal data-request handling |
+| 2024-06-22 | `20240622000004_notification_dispatch_schedule.sql` | Notification dispatch scheduling |
+| 2024-06-22 | `20240622000005_user_roles.sql` | User roles |
+| 2024-06-23 | `20240623000000_enable_rls_consensus_trust_work.sql` | RLS on consensus/trust work tables |
+| 2024-06-24 | `20240624000000_enable_rls_audit_tables.sql` | RLS on audit tables |
 
 ## Database Schema
 

@@ -1,6 +1,9 @@
-# OpenRelief Accessibility Guide
+# Accessibility — Developer Guide
 
-This guide provides comprehensive accessibility information for developers working on the OpenRelief emergency management system.
+This guide covers accessibility **implementation** for developers working on
+the OpenRelief codebase. For the end-user guide (how to use a11y features with
+screen readers, keyboard, etc.), see
+[`user-guide.md`](user-guide.md).
 
 ## Table of Contents
 
@@ -89,9 +92,12 @@ OpenRelief provides comprehensive keyboard navigation:
 
 #### Emergency Reporting
 
-- `Ctrl+E` - Open emergency report form
+- `Ctrl+E` - Open emergency report form (implemented in `KeyboardHelp.tsx`)
 - `Ctrl+S` - Submit emergency report (when in form)
 - `Number Keys` - Select emergency type (1-5)
+
+> **Note:** `Alt+E` is a _separate_ binding — it toggles eye-tracking in
+> `MotorAccessibility.tsx`. These are distinct shortcuts, not a conflict.
 
 ### Screen Reader Support
 
@@ -462,7 +468,7 @@ test('EmergencyMap is accessible', () => {
 
 #### Testing Tools
 
-- [axe Core](https://www.dequeuesystems.com/axe/)
+- [axe Core](https://www.deque.com/axe/)
 - [WAVE](https://wave.webaim.org/)
 - [Lighthouse Accessibility](https://developers.google.com/web/tools/lighthouse/)
 

@@ -205,7 +205,7 @@ git ls-files 'src/*.ts' 'src/*.tsx' | xargs wc -l | sort -rn | head -16
 
 ### 9. `src/components/map/EmergencyMap.tsx` — 1191 lines
 
-- **Responsibility**: The main emergency map component — MapLibre/Leaflet
+- **Responsibility**: The main emergency map component — MapLibre GL
   rendering, marker clustering, layer config, popup rendering, event
   filtering, and viewport handling. Single default-exported component.
 - **Proposed split**:

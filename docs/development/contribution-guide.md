@@ -391,16 +391,14 @@ npm run dev
 #### Branch Strategy
 
 ```bash
-# Main branches
-main          # Production-ready code
-develop        # Integration branch
+# Main branch
+main           # Production-ready code; feature branches fork from here
 feature/*      # Feature development
 hotfix/*       # Critical bug fixes
-release/*       # Release preparation
 
 # Create feature branch
-git checkout develop
-git pull upstream develop
+git checkout main
+git pull upstream main
 git checkout -b feature/your-feature-name
 
 # Create hotfix branch
@@ -413,9 +411,9 @@ git checkout -b hotfix/your-hotfix-name
 
 ```bash
 # 1. Update from upstream
-git checkout develop
+git checkout main
 git fetch upstream
-git merge upstream/develop
+git merge upstream/main
 
 # 2. Create feature branch
 git checkout -b feature/new-feature

@@ -1,4 +1,8 @@
-# OpenRelief PWA Debugging Guide
+# Debugging Notes — PWA Lessons Learned
+
+> This page collects **resolved** debugging case studies from the PWA layer.
+> Each documents a real issue we hit, its root cause, and the fix that shipped.
+> Use it as a reference when similar symptoms reappear.
 
 ## Issues Identified and Solutions Applied
 
