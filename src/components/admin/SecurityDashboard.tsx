@@ -111,16 +111,47 @@ export default function SecurityDashboard() {
   const [loading, setLoading] = useState(true)
   const [selectedTimeRange, setSelectedTimeRange] = useState('24h')
   const [emergencyMode, setEmergencyMode] = useState(false)
+  // Backend-unreachable flag. The admin security API (`/api/admin/security/*`)
+  // is not yet implemented, so the five parallel GETs 404 and `response.json()`
+  // throws on the HTML 404 page. Previously this was silently swallowed and the
+  // dashboard rendered an all-zero "operational/Unknown" state — masking the
+  // total backend absence from operators. Now we surface a visible error and
+  // stop the 30s polling loop once the backend is confirmed unreachable, so we
+  // don't hammer missing endpoints forever (4xx doesn't trip the circuit
+  // breaker in api-client.ts, so without this guard the poll runs indefinitely).
+  const [backendError, setBackendError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchSecurityData()
-    const interval = setInterval(fetchSecurityData, 30000)
-    return () => clearInterval(interval)
+    let cancelled = false
+    let interval: ReturnType<typeof setInterval> | undefined
+
+    const poll = async () => {
+      const ok = await fetchSecurityData()
+      if (cancelled) return ok
+      if (!ok) {
+        // Backend unreachable — stop polling to avoid infinite 404 hammering.
+        if (interval) clearInterval(interval)
+      }
+      return ok
+    }
+
+    poll()
+    interval = setInterval(poll, 30000)
+    return () => {
+      cancelled = true
+      if (interval) clearInterval(interval)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTimeRange])
 
-  const fetchSecurityData = async () => {
+  // Returns true when the data fetch succeeded, false when the backend was
+  // unreachable (so the caller can stop polling). Catches the SyntaxError
+  // thrown by `response.json()` on a 404 HTML page and converts it into a
+  // visible error state instead of an all-zero silent fallback.
+  const fetchSecurityData = async (): Promise<boolean> => {
     try {
       setLoading(true)
+      setBackendError(null)
 
       // Fetch all security data in parallel. Routes through apiGetJson so each
       // call gets the shared circuit breaker + default timeout (no unbounded
@@ -139,8 +170,13 @@ export default function SecurityDashboard() {
       setTrustMetrics(trustResponse.data)
       setSystemStatus(statusResponse.data)
       setSuspiciousActivity(activityResponse.data)
+      return true
     } catch (error) {
       console.error('Error fetching security data:', error)
+      setBackendError(
+        'The admin security API is currently unavailable. The /api/admin/security/* endpoints could not be reached — they may not be deployed in this environment. Monitoring data shown below may be incomplete or stale. Polling has been paused; refresh the page to retry.'
+      )
+      return false
     } finally {
       setLoading(false)
     }
@@ -273,6 +309,18 @@ export default function SecurityDashboard() {
           <AlertDescription className="text-red-700">
             Enhanced security measures are in place. Some features may be limited.
           </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Backend-unreachable banner. Previously a missing /api/admin/security/*
+          backend was silently masked by the `|| 0` / `?.` render fallbacks,
+          presenting an all-zero "operational" dashboard. This surfaces the
+          failure to the operator and explains that polling is paused. */}
+      {backendError && (
+        <Alert className="border-orange-300 bg-orange-50">
+          <AlertTriangle className="h-4 w-4 text-orange-600" />
+          <AlertTitle className="text-orange-800">Security API unavailable</AlertTitle>
+          <AlertDescription className="text-orange-700">{backendError}</AlertDescription>
         </Alert>
       )}
 

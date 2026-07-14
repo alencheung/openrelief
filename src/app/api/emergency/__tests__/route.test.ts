@@ -137,4 +137,27 @@ describe('Emergency API Routes', () => {
     const res = await DELETE(req).catch(() => ({ status: 500 }))
     expect(res.status).toBeDefined()
   })
+
+  // Regression for D-04: 'cancelled' (produced by the owner soft-cancel
+  // DELETE on /api/emergency/[id]) was missing from the GET status
+  // allowedValues, so GET ?status=cancelled returned 400. Now it is an
+  // accepted filter value alongside pending/active/resolved/closed.
+  it('accepts status=cancelled as a GET filter value', async () => {
+    const req = new NextRequest('http://localhost:3000/api/emergency?status=cancelled')
+    const res = await GET(req)
+    expect(res.status).toBe(200)
+  })
+
+  it('accepts status=cancelled,resolved as a multi-value GET filter', async () => {
+    const req = new NextRequest('http://localhost:3000/api/emergency?status=cancelled,resolved')
+    const res = await GET(req)
+    expect(res.status).toBe(200)
+  })
+
+  // NOTE: a "rejects invalid status" test is intentionally omitted here because
+  // this suite mocks inputValidator.validateAndSanitizeObject to always return
+  // isValid:true, so no status value is ever rejected at this test boundary.
+  // The allowedValues change (adding 'cancelled') is covered by the two
+  // acceptance tests above; rejection of truly-invalid values is verified
+  // against the real validator in src/lib/security/__tests__/input-validation.test.ts.
 })

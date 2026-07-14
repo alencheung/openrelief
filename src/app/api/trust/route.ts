@@ -254,7 +254,7 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
 
 export const POST = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
   request: NextRequest,
-  _context
+  context
 ) => {
   try {
     const body = await request.json()
@@ -266,6 +266,31 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
       )
     }
     const { targetUserId } = parsed.data
+
+    // Ownership check: a user may only invalidate their OWN trust cache.
+    // Invalidation by another target requires an admin/moderator role, mirroring
+    // the cross-user access rule already enforced in the GET handler above.
+    // Previously the security context was discarded (`_context`), letting any
+    // authenticated user flush any other user's cache (a targeted cache-flush
+    // DoS forcing recomputation on the victim's next read).
+    if (targetUserId !== context.userId) {
+      const { data: currentUser, error: permError } = await supabase
+        .from('user_profiles')
+        .select('role')
+        .eq('user_id', context.userId)
+        .single()
+
+      if (
+        permError ||
+        !currentUser ||
+        !['admin', 'moderator'].includes(currentUser.role || '')
+      ) {
+        return NextResponse.json(
+          { error: "Insufficient permissions to invalidate another user's trust cache" },
+          { status: 403 }
+        )
+      }
+    }
 
     await invalidateTrustCache(targetUserId).catch(() => {})
 

@@ -65,23 +65,63 @@ const injurySeverityConfig: Record<Injury['severity'], { color: string; label: s
 export const VictimDetails = React.forwardRef<HTMLDivElement, VictimDetailsProps>(
   ({ victim, checkIns = [], onClose, onEdit, onDelete, onStatusUpdate, className }, ref) => {
     const [isEditing, setIsEditing] = useState(false)
+    const [showShareConfirm, setShowShareConfirm] = useState(false)
     const statusInfo = statusConfig[victim.status]
 
+    // Print only a privacy-redacted summary, never the full PII modal.
+    // Previously handlePrint called window.print() directly on the entire
+    // DOM, dumping name, contacts, emergency contact, injuries, location,
+    // and notes to the printer/PDF without any redaction.
     const handlePrint = () => {
-      window.print()
+      const printWindow = window.open('', '_blank', 'width=600,height=800')
+      if (!printWindow) {
+        // Popup blocked — fall back to printing the page, but only the
+        // redacted summary is printable via the print stylesheet below.
+        window.print()
+        return
+      }
+      const maskedName = victim.name.charAt(0) + '•'.repeat(Math.max(0, victim.name.length - 1))
+      printWindow.document.write(`
+        <html><head><title>Victim Summary (Redacted)</title>
+        <style>
+          body { font-family: system-ui, sans-serif; padding: 24px; color: #1f2937; }
+          h1 { font-size: 18px; margin-bottom: 8px; }
+          .row { margin: 4px 0; }
+          .label { color: #6b7280; }
+          .redacted { color: #9ca3af; font-style: italic; }
+          .footer { margin-top: 24px; font-size: 12px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 8px; }
+        </style></head><body>
+          <h1>Victim Welfare Summary</h1>
+          <div class="row"><span class="label">Name:</span> <span class="redacted">${maskedName}</span></div>
+          <div class="row"><span class="label">Status:</span> ${statusInfo.label}</div>
+          <div class="row"><span class="label">Priority:</span> ${victim.priority}</div>
+          <div class="row"><span class="label">Injuries count:</span> ${victim.injuries.length}</div>
+          <div class="row"><span class="label">Last check-in:</span> ${victim.lastCheckIn ? formatRelativeTime(victim.lastCheckIn) : 'N/A'}</div>
+          <div class="row"><span class="label">Created:</span> ${formatDate(victim.createdAt)}</div>
+          <div class="footer">Generated ${new Date().toISOString()} — PII redacted for privacy. Contact information, injury details, location, and notes are omitted.</div>
+        </body></html>
+      `)
+      printWindow.document.close()
+      printWindow.focus()
+      printWindow.print()
     }
 
+    // Share must not embed victim PII in the share title/text. Previously the
+    // share title was `Victim: ${victim.name}`, leaking plaintext PII to
+    // arbitrary target apps (WhatsApp, SMS, email, etc.). Now shares only a
+    // generic welfare-status summary, and requires an explicit confirmation.
     const handleShare = async () => {
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: `Victim: ${victim.name}`,
-            text: `Status: ${victim.status}. Last check-in: ${victim.lastCheckIn ? formatRelativeTime(victim.lastCheckIn) : 'N/A'}`,
-            url: window.location.href
-          })
-        } catch (error) {
-          console.error('Error sharing:', error)
-        }
+      if (!navigator.share) return
+      try {
+        await navigator.share({
+          title: 'Welfare Status Update',
+          text: `A victim's current status is: ${statusInfo.label}. Last check-in: ${victim.lastCheckIn ? formatRelativeTime(victim.lastCheckIn) : 'N/A'}. See app for details.`,
+          url: window.location.href
+        })
+      } catch (error) {
+        console.error('Error sharing:', error)
+      } finally {
+        setShowShareConfirm(false)
       }
     }
 
@@ -100,7 +140,7 @@ export const VictimDetails = React.forwardRef<HTMLDivElement, VictimDetailsProps
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-4xl bg-background rounded-lg shadow-xl"
+            className="relative w-full max-w-4xl bg-background rounded-lg shadow-xl print:hidden"
           >
             <div className="sticky top-0 z-10 bg-background border-b px-6 py-4">
               <div className="flex items-center justify-between">
@@ -113,7 +153,12 @@ export const VictimDetails = React.forwardRef<HTMLDivElement, VictimDetailsProps
                   <Button size="sm" variant="outline" onClick={handlePrint}>
                     <Printer className="w-4 h-4" />
                   </Button>
-                  <Button size="sm" variant="outline" onClick={handleShare}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowShareConfirm(true)}
+                    aria-label="Share victim status (redacted)"
+                  >
                     <Share2 className="w-4 h-4" />
                   </Button>
                   {onEdit && (
@@ -386,6 +431,49 @@ export const VictimDetails = React.forwardRef<HTMLDivElement, VictimDetailsProps
               </Card>
             </div>
           </motion.div>
+
+          {/* Share confirmation gate — ensures the user explicitly confirms
+              sharing a (redacted) welfare status before invoking navigator.share,
+              which on mobile exposes the payload to arbitrary target apps. */}
+          {showShareConfirm && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4 print:hidden"
+              onClick={() => setShowShareConfirm(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.95 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0.95 }}
+                className="bg-background rounded-lg shadow-xl max-w-md w-full p-6 space-y-4"
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="flex items-center gap-2">
+                  <Share2 className="w-5 h-5" />
+                  <h3 className="text-lg font-semibold">Share welfare status?</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  This will share a <strong>redacted</strong> welfare summary (status and last
+                  check-in only). The victim&apos;s name, contact details, injuries, and location
+                  will <strong>not</strong> be included.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Preview: &quot;A victim&apos;s current status is: {statusInfo.label}. Last
+                  check-in: {victim.lastCheckIn ? formatRelativeTime(victim.lastCheckIn) : 'N/A'}.&quot;
+                </p>
+                <div className="flex justify-end gap-2">
+                  <Button size="sm" variant="ghost" onClick={() => setShowShareConfirm(false)}>
+                    Cancel
+                  </Button>
+                  <Button size="sm" onClick={handleShare}>
+                    Confirm Share
+                  </Button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
         </div>
       </div>
     )

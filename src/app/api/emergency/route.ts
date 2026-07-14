@@ -95,7 +95,10 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
           {
             name: 'status',
             type: 'string',
-            allowedValues: ['pending', 'active', 'resolved', 'closed']
+            // 'cancelled' is produced by the owner soft-cancel DELETE on
+            // /api/emergency/[id]; it must be a filterable value here so
+            // cancelled events remain queryable instead of 400-ing.
+            allowedValues: ['pending', 'active', 'resolved', 'closed', 'cancelled']
           }
         ],
         type_id: [{ name: 'type_id', type: 'number', min: 1 }],
@@ -487,7 +490,10 @@ export const PUT = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
           {
             name: 'status',
             type: 'string',
-            allowedValues: ['pending', 'active', 'resolved', 'closed']
+            // Allow 'cancelled' here too so an admin/moderator can transition
+            // a soft-cancelled event back to an active state if needed, and so
+            // the status vocabulary is consistent with the [id] PATCH schema.
+            allowedValues: ['pending', 'active', 'resolved', 'closed', 'cancelled']
           }
         ],
         severity: [

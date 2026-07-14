@@ -192,14 +192,55 @@ describe('/api/trust Endpoint', () => {
       expect(res.status).toBe(400)
     })
 
-    it('invalidates the trust cache on a valid request', async () => {
+    it('invalidates the trust cache on a valid self request', async () => {
       const { invalidateTrustCache } = require('@/lib/cache/api-cache')
-      const req = jsonRequest('POST', { action: 'invalidate', targetUserId: 'target-user' })
+      // targetUserId must match context.userId ('test-user') — the POST
+      // handler now enforces ownership (D-06 fix).
+      const req = jsonRequest('POST', { action: 'invalidate', targetUserId: 'test-user' })
       const res = await POST(req, authedCtx)
       expect(res.status).toBe(200)
       const json = await res.json()
       expect(json.success).toBe(true)
-      expect(invalidateTrustCache).toHaveBeenCalledWith('target-user')
+      expect(invalidateTrustCache).toHaveBeenCalledWith('test-user')
+    })
+
+    // Regression for D-06: POST /api/trust previously discarded the security
+    // context (`_context`) and let any authenticated user invalidate any other
+    // user's trust cache. Now cross-user invalidation requires admin/moderator.
+    it('forbids invalidating another user cache without elevated role', async () => {
+      const permChain = buildChain({ role: 'citizen' })
+      mockSupabase.from.mockImplementation(() => permChain)
+      const req = jsonRequest('POST', { action: 'invalidate', targetUserId: 'other-user' })
+      const res = await POST(req, authedCtx)
+      expect(res.status).toBe(403)
+    })
+
+    it('allows an admin to invalidate another user cache', async () => {
+      const { invalidateTrustCache } = require('@/lib/cache/api-cache')
+      const permChain = buildChain({ role: 'admin' })
+      mockSupabase.from.mockImplementation(() => permChain)
+      const req = jsonRequest('POST', { action: 'invalidate', targetUserId: 'other-user' })
+      const res = await POST(req, authedCtx)
+      expect(res.status).toBe(200)
+      expect(invalidateTrustCache).toHaveBeenCalledWith('other-user')
+    })
+
+    it('allows a moderator to invalidate another user cache', async () => {
+      const { invalidateTrustCache } = require('@/lib/cache/api-cache')
+      const permChain = buildChain({ role: 'moderator' })
+      mockSupabase.from.mockImplementation(() => permChain)
+      const req = jsonRequest('POST', { action: 'invalidate', targetUserId: 'other-user' })
+      const res = await POST(req, authedCtx)
+      expect(res.status).toBe(200)
+      expect(invalidateTrustCache).toHaveBeenCalledWith('other-user')
+    })
+
+    it('forbids cross-user invalidation when the profile lookup errors', async () => {
+      const errChain = buildChain(null, { message: 'db error' })
+      mockSupabase.from.mockImplementation(() => errChain)
+      const req = jsonRequest('POST', { action: 'invalidate', targetUserId: 'other-user' })
+      const res = await POST(req, authedCtx)
+      expect(res.status).toBe(403)
     })
   })
 })
