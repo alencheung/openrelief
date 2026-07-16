@@ -4,8 +4,8 @@ This guide will help you set up OpenRelief for local development.
 
 ## Prerequisites
 
-- **Node.js** 18+ (LTS recommended)
-- **npm** 9+ or **pnpm** 8+
+- **Node.js** 20+ (CI pins Node 20; see [deployment overview](../deployment/overview.md))
+- **npm** 8+ (the project is npm-based; pnpm/yarn are not tested)
 - **Supabase CLI** (`npm install -g supabase`)
 - **Git**
 - **Docker** (for local Supabase)
@@ -83,7 +83,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 npm run test
 
 # E2E tests
-npm run test:e2e
+npm run test:e2e:playwright
 
 # Type checking
 npm run type-check

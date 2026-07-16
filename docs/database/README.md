@@ -261,15 +261,16 @@ SELECT calculate_trust_score('user-uuid');
 ## Backup and Recovery
 
 ```bash
-# Create backup
+# Create a data-only backup (valid CLI command)
 supabase db dump --data-only > backup-$(date +%Y%m%d).sql
 
-# Restore from backup
-supabase db restore backup-20240115.sql
-
-# Point-in-time recovery (Supabase Pro)
-# Available through Supabase Dashboard
+# Restore: replay a dump via psql against your target database
+psql "$DATABASE_URL" -f backup-20240115.sql
 ```
+
+> **Note:** `supabase db restore` is **not** a real Supabase CLI subcommand.
+> For managed restore use the Supabase Dashboard or Point-in-Time Recovery
+> (Supabase Pro); for local/CLI restore, pipe a dump file into `psql`.
 
 ## Related Documentation
 

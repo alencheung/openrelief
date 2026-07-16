@@ -69,12 +69,19 @@ supabase/
 
 #### Notification System
 - **notification_queue**: Queued notifications for delivery
-- **user_push_tokens**: Push notification device tokens
+- **push_subscriptions**: Web Push subscriptions (`endpoint`, `p256dh`, `auth`)
+- **user_notification_settings**: Per-topic severity/distance/quiet-hours prefs
 
 #### System Management
 - **audit_log**: Complete audit trail
 - **system_metrics**: Performance and usage metrics
-- **user_mutes**: User muting functionality
+
+> **Note:** There is no `user_push_tokens` or `user_mutes` table. Push tokens
+> live in `push_subscriptions` (Web Push / VAPID, not FCM), and muting is
+> expressed through `user_notification_settings.is_enabled` plus quiet-hours
+> windows. (The legacy `get_users_for_alert_dispatch` SQL still references
+> `user_push_tokens` — see [database/schema.md](../docs/database/schema.md) for
+> that known debt.)
 
 ### Key Features
 

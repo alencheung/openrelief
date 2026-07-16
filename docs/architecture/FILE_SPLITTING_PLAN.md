@@ -1,16 +1,29 @@
 # File Splitting Plan
 
-> **Status**: Living document. Update as splits land.
+> **Status**: ✅ **Phases 1–3 complete** (as of 2026-07). The original top-15
+> files listed below have all been split and now sit at or under the 500-line
+> target. This document is retained as a historical record of the refactor and
+> as a template for any future oversized-file work.
 > **Tracking**: [#16](https://github.com/openrelief/openrelief/issues/16)
 > **Owner**: Platform / Architecture
-> **Last updated**: 2026-07-11
+> **Last updated**: 2026-07-16
 
 This is a living document that plans how to incrementally split the largest
 files in the codebase. Per [AGENTS.md](../../AGENTS.md), no file should exceed
-**500 lines**. Today the top 15 files range from ~1,060 to ~1,670 lines.
+**500 lines**.
 
-The goal is **incremental, reviewable change** — not a big-bang refactor. Each
-split ships behind the original import path so callers do not break.
+> **What landed.** Every file in the original "Top 15 largest" table below was
+> split behind its original import path (types → `*/types.ts`, pure helpers →
+> sibling modules, singletons/hooks retained as facades). Re-verified line counts
+> as of this update: the largest former offender,
+> `performance-regression-testing.ts`, is now **360 lines**; the largest of the
+> whole `src/` tree is now a *test* file (`emergencyWorkflowIntegration.test.ts`,
+> 924 lines), and the largest non-test source file is
+> `src/components/accessibility/MotorAccessibility.tsx` (893 lines). See the
+> [Completed splits](#completed-splits) section.
+
+The goal was **incremental, reviewable change** — not a big-bang refactor. Each
+split shipped behind the original import path so callers did not break.
 
 ---
 
@@ -32,7 +45,11 @@ Each entry below contains:
 
 ---
 
-## Top 15 largest files
+## Top 15 largest files (historical — pre-split)
+
+> These were the largest files **before** the splitting work. All have since
+> been split (see [Completed splits](#completed-splits)). The line counts below
+> are kept for reference; current counts are far smaller.
 
 Generated with:
 
@@ -40,23 +57,23 @@ Generated with:
 git ls-files 'src/*.ts' 'src/*.tsx' | xargs wc -l | sort -rn | head -16
 ```
 
-| #   | File                                                        | Lines |
-| --- | ----------------------------------------------------------- | ----- |
-| 1   | `src/lib/testing/performance-regression-testing.ts`        | 1671  |
-| 2   | `src/lib/performance/performance-integration.ts`           | 1671  |
-| 3   | `src/lib/pwa/service-worker-optimizer.ts`                  | 1643  |
-| 4   | `src/lib/alerts/alert-dispatch-optimizer.ts`               | 1597  |
-| 5   | `src/lib/performance/performance-dashboard.ts`             | 1582  |
-| 6   | `src/lib/testing/load-testing-framework.ts`                | 1471  |
-| 7   | `src/lib/security/incident-response.ts`                    | 1315  |
-| 8   | `src/lib/edge/edge-optimizer.ts`                           | 1279  |
-| 9   | `src/components/map/EmergencyMap.tsx`                      | 1191  |
-| 10  | `src/lib/performance/frontend-optimizer.ts`                | 1175  |
-| 11  | `src/components/privacy/DataControls.tsx`                  | 1148  |
-| 12  | `src/lib/security/sybil-prevention.ts`                     | 1138  |
-| 13  | `src/store/offlineStore.ts`                                | 1125  |
-| 14  | `src/hooks/queries/useRealtimeSubscriptions.ts`            | 1089  |
-| 15  | `src/hooks/usePrivacy.ts`                                   | 1058  |
+| #   | File                                                        | Lines (then) | Lines (now) |
+| --- | ----------------------------------------------------------- | ------------ | ----------- |
+| 1   | `src/lib/testing/performance-regression-testing.ts`        | 1671         | 360         |
+| 2   | `src/lib/performance/performance-integration.ts`           | 1671         | 486         |
+| 3   | `src/lib/pwa/service-worker-optimizer.ts`                  | 1643         | 418         |
+| 4   | `src/lib/alerts/alert-dispatch-optimizer.ts`               | 1597         | 497         |
+| 5   | `src/lib/performance/performance-dashboard.ts`             | 1582         | 489         |
+| 6   | `src/lib/testing/load-testing-framework.ts`                | 1471         | 499         |
+| 7   | `src/lib/security/incident-response.ts`                    | 1315         | 421         |
+| 8   | `src/lib/edge/edge-optimizer.ts`                           | 1279         | 499         |
+| 9   | `src/components/map/EmergencyMap.tsx`                      | 1191         | 456         |
+| 10  | `src/lib/performance/frontend-optimizer.ts`                | 1175         | 475         |
+| 11  | `src/components/privacy/DataControls.tsx`                  | 1148         | 244         |
+| 12  | `src/lib/security/sybil-prevention.ts`                     | 1138         | 415         |
+| 13  | `src/store/offlineStore.ts`                                | 1125         | 500         |
+| 14  | `src/hooks/queries/useRealtimeSubscriptions.ts`            | 1089         | 297         |
+| 15  | `src/hooks/usePrivacy.ts`                                   | 1058         | 467         |
 
 > **Note**: `src/components/privacy/PrivacyDashboard.tsx` (999 lines) is just
 > below the cutoff but is included in Phase 3 because it shares a feature area
@@ -314,7 +331,32 @@ git ls-files 'src/*.ts' 'src/*.tsx' | xargs wc -l | sort -rn | head -16
 
 ---
 
-## Phased rollout
+## Completed splits
+
+All 15 entries above were executed across Phases 1–3. Each split followed the
+rules below: code moved to sibling modules (`*/types.ts`, pure helper files, or
+per-domain subfolders), and the original path re-exported its former public
+surface so callers kept compiling. Representative splits:
+
+- `alert-dispatch-optimizer.ts` → `dispatch-types.ts`, `dispatch-helpers.ts`,
+  `dispatch-strategy.ts`, `dispatch-batching.ts` (documented in the file
+  header). Now 497 lines.
+- `offlineStore.ts` → `offline-types.ts`, `offline-helpers.ts`,
+  `offline-selectors.ts`. Now exactly 500 lines.
+- `usePrivacy.ts` → `usePrivacy-types.ts`, `usePrivacy-helpers.ts`,
+  `usePrivacy-protection.ts`. Now 467 lines.
+- `EmergencyMap.tsx` → layer/marker/popup helpers under
+  `src/components/map/`. Now 456 lines.
+
+The current largest non-test source files are unrelated to the original list
+(e.g. `src/components/accessibility/MotorAccessibility.tsx` at 893 lines,
+`src/app/api/performance/route.ts` at 878 lines). Those are candidates for a
+future pass if/when they are next heavily edited; they are **not** blocking
+today.
+
+---
+
+## Phased rollout (historical)
 
 ### Phase 1 — Quick wins
 
@@ -401,27 +443,29 @@ These rules apply to **every** split, regardless of phase:
 ## Performance subsystem consolidation
 
 > **The triplication problem.** `PerformanceMetrics` (and several sibling
-> types) are defined in **four** places today, and the subsystem mixes root
-> and nested modules.
+> types) are defined in multiple places, and the subsystem mixes root and
+> nested modules. The line-count bloat has been fixed (all files now ≤ ~490
+> lines), but the **type duplication** and the **root-vs-nested split**
+> remain open.
 
-### Current state
+### Current state (verified 2026-07-16)
 
-- `src/lib/performance/` contains four files:
-  - `frontend-optimizer.ts` (1175 lines)
-  - `performance-dashboard.ts` (1582 lines)
-  - `performance-integration.ts` (1671 lines)
-  - `performance-monitor.ts` (1012 lines)
-- `src/lib/performance-monitor.ts` (757 lines, **root**) still exists.
-  > The task brief notes it was meant to be deleted in PR #3 — verify before
-  > relying on this. As of this writing it is still present and exports
-  > `PerformanceMetrics`, `usePerformanceMonitor`, and selectors.
+- `src/lib/performance/` contains four files (all now well under 500 lines):
+  - `frontend-optimizer.ts` (475 lines)
+  - `performance-dashboard.ts` (489 lines)
+  - `performance-integration.ts` (486 lines)
+  - `performance-monitor.ts` (nested, ~460 lines)
+- `src/lib/performance-monitor.ts` (**461 lines, root**) still exists and
+  exports `PerformanceMetrics`, `usePerformanceMonitor`, and selectors. It has
+  not yet been folded into the nested subsystem.
+- `src/lib/performance/index.ts` (the intended barrel) **does not exist yet**.
 - `PerformanceMetrics` is defined independently in:
-  - `src/lib/performance-monitor.ts:12` (root, Zustand store shape)
-  - `src/hooks/useMobilePerformance.ts:6` (mobile metrics shape)
-  - `src/components/pwa/EnhancedPWAStatus.tsx:61` (PWA-local shape)
+  - `src/lib/performance-monitor.ts` (root, Zustand store shape)
+  - `src/hooks/useMobilePerformance.ts` (mobile metrics shape)
+  - `src/components/pwa/EnhancedPWAStatus.tsx` (PWA-local shape)
 - `EdgePerformanceMetrics` is defined independently in:
-  - `src/lib/edge/edge-optimizer.ts:101`
-  - `src/lib/testing/performance-regression-testing.ts:86`
+  - `src/lib/edge/edge-optimizer.ts`
+  - `src/lib/testing/performance-regression-testing.ts`
 - Many sibling types (`EmergencyModeConfig`, `TestingConfig`,
   `ReportingConfig`, `AlertingConfig`, `PerformanceThresholds`) are
   redefined across `performance-integration.ts`, `performance-dashboard.ts`,

@@ -100,7 +100,7 @@ We welcome contributions in many areas:
 - **MapLibre GL JS**: Mapping library
 - **Docker**: Containerization
 - **AWS/Cloudflare**: Cloud infrastructure
-- **Testing frameworks**: Jest, Cypress, Playwright
+- **Testing frameworks**: Jest (unit/integration), Playwright (E2E)
 
 #### Domain Knowledge
 - **Emergency Management**: Understanding of emergency response
@@ -139,9 +139,8 @@ psql --version                   # PostgreSQL client
 supabase --version               # Supabase CLI
 
 # Testing tools
-jest --version                    # Unit testing
-cypress --version                 # E2E testing
-playwright --version               # Browser automation
+jest --version                    # Unit/integration testing
+playwright --version               # E2E browser automation
 ```
 
 #### Optional Tools
@@ -429,7 +428,7 @@ git commit -m "feat: implement new feature"
 git push origin feature/new-feature
 
 # 6. Create pull request
-# Visit GitHub to create PR from your branch to develop
+# Visit GitHub to create PR from your branch to main
 ```
 
 ## Contribution Guidelines
@@ -691,12 +690,14 @@ Add any other context, mockups, or examples.
 ```json
 {
   "compilerOptions": {
-    "strict": true,
-    "noImplicitAny": true,
+    "strict": true,                  // enables noImplicitAny, noImplicitThis, strictNullChecks, ...
+    "noUncheckedIndexedAccess": true, // index access yields T | undefined
     "noImplicitReturns": true,
-    "noImplicitThis": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true
+    // NOTE: noUnusedLocals / noUnusedParameters are NOT enabled; unused vars
+    // are prefixed with `_` by convention (enforced via ESLint, not tsc).
+    // exactOptionalPropertyTypes is OFF.
   }
 }
 ```
@@ -1082,27 +1083,25 @@ module.exports = {
 };
 ```
 
-##### Cypress Configuration
-```javascript
-// cypress.config.js
-module.exports = {
-  e2e: {
-    baseUrl: 'http://localhost:3000',
-    supportFile: 'cypress/support/e2e.js',
-    specPattern: 'cypress/e2e/**/*.cy.{js,jsx,ts,tsx}',
-    video: true,
-    screenshotOnRunFailure: true,
-    viewportWidth: 1280,
-    viewportHeight: 720,
+##### Playwright Configuration
+```typescript
+// playwright.config.ts (see the committed file for the full version)
+import { defineConfig, devices } from '@playwright/test'
+
+export default defineConfig({
+  testDir: './tests/e2e',
+  fullyParallel: true,
+  use: {
+    baseURL: 'http://localhost:3000',
+    trace: 'on-first-retry',
   },
-  component: {
-    devServer: {
-      framework: 'next',
-      bundler: 'webpack',
-    },
-  },
-};
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'mobile', use: { ...devices['iPhone 13'] } },
+  ],
+})
 ```
+Run with `npm run test:e2e:playwright` (UI mode: `:open`, debugger: `:debug`).
 
 ### Test Writing Guidelines
 
@@ -1207,44 +1206,54 @@ describe('EmergencyMap Integration', () => {
 #### E2E Test Structure
 
 ```typescript
-// Example E2E test
-describe('Emergency Reporting E2E', () => {
-  beforeEach(() => {
-    cy.visit('/');
-  });
-  
-  it('allows user to report emergency', () => {
+// tests/e2e/emergency-reporting.spec.ts — Example Playwright E2E test
+import { test, expect } from '@playwright/test'
+
+test.describe('Emergency Reporting E2E', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+  })
+
+  test('allows user to report emergency', async ({ page }) => {
     // Navigate to emergency report
-    cy.get('[data-testid="nav-emergency-report"]').click();
-    
+    await page.locator('[data-testid="nav-emergency-report"]').click()
+
     // Fill out form
-    cy.get('[data-testid="emergency-type"]').select('fire');
-    cy.get('[data-testid="emergency-title"]').type('Building Fire');
-    cy.get('[data-testid="emergency-description"]').type('Fire in apartment building');
-    
+    await page.locator('[data-testid="emergency-type"]').selectOption('fire')
+    await page.locator('[data-testid="emergency-title"]').fill('Building Fire')
+    await page
+      .locator('[data-testid="emergency-description"]')
+      .fill('Fire in apartment building')
+
     // Set location
-    cy.get('[data-testid="location-search"]').type('123 Main St');
-    cy.get('[data-testid="location-result-0"]').click();
-    
+    await page.locator('[data-testid="location-search"]').fill('123 Main St')
+    await page.locator('[data-testid="location-result-0"]').click()
+
     // Submit form
-    cy.get('[data-testid="submit-report"]').click();
-    
+    await page.locator('[data-testid="submit-report"]').click()
+
     // Verify success
-    cy.get('[data-testid="success-message"]').should('contain', 'Emergency reported successfully');
-    cy.url().should('include', '/emergency/');
-  });
-  
-  it('validates form fields', () => {
-    cy.get('[data-testid="nav-emergency-report"]').click();
-    
+    await expect(page.locator('[data-testid="success-message"]')).toContainText(
+      'Emergency reported successfully'
+    )
+    await expect(page).toHaveURL(/\/emergency\//)
+  })
+
+  test('validates form fields', async ({ page }) => {
+    await page.locator('[data-testid="nav-emergency-report"]').click()
+
     // Try to submit without required fields
-    cy.get('[data-testid="submit-report"]').click();
-    
+    await page.locator('[data-testid="submit-report"]').click()
+
     // Check validation errors
-    cy.get('[data-testid="error-emergency-type"]').should('contain', 'Emergency type is required');
-    cy.get('[data-testid="error-title"]').should('contain', 'Title is required');
-  });
-});
+    await expect(page.locator('[data-testid="error-emergency-type"]')).toContainText(
+      'Emergency type is required'
+    )
+    await expect(page.locator('[data-testid="error-title"]')).toContainText(
+      'Title is required'
+    )
+  })
+})
 ```
 
 ### Accessibility Testing
@@ -1643,43 +1652,25 @@ export const Component: React.FC<ComponentProps> = ({
 Component.displayName = 'ComponentName';
 ```
 
-#### Storybook Integration
+#### Component examples (no Storybook)
 
-```typescript
-// Component story
-import type { ComponentStory, Meta } from '@storybook/react';
+> **Note:** OpenRelief does **not** use Storybook (it's not a dependency).
+> Component variants are demonstrated through **Jest + Testing Library** tests
+> colocated in `__tests__/` dirs, and visually via Playwright E2E. To exercise
+> a component in isolation, add a `.test.tsx` rendering it with CVA variants:
 
-const meta: Meta = {
-  title: 'Components/EmergencyCard',
-  component: EmergencyCard,
-  parameters: {
-    layout: 'centered',
-  },
-};
+```tsx
+// Example: rendering CVA variants in a component test
+import { render, screen } from '@testing-library/react'
+import { Button } from '@/components/ui/Button'
 
-export default meta;
-
-const Template: ComponentStory = (args) => <EmergencyCard {...args} />;
-
-export const Default = Template.bind({});
-Default.args = {
-  emergency: {
-    id: '1',
-    type: 'fire',
-    title: 'Building Fire',
-    severity: 4,
-    location: { lat: 37.7749, lng: -122.4194 }
-  }
-};
-
-export const HighSeverity = Template.bind({});
-HighSeverity.args = {
-  ...Default.args,
-  emergency: {
-    ...Default.args.emergency,
-    severity: 5
-  }
-};
+it('renders all variants', () => {
+  ;(['default', 'destructive', 'outline'] as const).forEach((variant) => {
+    const { unmount } = render(<Button variant={variant}>Click</Button>)
+    expect(screen.getByText('Click')).toBeInTheDocument()
+    unmount()
+  })
+})
 ```
 
 ### Component Categories
@@ -1712,24 +1703,24 @@ HighSeverity.args = {
 #### Input Validation
 
 ```typescript
-// Server-side validation
-import Joi from 'joi';
+// Server-side validation with Zod (the project's validation library)
+import { z } from 'zod'
 
-const emergencySchema = Joi.object({
-  type_id: Joi.number().integer().min(1).max(10).required(),
-  title: Joi.string().min(1).max(200).required(),
-  description: Joi.string().min(0).max(2000).required(),
-  location: Joi.object().required(),
-  severity: Joi.number().integer().min(1).max(5).required()
-});
+const emergencySchema = z.object({
+  type_id: z.number().int().min(1).max(10),
+  title: z.string().min(1).max(200),
+  description: z.string().min(0).max(2000),
+  location: z.object({ lat: z.number(), lng: z.number() }),
+  severity: z.number().int().min(1).max(5),
+})
 
 export const validateEmergency = (data: unknown) => {
-  const { error, value } = emergencySchema.validate(data);
-  if (error) {
-    throw new Error(`Validation error: ${error.message}`);
+  const parsed = emergencySchema.safeParse(data)
+  if (!parsed.success) {
+    throw new Error(`Validation error: ${parsed.error.message}`)
   }
-  return value;
-};
+  return parsed.data
+}
 ```
 
 #### SQL Injection Prevention
@@ -1747,8 +1738,8 @@ SELECT * FROM emergency_events WHERE title = $1;
 
 #### XSS Prevention
 ```typescript
-// Sanitize user input
-import DOMPurify from 'dompurify';
+// Sanitize user input (isomorphic-dompurify works on server + client)
+import DOMPurify from 'isomorphic-dompurify';
 
 const sanitizeInput = (input: string): string => {
   return DOMPurify.sanitize(input, {
@@ -1872,7 +1863,7 @@ const anonymizeUserData = (user: UserProfile) => {
 # Ensure your branch is up to date
 git checkout your-feature-branch
 git fetch upstream
-git rebase upstream/develop
+git rebase upstream/main
 
 # Run tests
 npm run test
@@ -1967,7 +1958,7 @@ name: PR Checks
 
 on:
   pull_request:
-    branches: [develop]
+    branches: [main]
 
 jobs:
   test:

@@ -77,7 +77,7 @@ npm run start            # Start production server
 npm run test             # Run all tests
 npm run test:watch       # Run tests in watch mode
 npm run test:coverage    # Generate coverage report
-npm run test:e2e         # Run end-to-end tests
+npm run test:e2e:playwright # Run end-to-end tests (Playwright)
 npm run test:performance # Run performance tests
 
 # Database
@@ -90,11 +90,11 @@ npm run lint             # Run linter
 npm run lint:fix         # Fix linting issues
 npm run type-check       # Run TypeScript type checking
 npm run format           # Format code with Prettier
-
-# Deployment
-npm run deploy:staging   # Deploy to staging
-npm run deploy:prod      # Deploy to production
 ```
+
+> **Deployment** is handled via Vercel + GitHub Actions CI (see
+> [`docs/deployment/overview.md`](docs/deployment/overview.md)). There are no
+> `npm run deploy:*` scripts.
 
 ## Contribution Guidelines
 
@@ -140,9 +140,9 @@ We welcome the following types of contributions:
 2. **Create a Branch**
 
    ```bash
-   # From develop branch
-   git checkout develop
-   git pull origin develop
+   # From main branch
+   git checkout main
+   git pull origin main
    git checkout -b feature/your-feature-name
 
    # For bug fixes
@@ -321,7 +321,7 @@ npm run test:watch
 npm run test:coverage
 
 # E2E tests
-npm run test:e2e
+npm run test:e2e:playwright
 
 # Performance tests
 npm run test:performance
@@ -357,7 +357,7 @@ npm run test:performance
 ### Submitting PR
 
 1. **Create Pull Request**
-   - Target: `develop` branch
+   - Target: `main` branch
    - Title: Clear and descriptive
    - Description: Detailed explanation of changes
 

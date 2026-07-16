@@ -4,6 +4,14 @@
 
 OpenRelief API is built on Supabase with PostgreSQL backend and Edge Functions for compute-intensive operations. The API follows RESTful principles and includes real-time subscriptions via WebSocket connections.
 
+> **Scope.** This document covers the **Supabase data layer** (PostgREST
+> `/rest/v1/*` routes over tables/views) and the three **Supabase Edge
+> Functions**. The Next.js application also exposes its own route handlers under
+> `src/app/api/` (e.g. `/api/emergency`, `/api/trust`, `/api/privacy/*`,
+> `/api/notifications/*`, `/api/push/*`, `/api/health`) — those are the
+> app-level API used by the PWA client and are documented in the
+> [Architecture](../architecture/overview.md) and source itself.
+
 ## Authentication
 
 ### Authentication Methods
@@ -323,124 +331,69 @@ Authorization: Bearer <jwt_token>
 
 ## Edge Functions
 
-### 1. Alert Dispatch
+OpenRelief ships three Supabase Edge Functions (Deno), located in
+`supabase/functions/`. They are invoked over the Supabase Functions endpoint
+(`/functions/v1/<name>`) with a service-role JWT and a JSON body. CORS is
+enforced inside each function.
 
-#### 1.1 Trigger Alert Dispatch
+> **Note:** The trust-score *computation* and the spatial *target-user lookup*
+> are Postgres functions (`calculate_trust_score`, `get_users_for_alert_dispatch`)
+> invoked from SQL — they are **not** separate Edge Functions. There is no
+> `classify-text` / NLP-classification Edge Function in the codebase.
+
+### 1. `alert-dispatch` — fan out push notifications for an event
 
 ```http
-POST /functions/v1/dispatch-alert
+POST /functions/v1/alert-dispatch
 Authorization: Bearer <service_role_jwt>
 Content-Type: application/json
 
 {
   "event_id": "event-uuid",
-  "max_distance": 10000,
-  "min_relevance": 0.5
+  "type": "new_event",            // or "status_change"
+  "batch_size": 1000              // optional; default 1000
 }
 ```
 
-**Response:**
-```json
-{
-  "success": true,
-  "users_notified": 127,
-  "notifications_queued": 127,
-  "processing_time_ms": 45
-}
-```
+The function looks up subscribers for the event (via the DB dispatch query),
+batches them, and delivers Web Push notifications. (The legacy FCM path is
+stubbed — see `src/lib/notifications/`; production push is VAPID-only.)
 
-#### 1.2 Get Users for Alert
+### 2. `consensus-processor` — recompute consensus for an event
 
 ```http
-POST /functions/v1/get-target-users
+POST /functions/v1/consensus-processor
 Authorization: Bearer <service_role_jwt>
 Content-Type: application/json
 
 {
-  "event_id": "event-uuid",
-  "max_distance": 10000,
-  "filters": {
-    "min_trust_score": 0.1,
-    "active_subscriptions_only": true
-  }
+  "event_id": "event-uuid"
 }
 ```
 
-### 2. Trust Calculation
+Re-reads the event's confirmations/disputes, sums trust-weighted votes with the
+time-decay table, and promotes `pending → active` when the weighted total
+reaches the **5.0 threshold** (or demotes `active → pending` on sufficient
+dispute weight). Mirrors the `calculate_event_consensus` SQL function for
+asynchronous/batched processing.
 
-#### 2.1 Calculate Trust Score
+### 3. `trust-update` — record a trust-affecting action
 
 ```http
-POST /functions/v1/calculate-trust
+POST /functions/v1/trust-update
 Authorization: Bearer <service_role_jwt>
 Content-Type: application/json
 
 {
   "user_id": "user-uuid",
-  "event_type": "fire",
-  "include_history": true
+  "action_type": "confirm",       // "report" | "confirm" | "dispute"
+  "event_id": "event-uuid",       // optional
+  "metadata": { }                 // optional
 }
 ```
 
-**Response:**
-```json
-{
-  "trust_score": 0.85,
-  "components": {
-    "base_score": 0.1,
-    "accuracy_bonus": 0.15,
-    "recency_multiplier": 1.2,
-    "final_score": 0.85
-  },
-  "history_summary": {
-    "total_reports": 12,
-    "confirmed_reports": 10,
-    "disputed_reports": 2,
-    "accuracy_rate": 0.83
-  }
-}
-```
-
-### 3. Text Classification
-
-#### 3.1 Classify Emergency Text
-
-```http
-POST /functions/v1/classify-text
-Authorization: Bearer <service_role_jwt>
-Content-Type: application/json
-
-{
-  "text": "There's a big fire in the apartment building on Main Street",
-  "context": {
-    "location": "Main Street",
-    "user_trust_score": 0.75
-  }
-}
-```
-
-**Response:**
-```json
-{
-  "classification": {
-    "emergency_type": "fire",
-    "confidence": 0.92,
-    "severity": 4,
-    "extracted_entities": {
-      "location": "Main Street",
-      "building_type": "apartment",
-      "urgency": "high"
-    }
-  },
-  "suggestions": {
-    "recommended_radius": 500,
-    "additional_questions": [
-      "How many people are affected?",
-      "Is the fire department notified?"
-    ]
-  }
-}
-```
+Appends a `user_trust_history` row and triggers a `calculate_trust_score`
+recompute for the user.
 
 ## Real-time Subscriptions
 

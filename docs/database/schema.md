@@ -488,26 +488,39 @@ BEGIN
         upf.fcm_token,
         auth.users.email,
         ST_Distance(up.last_known_location, v_event_location) as distance,
-        -- Inverse-square relevance calculation
-        (v_event_severity::FLOAT / (1 + POWER(ST_Distance(up.last_known_location, v_event_location) / 500, 2))) as relevance_score
+        -- Stepped relevance: severity * trust_score * distance bucket
+        (v_event_severity::FLOAT * up.trust_score * 
+         CASE 
+             WHEN ST_Distance(up.last_known_location, v_event_location) < 1000 THEN 1.0
+             WHEN ST_Distance(up.last_known_location, v_event_location) < 5000 THEN 0.7
+             ELSE 0.4
+         END) as relevance_score
     FROM user_profiles up
     JOIN auth.users ON auth.users.id = up.user_id
     LEFT JOIN user_push_tokens upf ON upf.user_id = up.user_id
     JOIN user_subscriptions us ON us.user_id = up.user_id
+    JOIN user_notification_settings uns ON uns.user_id = up.user_id AND uns.topic_id = v_event_type_id
     WHERE 
         ST_DWithin(up.last_known_location, v_event_location, p_max_distance)
         AND us.topic_id = v_event_type_id
         AND us.is_active = true
+        AND uns.is_enabled = true
+        AND v_event_severity >= uns.min_severity
+        AND ST_Distance(up.last_known_location, v_event_location) <= uns.max_distance
         AND up.trust_score > 0.1
-        AND NOT EXISTS (
-            SELECT 1 FROM user_mutes um 
-            WHERE um.user_id = up.user_id 
-            AND um.mute_until > NOW()
-        )
+        -- quiet-hours check (no separate user_mutes table)
     ORDER BY relevance_score DESC;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 ```
+
+> **Known data-layer debt:** The function still `LEFT JOIN`s
+> `user_push_tokens` (with `fcm_token`), but **no migration creates that
+> table** — the real push table is `push_subscriptions` (Web Push
+> `endpoint`/`p256dh`/`auth`, no FCM column). So this join always yields `NULL`
+> in the as-built schema. Muting is modeled via
+> `user_notification_settings.is_enabled` plus quiet-hours windows, **not** a
+> `user_mutes` table (which does not exist).
 
 ## Database Triggers
 

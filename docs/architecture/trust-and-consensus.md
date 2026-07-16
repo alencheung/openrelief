@@ -29,10 +29,16 @@ factors:
 $$\text{score} = \text{base} + (\text{accuracyBonus} \times \text{recencyMultiplier})$$
 
 - **Base**: `0.1`
-- **Accuracy bonus** — averaged over the user's reports from the last 30 days:
-  - `+0.1` per report that was `resolved` by someone else (confirmed accurate)
-  - `-0.05` per report that `expired` (likely false/unconfirmed)
-  - `0` otherwise
+- **Accuracy bonus** — computed over the user's reports from the last 30 days:
+  - First, an **accuracy ratio**: `(resolved-by-others reports / total reports) × 0.3`
+    rewards reporters whose submissions are corroborated and resolved by others.
+  - That ratio is then **overwritten** by a per-report penalty sum: `-0.1` for
+    each report whose `dispute_count > confirmation_count`, and `-0.05` for each
+    report that `expired` (likely false/unconfirmed). Reports that are neither
+    disputed-nor-expired contribute `0` to the penalty sum.
+  - (This overwrite is a known quirk of the as-built `calculate_trust_score`
+    function: the positive ratio does not stack with the penalty sum — the
+    penalty branch replaces it.)
 - **Recency multiplier** — based on days since the user's last activity:
   - `< 7 days` → `1.2` (active-user bonus)
   - `7–30 days` → `1.0` (normal)
@@ -80,8 +86,11 @@ When `V_total` reaches the **threshold of 5.0**, the event promotes from
 `pending` to `active` and the function fires `pg_notify('event_activated', ...)`,
 which Supabase Realtime relays to subscribed clients (the map updates live).
 
-Disputes count negatively; if the weighted sum drops below `-5.0`, an active
-event can demote back to `pending`.
+Disputes are summed with the same time-decay into a separate `dispute_weight`.
+If an event is already `active` and its `dispute_weight` alone reaches the **5.0
+threshold**, the event demotes back to `pending` (its displayed weight becomes
+`V_total − dispute_weight`). There is no negative-net logic — demotion is driven
+purely by dispute weight hitting the same 5.0 bar.
 
 ### Why this resists Sybil attacks
 
@@ -95,23 +104,34 @@ further behavioral and network-graph defenses.
 
 Once an event is active, `get_users_for_alert_dispatch(event_id, max_distance)`
 finds nearby, subscribed users using a **PostGIS spatial query** and ranks them
-by an inverse-square relevance score:
+by a stepped relevance score:
 
-$$R = \frac{S_{event}}{1 + (d / 500)^2}$$
+$$R = S_{event} \times \text{trust\_score} \times f(d)$$
 
-- `S` = event severity (1–5)
+where the distance factor `f(d)` is a stepped bucket function (not a smooth
+curve):
+
+| Distance `d` | Factor `f(d)` |
+| --- | --- |
+| `< 1000 m` | `1.0` |
+| `1000 – 5000 m` | `0.7` |
+| `> 5000 m` | `0.4` |
+
+- `S` = event severity (integer)
+- `trust_score` = the recipient's own trust score, so higher-trust responders
+  are prioritized for a given event
 - `d` = distance in meters from the user to the event
-- `500m` = half-value distance (the point where relevance halves)
 
-This formula has two important properties:
+This gives **natural attenuation** — alerts grow less relevant with distance, so
+users far away aren't spammed — while keeping the computation cheap (a `CASE`
+expression over GIST-indexed distance buckets).
 
-1. **Natural attenuation** — alerts grow less relevant with distance, so users
-   far away aren't spammed.
-2. **No singularity** — the `+1` term keeps relevance finite even at `d = 0`,
-   unlike a raw inverse-square.
-
-The dispatch query also respects per-user **mutes** (`user_mutes` table) and
-subscription radii, so opted-out or quiet-hours users aren't disturbed.
+The dispatch query also respects per-user preferences: it only returns users
+whose `user_subscriptions` match the event type and are active, whose
+`user_notification_settings` are enabled for that type with severity ≥ their
+`min_severity` and distance ≤ their `max_distance`, and who are outside their
+configured **quiet hours**. (There is no separate `user_mutes` table; muting is
+expressed via `user_notification_settings.is_enabled` and quiet-hours windows.)
 
 ## Performance
 
@@ -128,7 +148,7 @@ subscription radii, so opted-out or quiet-hours users aren't disturbed.
 | --- | --- |
 | Trust score function | `supabase/migrations/20240101000004_database_functions.sql` |
 | Consensus function | same |
-| Spatial dispatch function | `supabase/migrations/20240115000010_spatial_functions.sql` |
+| Spatial dispatch function | `supabase/migrations/20240101000004_database_functions.sql` (`get_users_for_alert_dispatch`) |
 | Trust triggers | `20240101000006_database_triggers.sql` |
 | Trust integration (app) | `src/lib/security/trust-integration.ts` |
 | Sybil detection | `src/lib/security/sybil-detection.ts`, `sybil-prevention.ts` |

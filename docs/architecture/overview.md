@@ -90,7 +90,7 @@ These are the technologies **in `package.json` and confirmed in use**:
 | Layer | Technology | Notes |
 | --- | --- | --- |
 | Framework | **Next.js 15.5.20** (App Router) | React 18.2 |
-| Language | **TypeScript 5.7** (strict mode) | `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes` |
+| Language | **TypeScript 5.7** (strict mode) | `noUncheckedIndexedAccess` (`exactOptionalPropertyTypes` is off) |
 | Database / Auth | **Supabase** (PostgreSQL 15, PostGIS 3.3+, Auth, RLS, Realtime) | Migrations in `supabase/migrations/` |
 | Client state | **Zustand 4.4** (`persist` + `subscribeWithSelector`) | `src/store/` |
 | Server state | **TanStack Query v5** | `src/hooks/queries/` |
@@ -124,13 +124,16 @@ attacks and false reporting. Details in
 
 ### Intelligent fatigue guard
 
-Alert relevance uses an **inverse-square** formula so alerts attenuate
-naturally with distance and never hit a singularity:
+Alert relevance uses a **stepped distance-bucket** formula so alerts attenuate
+with distance and prioritize high-trust responders:
 
-$$R = \frac{S_{event}}{1 + (d / 500)^2}$$
+$$R = S_{event} \times \text{trust\_score} \times f(d), \quad
+f(d) = \begin{cases} 1.0 & d < 1000\text{m} \\ 0.7 & 1000\text{m} \le d < 5000\text{m} \\ 0.4 & d \ge 5000\text{m} \end{cases}$$
 
-where `S` is severity (1–5), `d` is distance in meters, and 500m is the
-half-value distance. This prevents alarm fatigue.
+where `S` is severity, `trust_score` is the recipient's trust, and `d` is
+distance in meters. The stepped buckets keep the computation cheap over
+GIST-indexed distances. See [Trust & Consensus](trust-and-consensus.md) for the
+exact SQL.
 
 ### Offline-first
 

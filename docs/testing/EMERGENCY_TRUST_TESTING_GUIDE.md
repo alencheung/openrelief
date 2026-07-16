@@ -16,12 +16,18 @@ This guide provides comprehensive documentation for the testing infrastructure i
 
 ### Coverage Requirements
 
-- **Minimum 80% coverage** for all components
-- **90% coverage** for critical components:
-  - `src/store/emergencyStore.ts`
-  - `src/store/trustStore.ts`
-  - `src/hooks/useTrustSystem.ts`
-  - `src/app/api/emergency/route.ts`
+- **Global floor: 20%** across branches/functions/lines/statements — enforced by
+  [`jest.config.js`](../../jest.config.js) on every `npm test` run.
+- **Higher per-file thresholds (85–90%)** apply only when running the targeted
+  `test:*` scripts via [`jest.coverage.config.js`](../../jest.coverage.config.js):
+  - **90% coverage** for critical stores/hooks:
+    - `src/store/emergencyStore.ts`
+    - `src/store/trustStore.ts`
+    - `src/hooks/useTrustSystem.ts`
+  - **85% coverage** for map and Supabase-client modules
+- The app's stated *aspirational* target is >80% on critical paths, but note
+  the CI global gate is currently 20% (pre-existing test debt; the CI test step
+  also runs with `continue-on-error`).
 
 ## Test Files Structure
 
@@ -359,9 +365,10 @@ The coverage report includes:
 
 ### Coverage Thresholds
 
-- **Global Minimum**: 80% across all metrics
-- **Critical Components**: 90% across all metrics
-- **New Code**: 85% coverage requirement
+- **Global Minimum**: 20% across all metrics (enforced in `jest.config.js`)
+- **Critical Components**: 90% across all metrics (via `jest.coverage.config.js`,
+  only under targeted `test:*` scripts)
+- **New Code**: aim for 85%+ (aspirational; not a hard CI gate)
 
 ## Best Practices
 

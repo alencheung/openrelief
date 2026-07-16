@@ -62,7 +62,7 @@ emergency_events (
     reporter_id       UUID REFERENCES user_profiles(user_id),
     location          GEOGRAPHY(POINT, 4326) NOT NULL,   -- GIST indexed
     severity          INTEGER CHECK (BETWEEN 1 AND 5),
-    status            TEXT CHECK (IN ('pending','active','resolved','expired')),
+    status            emergency_events_status,  -- enum: pending, active, resolved, expired
     trust_weight      FLOAT DEFAULT 0.0,
     confirmation_count INTEGER DEFAULT 0,
     expires_at        TIMESTAMPTZ DEFAULT (NOW() + INTERVAL '24 hours'),
@@ -71,7 +71,13 @@ emergency_events (
 ```
 
 - `reporter_id` links back to the reporting user (references `user_profiles`).
-- A new event starts as `pending`; consensus promotes it to `active`.
+- `status` is a native Postgres enum `emergency_events_status` with values
+  `pending`, `active`, `resolved`, `expired` (defined in the initial schema
+  migration). A new event starts as `pending`; consensus promotes it to `active`.
+  Note: the **API layer** (`src/app/api/emergency/route.ts`) also accepts
+  `closed` and `cancelled` as transition targets — `cancelled` is produced by an
+  owner's soft-cancel, and `closed` marks a resolved-then-archived event. These
+  two are API-recognized states rather than enum values in the DB type.
 - Events auto-expire after 24 hours (`expires_at`) unless resolved.
 - Severity is an integer **1–5**.
 
@@ -81,8 +87,10 @@ emergency_events (
 event_confirmations (
     event_id  UUID REFERENCES emergency_events(id),
     user_id   UUID REFERENCES user_profiles(user_id),
-    confirmation_type TEXT CHECK (IN ('confirm','dispute')),
+    confirmation_type event_confirmations_confirmation_type,  -- enum: confirm, dispute
     trust_weight FLOAT NOT NULL,
+    location            GEOGRAPHY(POINT, 4326),    -- where the confirmer was
+    distance_from_event FLOAT,                     -- meters from the event
     UNIQUE(event_id, user_id)   -- one vote per user per event
 )
 ```
@@ -129,7 +137,7 @@ later migrations; documented with full DDL in
 | --- | --- |
 | `calculate_trust_score(user_id)` | Computes a user's trust from report accuracy + recency; writes back to `user_profiles` |
 | `calculate_event_consensus(event_id)` | Sums trust-weighted confirmations; promotes event to `active` at threshold **5.0** |
-| `get_users_for_alert_dispatch(event_id, max_distance)` | **PostGIS spatial query** returning nearby subscribed users with inverse-square relevance scoring |
+| `get_users_for_alert_dispatch(event_id, max_distance)` | **PostGIS spatial query** returning nearby subscribed users with stepped distance-bucket relevance scoring (`severity × trust × f(distance)`) |
 | `cleanup_expired_events()` | Daily `pg_cron` job: expire old events, prune audit/notifications |
 | `anonymize_old_locations()` | Reduces location precision after 7 days, nulls after 30 |
 

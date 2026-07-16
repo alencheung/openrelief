@@ -77,7 +77,7 @@ These modules are **implemented and in use** (not aspirational):
 Database-side: `privacy_settings`, `privacy_budget`, `privacy_audit_log`,
 `data_export_requests`, `data_deletion_requests`, `user_consents`, and
 `encrypted_user_data` tables back these features. The
-[`../privacy/implementation-guide.md`](../privacy/implementation-guide.md)
+[`../privacy/Privacy_Implementation_Guide.md`](../privacy/Privacy_Implementation_Guide.md)
 covers usage in depth.
 
 ### 6. Incident response — `src/lib/security/incident-*.ts`
@@ -139,8 +139,8 @@ npm run lint              # ESLint (includes security-oriented rules)
 ## Related docs
 
 - [Trust & Consensus](trust-and-consensus.md) — the trust algorithm in detail
-- [`../security/implementation-guide.md`](../security/implementation-guide.md) —
+- [`../security/SECURITY_IMPLEMENTATION_GUIDE.md`](../security/SECURITY_IMPLEMENTATION_GUIDE.md) —
   security implementation walkthrough
-- [`../privacy/implementation-guide.md`](../privacy/implementation-guide.md) —
+- [`../privacy/Privacy_Implementation_Guide.md`](../privacy/Privacy_Implementation_Guide.md) —
   privacy features
 - [`../../SECURITY.md`](../../SECURITY.md) — vulnerability reporting policy

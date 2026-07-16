@@ -85,7 +85,8 @@ confirmed against the current codebase:
    and trust is bounded **0.0–1.0**. See
    [`../trust-and-consensus.md`](../trust-and-consensus.md).
 3. **Dispatch is a PostGIS spatial query** (`get_users_for_alert_dispatch`)
-   with an inverse-square relevance formula, not application iteration.
+   with a stepped distance-bucket relevance formula
+   (`severity × trust_score × f(distance)`), not application iteration.
 4. **Security is layered** at the edge (`src/middleware.ts`: rate limit, Sybil
    detection, validation, headers) and in the app
    (`src/lib/security/api-security.ts`). See

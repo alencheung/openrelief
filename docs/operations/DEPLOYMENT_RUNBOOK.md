@@ -1,5 +1,18 @@
 # OpenRelief Production Deployment Runbook
 
+> **⚠️ Conventions used below.** Several commands in this runbook reference
+> helper shell scripts (e.g. `./scripts/notify-emergency.sh`,
+> `./scripts/test-critical-paths.sh`) and hostnames
+> (e.g. `dispatch.openrelief.org`) that are **illustrative templates**, not
+> committed scripts. They show the *shape* of the operation; substitute your
+> real commands. The scripts that actually ship live in
+> [`scripts/`](../../scripts/) — currently `backup-production.sh`,
+> `deploy-edge-functions.sh`, and `test-production-deployment.sh`. Where an
+> `npm run` script is referenced, only the ones in
+> [`package.json`](../../package.json) are valid (e.g. `npm run test:lighthouse`,
+> `npm run test:e2e:playwright`) — there is no `test:memory` or
+> `test:lighthouse:production`.
+
 ## Overview
 
 This runbook provides step-by-step procedures for deploying OpenRelief to production environments. It covers emergency deployments, rollback procedures, and troubleshooting common issues.
@@ -259,8 +272,9 @@ npm run build
 # Rollback to previous version
 vercel rollback
 
-# Check for memory leaks
-npm run test:memory
+# Performance / memory profile (Lighthouse + Playwright)
+npm run test:lighthouse
+npm run test:performance
 ```
 
 #### 3. Edge Function Issues
@@ -348,30 +362,33 @@ openssl s_client -connect openrelief.org:443 -servername openrelief.org < /dev/n
 ### Functional Tests
 
 ```bash
-# Test emergency reporting
-./scripts/test-emergency-reporting.sh
+# Emergency reporting flow (Jest)
+npm run test:emergency
 
-# Test user authentication
-./scripts/test-authentication.sh
+# Trust / consensus (Jest)
+npm run test:trust
+npm run test:consensus
 
-# Test push notifications
-./scripts/test-notifications.sh
+# Push / notifications (committed production smoke test)
+bash scripts/test-production-deployment.sh
 
-# Test map functionality
-./scripts/test-maps.sh
+# Map + end-to-end UI (Playwright)
+npm run test:e2e:playwright
 ```
 
 ### Performance Tests
 
 ```bash
-# Run Lighthouse tests
-npm run test:lighthouse:production
+# Run Lighthouse tests (CI config; also :mobile / :desktop / :pwa variants)
+npm run test:lighthouse
 
-# Load testing
-./scripts/load-test.sh https://openrelief.org
+# Load / performance testing (Playwright-based)
+npm run test:performance
+npm run test:e2e:playwright
 
-# Database performance test
-./scripts/test-database-performance.sh
+# Database performance — run the spatial/integration suites locally
+npm run test:spatial
+npm run test:integration
 ```
 
 ## Communication Procedures

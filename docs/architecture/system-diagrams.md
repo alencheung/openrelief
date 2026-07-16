@@ -25,7 +25,7 @@ graph TB
     end
 
     subgraph External["External Services"]
-        M[Web Push — VAPID/FCM]
+        M[Web Push — VAPID]
         N[Map tiles — OpenMapTiles]
         O[Sentry monitoring]
         P[Upstash Redis — rate limiting]
@@ -133,6 +133,9 @@ graph LR
         Z5[notificationStore]
         Z6[offlineStore]
         Z7[checkInStore]
+        Z8[resourceStore]
+        Z9[shelterStore]
+        Z10[victimStore]
     end
 
     subgraph Queries["Server state (src/hooks/queries/)"]

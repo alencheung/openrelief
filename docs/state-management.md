@@ -85,6 +85,27 @@ Located in `src/store/`, these stores manage client-side state with persistence:
 - Sync coordination
 - Conflict resolution
 
+#### Check-In Store (`checkInStore.ts`)
+- User welfare / status check-ins
+- Check-in history and scheduling
+
+#### Resource Store (`resourceStore.ts`)
+- Relief resources (food, water, medical, shelter supplies)
+- Resource availability and capacity tracking
+
+#### Shelter Store (`shelterStore.ts`)
+- Shelter locations and capacity
+- Occupancy / availability status
+
+#### Victim Store (`victimStore.ts`)
+- Victim records and tracking
+- Welfare status and priority
+
+> The full set of stores lives in [`src/store/`](../src/store/) and is
+> re-exported from `src/store/index.ts`. Several stores (notification,
+> offline, privacy) are split across `*-types.ts` / `*-helpers.ts` / 
+> `*-selectors.ts` sibling files to stay under the 500-line limit.
+
 ### 2. TanStack Query Hooks
 
 Located in `src/hooks/queries/`, these hooks manage server state:

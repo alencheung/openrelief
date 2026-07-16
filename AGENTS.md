@@ -36,12 +36,12 @@ npm run test:spatial                  # Spatial query tests
 npm run test:security                 # Security tests (node script)
 npm run test:pwa                      # PWA tests (node script)
 
-# E2E Tests
-npm run test:e2e                      # Cypress tests
-npm run test:e2e:open                 # Cypress UI mode
+# E2E Tests (Playwright)
 npm run test:e2e:playwright           # Playwright tests
 npm run test:e2e:playwright:open      # Playwright UI mode
 npm run test:e2e:playwright:debug     # Playwright debug mode
+npm run test:e2e:playwright:report    # Show last report
+npm run test:e2e:playwright:install   # Install browser binaries
 
 # Lighthouse / Performance
 npm run test:lighthouse               # Run Lighthouse CI
@@ -115,7 +115,7 @@ import { Database } from '@/types/database'
 
 - Strict mode with all strict checks + `noUncheckedIndexedAccess`
 - `noImplicitReturns`, `noFallthroughCasesInSwitch`, `noImplicitOverride`
-- `exactOptionalPropertyTypes: true` — use `?` or `| undefined`, not both
+- `exactOptionalPropertyTypes` is OFF — `?` and `| undefined` may both appear
 - Use Database types from `@/types/database` for Supabase tables
 - `@typescript-eslint/no-explicit-any` is off (allowed), but prefer typed
   alternatives

@@ -87,7 +87,6 @@ Users have trust scores (0.0-1.0) affecting:
 
 ```bash
 npm audit
-npm run security:check
 npm run test:security
 ```
 

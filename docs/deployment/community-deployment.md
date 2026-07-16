@@ -190,7 +190,7 @@ Combine cloud and local deployment for optimal balance of control and convenienc
 - **Backup Tools**: pg_dump, Barman, or similar
 
 ##### Web Server
-- **Node.js**: 18+ LTS
+- **Node.js**: 20+ (CI pins Node 20; see [deployment overview](overview.md))
 - **Nginx**: 1.18+ or Apache 2.4+
 - **SSL Certificate**: Let's Encrypt or commercial
 
@@ -414,19 +414,17 @@ Combine cloud and local deployment for optimal balance of control and convenienc
    
    # Seed initial data
    npm run db:seed
-   
-   # Create administrative user
-   npm run db:create-admin
    ```
+   > **Note:** The first admin user must be created via the Supabase dashboard
+   > or a SQL `insert into user_profiles ...` with `role = 'admin'` — there is
+   > no `npm run db:create-admin` script. Only `db:generate`, `db:migrate`,
+   > `db:reset`, and `db:seed` exist (see [`package.json`](../../package.json)).
 
 2. **Data Import (Optional)**
-   ```bash
-   # Import existing emergency data
-   npm run db:import --file=path/to/data.csv
-   
-   # Import user data (if migrating)
-   npm run db:import-users --file=path/to/users.csv
-   ```
+
+   There are no built-in `db:import*` scripts. For bulk data, load CSV/SQL
+   directly into Postgres (e.g. `psql \copy`, Supabase dashboard upload, or a
+   one-off migration in `supabase/migrations/`).
 
 #### Application Configuration
 
@@ -503,14 +501,13 @@ Combine cloud and local deployment for optimal balance of control and convenienc
 
 1. **Basic Functionality**
    ```bash
-   # Test application startup
+   # Test application startup + health endpoint
    curl -I https://your-domain.com
+   curl -f https://your-domain.com/api/health
    
-   # Test database connection
-   npm run test:db-connection
-   
-   # Test API endpoints
-   npm run test:api
+   # Run the test suites (no separate db/api smoke scripts exist)
+   npm test
+   npm run test:integration
    ```
 
 2. **Emergency Reporting Test**
