@@ -52,12 +52,15 @@ export const metadata: Metadata = {
   }
 }
 
-// Separate viewport export as required by Next.js 15+
+// Separate viewport export as required by Next.js 15+.
+// Pinch-zoom is intentionally NOT disabled: blocking user scaling violates
+// WCAG 1.4.4 (Resize text). Use `maximumScale: 5` instead of
+// `maximumScale: 1`/`userScalable: false` so users who need larger text can zoom.
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
   viewportFit: 'cover',
   themeColor: '#dc2626'
 }

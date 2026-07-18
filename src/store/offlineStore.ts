@@ -175,6 +175,17 @@ export const useOfflineStore = create<OfflineStore>()(
               ),
               lastSyncTime: Date.now()
             }))
+
+            // Mirror the last-sync timestamp to localStorage so the offline
+            // fallback page can display "Last sync: <time>" — previously this
+            // key was read but never written, so it always showed "never".
+            try {
+              if (typeof localStorage !== 'undefined') {
+                localStorage.setItem('openrelief-last-sync', new Date().toISOString())
+              }
+            } catch {
+              // localStorage may be unavailable (private mode); ignore.
+            }
           } catch (error) {
             console.error('Sync queue failed:', error)
 

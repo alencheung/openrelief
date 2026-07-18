@@ -15,6 +15,20 @@ import {
   calculateStats
 } from './notificationStore-helpers'
 
+// Decode a VAPID public key (base64url) into a Uint8Array suitable for
+// PushManager.subscribe({ applicationServerKey }). Passing the raw string
+// throws "The provided applicationServerKey is not valid".
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const rawData = typeof atob !== 'undefined' ? atob(base64) : ''
+  const outputArray = new Uint8Array(rawData.length)
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i)
+  }
+  return outputArray
+}
+
 export const useNotificationStore = create<NotificationStore>()(
   subscribeWithSelector(
     persist(
@@ -246,18 +260,34 @@ export const useNotificationStore = create<NotificationStore>()(
               throw new Error('VAPID public key is not configured')
             }
 
+            // PushManager.subscribe requires applicationServerKey as a
+            // BufferSource (base64-decoded). Passing the raw VAPID string throws
+            // "The provided applicationServerKey is not valid". Decode it first.
+            const applicationServerKey = urlBase64ToUint8Array(vapidKey) as BufferSource
+
             const subscription = await registration.pushManager.subscribe({
               userVisibleOnly: true,
-              applicationServerKey: vapidKey
+              applicationServerKey
             })
 
             set({ pushSubscription: subscription })
 
-            // Send subscription to server
+            // Send subscription to server. /api/push/subscribe reads
+            // body.subscription (an object with endpoint + keys), so wrap it.
+            const subJson = subscription.toJSON()
             await fetch('/api/push/subscribe', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(subscription)
+              body: JSON.stringify({
+                subscription: {
+                  endpoint: subscription.endpoint,
+                  expirationTime: subJson.expirationTime ?? null,
+                  keys: {
+                    p256dh: subJson.keys?.p256dh,
+                    auth: subJson.keys?.auth
+                  }
+                }
+              })
             })
 
             return subscription
@@ -403,7 +433,16 @@ export const useNotificationStore = create<NotificationStore>()(
               return false
             }
             if (filter.dateRange) {
-              const notifTime = notification.timestamp.getTime()
+              // Defensive: timestamp may be a string if rehydration hasn't run
+              // (e.g. legacy persisted state). Coerce before calling getTime().
+              const ts =
+                notification.timestamp instanceof Date
+                  ? notification.timestamp
+                  : new Date(notification.timestamp as unknown as string)
+              const notifTime = ts.getTime()
+              if (Number.isNaN(notifTime)) {
+                return false
+              }
               if (notifTime < filter.dateRange.start.getTime() || notifTime > filter.dateRange.end.getTime()) {
                 return false
               }
@@ -465,7 +504,19 @@ export const useNotificationStore = create<NotificationStore>()(
         partialize: (state) => ({
           settings: state.settings,
           notifications: state.notifications.slice(0, 100) // Limit stored notifications
-        })
+        }),
+        // persisted notifications rehydrate with timestamp as an ISO string
+        // (JSON has no Date type). Convert back to Date so callers that do
+        // timestamp.getTime() (e.g. getFilteredNotifications date-range filter)
+        // don't crash with TypeError after a reload.
+        onRehydrateStorage: () => (state) => {
+          if (!state?.notifications) return
+          state.notifications = state.notifications.map(n => ({
+            ...n,
+            timestamp:
+              n.timestamp instanceof Date ? n.timestamp : new Date(n.timestamp as unknown as string)
+          }))
+        }
       }
     )
   )

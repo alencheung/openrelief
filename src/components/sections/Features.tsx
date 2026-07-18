@@ -180,7 +180,7 @@ export default function Features() {
                 isMobile && 'w-full'
               )}
             >
-              <a href="/demo">View Demo</a>
+              <a href="/login">View Demo</a>
             </Button>
           </div>
         </div>

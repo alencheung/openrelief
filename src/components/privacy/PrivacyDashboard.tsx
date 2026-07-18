@@ -69,11 +69,22 @@ const PrivacyDashboard: React.FC = () => {
     const loadPrivacySettings = async () => {
       setIsLoading(true)
       try {
-        // In a real implementation, fetch from API
-        // const response = await fetch('/api/privacy/settings');
-        // const settings = await response.json();
-        // setPrivacySettings(settings);
+        // Fetch the user's saved privacy settings from the API. Previously
+        // this was commented out, so the dashboard always showed defaults.
+        const response = await fetch('/api/privacy/settings', {
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin'
+        })
+        if (response.ok) {
+          const json = (await response.json()) as {
+            data?: { settings?: PrivacySettings }
+          }
+          if (json.data?.settings) {
+            setPrivacySettings(json.data.settings)
+          }
+        }
       } catch (error) {
+        console.error('Failed to load privacy settings:', error)
         toast({
           title: 'Error',
           description: 'Failed to load privacy settings',
@@ -99,21 +110,30 @@ const PrivacyDashboard: React.FC = () => {
   const savePrivacySettings = async () => {
     setIsLoading(true)
     try {
-      // In a real implementation, save to API
-      // await fetch('/api/privacy/settings', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(privacySettings)
-      // });
+      // Persist settings to the API. Previously this was a no-op that toasted
+      // success while changing nothing on the server.
+      const response = await fetch('/api/privacy/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(privacySettings)
+      })
+
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}))
+        throw new Error(errorBody.error || `HTTP ${response.status}`)
+      }
 
       toast({
         title: 'Success',
         description: 'Privacy settings saved successfully'
       })
     } catch (error) {
+      console.error('Failed to save privacy settings:', error)
       toast({
         title: 'Error',
-        description: 'Failed to save privacy settings',
+        description:
+          error instanceof Error ? error.message : 'Failed to save privacy settings',
         variant: 'destructive'
       })
     } finally {

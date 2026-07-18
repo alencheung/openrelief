@@ -146,9 +146,9 @@ export function EnhancedOfflineFallback() {
     {
       id: 'view-map',
       title: 'View Offline Map',
-      description: 'Access cached map data and locations',
+      description: 'Open the home map (cached tiles are available offline)',
       icon: MapIcon,
-      action: () => (window.location.href = '/offline/map'),
+      action: () => (window.location.href = '/'),
       available: true,
       priority: 'medium',
       offlineCapable: true,
@@ -157,9 +157,9 @@ export function EnhancedOfflineFallback() {
     {
       id: 'emergency-contacts',
       title: 'Emergency Contacts',
-      description: 'View cached emergency contact information',
+      description: 'Dial local emergency services directly',
       icon: PhoneIcon,
-      action: () => (window.location.href = '/offline/contacts'),
+      action: () => (window.location.href = 'tel:911'),
       available: true,
       priority: 'high',
       offlineCapable: true,
@@ -168,23 +168,23 @@ export function EnhancedOfflineFallback() {
     {
       id: 'medical-info',
       title: 'Medical Information',
-      description: 'Access offline medical resources and guides',
+      description: 'Offline medical resources are not yet available',
       icon: FileTextIcon,
-      action: () => (window.location.href = '/offline/medical'),
-      available: true,
+      action: () => {},
+      available: false,
       priority: 'medium',
-      offlineCapable: true,
+      offlineCapable: false,
       requiresSync: false
     },
     {
       id: 'safety-guide',
       title: 'Safety Guide',
-      description: 'View offline safety procedures and protocols',
+      description: 'Offline safety guides are not yet available',
       icon: ShieldIcon,
-      action: () => (window.location.href = '/offline/safety'),
-      available: true,
+      action: () => {},
+      available: false,
       priority: 'medium',
-      offlineCapable: true,
+      offlineCapable: false,
       requiresSync: false
     }
   ]

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="OpenRelief">
+  <!-- Safari pinned-tab / mask icon. Must be a single-color (black) silhouette
+       on transparent background; Safari applies the theme color (#dc2626) at
+       runtime. This is a shield glyph matching the app's emergency-relief brand. -->
+  <path fill="#000000" fill-rule="evenodd" d="M128 16 48 48v72c0 56 34 96 80 120 46-24 80-64 80-120V48l-80-32Zm0 24 56 22.4V120c0 42-24 72-56 92-32-20-56-50-56-92V62.4L128 40Z"/>
+  <path fill="#000000" d="M124 72h-22l-2 6 22 26h-20l-4 4v12l4 4h22l2-6-22-26h20l4-4V76l-4-4Zm48 32h-22l-2 6 22 26h-20l-4 4v12l4 4h22l2-6-22-26h20l4-4v-12l-4-4Z"/>
+</svg>

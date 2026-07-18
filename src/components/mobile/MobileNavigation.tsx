@@ -268,7 +268,8 @@ export const defaultNavItems: NavItem[] = [
     id: 'map',
     label: 'Map',
     icon: <Map className="w-5 h-5" />,
-    href: '/map'
+    // The interactive map lives on the home page; there is no dedicated /map route.
+    href: '/'
   },
   {
     id: 'report',
@@ -280,7 +281,8 @@ export const defaultNavItems: NavItem[] = [
     id: 'alerts',
     label: 'Alerts',
     icon: <Bell className="w-5 h-5" />,
-    href: '/alerts',
+    // No dedicated /alerts route yet; proximity alerts are shown on the home map.
+    href: '/',
     // This would be updated dynamically
     badge: 0
   },
@@ -304,13 +306,15 @@ export const defaultMenuItems: NavItem[] = [
     id: 'safety',
     label: 'Safety Info',
     icon: <Shield className="w-5 h-5" />,
-    href: '/safety'
+    // No dedicated /safety route yet; the privacy center is the closest safety-related page.
+    href: '/privacy'
   },
   {
     id: 'about',
     label: 'About',
     icon: <Info className="w-5 h-5" />,
-    href: '/about'
+    // No dedicated /about route yet; terms is the closest informational page.
+    href: '/terms'
   }
 ]
 

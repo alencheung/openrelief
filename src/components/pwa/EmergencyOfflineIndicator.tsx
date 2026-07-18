@@ -646,7 +646,7 @@ export function EmergencyOfflineIndicator() {
                           <Button
                             size="sm"
                             className="flex-1"
-                            onClick={() => (window.location.href = `/emergency/${feature.id}`)}
+                            onClick={() => (window.location.href = '/report')}
                           >
                             <AlertTriangleIcon className="w-3 h-3 mr-1" />
                             Use Feature

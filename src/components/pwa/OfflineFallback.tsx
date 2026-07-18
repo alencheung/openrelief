@@ -45,21 +45,21 @@ export function OfflineFallback() {
       title: 'Report Emergency',
       description: 'File an emergency report (will sync when online)',
       icon: AlertTriangleIcon,
-      action: () => window.location.href = '/report',
+      action: () => (window.location.href = '/report'),
       available: true
     },
     {
-      title: 'View Offline Map',
-      description: 'Access cached map data and locations',
+      title: 'Offline Emergency Report',
+      description: 'Queue an emergency report while offline (syncs on reconnect)',
       icon: CheckCircleIcon,
-      action: () => window.location.href = '/offline/map',
+      action: () => (window.location.href = '/offline/emergency'),
       available: true
     },
     {
-      title: 'Emergency Contacts',
-      description: 'View cached emergency contact information',
+      title: 'Call Emergency Services',
+      description: 'Dial local emergency services directly',
       icon: CheckCircleIcon,
-      action: () => window.location.href = '/offline/contacts',
+      action: () => (window.location.href = 'tel:911'),
       available: true
     }
   ]

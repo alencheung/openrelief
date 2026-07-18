@@ -310,6 +310,11 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 
 // API functions for subscription management
 async function sendSubscriptionToServer(subscription: PushSubscription) {
+  // The /api/push/subscribe route reads `body.subscription` (an object with
+  // endpoint + keys). Sending {endpoint, keys} at the top level caused every
+  // registration to 400 ("Valid push subscription required"). Wrap the payload
+  // under `subscription` and include expirationTime for completeness.
+  const subJson = subscription.toJSON()
   try {
     const response = await fetch('/api/push/subscribe', {
       method: 'POST',
@@ -317,19 +322,25 @@ async function sendSubscriptionToServer(subscription: PushSubscription) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        endpoint: subscription.endpoint,
-        keys: {
-          p256dh: subscription.toJSON().keys?.p256dh,
-          auth: subscription.toJSON().keys?.auth
+        subscription: {
+          endpoint: subscription.endpoint,
+          expirationTime: subJson.expirationTime ?? null,
+          keys: {
+            p256dh: subJson.keys?.p256dh,
+            auth: subJson.keys?.auth
+          }
         }
       })
     })
 
     if (!response.ok) {
-      throw new Error('Failed to send subscription to server')
+      throw new Error(`Failed to send subscription to server (HTTP ${response.status})`)
     }
   } catch (error) {
+    // Surface the failure so callers can update UI state instead of silently
+    // showing "subscribed" while the server has no record.
     console.error('[Push] Failed to send subscription to server:', error)
+    throw error
   }
 }
 

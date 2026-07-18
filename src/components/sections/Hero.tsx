@@ -1,20 +1,38 @@
 'use client'
 
-import { useState } from 'react'
-import { Play, Shield, Users, MapPin } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Play, Shield, Users, MapPin, X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useMobileDetection } from '@/hooks/useMobileDetection'
 import { cn } from '@/lib/utils'
 
 export default function Hero() {
-  const [isPlaying, setIsPlaying] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const { isMobile, isTablet, breakpoint } = useMobileDetection()
+  const modalCloseRef = useRef<HTMLButtonElement>(null)
 
+  // Opens an accessible demo modal. There is no hosted video asset yet, so the
+  // modal shows an explainer and a CTA to launch the live map demo.
   const handleWatchVideo = () => {
-    setIsPlaying(true)
-    // In a real implementation, this would open a video modal
-    console.log('Play demo video')
+    setIsModalOpen(true)
   }
+
+  const closeModal = () => setIsModalOpen(false)
+
+  // Trap focus + close on Escape while the modal is open.
+  useEffect(() => {
+    if (!isModalOpen) return
+    const previousActive = document.activeElement as HTMLElement | null
+    modalCloseRef.current?.focus()
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeModal()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      previousActive?.focus()
+    }
+  }, [isModalOpen])
 
   return (
     <div className="relative overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -133,6 +151,51 @@ export default function Hero() {
       <div className="absolute inset-x-0 top-[calc(100%-13rem)] -z-10 transform-gpu overflow-hidden">
         <div className="aspect-[1155/678] w-[36.125rem] bg-gradient-to-br from-primary to-primary/20 opacity-20" />
       </div>
+
+      {/* Demo modal */}
+      {isModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="demo-modal-title"
+          onClick={closeModal}
+        >
+          <div
+            className="relative w-full max-w-lg rounded-xl bg-white p-6 shadow-xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              ref={modalCloseRef}
+              type="button"
+              onClick={closeModal}
+              aria-label="Close demo dialog"
+              className="absolute right-4 top-4 rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+              <Play className="h-7 w-7 text-primary" />
+            </div>
+            <h2 id="demo-modal-title" className="text-center text-xl font-bold text-gray-900">
+              See OpenRelief in action
+            </h2>
+            <p className="mt-2 text-center text-sm text-gray-600">
+              A hosted walkthrough video isn&apos;t available yet. The fastest way to see
+              OpenRelief is to launch the live map demo below — sign in, then explore real-time
+              emergency coordination, trust-based verification, and offline reporting.
+            </p>
+            <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-center">
+              <Button asChild variant="default" size="lg" className="touch-target">
+                <a href="/login">Launch the live demo</a>
+              </Button>
+              <Button onClick={closeModal} variant="outline" size="lg">
+                Maybe later
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

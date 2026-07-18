@@ -143,7 +143,7 @@ export const VALIDATION_SCHEMAS: ValidationSchemas = {
   emergencyReport: {
     title: [
       { name: 'title', required: true, type: 'string', minLength: 5, maxLength: 200, sanitize: true, stripHtml: true },
-      { name: 'title', type: 'string', pattern: /^[a-zA-Z0-9\s\-.,!?]+$/, custom: (value: unknown) => {
+      { name: 'title', type: 'string', custom: (value: unknown) => {
         const str = typeof value === 'string' ? value : ''
         if (str.length > 0 && !str.trim()) {
           return 'Title cannot be empty or whitespace only'
@@ -155,12 +155,17 @@ export const VALIDATION_SCHEMAS: ValidationSchemas = {
       { name: 'description', required: true, type: 'string', minLength: 10, maxLength: 2000, sanitize: true, stripHtml: true }
     ],
     severity: [
-      { name: 'severity', required: true, type: 'number', min: 1, max: 10 }
+      { name: 'severity', required: true, type: 'number', min: 1, max: 5 }
     ],
     location: [
       { name: 'location', required: true, type: 'object', custom: (value: unknown) => {
         const loc = value as { latitude?: number; longitude?: number }
-        if (!loc.latitude || !loc.longitude) {
+        // Use typeof checks (not truthiness) so latitude/longitude of exactly 0
+        // (equator / prime meridian) are accepted.
+        if (typeof loc.latitude !== 'number' || typeof loc.longitude !== 'number') {
+          return 'Location must include latitude and longitude'
+        }
+        if (Number.isNaN(loc.latitude) || Number.isNaN(loc.longitude)) {
           return 'Location must include latitude and longitude'
         }
         if (loc.latitude < -90 || loc.latitude > 90) {

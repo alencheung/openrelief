@@ -341,6 +341,40 @@ export default function EmergencyReportInterface({
     setMapPreview(true)
   }
 
+  // Fallback location acquisition for contexts where no mapInstance is wired
+  // (e.g. the standalone /report page). Without this, the "Select on Map"
+  // button is a no-op and the location step cannot be satisfied, blocking
+  // submission entirely for users without a pre-existing GPS fix.
+  const [isLocating, setIsLocating] = useState(false)
+  const handleUseMyLocation = () => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setFormErrors(prev => ({ ...prev, location: 'Geolocation is not supported on this device.' }))
+      return
+    }
+    setIsLocating(true)
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+        setFormErrors(prev => ({ ...prev, location: '' }))
+        announcePolite(
+          `Location set to your current position: ${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`
+        )
+        setIsLocating(false)
+      },
+      err => {
+        const message =
+          err.code === err.PERMISSION_DENIED
+            ? 'Location permission denied. Enable location access or select a location manually.'
+            : err.code === err.TIMEOUT
+              ? 'Could not determine your location in time. Try again or select manually.'
+              : 'Could not determine your location. Try again or select manually.'
+        setFormErrors(prev => ({ ...prev, location: message }))
+        setIsLocating(false)
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    )
+  }
+
   // Handle file uploads
   const handleImageUpload = (files: File[], previews: { id: string; url: string; file: File }[]) => {
     // Limit to 5 images
@@ -665,9 +699,9 @@ export default function EmergencyReportInterface({
                 aria-label="Step 3 of 5: Location"
               >
                 <div className="space-y-6">
-                  <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-lg">
+                  <div className="flex flex-wrap items-center gap-3 p-4 bg-muted/30 rounded-lg">
                     <MapPin className="h-5 w-5 text-muted-foreground" />
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-[12rem]">
                       {location ? (
                         <div className="text-sm text-foreground">
                           {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
@@ -679,10 +713,32 @@ export default function EmergencyReportInterface({
                     <EnhancedButton
                       onClick={handleLocationSelect}
                       variant={mapPreview ? 'warning' : 'default'}
+                      disabled={!mapInstance}
+                      aria-label={
+                        mapInstance ? undefined : 'Map selection unavailable on this page'
+                      }
+                      title={
+                        mapInstance ? undefined : 'Map selection unavailable on this page — use “Use my location”'
+                      }
                     >
                       {mapPreview ? 'Click on Map' : 'Select on Map'}
                     </EnhancedButton>
+                    {/* GPS fallback so the wizard is submittable even when no
+                        mapInstance is wired (standalone /report page). */}
+                    <EnhancedButton
+                      onClick={handleUseMyLocation}
+                      variant="outline"
+                      disabled={isLocating}
+                    >
+                      {isLocating ? 'Locating…' : 'Use my location'}
+                    </EnhancedButton>
                   </div>
+
+                  {formErrors.location && (
+                    <div role="alert" className="text-sm text-destructive">
+                      {formErrors.location}
+                    </div>
+                  )}
 
                   {location && (
                     <EnhancedRangeSlider
@@ -760,6 +816,14 @@ export default function EmergencyReportInterface({
                 aria-label="Step 5 of 5: Review Report"
               >
                 <div className="space-y-6">
+                  {formErrors.submit && (
+                    <div
+                      role="alert"
+                      className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive"
+                    >
+                      {formErrors.submit}
+                    </div>
+                  )}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
                       <h3 className="text-lg font-medium text-foreground">Emergency Details</h3>

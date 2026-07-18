@@ -25,6 +25,7 @@ import {
   checkETagMatch,
   CACHE_CONFIGS
 } from '@/lib/cache/api-cache'
+import { enqueueEventNotifications } from '@/lib/notifications/enqueue'
 
 // Build-safe Supabase client: returns a real client when env vars are present,
 // otherwise a minimal stub so module-load during the Next.js build page-data
@@ -442,6 +443,35 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (
       }
     }
 
+    // Enqueue push notifications for nearby subscribed users. Previously
+    // nothing wrote to notification_queue, so the dispatch cron always had
+    // nothing to send and no user ever received a server-side alert. Best-effort:
+    // a failure here must not fail event creation.
+    try {
+      const eventTitle =
+        typeof (data as { title?: string }).title === 'string'
+          ? (data as { title?: string }).title as string
+          : 'New emergency reported'
+      const eventDescription = (data as { description?: string }).description ?? ''
+      await enqueueEventNotifications({
+        supabase: getSupabase(),
+        eventId: data.id,
+        title: 'New emergency nearby',
+        message:
+          eventDescription.length > 160 ? `${eventDescription.slice(0, 157)}...` : eventDescription || eventTitle,
+        notificationType: 'new_event',
+        excludeUserId: context.userId,
+        data: {
+          eventId: data.id,
+          severity: sanitizedData.severity,
+          title: eventTitle
+        }
+      })
+    } catch (notifyError) {
+      console.error('Error enqueueing event notifications:', notifyError)
+      // Non-fatal: the event is already created; notifications are best-effort.
+    }
+
     return NextResponse.json(
       {
         data,
@@ -490,14 +520,14 @@ export const PUT = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
           {
             name: 'status',
             type: 'string',
-            // Allow 'cancelled' here too so an admin/moderator can transition
-            // a soft-cancelled event back to an active state if needed, and so
-            // the status vocabulary is consistent with the [id] PATCH schema.
-            allowedValues: ['pending', 'active', 'resolved', 'closed', 'cancelled']
+            // Must match the DB enum emergency_events_status exactly.
+            // ('closed'/'cancelled' are NOT valid enum values and would 500.)
+            allowedValues: ['pending', 'active', 'resolved', 'expired']
           }
         ],
         severity: [
-          { name: 'severity', type: 'string', allowedValues: ['low', 'medium', 'high', 'critical'] }
+          // severity is a numeric column (1-5), not a string label.
+          { name: 'severity', type: 'number', min: 1, max: 5 }
         ],
         metadata: [{ name: 'metadata', type: 'object' }],
         final_report: [{ name: 'final_report', type: 'string', maxLength: 5000 }],
@@ -677,9 +707,12 @@ export const DELETE = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
       )
     }
 
-    if (!['resolved', 'closed'].includes(event.status)) {
+    // Only terminal-state events may be hard-deleted. 'closed' is not a valid
+    // DB enum value (emergency_events_status is pending|active|resolved|expired),
+    // so use 'resolved' or 'expired' as the terminal states.
+    if (!['resolved', 'expired'].includes(event.status)) {
       return NextResponse.json(
-        { error: 'Only resolved or closed events can be deleted' },
+        { error: 'Only resolved or expired events can be deleted' },
         { status: 400 }
       )
     }

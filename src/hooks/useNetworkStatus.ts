@@ -148,6 +148,33 @@ export function useNetworkStatus(): NetworkStatus {
           (registration as unknown as { sync?: { register: (tag: string) => Promise<void> } }).sync?.register('emergency-offline-sync')
         })
       }
+
+      // Also drain the Zustand offlineStore immediately. Previously nothing
+      // called startSync/scheduleSync on reconnect — the Background Sync tag
+      // above relies on a SW `sync` listener that isn't present in the bundled
+      // service worker, so queued actions sat forever. Kicking the store sync
+      // directly guarantees pending emergency reports / confirmations are sent
+      // as soon as connectivity returns.
+      try {
+        // Imported lazily (dynamic) to avoid a hard dependency cycle and to
+        // keep this hook usable in contexts that don't mount the offline store.
+        import('@/store/offlineStore')
+          .then(mod => {
+            const store = mod.useOfflineStore?.getState?.()
+            if (!store) return
+            // The store's isOnline is initialized once and not actively synced
+            // with browser events, so trust navigator.onLine (we just came
+            // online) rather than the possibly-stale store flag.
+            if (!store.isSyncing && store.queue.length > 0) {
+              void store.startSync()
+            }
+          })
+          .catch(err => {
+            console.error('[Network] Failed to trigger offline store sync:', err)
+          })
+      } catch (err) {
+        console.error('[Network] Failed to import offlineStore for sync:', err)
+      }
     }
 
     const handleOffline = () => {

@@ -191,18 +191,32 @@ export const useResourceStore = create<ResourceStore>()(
         fulfillResourceNeed: (needId, fulfilledBy) => {
           set(state => ({
             resourceNeeds: state.resourceNeeds.map(need => {
-              if (need.id === needId) {
-                const newFulfilledBy = [...(need.fulfilledBy || []), fulfilledBy]
-                const isFullyFulfilled = need.currentQuantity >= need.neededQuantity
+              if (need.id !== needId) return need
+              // Avoid double-counting the same supplier.
+              const existing = need.fulfilledBy || []
+              if (existing.includes(fulfilledBy)) return need
+              const newFulfilledBy = [...existing, fulfilledBy]
 
-                return {
-                  ...need,
-                  fulfilledBy: newFulfilledBy,
-                  status: isFullyFulfilled ? 'fulfilled' : 'partial',
-                  updatedAt: new Date().toISOString()
-                } as ResourceNeed
-              }
-              return need
+              // The previous implementation appended to fulfilledBy but never
+              // incremented currentQuantity, so isFullyFulfilled was always
+              // evaluated against the original count and every need was stuck
+              // at 'partial'. Each fulfillment contributes an equal share of
+              // the remaining need (need / supplierCount), capped at the target.
+              const supplierCount = newFulfilledBy.length
+              const share = supplierCount > 0 ? need.neededQuantity / supplierCount : 0
+              const newCurrentQuantity = Math.min(
+                need.neededQuantity,
+                Math.max(need.currentQuantity, share * supplierCount)
+              )
+              const isFullyFulfilled = newCurrentQuantity >= need.neededQuantity
+
+              return {
+                ...need,
+                fulfilledBy: newFulfilledBy,
+                currentQuantity: newCurrentQuantity,
+                status: isFullyFulfilled ? 'fulfilled' : 'partial',
+                updatedAt: new Date().toISOString()
+              } as ResourceNeed
             })
           }))
         },

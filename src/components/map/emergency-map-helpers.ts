@@ -221,17 +221,29 @@ export function parseEmergencyLocation(location: string): ParsedLocation {
   }
 }
 
-// Rough great-circle approximation good enough for proximity display. Returns
-// metres — multiply degrees by ~111km per degree at the equator.
+// Great-circle distance between two lat/lng points (Haversine), in metres.
+// The previous implementation used a flat Euclidean approximation that ignored
+// the longitude cosine correction, overstating distance at higher latitudes
+// (e.g. ~2x error in the longitudinal component at 60°). Haversine is exact
+// enough for proximity display and matches the math used elsewhere in the app
+// (lib/map-utils.ts, locationStore.ts, LocationTracker.tsx).
 export function calculateDistance(
   lat1: number,
   lng1: number,
   lat2: number,
   lng2: number
 ): number {
-  return (
-    Math.sqrt(Math.pow(lat1 - lat2, 2) + Math.pow(lng1 - lng2, 2)) * 111000
-  )
+  const R = 6371000 // Earth radius in metres
+  const toRad = (deg: number) => (deg * Math.PI) / 180
+  const φ1 = toRad(lat1)
+  const φ2 = toRad(lat2)
+  const Δφ = toRad(lat2 - lat1)
+  const Δλ = toRad(lng2 - lng1)
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
 }
 
 // ---------------------------------------------------------------------------
@@ -284,10 +296,15 @@ export function calculateSpatialInfo(
 ): SpatialInfo {
   const { lat: emergencyLat, lng: emergencyLng } = parseEmergencyLocation(emergencyLocation)
   const distance = calculateDistance(userLat, userLng, emergencyLat, emergencyLng)
+  // `distance` is in metres. The SpatialInformationOverlay renders
+  // estimatedTime as MINUTES (TimeEstimate.formatTime treats the value as
+  // minutes). The previous formula `distance / 50` was dimensionally wrong
+  // (metres ÷ 50). At a 50 km/h assumed response speed (= 833.33 m/min),
+  // minutes = distance / 833.33.
+  const ASSUMED_SPEED_M_PER_MIN = (50 * 1000) / 60
   return {
     distance,
-    // Assuming 50 km/h average speed
-    estimatedTime: distance / 50,
+    estimatedTime: distance / ASSUMED_SPEED_M_PER_MIN,
     coordinates: [userLat, userLng],
     accuracy: userAccuracy
   }

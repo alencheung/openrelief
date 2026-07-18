@@ -80,11 +80,12 @@ export function OfflineEmergencyPage() {
         synced: false
       }
 
-      // Queue for offline sync
+      // Queue for offline sync. Endpoint must be the real route /api/emergency
+      // (singular) — the previous '/api/emergencies' (plural) 404s on sync.
       await queueOfflineAction({
         type: 'emergency_report',
         data: report as unknown as Record<string, unknown>,
-        endpoint: '/api/emergencies',
+        endpoint: '/api/emergency',
         method: 'POST'
       })
 
@@ -114,10 +115,12 @@ export function OfflineEmergencyPage() {
   const loadQueuedReports = async () => {
     try {
       const actions = await getQueuedActions()
+      // Match the shape we actually queue in handleSubmit: type === 'emergency_report'.
+      // The previous filter (action.table === 'emergency_events' && type === 'create')
+      // never matched because queued actions have no `table` field, which caused
+      // saved reports to vanish from the list after every reload.
       const reports = actions
-        .filter(
-          action => action.table === 'emergency_events' && action.type === 'create'
-        )
+        .filter(action => action.type === 'emergency_report')
         .map(action => action.data as unknown as EmergencyReport)
       setQueuedReports(reports)
     } catch (error) {

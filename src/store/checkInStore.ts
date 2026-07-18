@@ -11,7 +11,13 @@ import {
 } from '@/types/checkin'
 
 interface CheckInState {
+  // Authoritative source of truth — NEVER overwritten by a filtered result.
+  // Prior to this fix, mutations wrote filterCheckIns(...) back into checkIns,
+  // which permanently destroyed expired / non-matching records (data loss).
   checkIns: StatusCheckIn[]
+  // Derived view of checkIns after applying filters/search/expiry. Consumers
+  // that want the "current visible list" should read filteredCheckIns.
+  filteredCheckIns: StatusCheckIn[]
   myCheckIns: StatusCheckIn[]
   selectedCheckIn: StatusCheckIn | null
   filters: CheckInFilter
@@ -48,6 +54,7 @@ type CheckInStore = CheckInState & CheckInActions
 
 const initialState: CheckInState = {
   checkIns: [],
+  filteredCheckIns: [],
   myCheckIns: [],
   selectedCheckIn: null,
   filters: {},
@@ -55,6 +62,14 @@ const initialState: CheckInState = {
   loading: false,
   error: null
 }
+
+// Recompute the derived filtered view from the authoritative source. Pure —
+// never mutates checkIns.
+const recomputeFiltered = (
+  checkIns: StatusCheckIn[],
+  filters: CheckInFilter,
+  searchQuery: string
+): StatusCheckIn[] => sortCheckInsByDate(filterCheckIns(checkIns, filters, searchQuery))
 
 const generateId = (): string => {
   return `checkin-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
@@ -180,7 +195,8 @@ export const useCheckInStore = create<CheckInStore>()(
             const myCheckIns = newCheckIns.filter(c => c.userId === userId)
 
             return {
-              checkIns: sortCheckInsByDate(filterCheckIns(newCheckIns, state.filters, state.searchQuery)),
+              checkIns: sortCheckInsByDate(newCheckIns),
+              filteredCheckIns: recomputeFiltered(newCheckIns, state.filters, state.searchQuery),
               myCheckIns: sortCheckInsByDate(myCheckIns)
             }
           })
@@ -207,7 +223,8 @@ export const useCheckInStore = create<CheckInStore>()(
             const myCheckIns = userId ? newCheckIns.filter(c => c.userId === userId) : state.myCheckIns
 
             return {
-              checkIns: sortCheckInsByDate(filterCheckIns(newCheckIns, state.filters, state.searchQuery)),
+              checkIns: newCheckIns,
+              filteredCheckIns: recomputeFiltered(newCheckIns, state.filters, state.searchQuery),
               myCheckIns: sortCheckInsByDate(myCheckIns),
               selectedCheckIn:
                 state.selectedCheckIn?.id === checkInId
@@ -225,7 +242,8 @@ export const useCheckInStore = create<CheckInStore>()(
             const myCheckIns = userId ? newCheckIns.filter(c => c.userId === userId) : state.myCheckIns
 
             return {
-              checkIns: sortCheckInsByDate(filterCheckIns(newCheckIns, state.filters, state.searchQuery)),
+              checkIns: newCheckIns,
+              filteredCheckIns: recomputeFiltered(newCheckIns, state.filters, state.searchQuery),
               myCheckIns: sortCheckInsByDate(myCheckIns),
               selectedCheckIn: state.selectedCheckIn?.id === checkInId ? null : state.selectedCheckIn
             }
@@ -259,8 +277,8 @@ export const useCheckInStore = create<CheckInStore>()(
 
         applyFilters: () => {
           const { checkIns, filters, searchQuery } = get()
-          const filteredCheckIns = sortCheckInsByDate(filterCheckIns(checkIns, filters, searchQuery))
-          set({ checkIns: filteredCheckIns })
+          // Only recompute the derived view; never mutate the source checkIns.
+          set({ filteredCheckIns: recomputeFiltered(checkIns, filters, searchQuery) })
         },
 
         getEventSummary: eventId => {
@@ -308,9 +326,13 @@ export const useCheckInStore = create<CheckInStore>()(
 
         cleanExpiredCheckIns: () => {
           const now = new Date()
-          set(state => ({
-            checkIns: state.checkIns.filter(checkIn => new Date(checkIn.expiresAt) >= now)
-          }))
+          set(state => {
+            const remaining = state.checkIns.filter(checkIn => new Date(checkIn.expiresAt) >= now)
+            return {
+              checkIns: remaining,
+              filteredCheckIns: recomputeFiltered(remaining, state.filters, state.searchQuery)
+            }
+          })
           console.log('Expired check-ins cleaned')
         },
 
@@ -323,10 +345,18 @@ export const useCheckInStore = create<CheckInStore>()(
       {
         name: 'checkin-storage',
         partialize: state => ({
+          // Persist only the authoritative source; filteredCheckIns is derived
+          // and recomputed on rehydrate.
           checkIns: state.checkIns,
           filters: state.filters,
           searchQuery: state.searchQuery
-        })
+        }),
+        // After rehydrating checkIns/filters, rebuild the derived filtered view
+        // so it doesn't start empty until the next mutation.
+        onRehydrateStorage: () => state => {
+          if (!state) return
+          state.filteredCheckIns = recomputeFiltered(state.checkIns, state.filters, state.searchQuery)
+        }
       }
     )
   )
@@ -334,7 +364,11 @@ export const useCheckInStore = create<CheckInStore>()(
 
 export const useCheckIns = () =>
   useCheckInStore(state => ({
-    checkIns: state.checkIns,
+    // Expose the derived (filtered) view under the historical `checkIns` key so
+    // consumers see the visible list. The unfiltered source remains on
+    // state.checkIns and is exposed as allCheckIns for callers that need it.
+    checkIns: state.filteredCheckIns,
+    allCheckIns: state.checkIns,
     myCheckIns: state.myCheckIns,
     loading: state.loading,
     error: state.error
@@ -344,7 +378,7 @@ export const useCheckInFilters = () =>
   useCheckInStore(state => ({
     filters: state.filters,
     searchQuery: state.searchQuery,
-    checkIns: state.checkIns
+    checkIns: state.filteredCheckIns
   }))
 
 export const useSelectedCheckIn = () => useCheckInStore(state => state.selectedCheckIn)

@@ -335,21 +335,27 @@ export const useCreateEmergencyEvent = () => {
         throw error
       }
     },
-    onSuccess: (data: EmergencyEvent) => {
+    onSuccess: (data: EmergencyEvent, _variables, context) => {
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: ['emergency-events'] })
       queryClient.setQueryData(['emergency-event', data.id], data)
 
-      // Update local store with real data
-      if (data.id.startsWith('temp-')) {
-        useEmergencyStore.getState().removeEvent(data.id)
+      // Remove the optimistic temp event added in onMutate. The previous check
+      // inspected `data.id` (the server UUID) which never starts with 'temp-',
+      // so the temp event was never removed and a duplicate phantom remained in
+      // the local store alongside the real one. The temp id is on the context
+      // returned by onMutate.
+      const optimisticId = (context as { id?: string } | undefined)?.id
+      if (optimisticId && optimisticId.startsWith('temp-')) {
+        useEmergencyStore.getState().removeEvent(optimisticId)
       }
       useEmergencyStore.getState().addEvent(data)
     },
-    onError: (error: unknown, variables: EmergencyEventInsert & { id?: string }) => {
-      // Rollback optimistic update
-      if (variables.id && variables.id.startsWith('temp-')) {
-        useEmergencyStore.getState().removeEvent(variables.id)
+    onError: (error: unknown, _variables, context) => {
+      // Rollback optimistic update using the context returned by onMutate.
+      const optimisticId = (context as { id?: string } | undefined)?.id
+      if (optimisticId && optimisticId.startsWith('temp-')) {
+        useEmergencyStore.getState().removeEvent(optimisticId)
       }
 
       console.error('Create emergency event mutation error:', error)
@@ -467,10 +473,17 @@ export const useConfirmEvent = () => {
           created_at: new Date().toISOString()
         }
 
-        // Update local store immediately
+        // Update local store immediately. Increment the relevant counter rather
+        // than overwriting it — the previous code set confirmation_count to 0/1,
+        // which zeroed the count on every dispute and lost prior confirmations.
+        const currentEvent = useEmergencyStore.getState().events.find(e => e.id === eventId)
+        const currentConfirmCount = currentEvent?.confirmation_count ?? 0
+        const currentDisputeCount = currentEvent?.dispute_count ?? 0
         useEmergencyStore.getState().updateEvent(eventId, {
-          confirmation_count: confirmationType === 'confirm' ? 1 : 0,
-          dispute_count: confirmationType === 'dispute' ? 1 : 0
+          confirmation_count:
+            confirmationType === 'confirm' ? currentConfirmCount + 1 : currentConfirmCount,
+          dispute_count:
+            confirmationType === 'dispute' ? currentDisputeCount + 1 : currentDisputeCount
         })
 
         // Add to offline queue if needed
@@ -497,7 +510,9 @@ export const useConfirmEvent = () => {
         addNotification({
           type: 'system',
           title: `Event ${confirmationType === 'confirm' ? 'Confirmed' : 'Disputed'}`,
-          message: `You have successfully ${confirmationType}ed this emergency event.`,
+          message: `You have successfully ${
+            confirmationType === 'confirm' ? 'confirmed' : 'disputed'
+          } this emergency event.`,
           severity: 'success',
           priority: 'medium',
           channels: { inApp: true, push: false, email: false, sms: false }

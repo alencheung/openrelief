@@ -7,6 +7,7 @@ import { EnhancedInput } from '@/components/ui/forms/EnhancedInput'
 import { EnhancedTextarea } from '@/components/ui/forms/EnhancedTextarea'
 import { EnhancedCheckbox } from '@/components/ui/forms/EnhancedCheckbox'
 import { cn } from '@/lib/utils'
+import { useShelterActions } from '@/store/shelterStore'
 import type { ContactInfo } from '@/types/resource'
 
 interface ShelterCheckIn {
@@ -52,6 +53,7 @@ const durationOptions = [
 
 const ShelterCheckInForm = React.forwardRef<HTMLDivElement, ShelterCheckInFormProps>(
   ({ shelterId, shelterName, petsAllowed = false, onCheckIn, onCancel, className }, ref) => {
+    const { incrementOccupancy } = useShelterActions()
     const [numberOfPeople, setNumberOfPeople] = useState('1')
     const [medicalNeeds, setMedicalNeeds] = useState(false)
     const [accessibilityNeeds, setAccessibilityNeeds] = useState(false)
@@ -137,6 +139,11 @@ const ShelterCheckInForm = React.forwardRef<HTMLDivElement, ShelterCheckInFormPr
             : undefined
       }
 
+      // Update shelter occupancy so the shelter actually fills. Previously the
+      // form emitted the check-in object to the parent but never called
+      // incrementOccupancy, so currentOccupancy / availableBeds / status never
+      // changed and shelters could never become "full" through check-ins.
+      incrementOccupancy(shelterId, checkIn.numberOfPeople)
       onCheckIn(checkIn)
     }
 

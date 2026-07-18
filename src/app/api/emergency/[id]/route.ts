@@ -29,7 +29,9 @@ const emergencyPatchSchema = z
       .max(100000, 'radius_meters must be a positive number up to 100000')
       .optional(),
     status: z
-      .enum(['pending', 'active', 'resolved', 'closed', 'cancelled'])
+      // Must match the DB enum emergency_events_status exactly.
+      // ('closed'/'cancelled' are NOT valid enum values and would 500 at the DB.)
+      .enum(['pending', 'active', 'resolved', 'expired'])
       .optional()
   })
   .strict()
@@ -211,10 +213,13 @@ export async function DELETE(
       )
     }
 
-    // Soft-cancel: preserves audit trail + consensus history.
+    // Soft-cancel: preserves audit trail + consensus history. Map "cancelled by
+    // owner" to the 'expired' enum value (the DB enum is pending|active|resolved|
+    // expired — there is no 'cancelled' value), so the event is withdrawn from
+    // active circulation without a hard delete.
     const { error } = await supabase
       .from('emergency_events')
-      .update({ status: 'cancelled' })
+      .update({ status: 'expired' })
       .eq('id', id)
 
     if (error) {

@@ -72,16 +72,35 @@ export const usePrivacy = (options: UsePrivacyOptions = {}) => {
         initializePrivacyBudget(options.userId)
       }
 
-      // Load privacy settings from storage or API
-      // In a real implementation, fetch from API
-      // const response = await fetch('/api/privacy/settings');
-      // const settings = await response.json();
+      // Load privacy settings from the server. Previously this fetch was
+      // commented out, so the privacy UI always showed defaults and never
+      // reflected the user's saved settings.
+      let serverSettings: PrivacySettings | null = null
+      try {
+        const response = await fetch('/api/privacy/settings', {
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin'
+        })
+        if (response.ok) {
+          const json = (await response.json()) as {
+            data?: { settings?: PrivacySettings }
+          }
+          if (json.data?.settings) {
+            serverSettings = json.data.settings
+          }
+        }
+      } catch (fetchError) {
+        // Non-fatal: fall back to defaults if the network/API is unavailable.
+        console.error('Failed to fetch privacy settings:', fetchError)
+      }
 
+      const baseSettings = serverSettings ?? privacyContext.settings
       // Calculate privacy level based on settings
-      const privacyLevel = calculatePrivacyLevel(privacyContext.settings)
+      const privacyLevel = calculatePrivacyLevel(baseSettings)
 
       setPrivacyContext(prev => ({
         ...prev,
+        settings: serverSettings ?? prev.settings,
         privacyLevel,
         updateSettings: (newSettings: Partial<PrivacySettings>) => {
           setPrivacyContext(current => {
