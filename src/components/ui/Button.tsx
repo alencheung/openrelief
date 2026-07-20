@@ -36,8 +36,27 @@ export interface ButtonProps
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, loading, disabled, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, loading, disabled, children, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button'
+
+    // Radix Slot requires exactly ONE child element. When `asChild` is set we
+    // must not render the loading spinner as a sibling of the slotted child,
+    // or Slot throws "React.Children.only expected to receive a single React
+    // element child" during SSR and the UI fails to hydrate. In asChild mode
+    // the spinner is intentionally omitted to preserve single-child semantics.
+    if (asChild) {
+      return (
+        <Comp
+          className={cn(buttonVariants({ variant, size, className }))}
+          ref={ref}
+          disabled={disabled || loading}
+          {...props}
+        >
+          {children}
+        </Comp>
+      )
+    }
+
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
@@ -62,7 +81,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             />
           </svg>
         )}
-        {props.children}
+        {children}
       </Comp>
     )
   }

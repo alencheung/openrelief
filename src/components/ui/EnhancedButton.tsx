@@ -89,7 +89,7 @@ const EnhancedButton = React.forwardRef<HTMLButtonElement, EnhancedButtonProps>(
     const Comp = asChild ? Slot : 'button'
     const isDisabled = disabled || loading
 
-    // Accessibility hooks
+    // Accessibility hooks — must run unconditionally (Rules of Hooks).
     const { announcePolite } = useAriaAnnouncer()
 
     /**
@@ -109,6 +109,28 @@ const EnhancedButton = React.forwardRef<HTMLButtonElement, EnhancedButtonProps>(
 
       // Call original onClick if provided
       props.onClick?.(e)
+    }
+
+    // Radix Slot requires EXACTLY ONE child. All of the decoration below
+    // (ripple, spinner, icon wrappers) would create multiple siblings and
+    // trigger "React.Children.only expected to receive a single React element
+    // child" during SSR. In asChild mode, render only the slotted child as-is.
+    if (asChild) {
+      return (
+        <Comp
+          className={cn(enhancedButtonVariants({ variant, size, fullWidth, loading }), className)}
+          ref={ref}
+          aria-label={ariaLabel}
+          aria-describedby={ariaDescribedBy}
+          aria-pressed={ariaPressed}
+          aria-expanded={ariaExpanded}
+          aria-controls={ariaControls}
+          aria-busy={loading}
+          {...props}
+        >
+          {children}
+        </Comp>
+      )
     }
 
     return (
