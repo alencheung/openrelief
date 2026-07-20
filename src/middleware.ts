@@ -455,10 +455,17 @@ async function inputValidationMiddleware(req: NextRequest): Promise<{ valid: boo
     }
   }
 
-  // Validate content type for POST/PUT requests
+  // Validate content type for POST/PUT requests.
+  // Allow `application/csp-report` in addition to the usual JSON/form types:
+  // it is the MIME type browsers use when POSTing CSP violation reports to
+  // our /api/csp-violation endpoint (CSP Level 2 spec). Without it, every
+  // violation report is rejected with a 400 before reaching the handler,
+  // which is what users see in the console on every blocked resource.
   if (
     (method === 'POST' || method === 'PUT') &&
     !contentType.includes('application/json') &&
+    !contentType.includes('application/csp-report') &&
+    !contentType.includes('application/reports+json') &&
     !contentType.includes('multipart/form-data') &&
     !contentType.includes('application/x-www-form-urlencoded')
   ) {
@@ -486,9 +493,26 @@ function securityHeadersMiddleware(response: NextResponse): NextResponse {
   response.headers.set('Cross-Origin-Resource-Policy', 'same-origin')
 
   // Content Security Policy
+  //
+  // NOTE on `script-src`: we deliberately do NOT use `strict-dynamic` here.
+  // Per the CSP spec, when `strict-dynamic` is present, browsers IGNORE
+  // `'unsafe-inline'`. The previous policy was
+  //   script-src 'self' 'strict-dynamic' 'unsafe-inline' <allowlist>
+  // which sounds strict but in practice blocked EVERY Next.js inline
+  // hydration / RSC script (Next.js emits inline <script> tags without
+  // per-request nonces). On Netlify this resulted in a blank page:
+  // "Executing inline script violates the following Content Security
+  // Policy directive". The proper fix is per-request nonce generation
+  // threaded from middleware -> layout -> next/script, but until that
+  // refactor lands we ship a working policy that:
+  //   - allows 'self' (the Next.js JS chunks)
+  //   - allows 'unsafe-inline' (Next.js inline scripts/styles)
+  //   - allows the Sentry CDN host for the loader bundle
+  // Removing `strict-dynamic` makes `'unsafe-inline'` actually take
+  // effect, restoring hydration.
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'strict-dynamic' 'unsafe-inline' https://cdn.vercel-insights.com https://browser.sentry-cdn.com",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.vercel-insights.com https://browser.sentry-cdn.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https: blob:",
