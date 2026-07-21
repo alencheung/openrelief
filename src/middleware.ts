@@ -11,7 +11,6 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createHash, randomBytes } from 'crypto'
 import {
   securityMonitor,
   SecurityIncidentType,
@@ -516,7 +515,7 @@ function securityHeadersMiddleware(response: NextResponse): NextResponse {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https: blob:",
-    "connect-src 'self' https://api.openrelief.org https://openrelief.supabase.co https://dispatch.openrelief.org wss://openrelief.supabase.co https://o*.ingest.sentry.io",
+    "connect-src 'self' https://api.openrelief.org https://openrelief.supabase.co https://dispatch.openrelief.org wss://openrelief.supabase.co https://*.ingest.sentry.io https://*.sentry.io",
     "media-src 'self' blob:",
     "object-src 'none'",
     "child-src 'self'",

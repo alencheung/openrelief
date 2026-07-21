@@ -2,9 +2,21 @@
  * Audit Logging Helpers for OpenRelief
  *
  * Pure utility functions and convenience wrappers extracted from audit-logger.
+ *
+ * NOTE on hashing: we use the Web Crypto API (globalThis.crypto.subtle)
+ * rather than Node's `crypto.createHash`. The audit logger is invoked from
+ * Next.js middleware, which runs on the Edge runtime in production
+ * (Netlify/Vercel). The Edge runtime does NOT expose Node's `crypto`
+ * module, so the previous `createHash('sha256')` call crashed every
+ * audited request with:
+ *   "The edge runtime does not support Node.js 'crypto' module"
+ * Web Crypto is available in both Edge and Node.js >= 19 (and via
+ * globalThis.crypto in Node 18+ with the --experimental-global-webcrypto
+ * flag, which Next.js sets automatically for its runtimes).
+ *
+ * Because Web Crypto's digest() is async, calculateAuditHash is async.
  */
 
-import { createHash } from 'crypto'
 import {
   AuditEventType,
   AuditSeverity,
@@ -12,11 +24,23 @@ import {
 } from './audit-logger-types'
 import type { AuditLogEntry } from './audit-logger-types'
 
-// Calculate a tamper-evident hash for an audit log entry
-export const calculateAuditHash = (
+// Convert a Uint8Array to a hex string (Web Crypto returns bytes, not hex)
+function bytesToHex(bytes: Uint8Array): string {
+  let hex = ''
+  for (let i = 0; i < bytes.length; i++) {
+    const byte = bytes[i]
+    if (byte === undefined) continue
+    hex += byte.toString(16).padStart(2, '0')
+  }
+  return hex
+}
+
+// Calculate a tamper-evident hash for an audit log entry.
+// Async because Web Crypto's digest() returns a Promise.
+export const calculateAuditHash = async (
   entry: AuditLogEntry,
   previousHash?: string | null
-): string => {
+): Promise<string> => {
   const hashData = {
     id: entry.id,
     timestamp: entry.timestamp.toISOString(),
@@ -31,7 +55,10 @@ export const calculateAuditHash = (
   }
 
   const dataString = JSON.stringify(hashData, Object.keys(hashData).sort())
-  return createHash('sha256').update(dataString).digest('hex')
+  const encoder = new TextEncoder()
+  const dataBytes = encoder.encode(dataString)
+  const digestBuffer = await crypto.subtle.digest('SHA-256', dataBytes)
+  return bytesToHex(new Uint8Array(digestBuffer))
 }
 
 // Generate a unique audit log id

@@ -76,8 +76,8 @@ class AuditLogger {
         updatedAt: new Date()
       }
 
-      // Calculate hash for integrity
-      entry.currentHash = this.calculateHash(entry)
+      // Calculate hash for integrity (async — uses Web Crypto for Edge-runtime compat)
+      entry.currentHash = await this.calculateHash(entry)
 
       // Add to buffer
       this.logBuffer.push(entry)
@@ -253,8 +253,8 @@ class AuditLogger {
       let previousHash = null
 
       for (const log of logs) {
-        // Verify current hash
-        const calculatedHash = this.calculateHash(log, previousHash)
+        // Verify current hash (async — Web Crypto)
+        const calculatedHash = await this.calculateHash(log, previousHash)
 
         if (calculatedHash !== log.currentHash) {
           violations.push({
@@ -362,9 +362,12 @@ class AuditLogger {
   }
 
   /**
-   * Calculate hash for log entry
+   * Calculate hash for log entry (async — Web Crypto API for Edge-runtime compat)
    */
-  private calculateHash(entry: AuditLogEntry, previousHash?: string | null): string {
+  private async calculateHash(
+    entry: AuditLogEntry,
+    previousHash?: string | null
+  ): Promise<string> {
     return calculateAuditHash(entry, previousHash)
   }
 
