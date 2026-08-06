@@ -40,7 +40,7 @@ describe('Trust Store', () => {
 
       expect(state.thresholds.reporting).toBe(0.3)
       expect(state.thresholds.confirming).toBe(0.4)
-      expect(state.thresholds.disputing).toBe(0.5)
+      expect(state.thresholds.disputing).toBe(0.6)
       expect(state.thresholds.highTrust).toBe(0.8)
       expect(state.thresholds.lowTrust).toBe(0.2)
 
@@ -565,7 +565,7 @@ describe('Trust Store', () => {
         expect(result.current.thresholds.reporting).toBe(0.4)
         expect(result.current.thresholds.confirming).toBe(0.5)
         expect(result.current.thresholds.highTrust).toBe(0.9)
-        expect(result.current.thresholds.disputing).toBe(0.5) // Should preserve default
+        expect(result.current.thresholds.disputing).toBe(0.6) // Should preserve default
       })
     })
 

@@ -1,5 +1,10 @@
 import { create } from 'zustand'
 import { persist, subscribeWithSelector } from 'zustand/middleware'
+import {
+  REPORTING_TRUST_THRESHOLD,
+  CONFIRM_TRUST_THRESHOLD,
+  DISPUTE_TRUST_THRESHOLD
+} from '@/lib/security/trust-thresholds'
 
 // Types
 //
@@ -159,11 +164,14 @@ interface TrustActions {
 
 type TrustStore = TrustState & TrustActions
 
-// Initial thresholds and weights
+// Initial thresholds and weights.
+// Sourced from the shared trust-thresholds module so client and server agree
+// (previously `disputing` was 0.5 here while the server's consensusThreshold
+// was 0.6 — letting users submit disputes the engine would silently ignore).
 const defaultThresholds: TrustThresholds = {
-  reporting: 0.3,
-  confirming: 0.4,
-  disputing: 0.5,
+  reporting: REPORTING_TRUST_THRESHOLD,
+  confirming: CONFIRM_TRUST_THRESHOLD,
+  disputing: DISPUTE_TRUST_THRESHOLD,
   highTrust: 0.8,
   lowTrust: 0.2
 }

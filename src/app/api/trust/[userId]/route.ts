@@ -181,7 +181,7 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
 
     return NextResponse.json({
       user_id: userId,
-      trust_score: profile?.trust_score || 0.5,
+      trust_score: profile?.trust_score ?? 0.5,
       threshold_level: threshold.level,
       permissions: threshold.permissions,
       restrictions: threshold.restrictions,

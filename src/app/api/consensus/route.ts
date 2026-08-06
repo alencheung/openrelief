@@ -215,7 +215,9 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
         .eq('user_id', context.userId)
         .single()
 
-      const trustWeight = userProfile?.trust_score || 0.5
+      // Nullish coalescing: a legitimate trust_score of 0 must be honored,
+      // not coerced to 0.5. Only null/undefined fall back to the default.
+      const trustWeight = userProfile?.trust_score ?? 0.5
 
       const { error: insertError } = await supabase.from('event_confirmations').insert({
         event_id,
@@ -243,14 +245,21 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
       console.warn('Failed to update event consensus:', rpcError)
     }
 
-    try {
-      await trustScoreManager.calculateTrustScore(
-        context.userId,
-        confirmation_type === 'confirm' ? 'confirm' : 'dispute',
-        { eventId: event_id, timestamp: new Date().toISOString() }
-      )
-    } catch (trustError) {
-      console.warn('Failed to update trust score:', trustError)
+    // Only recalculate the reporter's trust score on the FIRST vote.
+    // Recalculating on every vote-update (e.g. a user flipping confirm→dispute→confirm)
+    // would re-apply the action's factor delta each time and inflate the score.
+    // Updating an existing confirmation still re-runs consensus above, but does
+    // not re-bump trust factors.
+    if (!existingConfirmation) {
+      try {
+        await trustScoreManager.calculateTrustScore(
+          context.userId,
+          confirmation_type === 'confirm' ? 'confirm' : 'dispute',
+          { eventId: event_id, timestamp: new Date().toISOString() }
+        )
+      } catch (trustError) {
+        console.warn('Failed to update trust score:', trustError)
+      }
     }
 
     return NextResponse.json({

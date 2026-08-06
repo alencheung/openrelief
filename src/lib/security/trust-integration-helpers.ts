@@ -13,6 +13,7 @@ import type {
   Reputation,
   TrustThreshold
 } from './trust-integration-types'
+import { CONSENSUS_VOTE_THRESHOLD } from './trust-thresholds'
 
 // Trust score configuration
 export const TRUST_CONFIG = {
@@ -89,7 +90,7 @@ export const TRUST_CONFIG = {
   // Attack resistance
   attackResistance: {
     trustWeightMultiplier: 2.0,
-    consensusThreshold: 0.6,
+    consensusThreshold: CONSENSUS_VOTE_THRESHOLD,
     sybilThreshold: 0.3,
     reputationThreshold: 0.4,
     adaptiveThresholds: true,

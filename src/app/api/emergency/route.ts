@@ -364,8 +364,11 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.emergency)(async (
       }
     }
 
-    // Calculate trust weight if not provided
-    const calculatedTrustWeight = sanitizedData.trust_weight || reporter.trust_score || 0.5
+    // Calculate trust weight if not provided. Note: client-supplied
+    // trust_weight (untrusted) wins only when truthy; the server-side
+    // reporter.trust_score must be honored even when it is a legitimate 0,
+    // hence ?? for that fallback (not ||).
+    const calculatedTrustWeight = sanitizedData.trust_weight ?? (reporter.trust_score ?? 0.5)
 
     // Create emergency event. reporter_id comes from the authenticated
     // session (context.userId), not the request body, to prevent impersonation.
