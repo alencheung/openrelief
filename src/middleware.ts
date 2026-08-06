@@ -505,13 +505,17 @@ function securityHeadersMiddleware(response: NextResponse): NextResponse {
   // threaded from middleware -> layout -> next/script, but until that
   // refactor lands we ship a working policy that:
   //   - allows 'self' (the Next.js JS chunks)
-  //   - allows 'unsafe-inline' (Next.js inline scripts/styles)
+  //   - allows 'unsafe-inline' (Next.js inline scripts/styles) — time-boxed
+  //     exception; the proper fix is per-request nonces threaded from
+  //     middleware -> layout -> next/script, tracked as follow-up.
   //   - allows the Sentry CDN host for the loader bundle
   // Removing `strict-dynamic` makes `'unsafe-inline'` actually take
-  // effect, restoring hydration.
+  // effect, restoring hydration. We do NOT allow 'unsafe-eval' — Next.js
+  // production builds don't require it (only dev tooling does), and leaving
+  // it out removes a meaningful XSS escalation vector.
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.vercel-insights.com https://browser.sentry-cdn.com",
+    "script-src 'self' 'unsafe-inline' https://cdn.vercel-insights.com https://browser.sentry-cdn.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https: blob:",

@@ -40,6 +40,10 @@ export interface KeyStorage {
   encryptedKey: string;
   salt: string;
   iv: string;
+  // GCM auth tag — required to verify ciphertext integrity on decrypt.
+  // Previously discarded by storeUserKey, which made retrieveUserKey
+  // decrypt without setAuthTag and silently dropped GCM tamper protection.
+  authTag?: string;
   createdAt: Date;
   expiresAt?: Date;
 }
@@ -174,13 +178,15 @@ export async function storeUserKey(
 
   const tag = cipher.getAuthTag()
 
-  // Store key information
+  // Store key information — including the GCM auth tag so retrieveUserKey
+  // can verify ciphertext integrity on decrypt (setAuthTag before final).
   const keyInfo: KeyStorage = {
     userId,
     keyId,
     encryptedKey: encryptedKey,
     salt: salt.toString('base64'),
     iv: iv.toString('base64'),
+    authTag: tag.toString('base64'),
     createdAt: new Date()
   }
 
@@ -213,10 +219,19 @@ export async function retrieveUserKey(
   const derivedKey = await deriveKey(masterKey.toString('base64'), salt)
 
   // Decrypt the user key
-  const decipher = createDecipheriv(DEFAULT_CRYPTO_CONFIG.algorithm, derivedKey, iv)
+  const decipher = createDecipheriv(DEFAULT_CRYPTO_CONFIG.algorithm, derivedKey, iv) as DecipherGCM
 
-  // Note: In a real implementation, you would need to store and retrieve the auth tag
-  // For this example, we're simplifying the process
+  // Set the GCM auth tag so .final() verifies ciphertext integrity.
+  // Without this, AES-256-GCM degrades to unauthenticated decryption and a
+  // tampered or forged key would decrypt (possibly to garbage) instead of
+  // throwing. Older keys stored without a tag cannot be verified — we treat
+  // that as a hard failure rather than silently degrading security.
+  if (keyInfo.authTag) {
+    decipher.setAuthTag(Buffer.from(keyInfo.authTag, 'base64'))
+  } else {
+    console.error('Refusing to decrypt user key: missing GCM auth tag (stored by a pre-fix version).')
+    return null
+  }
 
   try {
     let decryptedKey = decipher.update(keyInfo.encryptedKey, 'base64', 'utf8')
@@ -224,7 +239,7 @@ export async function retrieveUserKey(
 
     return Buffer.from(decryptedKey, 'base64')
   } catch (error) {
-    console.error('Failed to decrypt user key:', error)
+    console.error('Failed to decrypt user key (integrity check failed):', error)
     return null
   }
 }
