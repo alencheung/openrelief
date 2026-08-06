@@ -121,28 +121,34 @@ const DataExportTool: React.FC = () => {
 
     const loadRequests = async () => {
       try {
-        // In a real implementation, fetch from API
-        // const [exportRes, deletionRes] = await Promise.all([
-        //   fetch('/api/privacy/export-requests'),
-        //   fetch('/api/privacy/deletion-requests')
-        // ]);
-        // const exportData = await exportRes.json();
-        // const deletionData = await deletionRes.json();
-        // setExportRequests(exportData);
-        // setDeletionRequests(deletionData);
+        // Load the user's export requests from the real API. Deletion requests
+        // have no list endpoint, so they start empty and are tracked locally.
+        const response = await fetch('/api/privacy/export', {
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin'
+        })
 
-        // Mock data for demonstration
-        setExportRequests([
-          {
-            id: 'exp-123',
-            dataType: 'location',
-            format: 'json',
-            status: 'completed',
-            createdAt: new Date(Date.now() - 2 * (24 * 60 * 60 * 1000)),
-            completedAt: new Date(Date.now() - 1 * (24 * 60 * 60 * 1000)),
-            downloadUrl: '/api/privacy/download/exp-123'
+        if (response.ok) {
+          const json = (await response.json()) as {
+            data?: Array<Record<string, unknown>>
           }
-        ])
+          const rows = json.data ?? []
+          setExportRequests(
+            rows.map(row => ({
+              id: row.id as string,
+              dataType: (row.data_types as string[])?.join(', ') ?? '',
+              format: (row.format as 'json' | 'csv' | 'pdf') ?? 'json',
+              status: row.status as DataExportRequest['status'],
+              createdAt: new Date(row.created_at as string),
+              completedAt: row.completed_at
+                ? new Date(row.completed_at as string)
+                : undefined,
+              downloadUrl: (row.download_url as string) || undefined
+            }))
+          )
+        } else if (!response.ok && response.status !== 401) {
+          throw new Error(`Failed to load export requests (${response.status})`)
+        }
 
         setDeletionRequests([])
       } catch (error) {
@@ -178,24 +184,35 @@ const DataExportTool: React.FC = () => {
 
     setIsLoading(true)
     try {
-      // In a real implementation, submit to API
-      // const response = await fetch('/api/privacy/export', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     dataTypes: selectedDataTypes,
-      //     format: exportFormat
-      //   })
-      // });
-      // const request = await response.json();
+      const response = await fetch('/api/privacy/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          dataTypes: selectedDataTypes,
+          format: exportFormat
+        })
+      })
 
-      // Mock request for demonstration
+      const json = (await response.json()) as {
+        requestId?: string
+        downloadUrl?: string
+        status?: DataExportRequest['status']
+        error?: string
+      }
+
+      if (!response.ok || !json.requestId) {
+        throw new Error(json.error || `Request failed (${response.status})`)
+      }
+
+      // Use the real id + download URL returned by the API.
       const request: DataExportRequest = {
-        id: `exp-${Date.now()}`,
+        id: json.requestId,
         dataType: selectedDataTypes.join(', '),
         format: exportFormat,
-        status: 'pending',
-        createdAt: new Date()
+        status: json.status || 'pending',
+        createdAt: new Date(),
+        downloadUrl: json.downloadUrl || `/api/privacy/download/${json.requestId}`
       }
 
       setExportRequests(prev => [request, ...prev])
@@ -209,7 +226,8 @@ const DataExportTool: React.FC = () => {
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to submit export request',
+        description:
+          error instanceof Error ? error.message : 'Failed to submit export request',
         variant: 'destructive'
       })
     } finally {
@@ -239,25 +257,33 @@ const DataExportTool: React.FC = () => {
 
     setIsLoading(true)
     try {
-      // In a real implementation, submit to API
-      // const response = await fetch('/api/privacy/delete', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     dataTypes: selectedDataTypes,
-      //     reason: deletionReason
-      //   })
-      // });
-      // const request = await response.json();
+      // Submit the right-to-erasure request to the real API. The endpoint
+      // logs a deletion request; actual hard-delete happens on the retention
+      // schedule, so we surface the returned requestId as the confirmation.
+      const response = await fetch('/api/privacy/export', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ reason: deletionReason })
+      })
 
-      // Mock request for demonstration
+      const json = (await response.json()) as {
+        requestId?: string
+        message?: string
+        error?: string
+      }
+
+      if (!response.ok || !json.requestId) {
+        throw new Error(json.error || `Request failed (${response.status})`)
+      }
+
       const request: DataDeletionRequest = {
-        id: `del-${Date.now()}`,
+        id: json.requestId,
         dataType: selectedDataTypes.join(', '),
         reason: deletionReason,
         status: 'pending',
         createdAt: new Date(),
-        confirmationCode: Math.random().toString(36).substring(2, 10).toUpperCase()
+        confirmationCode: json.requestId
       }
 
       setDeletionRequests(prev => [request, ...prev])
@@ -271,7 +297,8 @@ const DataExportTool: React.FC = () => {
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to submit deletion request',
+        description:
+          error instanceof Error ? error.message : 'Failed to submit deletion request',
         variant: 'destructive'
       })
     } finally {
