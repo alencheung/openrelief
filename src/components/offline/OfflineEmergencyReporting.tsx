@@ -40,9 +40,9 @@ export function OfflineEmergencyReporting({
   onReportSubmitted,
   initialLocation
 }: OfflineEmergencyReportingProps) {
-  const { addAction: addOfflineAction, removeAction: _clearSyncedActions } = useOfflineActions()
+  const { addAction: addOfflineAction, removeAction: _clearSyncedActions, startSync } = useOfflineActions()
   const { userLocation, locationAccuracy } = useEmergencyStore()
-  const { storageQuota: _storageQuota, addAction: _addAction } = useOfflineStore()
+  const { storageQuota: _storageQuota, addAction: _addAction, actions: offlineActions } = useOfflineStore()
 
   const [currentReport, setCurrentReport] = useState<Partial<OfflineReport>>({
     type: 'fire',
@@ -62,16 +62,35 @@ export function OfflineEmergencyReporting({
   const [_expandedSection, _setExpandedSection] = useState<string | null>(null)
   const [queue, setQueue] = useState<OfflineQueue>(getDefaultQueue())
 
-  // Mock offline reports from storage
+  // Local mirror of reports for form display. The AUTHORITATIVE sync state
+  // lives in the offlineStore's `actions` array (each action has `synced`,
+  // `error`, `retryCount` updated by the real sync-executor). We merge that
+  // state into the displayed reports below so the UI never lies about sync.
   const [offlineReports, setOfflineReports] = useState<OfflineReport[]>(getDefaultOfflineReports())
+
+  // Merge authoritative store sync state into the displayed reports so the
+  // queue list reflects real server outcomes, not the optimistic local copy.
+  const displayedReports: OfflineReport[] = offlineReports.map(report => {
+    const matching = offlineActions.find(a => a.type === 'create' && (a.data as { id?: string })?.id === report.id)
+    if (!matching) {
+      return report
+    }
+    if (matching.synced) {
+      return { ...report, status: 'synced', lastSyncAttempt: matching.lastAttempt ?? report.lastSyncAttempt }
+    }
+    if (matching.error) {
+      return { ...report, status: 'failed', lastSyncAttempt: matching.lastAttempt ?? report.lastSyncAttempt }
+    }
+    return { ...report, status: 'queued' }
+  })
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
   const audioRef = useRef<HTMLAudioElement>(null)
 
-  // Update queue stats
+  // Update queue stats from the authoritative displayed reports
   useEffect(() => {
-    const reports = offlineReports.filter(report => report.status !== 'synced')
+    const reports = displayedReports.filter(report => report.status !== 'synced')
     const totalSize = calculateTotalSize(reports)
 
     setQueue(prev => ({
@@ -82,7 +101,7 @@ export function OfflineEmergencyReporting({
       autoSyncEnabled: prev.autoSyncEnabled,
       lastSyncTime: prev.lastSyncTime
     }))
-  }, [offlineReports])
+  }, [displayedReports])
 
   // Get current location
   const getCurrentLocation = (): ReportLocation => {
@@ -230,44 +249,36 @@ export function OfflineEmergencyReporting({
     setIsProcessing(false)
   }
 
-  // Sync when online
+  // Sync when online. Previously this effect simulated sync with a setTimeout
+  // that flipped local status to 'synced' WITHOUT contacting the server — a
+  // direct harm vector in a disaster tool (users believed their emergency was
+  // dispatched when it was not). It now defers to the real offlineStore,
+  // whose sync-executor performs actual fetch() calls to /api/emergency and
+  // marks actions synced/failed based on the server response.
   useEffect(() => {
-    const isOnline = navigator.onLine
-    if (isOnline && queue.autoSyncEnabled && offlineReports.length > 0) {
-      const syncInterval = setInterval(() => {
-        const reportsToSync = offlineReports.filter(report => report.status === 'queued')
-
-        if (reportsToSync.length > 0) {
-          // eslint-disable-next-line no-console
-          console.log(`Syncing ${reportsToSync.length} offline reports...`)
-
-          // Update status to syncing
-          setOfflineReports(prev =>
-            prev.map(report =>
-              reportsToSync.includes(report) ? { ...report, status: 'syncing' } : report
-            )
-          )
-
-          // Simulate sync process
-          // 3 seconds
-          setTimeout(() => {
-            setOfflineReports(prev =>
-              prev.map(report =>
-                report.status === 'syncing'
-                  ? { ...report, status: 'synced', lastSyncAttempt: Date.now() }
-                  : report
-              )
-            )
-          }, 3000)
-        }
-        // Check every 30 seconds
-      }, 30000)
-
-      return () => clearInterval(syncInterval)
+    if (!navigator.onLine || !queue.autoSyncEnabled) {
+      return
     }
 
-    return () => {}
-  }, [queue.autoSyncEnabled, offlineReports])
+    const hasUnsynced = offlineActions.some(a => !a.synced)
+    if (!hasUnsynced) {
+      return
+    }
+
+    const syncInterval = setInterval(() => {
+      if (navigator.onLine) {
+        void startSync().catch((err: unknown) => {
+          console.error('Offline sync failed:', err)
+        })
+      }
+    }, 30000)
+
+    void startSync().catch((err: unknown) => {
+      console.error('Offline sync failed:', err)
+    })
+
+    return () => clearInterval(syncInterval)
+  }, [queue.autoSyncEnabled, offlineActions, startSync])
 
   return (
     <div className={cn('space-y-6', className)}>
@@ -355,7 +366,7 @@ export function OfflineEmergencyReporting({
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <OfflineQueueList reports={offlineReports} />
+            <OfflineQueueList reports={displayedReports} />
           </div>
         </CardContent>
       </Card>
@@ -395,9 +406,11 @@ export function OfflineEmergencyReporting({
                 variant="outline"
                 className="w-full"
                 onClick={() => {
-                  // Trigger manual sync
-                  // eslint-disable-next-line no-console
-                  console.log('Manual sync triggered')
+                  // Trigger a real sync through the offline store's executor,
+                  // which performs actual fetch() calls to /api/emergency.
+                  void startSync().catch((err: unknown) => {
+                    console.error('Manual sync failed:', err)
+                  })
                 }}
               >
                 <Upload className="h-4 w-4 mr-2" />
