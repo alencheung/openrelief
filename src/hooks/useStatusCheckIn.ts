@@ -13,6 +13,9 @@ import {
 interface UseStatusCheckInReturn {
   checkIn: StatusCheckIn | null
   checkIns: StatusCheckIn[]
+  // Derived view after applying filters/search/expiry. Consumers that want
+  // the "current visible list" should read filteredCheckIns, not checkIns.
+  filteredCheckIns: StatusCheckIn[]
   myCheckIns: StatusCheckIn[]
   selectedCheckIn: StatusCheckIn | null
   loading: boolean
@@ -48,6 +51,7 @@ interface UseStatusCheckInReturn {
 export const useStatusCheckIn = (checkInId?: string): UseStatusCheckInReturn => {
   const {
     checkIns,
+    filteredCheckIns,
     myCheckIns,
     selectedCheckIn,
     loading,
@@ -192,6 +196,7 @@ export const useStatusCheckIn = (checkInId?: string): UseStatusCheckInReturn => 
   return {
     checkIn,
     checkIns,
+    filteredCheckIns,
     myCheckIns,
     selectedCheckIn,
     loading,

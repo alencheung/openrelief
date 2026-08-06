@@ -169,7 +169,11 @@ export const useCheckInStore = create<CheckInStore>()(
         checkIn: input => {
           const now = new Date()
           const expiresAfterHours = input.expiresAfterHours ?? 72
-          const expiresAt = new Date(now.getTime() + expiresAfterHours * 60 * 60 * 1000)
+          // Honor an explicit expiresAt override (used by tests/expiry
+          // migration); otherwise compute from now + expiresAfterHours.
+          const expiresAt = input.expiresAt
+            ? new Date(input.expiresAt)
+            : new Date(now.getTime() + expiresAfterHours * 60 * 60 * 1000)
 
           const newCheckIn: StatusCheckIn = {
             id: generateId(),

@@ -23,6 +23,7 @@ interface BeforeInstallPromptEvent extends Event {
 export function PWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [showInstallBanner, setShowInstallBanner] = useState(false)
+  const [showIOSModal, setShowIOSModal] = useState(false)
   const [isInstalled, setIsInstalled] = useState(false)
   const [isIOS, setIsIOS] = useState(false)
   const [isStandalone, setIsStandalone] = useState(false)
@@ -139,28 +140,9 @@ export function PWAInstallPrompt() {
 
   const handleIOSInstallInstructions = () => {
     setShowInstallBanner(false)
-
-    // Show iOS install instructions
-    const modal = document.createElement('div')
-    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'
-    modal.innerHTML = `
-      <div class="bg-white rounded-lg p-6 max-w-md w-full">
-        <h3 class="text-lg font-semibold mb-4">Install OpenRelief on iOS</h3>
-        <div class="space-y-3 text-sm text-gray-600">
-          <p>Follow these steps to install OpenRelief on your iOS device:</p>
-          <ol class="list-decimal list-inside space-y-2">
-            <li>Tap the Share button <span class="inline-block">⎋</span> at the bottom of the screen</li>
-            <li>Scroll down and tap "Add to Home Screen"</li>
-            <li>Tap "Add" to confirm the installation</li>
-          </ol>
-          <p class="text-xs text-gray-500 mt-4">This will add OpenRelief to your home screen for easy access.</p>
-        </div>
-        <button onclick="this.closest('.fixed').remove()" class="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700">
-          Got it
-        </button>
-      </div>
-    `
-    document.body.appendChild(modal)
+    // Show the CSP-safe React modal (previously this built a raw DOM node via
+    // innerHTML + inline onclick, which violates a strict Content-Security-Policy).
+    setShowIOSModal(true)
 
     // Track iOS instructions shown
     if (typeof gtag !== 'undefined') {
@@ -187,6 +169,41 @@ export function PWAInstallPrompt() {
   }
 
   return (
+    <>
+      {/* iOS install instructions — React-rendered (CSP-safe), replacing the
+          previous innerHTML + inline onclick DOM construction. */}
+      {showIOSModal && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowIOSModal(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Install OpenRelief on iOS"
+        >
+          <div
+            className="bg-white rounded-lg p-6 max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold mb-4">Install OpenRelief on iOS</h3>
+            <div className="space-y-3 text-sm text-gray-600">
+              <p>Follow these steps to install OpenRelief on your iOS device:</p>
+              <ol className="list-decimal list-inside space-y-2">
+                <li>Tap the Share button <span className="inline-block">⎋</span> at the bottom of the screen</li>
+                <li>Scroll down and tap &quot;Add to Home Screen&quot;</li>
+                <li>Tap &quot;Add&quot; to confirm the installation</li>
+              </ol>
+              <p className="text-xs text-gray-500 mt-4">This will add OpenRelief to your home screen for easy access.</p>
+            </div>
+            <Button
+              onClick={() => setShowIOSModal(false)}
+              className="mt-4 w-full"
+            >
+              Got it
+            </Button>
+          </div>
+        </div>
+      )}
+
     <div className="fixed bottom-4 left-4 right-4 z-50 md:left-auto md:right-4 md:w-96">
       <Card className="p-4 shadow-lg border-blue-200 bg-blue-50">
         <div className="flex items-start space-x-3">
@@ -234,6 +251,7 @@ export function PWAInstallPrompt() {
         </div>
       </Card>
     </div>
+    </>
   )
 }
 

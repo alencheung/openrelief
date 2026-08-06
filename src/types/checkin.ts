@@ -71,6 +71,9 @@ export interface CheckInCreateInput {
   visibleToContacts?: boolean | undefined
   eventId?: string | undefined
   expiresAfterHours?: number | undefined
+  // Optional explicit expiry override (primarily for testing/expiry migration).
+  // When omitted, expiresAt is computed as now + expiresAfterHours (default 72h).
+  expiresAt?: string | undefined
 }
 
 export interface CheckInUpdateInput {

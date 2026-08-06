@@ -58,7 +58,7 @@ describe('Status Check-in System', () => {
           message: 'Need assistance', isPublic: true, visibleToContacts: true
         })
       })
-      act(() => { result.current.updateStatus(original.id, 'safe', 'Update: I am safe now') })
+      act(() => { result.current.updateStatus(original.id, { status: 'safe', message: 'Update: I am safe now' }) })
       const updated = result.current.checkIns.find((c: any) => c.id === original.id)
       expect(updated?.status).toBe('safe')
       expect(updated?.message).toBe('Update: I am safe now')
@@ -91,7 +91,7 @@ describe('Status Check-in System', () => {
     it('should clean expired check-ins', () => {
       const { result } = renderHook(() => useStatusCheckIn())
       act(() => {
-        result.current.createCheckIn({ userId: 'old', userName: 'Old', status: 'safe', isPublic: true, visibleToContacts: true, timestamp: new Date(Date.now() - 48*60*60*1000).toISOString() })
+        result.current.createCheckIn({ userId: 'old', userName: 'Old', status: 'safe', isPublic: true, visibleToContacts: true, expiresAt: new Date(Date.now() - 48*60*60*1000).toISOString() })
         result.current.createCheckIn({ userId: 'user-456', userName: 'Recent', status: 'safe', isPublic: true, visibleToContacts: true })
       })
       act(() => { result.current.cleanExpiredCheckIns() })
@@ -108,8 +108,10 @@ describe('Status Check-in System', () => {
         result.current.createCheckIn({ userId: 'b', userName: 'B', status: 'safe', isPublic: false, visibleToContacts: false })
       })
       act(() => { result.current.setFilters({ isPublic: true }) })
-      expect(result.current.checkIns.length).toBe(1)
-      expect(result.current.checkIns[0]?.isPublic).toBe(true)
+      // Filters apply to filteredCheckIns (the derived visible list),
+      // not the raw checkIns array.
+      expect(result.current.filteredCheckIns.length).toBe(1)
+      expect(result.current.filteredCheckIns[0]?.isPublic).toBe(true)
     })
 
     it('should filter by event ID', () => {
@@ -119,8 +121,8 @@ describe('Status Check-in System', () => {
         result.current.createCheckIn({ userId: 'y', userName: 'Y', status: 'safe', eventId: 'event-456', isPublic: true, visibleToContacts: true })
       })
       act(() => { result.current.setFilters({ eventId: 'event-123' }) })
-      expect(result.current.checkIns.length).toBe(1)
-      expect(result.current.checkIns[0]?.eventId).toBe('event-123')
+      expect(result.current.filteredCheckIns.length).toBe(1)
+      expect(result.current.filteredCheckIns[0]?.eventId).toBe('event-123')
     })
   })
 })
