@@ -84,6 +84,9 @@ parcel-cache
 .zcode/_*.log
 .zcode/_*.txt
 
+# Production readiness harness output (regenerated each run)
+reports/readiness/
+
 # OS files
 .DS_Store
 ehthumbs.db

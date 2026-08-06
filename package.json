@@ -53,7 +53,10 @@
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md,css}\"",
     "prepare": "husky install",
     "analyze": "cross-env ANALYZE=true next build",
-    "postbuild": "next-sitemap"
+    "postbuild": "next-sitemap",
+    "readiness": "node scripts/readiness/evaluate.js",
+    "readiness:quick": "node scripts/readiness/evaluate.js --quick",
+    "readiness:fix": "node scripts/readiness/fix-session.js"
   },
   "dependencies": {
     "@auth/core": "^0.41.0",

@@ -60,6 +60,7 @@ documentation. Everything below reflects the **current, as-built** system.
 | [Database Pooling](deployment/DATABASE_POOLING.md) | Supavisor transaction pooling config |
 | [Community Deployment](deployment/community-deployment.md) | Self-hosted / hybrid / branding for third parties |
 | [Deployment Runbook](operations/DEPLOYMENT_RUNBOOK.md) | Standard + emergency deploy procedures |
+| [Production Readiness](operations/PRODUCTION_READINESS.md) | Readiness definition, 8-dimension rubric, daily evaluation harness |
 | [Surge Runbook](operations/SURGE_RUNBOOK.md) | Disaster-surge response (SEV, queue drain, rate limits) |
 | [Sentry Setup](monitoring/SENTRY_SETUP.md) | Error monitoring configuration |
 | [Lighthouse CI](monitoring/lighthouse-ci.md) | Performance budgets and audits |
