@@ -277,25 +277,36 @@ export function useEmergencyMapInstance(args: UseEmergencyMapInstanceArgs) {
           return
         }
         if ((feature.properties as { cluster?: boolean }).cluster) {
-          // Handle cluster click - zoom to cluster bounds
+          // Handle cluster click - zoom to cluster bounds.
+          // MapLibre's GeoJSONSource.getClusterLeaves is asynchronous: the
+          // synchronous call form returns undefined and the previous code
+          // silently no-op'd (F-005.7). Use the callback form and compute the
+          // bounds inside it.
           const clusterId = (feature.properties as { cluster_id?: number }).cluster_id
           const source = e.target.getSource('emergency-events') as unknown as {
             getClusterLeaves?: (
               id: number,
               limit: number,
-              offset: number
-            ) => GeoJSON.Feature<GeoJSON.Geometry>[]
+              offset: number,
+              callback: (err: unknown, leaves: GeoJSON.Feature<GeoJSON.Geometry>[]) => void
+            ) => void
           }
-          const clusterLeaves = source?.getClusterLeaves?.(clusterId as number, Infinity, 0)
 
-          if (clusterLeaves && clusterLeaves.length > 0) {
+          if (typeof clusterId !== 'number' || !source?.getClusterLeaves) {
+            return
+          }
+
+          source.getClusterLeaves(clusterId, Infinity, 0, (err, leaves) => {
+            if (err || !leaves || leaves.length === 0) {
+              return
+            }
             const bounds = new LngLatBounds()
-            clusterLeaves.forEach((leaf) => {
+            leaves.forEach((leaf) => {
               const coords = (leaf.geometry as GeoJSON.Point).coordinates as [number, number]
               bounds.extend([coords[0] ?? 0, coords[1] ?? 0])
             })
             e.target.fitBounds(bounds, { padding: 50 })
-          }
+          })
         } else {
           // Handle individual emergency click
           const emergencyId = (feature.properties as { id?: string }).id

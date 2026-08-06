@@ -464,6 +464,7 @@ export function EmergencyMapView(props: EmergencyMapViewProps) {
           collapsible={true}
           initiallyCollapsed={isMobile ? true : legendCollapsed}
           onToggleCollapse={onLegendToggle}
+          mapInstance={mapInstance ?? undefined}
           aria-label="Emergency map legend"
         />
       )}

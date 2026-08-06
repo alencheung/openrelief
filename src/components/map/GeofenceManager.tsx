@@ -38,22 +38,26 @@ interface GeofenceFormData {
   expiresAt?: string | undefined
 }
 
+// Static Tailwind text-color tokens. The previous implementation built class
+// names dynamically from hex strings (e.g. `text-ff4444`) which Tailwind's JIT
+// cannot see and therefore never generated, so the colors silently failed to
+// apply (F-005.14). These literal tokens are statically detectable.
 const geofenceTypes = [
-  { value: 'emergency', label: 'Emergency Zone', color: '#ff4444', icon: '🚨' },
-  { value: 'safe_zone', label: 'Safe Zone', color: '#44ff44', icon: '🛡️' },
-  { value: 'restricted', label: 'Restricted Area', color: '#ffaa00', icon: '🚫' },
-  { value: 'custom', label: 'Custom Zone', color: '#888888', icon: '📍' }
+  { value: 'emergency', label: 'Emergency Zone', textColor: 'text-red-600', icon: '🚨' },
+  { value: 'safe_zone', label: 'Safe Zone', textColor: 'text-green-600', icon: '🛡️' },
+  { value: 'restricted', label: 'Restricted Area', textColor: 'text-orange-600', icon: '🚫' },
+  { value: 'custom', label: 'Custom Zone', textColor: 'text-gray-600', icon: '📍' }
 ]
 
 const severityLevels: Array<{
   value: 'low' | 'medium' | 'high' | 'critical'
   label: string
-  color: string
+  textColor: string
 }> = [
-  { value: 'low', label: 'Low', color: '#44ff44' },
-  { value: 'medium', label: 'Medium', color: '#ffaa00' },
-  { value: 'high', label: 'High', color: '#ff8800' },
-  { value: 'critical', label: 'Critical', color: '#ff0000' }
+  { value: 'low', label: 'Low', textColor: 'text-green-600' },
+  { value: 'medium', label: 'Medium', textColor: 'text-yellow-600' },
+  { value: 'high', label: 'High', textColor: 'text-orange-600' },
+  { value: 'critical', label: 'Critical', textColor: 'text-red-600' }
 ]
 
 export default function GeofenceManager({
@@ -78,6 +82,7 @@ export default function GeofenceManager({
   })
   const [isSelectingLocation, setIsSelectingLocation] = useState(false)
   const [showForm, setShowForm] = useState(false)
+  const [nameError, setNameError] = useState<string | null>(null)
   const mapClickHandlerRef = useRef<((e: { lngLat: { lat: number; lng: number } }) => void) | null>(
     null
   )
@@ -182,9 +187,11 @@ export default function GeofenceManager({
   // Save geofence
   const saveGeofence = () => {
     if (!formData.name.trim()) {
-      // TODO: Replace with toast notification
+      // F-005.14: surface a visible error instead of silently returning.
+      setNameError('Geofence name is required')
       return
     }
+    setNameError(null)
 
     // FIXED: Handle expiresAt and metadata properly to avoid TypeScript errors
     const geofenceData: Omit<Geofence, 'id' | 'createdAt'> = {
@@ -225,7 +232,14 @@ export default function GeofenceManager({
 
   // Delete geofence
   const deleteGeofence = (geofenceId: string) => {
-    // TODO: Replace with confirmation dialog
+    // F-005.14: confirm before destructive delete.
+    const geofence = geofences.find(g => g.id === geofenceId)
+    const confirmed = window.confirm(
+      `Delete geofence "${geofence?.name ?? 'Unknown'}"? This cannot be undone.`
+    )
+    if (!confirmed) {
+      return
+    }
     removeGeofence(geofenceId)
     onGeofenceDelete?.(geofenceId)
   }
@@ -235,6 +249,7 @@ export default function GeofenceManager({
     setShowForm(false)
     setIsCreating(false)
     setEditingId(null)
+    setNameError(null)
 
     // FIXED: Clean up map event listener when resetting form
     if (mapClickHandlerRef.current && mapInstance) {
@@ -257,13 +272,17 @@ export default function GeofenceManager({
 
   // Toggle geofence active state
   const handleToggleGeofence = (geofenceId: string) => {
-    toggleGeofence(geofenceId)
     const geofence = geofences.find(g => g.id === geofenceId)
+    toggleGeofence(geofenceId)
+    // `geofence.isActive` is the state BEFORE the toggle (store update is
+    // applied above but `geofence` is the pre-toggle snapshot). So an active
+    // geofence being toggled is becoming inactive = an exit, and vice-versa.
+    // The previous code had these branches inverted (F-005.14).
     if (geofence) {
       if (geofence.isActive) {
-        onGeofenceEnter?.(geofence)
-      } else {
         onGeofenceExit?.(geofence)
+      } else {
+        onGeofenceEnter?.(geofence)
       }
     }
   }
@@ -335,7 +354,7 @@ export default function GeofenceManager({
                         <span
                           className={cn(
                             'font-medium',
-                            (typeInfo?.color || '#000000').replace('#', 'text-')
+                            typeInfo?.textColor || 'text-gray-600'
                           )}
                         >
                           {typeInfo?.label || 'Unknown'}
@@ -345,11 +364,11 @@ export default function GeofenceManager({
                           (() => {
                             const severity = geofence.metadata.severity || 'medium'
                             const info = getSeverityInfo(severity) || {
-                              color: '#000000',
+                              textColor: 'text-gray-600',
                               label: 'Unknown'
                             }
                             return (
-                              <span className={cn('font-medium', info.color.replace('#', 'text-'))}>
+                              <span className={cn('font-medium', info.textColor)}>
                                 {severity}
                               </span>
                             )
@@ -422,10 +441,24 @@ export default function GeofenceManager({
                 <input
                   type="text"
                   value={formData.name}
-                  onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  onChange={e => {
+                    setFormData(prev => ({ ...prev, name: e.target.value }))
+                    if (nameError) {
+                      setNameError(null)
+                    }
+                  }}
+                  className={cn(
+                    'w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+                    nameError ? 'border-red-500' : 'border-gray-300'
+                  )}
                   placeholder="Enter geofence name"
+                  aria-invalid={nameError ? true : undefined}
                 />
+                {nameError && (
+                  <p className="mt-1 text-xs text-red-600" role="alert">
+                    {nameError}
+                  </p>
+                )}
               </div>
 
               {/* Type */}

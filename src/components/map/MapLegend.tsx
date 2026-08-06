@@ -60,6 +60,13 @@ export interface MapLegendProps
   collapsible?: boolean
   initiallyCollapsed?: boolean
   onToggleCollapse?: (collapsed: boolean) => void
+  // Optional MapLibre map instance. When provided, the layer toggles drive the
+  // real map style via setLayoutProperty (F-005.18). Omitted in unit tests and
+  // when the legend is rendered standalone.
+  mapInstance?: {
+    getLayer?: (id: string) => unknown
+    setLayoutProperty?: (layer: string, prop: string, value: string | number) => void
+  }
 }
 
 interface LegendSectionProps {
@@ -180,6 +187,17 @@ const getTrustScore = (level: string): number => {
   return 20
 }
 
+// Maps a legend toggle key to the MapLibre layer id(s) it controls. Used by
+// toggleLayer to drive the real map style (F-005.18). The 'trust' toggle has
+// no dedicated layer (trust is a paint/property of emergency-events), so it is
+// omitted and remains a purely visual indicator.
+const LEGEND_LAYER_IDS: Record<string, string[]> = {
+  emergencies: ['emergency-events'],
+  severity: ['emergency-events'],
+  heatmap: ['emergency-heatmap'],
+  geofences: ['geofences-fill', 'geofences-border']
+}
+
 const MapLegend: React.FC<MapLegendProps> = ({
   className,
   position,
@@ -212,6 +230,7 @@ const MapLegend: React.FC<MapLegendProps> = ({
   collapsible = true,
   initiallyCollapsed = false,
   onToggleCollapse,
+  mapInstance,
   ...props
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(initiallyCollapsed)
@@ -239,10 +258,29 @@ const MapLegend: React.FC<MapLegendProps> = ({
   }, [isCollapsed, onToggleCollapse])
 
   const toggleLayer = (layer: string) => {
-    setVisibleLayers(prev => ({
-      ...prev,
-      [layer]: !prev[layer]
-    }))
+    setVisibleLayers(prev => {
+      const nextVisible = !prev[layer]
+
+      // F-005.18: drive the real MapLibre style so the toggle actually hides /
+      // shows the layers, not just local state. When no mapInstance is wired
+      // (tests, standalone usage) we fall back to local-state-only behaviour.
+      if (mapInstance?.setLayoutProperty && mapInstance?.getLayer) {
+        const layerIds = LEGEND_LAYER_IDS[layer]
+        if (layerIds) {
+          const visibility = nextVisible ? 'visible' : 'none'
+          for (const id of layerIds) {
+            if (mapInstance.getLayer(id)) {
+              mapInstance.setLayoutProperty(id, 'visibility', visibility)
+            }
+          }
+        }
+      }
+
+      return {
+        ...prev,
+        [layer]: nextVisible
+      }
+    })
   }
 
   const handleToggleCollapse = () => {

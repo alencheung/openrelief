@@ -482,44 +482,12 @@ export class MapAccessibilityManager {
     this.announceElement.className = 'sr-only'
     document.body.appendChild(this.announceElement)
 
-    // Setup keyboard navigation
-    this.setupKeyboardNavigation()
-  }
-
-  private setupKeyboardNavigation() {
-    document.addEventListener('keydown', e => {
-      const step = 0.001 // ~100m
-      const center = this.map.getCenter()
-
-      switch (e.key) {
-        case 'ArrowUp':
-          e.preventDefault()
-          this.map.panTo([center.lng, center.lat + step])
-          break
-        case 'ArrowDown':
-          e.preventDefault()
-          this.map.panTo([center.lng, center.lat - step])
-          break
-        case 'ArrowLeft':
-          e.preventDefault()
-          this.map.panTo([center.lng - step, center.lat])
-          break
-        case 'ArrowRight':
-          e.preventDefault()
-          this.map.panTo([center.lng + step, center.lat])
-          break
-        case '+':
-        case '=':
-          e.preventDefault()
-          this.map.zoomIn()
-          break
-        case '-':
-        case '_':
-          e.preventDefault()
-          this.map.zoomOut()
-          break
-      }
-    })
+    // NOTE: Keyboard navigation (Arrow/+/- pan & zoom) is intentionally NOT
+    // registered here. EmergencyMap wires the single authoritative keydown
+    // handler through useEmergencyMapKeyboardShortcuts (see
+    // emergency-map-helpers.ts) -> useKeyboardNavigation. Registering a second
+    // global 'keydown' listener here caused every pan/zoom shortcut to fire
+    // twice with different step sizes (F-005.4).
   }
 
   announce(message: string) {
@@ -539,8 +507,15 @@ export class MapAccessibilityManager {
   }
 
   enableHighContrast() {
-    // Apply high contrast styles
-    this.map.setStyle('mapbox://styles/mapbox/dark-v11') // Use dark style for high contrast
+    // Non-destructive high-contrast mode. The previous implementation called
+    // setStyle('mapbox://styles/mapbox/dark-v11'), which reloaded the entire
+    // map style and dropped runtime GeoJSON sources, making markers vanish
+    // (F-005.19). The AccessibilityMapFeatures component already toggles a
+    // `.high-contrast` class on <html>; mirror that here so callers of this
+    // manager get the CSS overlay rather than a style wipe.
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.add('high-contrast')
+    }
   }
 
   enableLargeText() {

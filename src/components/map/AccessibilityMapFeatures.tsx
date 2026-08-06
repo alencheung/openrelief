@@ -267,26 +267,12 @@ const AccessibilityMapFeatures: React.FC<AccessibilityMapFeaturesProps> = ({
       }
     }
 
-    // High contrast map style
-    if (settings.highContrastMode && mapInstance.setStyle) {
-      // Apply high contrast style - using map instance directly
-      const currentStyle = mapInstance.getStyle()
-      if (currentStyle && currentStyle.layers) {
-        const highContrastLayers = currentStyle.layers.map((layer) => ({
-          ...layer,
-          paint: {
-            ...layer.paint,
-            ...(layer.id.startsWith('emergency-') && {
-              'circle-stroke-color': '#000000',
-              'circle-stroke-width': 3,
-              'text-halo-color': '#ffffff',
-              'text-halo-width': 2
-            })
-          }
-        }))
-        mapInstance.setStyle({ ...currentStyle, layers: highContrastLayers })
-      }
-    }
+    // High contrast: do NOT call mapInstance.setStyle(). Reloading the style
+    // drops runtime GeoJSON sources (emergency-events, user-location, etc.),
+    // which makes every marker disappear (F-005.19). High-contrast styling is
+    // applied non-destructively via the `.high-contrast` CSS class added to
+    // <html> by the effect above — see map-styles.css for the overlay rules
+    // (markers, legend, popups).
 
     // Announce map changes
     const handleMapMove = () => {

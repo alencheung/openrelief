@@ -184,6 +184,15 @@ const defaultProximityThresholds = {
   geofences: 50 // 50m
 }
 
+// Proximity-alert dedupe (F-005.9). Without this, every geolocation fix
+// re-fired an alert for the same nearby target, producing alert storms. We
+// track the timestamp of the last alert emitted per `targetType:targetId` key
+// and suppress duplicates within PROXIMITY_ALERT_COOLDOWN_MS. Entry/exit
+// transitions are unaffected because exit alerts use a different type
+// ('geofence_exit').
+const PROXIMITY_ALERT_COOLDOWN_MS = 60_000
+const lastProximityAlertAt = new Map<string, number>()
+
 // Utility functions
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
   const R = 6371e3 // Earth's radius in meters
@@ -350,38 +359,12 @@ export const useLocationStore = create<LocationStore>()(
 
           set({ isTracking: true, trackingSession: session })
 
-          // Start watching position
-          if (typeof navigator !== 'undefined' && 'geolocation' in navigator) {
-            const watchId = navigator.geolocation.watchPosition(
-              (position) => {
-                const point: LocationPoint = {
-                  lat: position.coords.latitude,
-                  lng: position.coords.longitude,
-                  accuracy: position.coords.accuracy,
-                  ...(position.coords.altitude !== null && { altitude: position.coords.altitude }),
-                  ...(position.coords.altitudeAccuracy !== null && { altitudeAccuracy: position.coords.altitudeAccuracy }),
-                  ...(position.coords.heading !== null && { heading: position.coords.heading }),
-                  ...(position.coords.speed !== null && { speed: position.coords.speed }),
-                  timestamp: position.timestamp
-                }
-
-                get().setCurrentLocation(point)
-                get().addTrackingPoint(point)
-              },
-              (error) => {
-                console.error('Location tracking error:', error)
-                get().setError(error.message)
-                set((state) => ({ errorCount: state.errorCount + 1 }))
-              },
-              {
-                enableHighAccuracy: get().settings.highAccuracy,
-                timeout: 15000,
-                maximumAge: get().settings.maxAge
-              }
-            )
-
-            set({ watchId })
-          }
+          // NOTE: This store no longer calls navigator.geolocation.watchPosition.
+          // The LocationTracker component owns the single watchPosition source
+          // of truth (it needs per-fix privacy/trail/stats processing) and
+          // feeds updates back via setCurrentLocation/addTrackingPoint. A
+          // second watch here caused double position polling and the
+          // component's stop never cleared it (F-005.11).
         },
 
         stopTracking: () => {
@@ -564,6 +547,17 @@ export const useLocationStore = create<LocationStore>()(
 
         // Proximity alerts
         addProximityAlert: (alert) => {
+          // Dedupe: don't re-fire the same alert for the same target within
+          // the cooldown window (F-005.9). Entry/exit alerts use different
+          // `type` values so they key separately and still fire once each.
+          const dedupeKey = `${alert.type}:${alert.targetId}`
+          const now = Date.now()
+          const lastAt = lastProximityAlertAt.get(dedupeKey)
+          if (lastAt !== undefined && now - lastAt < PROXIMITY_ALERT_COOLDOWN_MS) {
+            return
+          }
+          lastProximityAlertAt.set(dedupeKey, now)
+
           const newAlert: ProximityAlert = {
             ...alert,
             id: `alert-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -588,10 +582,19 @@ export const useLocationStore = create<LocationStore>()(
           set((state) => ({
             proximityAlerts: state.proximityAlerts.filter(alert => alert.id !== alertId)
           }))
+          // Allow the same target to alert again once it has been dismissed.
+          const cleared = get().proximityAlerts
+          for (const [key] of lastProximityAlertAt) {
+            const stillPresent = cleared.some(a => `${a.type}:${a.targetId}` === key)
+            if (!stillPresent) {
+              lastProximityAlertAt.delete(key)
+            }
+          }
         },
 
         clearAllAlerts: () => {
           set({ proximityAlerts: [] })
+          lastProximityAlertAt.clear()
         },
 
         updateProximityThresholds: (thresholds) => {
