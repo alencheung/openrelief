@@ -155,10 +155,15 @@ function checkTier0() {
 // D1 — parse FEATURES.md dashboard
 function checkD1() {
   const features = read(path.join(ROOT, 'FEATURES.md')) || ''
-  // Count status emojis in the body (each story has one Status line)
+  // Count status emojis in the body (each story has one Status line).
+  // NOTE: do NOT use a regex character class like [🟢🟡🔴⚫⚪🔧] — the
+  // multi-codepoint emoji (🟢🟡🔴🔧 are surrogate pairs) get truncated to a
+  // lone high surrogate inside a character class, so includes() fails to
+  // match the full emoji. Instead, capture the full Status line and test
+  // each known status emoji with includes().
   const counts = {}
   for (const s of ALL_STATUS) counts[s] = 0
-  const statusLines = features.match(/- \*\*Status:\*\*\s*[🟢🟡🔴⚫⚪🔧]/g) || []
+  const statusLines = features.match(/- \*\*Status:\*\*\s*\S+/g) || []
   for (const line of statusLines) {
     for (const s of ALL_STATUS) if (line.includes(s)) counts[s]++
   }
