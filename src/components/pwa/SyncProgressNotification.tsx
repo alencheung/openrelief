@@ -54,6 +54,11 @@ export function SyncProgressNotification({
   const { isSyncing, syncProgress, lastSyncTime, metrics } = useOfflineStore()
   const pendingActions = metrics.pendingActions
   const failedActions = metrics.failedActions
+  // F-010.5: pull the real retry/sync actions so "Retry Failed" actually drains
+  // the queue instead of being a no-op announcement.
+  const retryAction = useOfflineStore(state => state.retryAction)
+  const forceSync = useOfflineStore(state => state.forceSync)
+  const getFailedActions = useOfflineStore(state => state.getFailedActions)
 
   const { announcePolite, announceAssertive } = useAriaAnnouncer()
   const { isReduced: prefersReducedMotion } = useReducedMotion()
@@ -232,7 +237,17 @@ export function SyncProgressNotification({
   // Handle retry
   const handleRetry = () => {
     announcePolite('Retrying synchronization')
-    // This would trigger a retry in the store
+    // F-010.5: reset every permanently-failed action (retryCount >= maxRetries)
+    // so startSync's getPendingActions filter picks them up again, then kick a
+    // real sync. Previously this was a no-op announcement.
+    try {
+      const failed = getFailedActions()
+      failed.forEach(action => retryAction(action.id))
+      void forceSync()
+    } catch (error) {
+      console.error('[SyncProgressNotification] Retry failed:', error)
+      announceAssertive('Retry failed. Please try again.')
+    }
   }
 
   // Calculate overall progress

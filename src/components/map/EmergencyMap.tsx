@@ -187,6 +187,14 @@ export default function EmergencyMap({
         animate: !prefersReducedMotion
       })
       announcePolite('Centered map on your location')
+    } else {
+      // F-005.3: previously a silent no-op when no location is available.
+      // Surface the reason so the toolbar button doesn't appear broken.
+      announcePolite(
+        currentLocation
+          ? 'Map is still loading, try again in a moment'
+          : 'Your location is not available yet. Enable location tracking and try again.'
+      )
     }
   }, [currentLocation, announcePolite, prefersReducedMotion])
 

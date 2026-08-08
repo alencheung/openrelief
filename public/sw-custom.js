@@ -125,7 +125,13 @@ self.addEventListener('sync', event => {
   console.log('[SW] Background sync event:', event.tag)
 
   if (event.tag === SYNC_TAGS.emergency) {
-    event.waitUntil(syncEmergencyReports())
+    // F-010.6: the SW can't reach the in-page Zustand offlineStore directly,
+    // so in addition to draining its own pendingEmergencyReports we ask every
+    // controlled client to flush its store. Without this the Background Sync
+    // tag was registered but never drained the client-side queue.
+    event.waitUntil(
+      syncEmergencyReports().then(() => notifyClients({ type: 'DRAIN_OFFLINE_STORE' }))
+    )
   } else if (event.tag === SYNC_TAGS.location) {
     event.waitUntil(syncLocations())
   } else if (event.tag === SYNC_TAGS.alerts) {
