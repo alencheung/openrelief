@@ -1,15 +1,23 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { AnimatePresence } from 'framer-motion'
 import { Users, Info, AlertCircle } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/Card'
-import { VictimList } from '@/components/victims'
-import { useVictims, useVictimActions } from '@/store/victimStore'
+import { VictimList, VictimDetails, VictimCheckInForm } from '@/components/victims'
+import { useVictims, useVictimActions, useVictimCheckIns } from '@/store/victimStore'
+import type { Victim } from '@/types/victim'
 
 export default function VictimsPage() {
-  const { victims, filteredVictims, loading } = useVictims()
+  const { victims, loading } = useVictims()
   const { loadVictims } = useVictimActions()
+  const { addCheckIn, getCheckInsForVictim } = useVictimCheckIns()
   const victimsEmpty = victims.length === 0
+
+  // Modal hosts for details and check-in (F-012.3, F-012.4). The components
+  // were previously unmounted; VictimCheckInForm now POSTs to /api/victims.
+  const [detailsVictim, setDetailsVictim] = useState<Victim | null>(null)
+  const [checkInVictim, setCheckInVictim] = useState<Victim | null>(null)
 
   // Pull victims from the API on mount so the list reflects persisted data
   // rather than only client-side additions. Safe to fire once; the action
@@ -17,6 +25,12 @@ export default function VictimsPage() {
   useEffect(() => {
     loadVictims()
   }, [loadVictims])
+
+  // If the selected victim is updated in the store (e.g. after a check-in),
+  // refresh the modal's reference so it shows current data.
+  const liveDetailsVictim = detailsVictim
+    ? victims.find(v => v.id === detailsVictim.id) ?? detailsVictim
+    : null
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
@@ -37,9 +51,8 @@ export default function VictimsPage() {
             <div className="text-sm text-yellow-800">
               <p className="font-medium">Backend not yet connected</p>
               <p className="mt-1">
-                Victim tracking requires database tables and API routes that are still being
-                wired up. The filters and cards below are fully functional, but no records have
-                been entered yet. See FEATURES.md F-012 for the remaining work.
+                Victim tracking requires database tables that may not be applied yet. The filters
+                and cards below are fully functional. See FEATURES.md F-012 for details.
               </p>
               <p className="mt-1.5 text-xs">
                 Note: this surface handles sensitive personal data — privacy and consent controls
@@ -64,8 +77,54 @@ export default function VictimsPage() {
           </CardContent>
         </Card>
       ) : (
-        <VictimList victims={filteredVictims.length > 0 ? filteredVictims : victims} isLoading={loading} />
+        <VictimList
+          victims={victims}
+          isLoading={loading}
+          onSelectVictim={victim => setDetailsVictim(victim)}
+          onCheckInVictim={victim => setCheckInVictim(victim)}
+        />
       )}
+
+      <AnimatePresence>
+        {liveDetailsVictim && (
+          <VictimDetails
+            victim={liveDetailsVictim}
+            checkIns={getCheckInsForVictim(liveDetailsVictim.id)}
+            onClose={() => setDetailsVictim(null)}
+          />
+        )}
+
+        {checkInVictim && (
+          <div
+            className="fixed inset-0 z-50 overflow-y-auto bg-black/50"
+            onClick={() => setCheckInVictim(null)}
+          >
+            <div
+              className="min-h-screen flex items-start justify-center p-4"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="w-full max-w-lg mt-8">
+                <VictimCheckInForm
+                  victimId={checkInVictim.id}
+                  onCancel={() => setCheckInVictim(null)}
+                  onCheckIn={payload => {
+                    // Mirror the API update into the local store so the list
+                    // reflects the new status without a refetch.
+                    const newCheckIn = {
+                      id: `checkin-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                      timestamp: new Date(),
+                      reporterId: 'self',
+                      ...payload
+                    }
+                    addCheckIn(newCheckIn)
+                    setCheckInVictim(null)
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

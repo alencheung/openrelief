@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Users, Phone, User, Car, Dog, Heart, Accessibility, Clock } from 'lucide-react'
+import { Users, Phone, User, Car, Dog, Heart, Accessibility, Clock, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -72,6 +72,10 @@ const ShelterCheckInForm = React.forwardRef<HTMLDivElement, ShelterCheckInFormPr
     const [petCount, setPetCount] = useState('1')
     const [petInfo, setPetInfo] = useState('')
     const [errors, setErrors] = useState<Record<string, string>>({})
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(
+      null
+    )
 
     const validate = (): boolean => {
       const newErrors: Record<string, string> = {}
@@ -100,8 +104,9 @@ const ShelterCheckInForm = React.forwardRef<HTMLDivElement, ShelterCheckInFormPr
       return Object.keys(newErrors).length === 0
     }
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault()
+      setSubmitMessage(null)
 
       if (!validate()) {
         return
@@ -139,12 +144,77 @@ const ShelterCheckInForm = React.forwardRef<HTMLDivElement, ShelterCheckInFormPr
             : undefined
       }
 
-      // Update shelter occupancy so the shelter actually fills. Previously the
-      // form emitted the check-in object to the parent but never called
-      // incrementOccupancy, so currentOccupancy / availableBeds / status never
-      // changed and shelters could never become "full" through check-ins.
-      incrementOccupancy(shelterId, checkIn.numberOfPeople)
-      onCheckIn(checkIn)
+      setIsSubmitting(true)
+      try {
+        // Persist the check-in via POST /api/resources. Shelters share the
+        // resources table (type 'shelter'), so a check-in is recorded as a
+        // resource row describing the group and linking back to the shelter.
+        const res = await fetch('/api/resources', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: `Check-in: ${checkIn.numberOfPeople} ${checkIn.numberOfPeople === 1 ? 'person' : 'people'}`,
+            type: 'shelter',
+            status: 'requested',
+            quantity: checkIn.numberOfPeople,
+            unit: 'people',
+            urgency: medicalNeeds || accessibilityNeeds ? 'high' : 'low',
+            contact_info: checkIn.contactInfo,
+            notes: [
+              `Shelter: ${shelterName ?? shelterId}`,
+              checkIn.specialNeeds.other
+                ? `Special needs: ${checkIn.specialNeeds.other}`
+                : null,
+              checkIn.vehicleInfo?.licensePlate
+                ? `Vehicle plate: ${checkIn.vehicleInfo.licensePlate}`
+                : null,
+              checkIn.petInfo ? `Pets: ${checkIn.petInfo.count} ${checkIn.petInfo.type}` : null,
+              checkIn.estimatedStayDuration
+                ? `Estimated stay: ${checkIn.estimatedStayDuration} nights`
+                : null
+            ]
+              .filter(Boolean)
+              .join('\n')
+          })
+        })
+
+        if (res.status === 401) {
+          setSubmitMessage({
+            type: 'error',
+            text: 'You must be signed in to complete a shelter check-in.'
+          })
+          return
+        }
+        if (!res.ok) {
+          let detail = `Check-in failed (status ${res.status})`
+          try {
+            const body = (await res.json()) as { error?: string }
+            if (body.error) detail = body.error
+          } catch {
+            // ignore JSON parse errors
+          }
+          setSubmitMessage({ type: 'error', text: detail })
+          return
+        }
+
+        // Update shelter occupancy so the shelter actually fills. The store
+        // action is local-only; the POST above persists a record of the
+        // check-in so occupancy changes can be reconstructed from history.
+        incrementOccupancy(shelterId, checkIn.numberOfPeople)
+
+        setSubmitMessage({
+          type: 'success',
+          text: `Check-in recorded for ${checkIn.numberOfPeople} ${checkIn.numberOfPeople === 1 ? 'person' : 'people'}.`
+        })
+        onCheckIn(checkIn)
+      } catch {
+        setSubmitMessage({
+          type: 'error',
+          text: 'Network error. Please check your connection and try again.'
+        })
+      } finally {
+        setIsSubmitting(false)
+      }
     }
 
     return (
@@ -380,13 +450,37 @@ const ShelterCheckInForm = React.forwardRef<HTMLDivElement, ShelterCheckInFormPr
             </div>
           </CardContent>
 
-          <CardFooter className="flex justify-end gap-2">
-            {onCancel && (
-              <Button type="button" variant="outline" onClick={onCancel}>
-                Cancel
-              </Button>
+          <CardFooter className="flex flex-col items-stretch gap-3">
+            {submitMessage && (
+              <div
+                role={submitMessage.type === 'error' ? 'alert' : 'status'}
+                className={cn(
+                  'text-sm px-3 py-2 rounded-md',
+                  submitMessage.type === 'error'
+                    ? 'bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300'
+                    : 'bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300'
+                )}
+              >
+                {submitMessage.text}
+              </div>
             )}
-            <Button type="submit">Complete Check-In</Button>
+            <div className="flex justify-end gap-2">
+              {onCancel && (
+                <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+                  Cancel
+                </Button>
+              )}
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Checking in...
+                  </>
+                ) : (
+                  'Complete Check-In'
+                )}
+              </Button>
+            </div>
           </CardFooter>
         </form>
       </Card>

@@ -152,7 +152,7 @@ const ResourceCard = React.forwardRef<HTMLDivElement, ResourceCardProps>(
               </div>
             )}
 
-            {resource.status !== 'depleted' && onRequest && (
+            {resource.status !== 'depleted' && onRequest && !isExpired && (
               <Button onClick={handleRequest} className="w-full mt-2">
                 Request Resource
               </Button>

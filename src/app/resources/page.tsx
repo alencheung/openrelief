@@ -1,20 +1,33 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Package, Home, Info, AlertCircle } from 'lucide-react'
+import { AnimatePresence } from 'framer-motion'
+import { Package, Home, Info, AlertCircle, Plus } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/Card'
-import { ResourceList, ShelterList } from '@/components/resources'
+import { Button } from '@/components/ui/Button'
+import {
+  ResourceList,
+  ShelterList,
+  ResourceRequestForm,
+  ShelterCheckInForm
+} from '@/components/resources'
 import { useResources, useResourceActions } from '@/store/resourceStore'
 import { useShelters } from '@/store/shelterStore'
+import type { Resource, Shelter } from '@/types/resource'
 import { cn } from '@/lib/utils'
 
 type Tab = 'resources' | 'shelters'
 
 export default function ResourcesPage() {
   const [tab, setTab] = useState<Tab>('resources')
-  const { resources, filteredResources, loading: resourcesLoading } = useResources()
-  const { shelters, filteredShelters, loading: sheltersLoading } = useShelters()
+  const { resources, loading: resourcesLoading } = useResources()
+  const { shelters, loading: sheltersLoading } = useShelters()
   const { loadResources } = useResourceActions()
+
+  // Modal hosts for the request/check-in forms (F-011.3, F-011.7). The forms
+  // were previously unmounted; they now POST to /api/resources directly.
+  const [requestTarget, setRequestTarget] = useState<Resource | 'new' | null>(null)
+  const [checkInTarget, setCheckInTarget] = useState<Shelter | null>(null)
 
   // Pull resources from the API on mount so the list reflects persisted data
   // rather than only client-side additions. Safe to fire once; the action
@@ -23,12 +36,9 @@ export default function ResourcesPage() {
     loadResources()
   }, [loadResources])
 
-  // NOTE: F-011 reachability wiring. The components and stores exist, and a
-  // SQL migration (supabase/migrations/20260717000001_resources_shelters_victims.sql)
-  // defines the backing tables, but the stores have no data loader and there
-  // are no /api/{resources,shelters} routes yet. Until those are added (and
-  // the migration applied + types regenerated), these lists will show their
-  // empty states with real (zero-fabricated) data.
+  // F-011 reachability: components and stores are wired to GET /api/resources.
+  // When the backing table is absent the route returns an empty list, so these
+  // lists show their genuine empty states (no fabricated data).
   const resourcesEmpty = resources.length === 0
   const sheltersEmpty = shelters.length === 0
 
@@ -51,9 +61,9 @@ export default function ResourcesPage() {
             <div className="text-sm text-yellow-800">
               <p className="font-medium">Backend not yet connected</p>
               <p className="mt-1">
-                Resource and shelter listings require database tables and API routes that are
-                still being wired up. The filters and cards below are fully functional, but no
-                listings have been published yet. See FEATURES.md F-011 for the remaining work.
+                Resource and shelter listings require database tables that may not be applied yet.
+                The filters and cards below are fully functional, and you can submit a request or
+                check-in even when no listings are shown. See FEATURES.md F-011 for details.
               </p>
             </div>
           </CardContent>
@@ -88,18 +98,27 @@ export default function ResourcesPage() {
       </div>
 
       {tab === 'resources' ? (
-        resourcesEmpty ? (
-          <EmptyState
-            icon={Package}
-            title="No resources listed yet"
-            message="Once resource providers publish availability, supplies will appear here."
-          />
-        ) : (
-          <ResourceList
-            resources={filteredResources.length > 0 ? filteredResources : resources}
-            loading={resourcesLoading}
-          />
-        )
+        <>
+          <div className="flex justify-end mb-3">
+            <Button onClick={() => setRequestTarget('new')} size="sm">
+              <Plus className="h-4 w-4 mr-1" />
+              Request a Resource
+            </Button>
+          </div>
+          {resourcesEmpty ? (
+            <EmptyState
+              icon={Package}
+              title="No resources listed yet"
+              message="Once resource providers publish availability, supplies will appear here."
+            />
+          ) : (
+            <ResourceList
+              resources={resources}
+              loading={resourcesLoading}
+              onRequestResource={resource => setRequestTarget(resource)}
+            />
+          )}
+        </>
       ) : sheltersEmpty ? (
         <EmptyState
           icon={Home}
@@ -108,10 +127,54 @@ export default function ResourcesPage() {
         />
       ) : (
         <ShelterList
-          shelters={filteredShelters.length > 0 ? filteredShelters : shelters}
+          shelters={shelters}
           loading={sheltersLoading}
+          onCheckIn={shelter => setCheckInTarget(shelter)}
         />
       )}
+
+      <AnimatePresence>
+        {requestTarget && (
+          <div
+            className="fixed inset-0 z-50 overflow-y-auto bg-black/50"
+            onClick={() => setRequestTarget(null)}
+          >
+            <div
+              className="min-h-screen flex items-start justify-center p-4"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="w-full max-w-2xl mt-8">
+                <ResourceRequestForm
+                  resourceId={requestTarget === 'new' ? undefined : requestTarget.id}
+                  onCancel={() => setRequestTarget(null)}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {checkInTarget && (
+          <div
+            className="fixed inset-0 z-50 overflow-y-auto bg-black/50"
+            onClick={() => setCheckInTarget(null)}
+          >
+            <div
+              className="min-h-screen flex items-start justify-center p-4"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="w-full max-w-2xl mt-8">
+                <ShelterCheckInForm
+                  shelterId={checkInTarget.id}
+                  shelterName={checkInTarget.name}
+                  petsAllowed={checkInTarget.petsAllowed}
+                  onCancel={() => setCheckInTarget(null)}
+                  onCheckIn={() => setCheckInTarget(null)}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

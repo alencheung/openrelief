@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { MapPin, Phone, User, MessageSquare, Package, AlertTriangle } from 'lucide-react'
+import { MapPin, Phone, User, MessageSquare, Package, AlertTriangle, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { EnhancedInput } from '@/components/ui/forms/EnhancedInput'
@@ -7,6 +7,21 @@ import { EnhancedTextarea } from '@/components/ui/forms/EnhancedTextarea'
 import { EnhancedSelect } from '@/components/ui/forms/EnhancedSelect'
 import { cn } from '@/lib/utils'
 import type { ResourceType, ResourceUrgency, GeoLocation, ContactInfo } from '@/types/resource'
+
+// Shape accepted by POST /api/resources. The 'requested' status marks the row
+// as a community need rather than an available supply.
+interface ResourceCreatePayload {
+  name: string
+  type: ResourceType
+  status: 'requested'
+  quantity: number
+  unit: string
+  urgency: ResourceUrgency
+  location: { lat: number; lng: number; address?: string }
+  address?: string
+  contact_info: ContactInfo
+  notes?: string
+}
 
 interface ResourceRequest {
   resourceType: ResourceType
@@ -20,7 +35,9 @@ interface ResourceRequest {
 
 interface ResourceRequestFormProps {
   resourceId?: string
-  onRequest: (request: ResourceRequest) => void
+  // Optional callback invoked after a successful POST. If omitted the form
+  // still persists the request via /api/resources on its own.
+  onRequest?: (request: ResourceRequest) => void
   onCancel?: () => void
   className?: string
 }
@@ -56,6 +73,10 @@ const ResourceRequestForm = React.forwardRef<HTMLDivElement, ResourceRequestForm
     const [contactEmail, setContactEmail] = useState('')
     const [specialInstructions, setSpecialInstructions] = useState('')
     const [errors, setErrors] = useState<Record<string, string>>({})
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(
+      null
+    )
 
     const validate = (): boolean => {
       const newErrors: Record<string, string> = {}
@@ -84,8 +105,9 @@ const ResourceRequestForm = React.forwardRef<HTMLDivElement, ResourceRequestForm
       return Object.keys(newErrors).length === 0
     }
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault()
+      setSubmitMessage(null)
 
       if (!validate()) {
         return
@@ -109,7 +131,69 @@ const ResourceRequestForm = React.forwardRef<HTMLDivElement, ResourceRequestForm
         specialInstructions: specialInstructions || undefined
       }
 
-      onRequest(request)
+      // Persist the request as a 'requested' resource via POST /api/resources.
+      // `resourceId` (when provided) is forwarded so the backend can attribute
+      // the request to a specific supply listing if desired.
+      const payload: ResourceCreatePayload = {
+        name: `${resourceType} request`,
+        type: resourceType,
+        status: 'requested',
+        quantity: request.quantity,
+        unit,
+        urgency,
+        location: { lat: 0, lng: 0, address },
+        address,
+        contact_info: {
+          name: contactName,
+          phone: contactPhone || undefined,
+          email: contactEmail || undefined
+        },
+        notes:
+          [specialInstructions || null, resourceId ? `Refers to ${resourceId}` : null]
+            .filter(Boolean)
+            .join('\n') || undefined
+      }
+
+      setIsSubmitting(true)
+      try {
+        const res = await fetch('/api/resources', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+
+        if (res.status === 401) {
+          setSubmitMessage({
+            type: 'error',
+            text: 'You must be signed in to submit a resource request.'
+          })
+          return
+        }
+        if (!res.ok) {
+          let detail = `Request failed (status ${res.status})`
+          try {
+            const body = (await res.json()) as { error?: string }
+            if (body.error) detail = body.error
+          } catch {
+            // ignore JSON parse errors
+          }
+          setSubmitMessage({ type: 'error', text: detail })
+          return
+        }
+
+        setSubmitMessage({
+          type: 'success',
+          text: 'Your resource request has been submitted.'
+        })
+        onRequest?.(request)
+      } catch {
+        setSubmitMessage({
+          type: 'error',
+          text: 'Network error. Please check your connection and try again.'
+        })
+      } finally {
+        setIsSubmitting(false)
+      }
     }
 
     return (
@@ -247,13 +331,37 @@ const ResourceRequestForm = React.forwardRef<HTMLDivElement, ResourceRequestForm
             </div>
           </CardContent>
 
-          <CardFooter className="flex justify-end gap-2">
-            {onCancel && (
-              <Button type="button" variant="outline" onClick={onCancel}>
-                Cancel
-              </Button>
+          <CardFooter className="flex flex-col items-stretch gap-3">
+            {submitMessage && (
+              <div
+                role={submitMessage.type === 'error' ? 'alert' : 'status'}
+                className={cn(
+                  'text-sm px-3 py-2 rounded-md',
+                  submitMessage.type === 'error'
+                    ? 'bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300'
+                    : 'bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300'
+                )}
+              >
+                {submitMessage.text}
+              </div>
             )}
-            <Button type="submit">Submit Request</Button>
+            <div className="flex justify-end gap-2">
+              {onCancel && (
+                <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+                  Cancel
+                </Button>
+              )}
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  'Submit Request'
+                )}
+              </Button>
+            </div>
           </CardFooter>
         </form>
       </Card>

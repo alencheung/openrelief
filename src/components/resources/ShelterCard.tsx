@@ -206,7 +206,7 @@ const ShelterCard = React.forwardRef<HTMLDivElement, ShelterCardProps>(
             )}
 
             {canCheckIn && onCheckIn && (
-              <Button onClick={handleCheckIn} className="w-full mt-2" disabled={!canCheckIn}>
+              <Button onClick={handleCheckIn} className="w-full mt-2">
                 Check In
               </Button>
             )}

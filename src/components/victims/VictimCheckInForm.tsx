@@ -47,11 +47,16 @@ export const VictimCheckInForm = React.forwardRef<HTMLDivElement, VictimCheckInF
     const [notifyContact, setNotifyContact] = useState(true)
     const [isGettingLocation, setIsGettingLocation] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(
+      null
+    )
 
     const handleGetLocation = () => {
       if (!navigator.geolocation) {
-        // eslint-disable-next-line no-alert
-        alert('Geolocation is not supported by your browser')
+        setSubmitMessage({
+          type: 'error',
+          text: 'Geolocation is not supported by your browser.'
+        })
         return
       }
 
@@ -66,8 +71,7 @@ export const VictimCheckInForm = React.forwardRef<HTMLDivElement, VictimCheckInF
         },
         error => {
           console.error('Error getting location:', error)
-          // eslint-disable-next-line no-alert
-          alert('Unable to retrieve your location')
+          setSubmitMessage({ type: 'error', text: 'Unable to retrieve your location.' })
           setIsGettingLocation(false)
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
@@ -76,14 +80,65 @@ export const VictimCheckInForm = React.forwardRef<HTMLDivElement, VictimCheckInF
 
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault()
+      setSubmitMessage(null)
       setIsSubmitting(true)
 
       try {
+        // Persist the check-in by updating the victim's status/location via
+        // PUT /api/victims/[id]. The local store update + history append are
+        // delegated to the parent's onCheckIn, which receives the same payload
+        // so it can route through the victimStore addCheckIn action.
+        const res = await fetch(`/api/victims/${victimId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            status,
+            location: location ?? undefined,
+            notes: notes.trim() || undefined
+          })
+        })
+
+        let apiOk = res.ok
+        let apiError: string | undefined
+        if (!apiOk) {
+          if (res.status === 401) {
+            apiError = 'You must be signed in to record a check-in.'
+          } else {
+            try {
+              const body = (await res.json()) as { error?: string }
+              apiError = body.error ?? `Check-in failed (status ${res.status})`
+            } catch {
+              apiError = `Check-in failed (status ${res.status})`
+            }
+          }
+        }
+
+        // notifyContact was previously captured but never sent anywhere. We
+        // cannot deliver notifications client-side, so it is surfaced as part
+        // of the success message rather than silently dropped.
+        if (apiOk && notifyContact) {
+          setSubmitMessage({
+            type: 'success',
+            text: 'Check-in recorded. (Emergency-contact notification is not yet implemented.)'
+          })
+        } else if (apiOk) {
+          setSubmitMessage({ type: 'success', text: 'Check-in recorded.' })
+        } else {
+          setSubmitMessage({ type: 'error', text: apiError ?? 'Check-in failed.' })
+        }
+
+        // Always reflect the check-in locally — even if the API rejected it
+        // (e.g. offline), the parent can queue an offline action.
         await onCheckIn({
           victimId,
           status,
           location,
           notes: notes.trim() || undefined
+        })
+      } catch {
+        setSubmitMessage({
+          type: 'error',
+          text: 'Network error. Please check your connection and try again.'
         })
       } finally {
         setIsSubmitting(false)
@@ -205,6 +260,20 @@ export const VictimCheckInForm = React.forwardRef<HTMLDivElement, VictimCheckInF
                   <p className="text-xs">Coming soon - capture or upload photos</p>
                 </div>
               </div>
+
+              {submitMessage && (
+                <div
+                  role={submitMessage.type === 'error' ? 'alert' : 'status'}
+                  className={cn(
+                    'text-sm px-3 py-2 rounded-lg',
+                    submitMessage.type === 'error'
+                      ? 'bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300'
+                      : 'bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300'
+                  )}
+                >
+                  {submitMessage.text}
+                </div>
+              )}
 
               <div className="flex gap-3 pt-4">
                 {onCancel && (
