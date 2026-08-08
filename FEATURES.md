@@ -34,14 +34,14 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 | Emergency Reporting | 11 | 0 | 0 | 0 | 5 | 0 | 6 |
 | Map & Geolocation | 20 | 8 | 4 | 7 | 0 | 0 | 1 |
 | Trust & Consensus | 14 | 0 | 9 | 2 | 3 | 0 | 0 |
-| Privacy & GDPR | 12 | 0 | 1 | 9 | 0 | 0 | 2 |
+| Privacy & GDPR | 12 | 0 | 1 | 5 | 0 | 0 | 6 |
 | Notifications & Push | 6 | 0 | 3 | 0 | 0 | 0 | 3 |
 | PWA | 6 | 1 | 2 | 1 | 1 | 0 | 1 |
 | Offline | 6 | 0 | 0 | 2 | 2 | 0 | 2 |
 | Resources & Shelters | 8 | 0 | 0 | 0 | 6 | 0 | 2 |
 | Victim Tracking | 5 | 0 | 0 | 0 | 5 | 0 | 0 |
 | Status Check-in | 3 | 0 | 0 | 1 | 1 | 0 | 1 |
-| **TOTAL** | **117** | **27** | **19** | **22** | **27** | **0** | **22** |
+| **TOTAL** | **117** | **27** | **19** | **18** | **27** | **0** | **26** |
 
 > **Phase 5 (2026-08-07):** ⚪ PENDING 27 → **0**; 🟢 PASS 0 → **27**. Every
 > story previously stranded by the false "corrupted node_modules" premise was
@@ -498,17 +498,17 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ### F-007.3 Privacy Settings page (`/privacy/settings`) — ORPHAN
 - **Refs:** `src/app/privacy/settings/page.tsx`
-- **Status:** 🔴
+- **Status:** 🔧
 - **Bugs:** `saveSettings()` doesn't persist; **no inbound link anywhere**; number inputs have no NaN guard.
 
 ### F-007.4 Legal Requests page (`/privacy/legal-requests`) — ORPHAN
 - **Refs:** `src/app/privacy/legal-requests/page.tsx`
-- **Status:** 🔴
+- **Status:** 🔧
 - **Bugs:** `handleCreateRequest()` doesn't call API; type vocab mismatch (`rectification` vs `correction`); "View Details" dead button; no inbound link.
 
 ### F-007.5 Data Export & Deletion tool
 - **Refs:** `src/components/privacy/DataExportTool.tsx`
-- **Status:** 🔴
+- **Status:** 🔧
 - **Bugs:** Entirely mock (fake IDs); download URL 404s; data types don't match API (`location` has no case); PDF silently downgraded to JSON.
 
 ### F-007.6 Data Controls (granular)
@@ -518,7 +518,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ### F-007.7 GDPR Rights Management
 - **Refs:** `src/components/privacy/RightsManagement.tsx`
-- **Status:** 🔴
+- **Status:** 🔧
 - **Bugs:** All submissions fake; type vocab completely different from API; Download/Appeal dead buttons.
 
 ### F-007.8 Transparency Report
