@@ -3,7 +3,7 @@
 import { useRouter, usePathname } from 'next/navigation'
 import { useAuth, useAuthActions } from '@/store/authStore'
 import { cn } from '@/lib/utils'
-import { Shield, Map, AlertTriangle, LogOut, Menu, X, User } from 'lucide-react'
+import { Shield, Map, AlertTriangle, LogOut, Menu, X, User, Package, Users } from 'lucide-react'
 import { useState } from 'react'
 
 export function Header() {
@@ -16,6 +16,9 @@ export function Header() {
   const navItems = [
     { label: 'Map', href: '/', icon: Map },
     { label: 'Report Emergency', href: '/report', icon: AlertTriangle },
+    { label: 'Emergencies', href: '/emergencies', icon: AlertTriangle },
+    { label: 'Resources', href: '/resources', icon: Package },
+    { label: 'People', href: '/victims', icon: Users },
     { label: 'Privacy', href: '/privacy', icon: Shield }
   ]
 
