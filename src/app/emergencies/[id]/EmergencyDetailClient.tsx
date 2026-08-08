@@ -18,6 +18,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { useEmergencyEvent, useConfirmEvent } from '@/hooks/useEmergencyEvents'
+import { EmergencySeverityAlerts } from '@/components/alerts/EmergencySeverityAlerts'
+import { EmergencyWorkflowManager } from '@/components/emergency/EmergencyWorkflowManager'
 import { useAuth } from '@/store/authStore'
 import { useCurrentLocation } from '@/store/locationStore'
 import {
@@ -402,6 +404,16 @@ export default function EmergencyDetailClient() {
           )}
         </CardContent>
       </Card>
+
+      {/* Severity alerts + workflow manager (previously DEAD components) */}
+      <div className="mt-6">
+        <EmergencySeverityAlerts />
+      </div>
+      {user && (
+        <div className="mt-6">
+          <EmergencyWorkflowManager />
+        </div>
+      )}
     </div>
   )
 }

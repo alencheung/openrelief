@@ -3,7 +3,7 @@
 import { useRouter, usePathname } from 'next/navigation'
 import { useAuth, useAuthActions } from '@/store/authStore'
 import { cn } from '@/lib/utils'
-import { Shield, Map, AlertTriangle, LogOut, Menu, X, User, Package, Users } from 'lucide-react'
+import { Shield, Map, AlertTriangle, LogOut, Menu, X, User, Package, Users, CheckCircle } from 'lucide-react'
 import { useState } from 'react'
 
 export function Header() {
@@ -19,6 +19,7 @@ export function Header() {
     { label: 'Emergencies', href: '/emergencies', icon: AlertTriangle },
     { label: 'Resources', href: '/resources', icon: Package },
     { label: 'People', href: '/victims', icon: Users },
+    { label: 'Check-In', href: '/check-in', icon: CheckCircle },
     { label: 'Privacy', href: '/privacy', icon: Shield }
   ]
 
