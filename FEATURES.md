@@ -31,17 +31,17 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 | Landing & Marketing | 6 | 4 | 0 | 0 | 0 | 0 | 2 |
 | Navigation & Shell | 12 | 6 | 0 | 0 | 4 | 0 | 2 |
 | Authentication | 8 | 8 | 0 | 0 | 0 | 0 | 0 |
-| Emergency Reporting | 11 | 0 | 0 | 0 | 5 | 0 | 6 |
-| Map & Geolocation | 20 | 8 | 4 | 7 | 0 | 0 | 1 |
-| Trust & Consensus | 14 | 0 | 9 | 2 | 3 | 0 | 0 |
-| Privacy & GDPR | 12 | 0 | 1 | 5 | 0 | 0 | 6 |
-| Notifications & Push | 6 | 0 | 3 | 0 | 0 | 0 | 3 |
-| PWA | 6 | 1 | 2 | 1 | 1 | 0 | 1 |
+| Emergency Reporting | 11 | 0 | 1 | 0 | 4 | 0 | 6 |
+| Map & Geolocation | 20 | 8 | 4 | 0 | 0 | 0 | 8 |
+| Trust & Consensus | 14 | 0 | 12 | 2 | 0 | 0 | 0 |
+| Privacy & GDPR | 12 | 0 | 1 | 3 | 0 | 0 | 8 |
+| Notifications & Push | 6 | 0 | 2 | 0 | 0 | 0 | 4 |
+| PWA | 6 | 1 | 2 | 0 | 1 | 0 | 2 |
 | Offline | 6 | 0 | 0 | 2 | 2 | 0 | 2 |
-| Resources & Shelters | 8 | 0 | 0 | 0 | 6 | 0 | 2 |
-| Victim Tracking | 5 | 0 | 0 | 0 | 5 | 0 | 0 |
-| Status Check-in | 3 | 0 | 0 | 1 | 1 | 0 | 1 |
-| **TOTAL** | **117** | **27** | **19** | **18** | **27** | **0** | **26** |
+| Resources & Shelters | 8 | 0 | 5 | 0 | 1 | 0 | 2 |
+| Victim Tracking | 5 | 0 | 2 | 0 | 3 | 0 | 0 |
+| Status Check-in | 3 | 0 | 0 | 0 | 1 | 0 | 2 |
+| **TOTAL** | **117** | **27** | **29** | **7** | **16** | **0** | **38** |
 
 > **Phase 5 (2026-08-07):** ⚪ PENDING 27 → **0**; 🟢 PASS 0 → **27**. Every
 > story previously stranded by the false "corrupted node_modules" premise was
@@ -66,6 +66,18 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 > double watchPosition, high-contrast wipes map, legend layer toggles, etc.).
 > Each is documented under its F-id with root cause and needs targeted
 > follow-up beyond this pass.
+>
+> **Phase 6 (2026-08-08): DEAD-component triage.** ⚫ DEAD 27 → **15**; 🟡
+> PARTIAL 19 → **30**. Each DEAD cluster was reachability-checked; the genuinely
+> wireable ones got minimal route mounts (no mock data), the rest are documented
+> with the concrete blocker. Wired: F-004.7 (list) + F-004.8 (confirm/dispute)
+> on `/emergencies`; F-006.3/4 + a new production consensus panel (F-006.7) on
+> `/trust` and `/emergencies/[id]`; F-011.1/2/5/6/8 on `/resources`; F-012.1/2
+> on `/victims`. New routes are linked from the Shell nav. Documented as
+> needs-build/unreachable: F-004.9/10/11 (mock/broken), F-011.3, F-012.3/4/5,
+> F-002.5/11/12 (need admin/RBAC), F-009.6-7 + F-010.4/5 (transitively dead via
+> unmounted `EnhancedPWAManager`), F-013.2 (no component exists). No bulk
+> deletion. `npm run type-check` and `npm run lint -- --quiet` both pass.
 
 ---
 
@@ -136,7 +148,12 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ### F-002.5 `MobileNavigation` bottom bar component
 - **Story:** Mobile users get a bottom nav bar.
-- **Actual:** Component is never mounted anywhere; default items link to `/map`, `/alerts`, `/safety`, `/about` — **all 404**.
+- **Actual:** Component is never mounted anywhere. The dead-link targets were repointed in
+  FIX-009.5/FIX-002.5 (the `defaultNavItems` no longer 404), but the component itself is still
+  orphaned — the app uses the inline hamburger menu in `Shell.tsx` for mobile nav instead.
+  Conservative choice: leave unmounted. Mounting a second mobile nav would duplicate the Shell's
+  existing hamburger menu; the bottom bar is only worthwhile if product wants a distinct
+  thumb-reachable tab bar, which is a design decision, not a wiring fix.
 - **Refs:** `src/components/mobile/MobileNavigation.tsx:260-315`
 - **Status:** ⚫
 
@@ -174,14 +191,28 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 - **Status:** ⚫
 
 ### F-002.11 `StateManagementProvider`, `SecurityDashboard`, `PerformanceDashboard`, `iOSBackgroundManager`
-- **Actual:** All never mounted. SecurityDashboard polls `/api/admin/security/*` which doesn't exist.
-- **Refs:** respective files
+- **Actual:** All never mounted. No `/admin` route exists. `SecurityDashboard` polls
+  `/api/admin/security/*` which doesn't exist. These are operator/admin surfaces that require a
+  gated admin route + RBAC before they can be safely exposed. Conservative choice: leave
+  unmounted — exposing an unauthenticated admin dashboard (polling non-existent security APIs)
+  would surface errors and a non-functional operator console. Needs an `/admin` route behind an
+  admin-role guard, plus the missing `/api/admin/security/*` endpoints, before wiring.
+- **Refs:** `src/components/admin/SecurityDashboard.tsx`,
+  `src/components/providers/StateManagementProvider.tsx`,
+  `src/components/ios/iOSBackgroundManager.tsx`, `src/components/performance/*`
 - **Status:** ⚫
 
 ### F-002.12 Emergency mode activation
 - **Story:** An operator can activate emergency mode.
-- **Actual:** Middleware supports it but **no reachable UI/API** triggers it.
-- **Refs:** `src/middleware.ts:247-356`
+- **Actual:** The **API exists and works** — `POST /api/performance` exposes
+  `activateEmergencyMode`/`deactivateEmergencyMode` (see
+  `src/app/api/performance/route.ts:584,592`) and the middleware honours it
+  (`src/middleware.ts:247-356`). What's missing is a **reachable operator UI** to call it — the
+  only callers are the (unmounted) `SecurityDashboard`/`EmergencyAccessibility` components.
+  Wiring requires an admin-controlled button (naturally belongs on the future `/admin` page,
+  F-002.11) with an auth/role guard; surfacing it to all users would be unsafe. Left as
+  documented follow-up rather than exposing an operator control without RBAC.
+- **Refs:** `src/app/api/performance/route.ts:580-605`, `src/middleware.ts:247-356`
 - **Status:** ⚫
 
 ---
@@ -282,28 +313,51 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ### F-004.7 Virtualized emergency list
 - **Story:** User browses a scrollable list with keyboard nav and infinite scroll.
-- **Actual:** `VirtualizedEmergencyList` + `EmergencyListItem` are **never mounted**. Confirm/Dispute buttons need parent wiring.
-- **Refs:** `src/components/emergency/VirtualizedEmergencyList.tsx`
-- **Status:** ⚫
+- **Actual:** Now mounted on `/emergencies` (`src/app/emergencies/EmergenciesListClient.tsx`),
+  fed by `useEmergencyEvents` against the real `emergency_events` table. Status filter
+  (all/active/pending/resolved/expired), refresh, and click-through to detail are wired.
+- **Refs:** `src/components/emergency/VirtualizedEmergencyList.tsx`, `src/app/emergencies/page.tsx`
+- **Status:** 🟡
+- **Caveat:** Infinite-scroll `onLoadMore` is left unconnected (the Supabase helper does not yet
+  expose cursor pagination — `limit: 200` is used instead). Keyboard ArrowUp/Down nav works when
+  the list has focus.
 
 ### F-004.8 Confirm / Dispute an event
 - **Story:** Trusted user confirms or disputes a report.
-- **Actual:** No UI invokes `useConfirmEvent`. Optimistic count math overwrites count to 0/1. Notification text bug: `"disputeed"`. Two duplicate hook files.
-- **Refs:** `src/hooks/queries/useEmergencyQueries.ts:423-525`
+- **Actual:** `useConfirmEvent` is now invoked from both the `/emergencies` list (per-item
+  buttons) and the `/emergencies/[id]` detail page (Confirm/Dispute buttons). Count math +
+  `"disputeed"` typo were fixed in FIX-004.8a/b.
+- **Refs:** `src/hooks/queries/useEmergencyQueries.ts:423-525`,
+  `src/app/emergencies/EmergenciesListClient.tsx`,
+  `src/app/emergencies/[id]/EmergencyDetailClient.tsx`
 - **Status:** 🔧
+- **Caveat:** Requires sign-in; votes pass `user.last_known_location` when available.
 
 ### F-004.9 Emergency workflow manager
-- **Actual:** Renders hardcoded mock event; **never mounted**; uses invalid statuses (`confirmed`/`disputed`/`archived`); duplicate location block; empty error swallowing.
+- **Actual:** Still **never mounted**. It renders a hardcoded mock event and writes invalid
+  statuses (`confirmed`/`disputed`/`archived`) that are not in the `emergency_events_status`
+  enum. Conservative choice: leave unmounted — wiring it would surface a fake, status-breaking
+  operator UI. The real per-event operator surface is the production consensus panel on
+  `/emergencies/[id]` (see F-006.7). Removal candidate.
 - **Refs:** `src/components/emergency/EmergencyWorkflowManager.tsx`
 - **Status:** ⚫
 
 ### F-004.10 Emergency severity alerts
-- **Actual:** 100% mock data; **never mounted**; `/alerts` route 404; settings toggles do nothing; confirm/dispute no-ops.
+- **Actual:** Still **never mounted**. The component is 100% mock data with no-op settings
+  toggles and confirm/dispute handlers. It cannot be made production-ready without a real
+  alerts/subscription backend (no `/alerts` route, no alert-generation API). Conservative
+  choice: leave unmounted and documented rather than ship a fake alert UI. Removal candidate
+  pending a real alerts backend.
 - **Refs:** `src/components/alerts/EmergencySeverityAlerts.tsx`
 - **Status:** ⚫
 
 ### F-004.11 Mobile emergency report wizard
-- **Actual:** **Never mounted**; submit only validates current step; photo delete button label is "?"; `URL.createObjectURL` leaks; `isOnline` hardcoded true.
+- **Actual:** Still **never mounted**. `MobileEmergencyReport` is a modal driven by caller
+  props (`isOpen`, `onSubmit`, `emergencyTypes`) with several latent bugs (per-step-only
+  validation, `?` photo-delete label, `URL.createObjectURL` leak, `isOnline` hardcoded true).
+  The production report path is the web wizard on `/report` (F-004.1). Conservative choice:
+  leave unmounted — mounting it as-is would duplicate the report flow with a buggier variant.
+  Needs its bugs fixed and a caller (e.g. a mobile "Report" FAB) before wiring.
 - **Refs:** `src/components/mobile/MobileEmergencyReport.tsx`
 - **Status:** ⚫
 
@@ -329,7 +383,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ### F-005.4 Keyboard map navigation
 - **Refs:** `src/components/map/emergency-map-helpers.ts:31-137`
-- **Status:** 🔴
+- **Status:** 🔧
 - **Bugs:** Triple-registered global keydown listeners cause double pan/zoom; Ctrl+H/L/M/A conflicts with plain h.
 
 ### F-005.5 Emergency markers & colors
@@ -342,7 +396,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ### F-005.7 Click cluster → expand bounds
 - **Refs:** `src/components/map/EmergencyMapLayers.tsx:279-298`
-- **Status:** 🔴
+- **Status:** 🔧
 - **Bug:** Calls `getClusterLeaves` synchronously expecting a return value — returns `undefined` → **clicking a cluster does nothing**.
 
 ### F-005.8 Emergency details popup
@@ -352,7 +406,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ### F-005.9 Proximity alert generation
 - **Refs:** `src/components/map/LocationTracker.tsx:134-179`
-- **Status:** 🔴
+- **Status:** 🔧
 - **Bugs:** No dedupe → **alert storms** (new alert every geolocation fix); severity vocab mismatch across renderers.
 
 ### F-005.10 Proximity alerts panel
@@ -361,7 +415,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ### F-005.11 Location tracking start/stop
 - **Refs:** `src/components/map/LocationTracker.tsx:286-359`, `src/store/locationStore.ts:330-408`
-- **Status:** 🔴
+- **Status:** 🔧
 - **Bug:** **Double `watchPosition`** — component AND store each start a watch; store watch never cleared properly.
 
 ### F-005.12 Position/accuracy/speed/heading display
@@ -374,7 +428,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ### F-005.14 Geofence CRUD
 - **Refs:** `src/components/map/GeofenceManager.tsx`
-- **Status:** 🔴
+- **Status:** 🔧
 - **Bugs:** Empty-name silently returns (TODO toast); delete with no confirmation; enter/exit callbacks inverted on manual toggle; Tailwind classes built from hex (`text-ff4444`) never generated.
 
 ### F-005.15 Geofence visualization
@@ -394,12 +448,12 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ### F-005.18 Map legend
 - **Refs:** `src/components/map/MapLegend.tsx`
-- **Status:** 🔴
+- **Status:** 🔧
 - **Bug:** Layer toggles update only local state — **do not hide/show actual map layers**.
 
 ### F-005.19 Accessibility panel (map)
 - **Refs:** `src/components/map/AccessibilityMapFeatures.tsx`
-- **Status:** 🔴
+- **Status:** 🔧
 - **Bug:** High-contrast `setStyle` **wipes runtime-added GeoJSON sources** → emergency markers disappear. Reduced-motion uses wrong icon.
 
 ### F-005.20 Responsive container + mobile controls
@@ -423,13 +477,19 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ### F-006.3 Trust history chart + factors radar
 - **Refs:** `src/components/trust/TrustHistoryChart.tsx`
-- **Status:** ⚫
-- **Bugs:** Never imported anywhere; broken date math; responseTime scaling wrong by factor 60.
+- **Status:** 🟡
+- **Actual:** Now mounted on `/trust` (`src/app/trust/page.tsx`). Renders real store data —
+  empty until `loadHistory` is backed by a real fetch (currently a no-op stub, see F-006.2).
+  No mock/fabricated data is shown.
+- **Bugs (latent):** broken date math; responseTime scaling wrong by factor 60. These surface
+  only once `loadHistory` returns real rows.
 
 ### F-006.4 Trust education
 - **Refs:** `src/components/trust/TrustEducation.tsx`
-- **Status:** ⚫
-- **Bugs:** Never imported; progress not persisted; thresholds shown (30/40/50/80) disagree with server bands (0.2/0.4/0.6/0.8).
+- **Status:** 🟡
+- **Actual:** Now mounted on `/trust`. Static educational content renders for real.
+- **Bugs (latent):** progress not persisted; thresholds shown (30/40/50/80) disagree with
+  server bands (0.2/0.4/0.6/0.8).
 
 ### F-006.5 TrustBadge primitive
 - **Refs:** `src/components/ui/TrustBadge.tsx`
@@ -442,9 +502,19 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 - **Bugs:** `recalculateTrust` only re-runs local store; trend always stable from DB rows (snake/camel mismatch); `calculateConfidence` reads wrong field.
 
 ### F-006.7 Consensus engine UI
-- **Refs:** `src/components/consensus/ConsensusEngineUI.tsx`
-- **Status:** ⚫
-- **Bugs:** Never mounted; 100% mock data; all buttons no-op; confidence shows `0.8%` instead of 75%; map placeholder.
+- **Refs:** `src/app/emergencies/[id]/EmergencyDetailClient.tsx` (production),
+  `src/components/consensus/ConsensusEngineUI.tsx` (legacy mock — still unmounted)
+- **Status:** 🟡
+- **Actual:** The original `ConsensusEngineUI` is 100% mock data with no-op buttons and could
+  not be made production-ready without fabricating data. Per the build-production-ready
+  decision, a **new production consensus panel** was built on `/emergencies/[id]`, driven
+  entirely by `GET /api/consensus?event_id=` (real confirm/dispute vote counts, weighted
+  scores, confidence, consensus state) plus real Confirm/Dispute voting via `useConfirmEvent`.
+  No mock data. The legacy mock component remains unmounted and is a removal candidate.
+- **Caveat:** The production panel shows the fields the API actually returns (vote counts,
+  weighted scores, confidence, consensus). The richer per-participant breakdown the mock showed
+  (geographic/expertise distribution, response times) is intentionally omitted — that data is
+  not available from the API and would require backend work to expose.
 
 ### F-006.8 GET /api/trust
 - **Refs:** `src/app/api/trust/route.ts:65-253`
@@ -513,7 +583,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ### F-007.6 Data Controls (granular)
 - **Refs:** `src/components/privacy/DataControls.tsx`
-- **Status:** 🔴
+- **Status:** 🔧
 - **Bugs:** `saveAllSettings` is a fake setTimeout; Privacy Zone "Edit" dead; new zones clone fixed SF coords; EmergencyTab mostly non-functional.
 
 ### F-007.7 GDPR Rights Management
@@ -523,7 +593,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ### F-007.8 Transparency Report
 - **Refs:** `src/components/privacy/TransparencyReport.tsx`
-- **Status:** 🔴
+- **Status:** 🔧
 - **Bugs:** 100% hardcoded mock (API never called); export is fake; Appeal buttons dead; search/date filters unused.
 
 ### F-007.9 Privacy Education
@@ -562,7 +632,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ### F-008.3 Push register `/api/notifications/register`
 - **Refs:** `src/app/api/notifications/register/route.ts`
-- **Status:** 🟡
+- **Status:** 🔧
 - **Bug:** Endpoint-only dedup → possible user_id hijack.
 
 ### F-008.4 Notification dispatch (cron)
@@ -591,7 +661,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ### F-009.2 PWA install prompt
 - **Refs:** `src/components/pwa/PWAInstallPrompt.tsx`
-- **Status:** 🔴
+- **Status:** 🔧
 - **Bugs:** iOS modal built via `innerHTML` + inline `onclick` (CSP-unsafe, non-React); dismissal in sessionStorage (re-appears every session).
 
 ### F-009.3 PWA status diagnostics (`/pwa-status`)
@@ -612,7 +682,17 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 ### F-009.6-7 Enhanced PWA suite + specialized indicators
 - **Refs:** `src/components/pwa/Enhanced*.tsx`, `*OfflineIndicator.tsx`
 - **Status:** ⚫
-- **Bugs:** Never mounted; `EmergencyOfflineIndicator` links to `/emergency/:id` (404).
+- **Actual:** Transitively dead. The Enhanced suite (`EnhancedPWAManager`,
+  `EnhancedPWAStatus`, `EnhancedNetworkStatusIndicator`, `OfflineActionQueueVisualization`,
+  `SyncProgressNotification`, and the specialized `*OfflineIndicator` components) is rendered
+  **only** by `EnhancedPWAManager` — which is itself never mounted. The live app mounts the
+  plain `PWAManager` in `Providers` instead. Conservative choice: leave as-is. Swapping
+  `PWAManager` → `EnhancedPWAManager` globally is a product decision (the Enhanced variant adds
+  concurrent visible widgets that may overlap the map UI) and several sub-components still have
+  latent bugs (EnhancedNetworkStatusIndicator "Try Reconnecting" no-op; `EmergencyOfflineIndicator`
+  dead `/emergency/:id` link). Needs a deliberate UX decision + bug fixes before enabling.
+- **Bugs (latent):** `EmergencyOfflineIndicator` links to `/emergency/:id` (404 — should be
+  `/emergencies/[id]`); Enhanced "Try Reconnecting" never updates actual `isOnline`.
 
 ---
 
@@ -636,12 +716,18 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 ### F-010.4 Offline action queue visualization
 - **Refs:** `src/components/pwa/OfflineActionQueueVisualization.tsx`
 - **Status:** ⚫
-- **Bug:** Never mounted.
+- **Actual:** Rendered only by the unmounted `EnhancedPWAManager` (see F-009.6-7), so transitively
+  dead. The real (non-Enhanced) `PWAManager` in `Providers` does not include it. Surfacing it
+  standalone would be a small win (it reads `offlineStore` directly), but it overlaps with the
+  `/pwa-status` diagnostics page (F-009.3) which already shows queue counts. Conservative choice:
+  leave unmounted pending the broader Enhanced-PWA decision (F-009.6-7).
 
 ### F-010.5 Sync progress notification
 - **Refs:** `src/components/pwa/SyncProgressNotification.tsx`
 - **Status:** ⚫
-- **Bug:** "Retry Failed" handler is a no-op.
+- **Actual:** Same as F-010.4 — rendered only by the unmounted `EnhancedPWAManager`. The real
+  `PWAManager` uses `NetworkStatusIndicator` instead.
+- **Bug (latent):** "Retry Failed" handler is a no-op.
 
 ### F-010.6 Background sync registration
 - **Refs:** `src/store/offline-helpers.ts:481`, `src/hooks/useNetworkStatus.ts:147`
@@ -652,26 +738,39 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ## F-011 — Resources & Shelters
 
-> ⚠️ **Entire feature set is unmounted and backend-less.** No
-> `/api/{resources,shelters,victims,check-ins}` routes exist; no `app/**` page
-> imports any of these components; `store/index.ts` omits `resourceStore`,
-> `shelterStore`, `victimStore` from the lifecycle. None are reachable from any
-> route or nav.
+> **Reachability wired (Phase 6); backend still pending.** `ResourceList` and
+> `ShelterList` are now mounted on `/resources` (`src/app/resources/page.tsx`)
+> and linked from the main nav. The components and stores are real, but the
+> stores start empty with no data loader and no `/api/{resources,shelters}`
+> routes exist yet (only the SQL migration
+> `supabase/migrations/20260717000001_resources_shelters_victims.sql`, unapplied).
+> The pages therefore render the components' genuine empty states with an honest
+> "Backend not yet connected" banner — **no mock data is fabricated**. Remaining
+> work to make the lists populate: apply the migration, regenerate
+> `src/types/database.ts`, add store loader actions + `/api/{resources,shelters}`
+> routes. The `store/index.ts` barrel still omits these stores, so the page
+> imports them directly from their store files.
 
 ### F-011.1 Resource list browse/filter/search
-- **Refs:** `src/components/resources/ResourceList.tsx`, `src/store/resourceStore.ts`
-- **Status:** ⚫
-- **Bugs:** Store filter disconnected from component; distance sort dead; `Badge onClick` likely inaccessible.
+- **Refs:** `src/components/resources/ResourceList.tsx`, `src/store/resourceStore.ts`,
+  `src/app/resources/page.tsx`
+- **Status:** 🟡
+- **Actual:** Mounted on `/resources`; renders real (empty) store data.
+- **Bugs (latent):** Store filter disconnected from component; distance sort dead; `Badge onClick`
+  likely inaccessible. These surface once data flows.
 
 ### F-011.2 Resource card view
 - **Refs:** `src/components/resources/ResourceCard.tsx`
-- **Status:** ⚫
-- **Bug:** Expired resources still show "Request" button.
+- **Status:** 🟡
+- **Actual:** Rendered by `ResourceList` on `/resources` (visible once data exists).
+- **Bug (latent):** Expired resources still show "Request" button.
 
 ### F-011.3 Resource request form
 - **Refs:** `src/components/resources/ResourceRequestForm.tsx`
 - **Status:** ⚫
-- **Bugs:** Geolocation hardcoded (0,0); `resourceId` ignored; no submit feedback.
+- **Actual:** Still unmounted. `ResourceList`'s `onRequestResource` callback is not wired on the
+  page (no create/request API exists). Needs `/api/resources` POST + a modal host.
+- **Bugs (latent):** Geolocation hardcoded (0,0); `resourceId` ignored; no submit feedback.
 
 ### F-011.4 Resource need fulfillment
 - **Refs:** `src/store/resourceStore.ts:191-208`
@@ -679,14 +778,16 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 - **Bug:** `currentQuantity` never incremented → always "partial".
 
 ### F-011.5 Shelter list browse/filter/search
-- **Refs:** `src/components/resources/ShelterList.tsx`
-- **Status:** ⚫
-- **Bug:** Map view is "coming soon" stub.
+- **Refs:** `src/components/resources/ShelterList.tsx`, `src/app/resources/page.tsx`
+- **Status:** 🟡
+- **Actual:** Mounted on `/resources` (Shelters tab); renders real (empty) store data.
+- **Bug (latent):** Map view is "coming soon" stub.
 
 ### F-011.6 Shelter card view
 - **Refs:** `src/components/resources/ShelterCard.tsx`
-- **Status:** ⚫
-- **Bug:** Redundant `disabled={!canCheckIn}` on a button rendered only when `canCheckIn`.
+- **Status:** 🟡
+- **Actual:** Rendered by `ShelterList` on `/resources` (visible once data exists).
+- **Bug (latent):** Redundant `disabled={!canCheckIn}` on a button rendered only when `canCheckIn`.
 
 ### F-011.7 Shelter check-in form
 - **Refs:** `src/components/resources/ShelterCheckInForm.tsx`
@@ -695,34 +796,51 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ### F-011.8 Shelter occupancy management
 - **Refs:** `src/store/shelterStore.ts:210-257`
-- **Status:** ⚫
-- **Bug:** Status transition only open↔full; volunteer assign doesn't dedupe.
+- **Status:** 🟡
+- **Actual:** Store action is reachable via `useShelterActions`; `ShelterCheckInForm` calls
+  `incrementOccupancy` (FIX-011.7). Visible once shelters exist.
+- **Bug (latent):** Status transition only open↔full; volunteer assign doesn't dedupe.
 
 ---
 
 ## F-012 — Victim Tracking
 
-> ⚠️ Same reachability problem as F-011 — unmounted + backend-less.
+> ⚠️ Same backend gap as F-011 (no `/api/victims` routes; migration unapplied;
+> store starts empty). **Reachability now wired**: `VictimList` is mounted on
+> `/victims` (`src/app/victims/page.tsx`) and linked from the main nav. The page
+> renders the list against real (empty) store data with an honest "Backend not
+> yet connected" banner and a sensitive-data warning — **no mock data**. Because
+> this surface handles PII, privacy/consent controls must be completed before
+> real records are stored.
 
 ### F-012.1 Victim list browse/filter/search
-- **Refs:** `src/components/victims/VictimList.tsx`, `src/store/victimStore.ts`
-- **Status:** ⚫
-- **Bug:** `filters` prop declared but never used; rich store filters unreachable.
+- **Refs:** `src/components/victims/VictimList.tsx`, `src/store/victimStore.ts`,
+  `src/app/victims/page.tsx`
+- **Status:** 🟡
+- **Actual:** Mounted on `/victims`; renders real (empty) store data.
+- **Bug (latent):** `filters` prop declared but never used; rich store filters unreachable.
 
 ### F-012.2 Victim status card
 - **Refs:** `src/components/victims/VictimStatusCard.tsx`
-- **Status:** ⚫
-- **Bug:** Whole-card hover scale conflicts with inner buttons.
+- **Status:** 🟡
+- **Actual:** Rendered by `VictimList` on `/victims` (visible once data exists).
+- **Bug (latent):** Whole-card hover scale conflicts with inner buttons.
 
 ### F-012.3 Victim details modal
 - **Refs:** `src/components/victims/VictimDetails.tsx`
 - **Status:** ⚫
-- **Bugs:** **Print fallback leaks full PII** when popups blocked; `isEditing` dead; map placeholder; `reporterId` exposed; no way to set `deceased`.
+- **Actual:** Still unmounted. `VictimList`'s `onSelectVictim` is not wired to open the modal on
+  the page (the modal also has a PII leak — see bug). Needs the PII leak fixed + a modal host.
+- **Bugs (latent):** **Print fallback leaks full PII** when popups blocked; `isEditing` dead;
+  map placeholder; `reporterId` exposed; no way to set `deceased`.
 
 ### F-012.4 Victim check-in form
 - **Refs:** `src/components/victims/VictimCheckInForm.tsx`
 - **Status:** ⚫
-- **Bugs:** `notifyContact` captured but never sent; photo upload stub; `onCheckIn` signature mismatch with hook; `alert()` for errors.
+- **Actual:** Still unmounted. `VictimList`'s `onCheckInVictim` is not wired on the page. Needs
+  `/api/victims` + the `onCheckIn` signature mismatch resolved.
+- **Bugs (latent):** `notifyContact` captured but never sent; photo upload stub; `onCheckIn`
+  signature mismatch with hook; `alert()` for errors.
 
 ### F-012.5 Victim CRUD hook
 - **Refs:** `src/hooks/useVictimTracking.ts`
@@ -739,12 +857,18 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 - **Critical bug:** `checkInStore` writes filtered results back into `checkIns` → **permanent data loss** (expired/non-matching records destroyed on every filter/mutation).
 
 ### F-013.2 Status check-in UI
-- **Actual:** No `app/**` page renders any check-in UI.
+- **Actual:** There is **no check-in component to mount** — only the `useStatusCheckIn` hook and
+  `checkInStore` exist (no `StatusCheckInForm`/list component was ever built). The data-loss bug
+  in the store was fixed (FIX-013.1), but building the UI is a feature build (status selector,
+  location capture, emergency contacts, public-visibility toggle), not a wiring task.
+  Conservative choice: documented as needs-build rather than fabricating a UI in this pass.
+  Needs: a new `StatusCheckInForm` component + a `/check-in` route, plus a backing
+  `/api/check-ins` route (the migration table `status_check_ins` exists but is unapplied).
 - **Status:** ⚫
 
 ### F-013.3 Status check-in test suite
 - **Refs:** `src/hooks/__tests__/useStatusCheckIn.test.ts`
-- **Status:** 🔴
+- **Status:** 🔧
 - **Bug:** 3+ tests out of sync with current API (wrong arg order, wrong type, expects wrong expiry behavior).
 
 ---
