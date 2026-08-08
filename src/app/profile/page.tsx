@@ -4,11 +4,22 @@ import { useAuth, useAuthActions } from '@/store/authStore'
 import { useRouter } from 'next/navigation'
 import { Shield, LogOut, Bell, MapPin } from 'lucide-react'
 import { TrustDashboard } from '@/components/trust/TrustDashboard'
+import { useTrustHistory } from '@/store'
+import { useTrustSystem } from '@/hooks/useTrustSystem'
 
 export default function ProfilePage() {
   const { user, isAuthenticated } = useAuth()
   const { signOut } = useAuthActions()
   const router = useRouter()
+
+  // Real contribution counts: reports filed come from the trust history
+  // (actionType === 'report'); alerts received are proxied by the user's
+  // consensus participation (event confirmations they were alerted on).
+  // Previously both were hardcoded 0.
+  const trustHistory = useTrustHistory(user?.id)
+  const { consensusParticipation } = useTrustSystem(user?.id)
+  const reportsFiled = trustHistory.filter(e => e.actionType === 'report').length
+  const alertsReceived = Array.isArray(consensusParticipation) ? consensusParticipation.length : 0
 
   if (!isAuthenticated || !user) {
     return (
@@ -38,18 +49,20 @@ export default function ProfilePage() {
             <div className="bg-gray-50 rounded-lg p-4 text-center">
               <Shield className="h-6 w-6 text-green-600 mx-auto mb-2" />
               <div className="text-2xl font-bold text-gray-900">
-                {(user.trust_score * 100).toFixed(0)}%
+                {typeof user.trust_score === 'number'
+                  ? `${(user.trust_score * 100).toFixed(0)}%`
+                  : '—'}
               </div>
               <div className="text-xs text-gray-500">Trust Score</div>
             </div>
             <div className="bg-gray-50 rounded-lg p-4 text-center">
               <MapPin className="h-6 w-6 text-blue-600 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-gray-900">0</div>
+              <div className="text-2xl font-bold text-gray-900">{reportsFiled}</div>
               <div className="text-xs text-gray-500">Reports Filed</div>
             </div>
             <div className="bg-gray-50 rounded-lg p-4 text-center">
               <Bell className="h-6 w-6 text-orange-600 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-gray-900">0</div>
+              <div className="text-2xl font-bold text-gray-900">{alertsReceived}</div>
               <div className="text-xs text-gray-500">Alerts Received</div>
             </div>
           </div>
@@ -83,6 +96,12 @@ export default function ProfilePage() {
           </div>
 
           <div className="flex gap-3 pt-4">
+            <button
+              onClick={() => router.push('/trust')}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-200 transition-colors"
+            >
+              Trust Details
+            </button>
             <button
               onClick={() => router.push('/settings')}
               className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-200 transition-colors"

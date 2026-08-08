@@ -58,9 +58,16 @@ export function TrustDashboard({
     }
   }, [userId, loadHistory])
 
-  const currentScore = trustScore?.score || 0
-  const previousScore = trustScore?.previousScore || 0
-  const scoreChange = currentScore - previousScore
+  // Distinguish "not loaded yet" from a genuine score of 0. The previous
+  // `|| 0` fallback rendered a missing score as "0%/Critical"; instead keep
+  // nullish until the store actually returns a score so the UI can show a
+  // neutral loading state.
+  const hasScore = !!trustScore && typeof trustScore.score === 'number'
+  const currentScore: number | null = hasScore && trustScore ? trustScore.score : null
+  const previousScore: number | null =
+    hasScore && trustScore ? (trustScore.previousScore ?? trustScore.score) : null
+  const scoreChange =
+    currentScore !== null && previousScore !== null ? currentScore - previousScore : 0
   const scoreTrend = scoreChange > 0 ? 'up' : scoreChange < 0 ? 'down' : 'stable'
 
   // Filter history based on time range
@@ -97,21 +104,27 @@ export function TrustDashboard({
     return { level: 'Critical', color: 'text-red-600', bg: 'bg-red-50' }
   }
 
-  const trustLevel = getTrustLevel(currentScore)
+  // While the score hasn't loaded, show a neutral state instead of forcing a
+  // 0 score that would render "Critical".
+  const trustLevel =
+    currentScore !== null
+      ? getTrustLevel(currentScore)
+      : { level: 'Loading', color: 'text-gray-500', bg: 'bg-gray-50' }
 
   if (compact) {
     return (
       <div className={cn('flex items-center gap-3', className)}>
-        <TrustBadge
-          score={currentScore}
-          showTrend
-          trend={scoreTrend}
-          size="sm"
-        />
+        {currentScore !== null ? (
+          <TrustBadge score={currentScore} showTrend trend={scoreTrend} size="sm" />
+        ) : (
+          <span className="text-xs text-muted-foreground">—</span>
+        )}
         <div className="flex-1">
           <div className="text-sm font-medium">{trustLevel.level}</div>
           <div className="text-xs text-muted-foreground">
-            {currentScore.toFixed(2)} trust score
+            {currentScore !== null
+              ? `${currentScore.toFixed(2)} trust score`
+              : 'Loading trust score'}
           </div>
         </div>
       </div>
@@ -147,7 +160,7 @@ export function TrustDashboard({
                 className="relative"
               >
                 <div className="text-4xl font-bold text-primary">
-                  {(currentScore * 100).toFixed(0)}%
+                  {currentScore !== null ? `${(currentScore * 100).toFixed(0)}%` : '—'}
                 </div>
                 <div className={cn('text-sm font-medium mt-1', trustLevel.color)}>
                   {trustLevel.level}
@@ -160,7 +173,9 @@ export function TrustDashboard({
                     scoreChange > 0 ? 'text-green-600'
                       : scoreChange < 0 ? 'text-red-600' : 'text-gray-600'
                   )}>
-                    {scoreChange > 0 ? '+' : ''}{(scoreChange * 100).toFixed(1)}%
+                    {currentScore !== null
+                      ? `${scoreChange > 0 ? '+' : ''}${(scoreChange * 100).toFixed(1)}%`
+                      : '—'}
                   </span>
                 </div>
               </motion.div>

@@ -217,6 +217,13 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
 
       // Nullish coalescing: a legitimate trust_score of 0 must be honored,
       // not coerced to 0.5. Only null/undefined fall back to the default.
+      //
+      // Snapshot-at-vote design: trust_weight is captured ONCE, at the time of
+      // the user's first vote on this event, and is intentionally NOT updated
+      // when the user's trust score later changes. This is correct — each
+      // confirmation should reflect how much weight the user carried at the
+      // moment they voted, so historical consensus tallies stay stable and a
+      // user can't retroactively re-weight past votes by grinding their score.
       const trustWeight = userProfile?.trust_score ?? 0.5
 
       const { error: insertError } = await supabase.from('event_confirmations').insert({

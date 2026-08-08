@@ -292,7 +292,21 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
       }
     }
 
-    await invalidateTrustCache(targetUserId).catch(() => {})
+    // Surface cache-invalidation failures instead of swallowing them. The
+    // previous `.catch(() => {})` returned success:true even when Redis (or
+    // the underlying cache backend) was down, leaving callers believing the
+    // cache had been flushed when it hadn't.
+    try {
+      await invalidateTrustCache(targetUserId)
+    } catch (invalidateError) {
+      const message =
+        invalidateError instanceof Error ? invalidateError.message : 'Unknown cache error'
+      console.error('Failed to invalidate trust cache:', invalidateError)
+      return NextResponse.json(
+        { success: false, error: 'Failed to invalidate trust cache', details: message },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({
       success: true,

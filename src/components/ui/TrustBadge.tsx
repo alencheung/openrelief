@@ -116,8 +116,16 @@ const TrustBadge = React.forwardRef<HTMLDivElement, TrustBadgeProps>(
     },
     ref
   ) => {
+    // Normalize the incoming score onto the 0..maxScore scale. Callers pass
+    // scores in two conventions: a 0..100 absolute (the common case) or a 0..1
+    // fraction (the compact TrustDashboard path passes the raw store score).
+    // A strictly positive value <= 1 is treated as a fraction and scaled up —
+    // this never collides with a real 0 score (which stays 0) and lets the
+    // dashboard render the correct level instead of "1%/Critical".
+    const normalizedScore = score > 0 && score <= 1 ? score * 100 : score
+
     // Cap score at maxScore for display purposes (scores above max are clamped)
-    const displayScore = Math.min(score, maxScore)
+    const displayScore = Math.min(normalizedScore, maxScore)
     const level = getTrustLevel(displayScore, maxScore)
     const IconComponent = showIcon ? getTrustIcon(level) : null
     const TrendComponent = showTrend ? getTrendIcon(trend) : null

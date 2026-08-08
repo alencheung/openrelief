@@ -127,9 +127,14 @@ export const useTrustSystem = (userId?: string) => {
         throw error
       }
       // Map snake_case DB columns to the camelCase shape consumers expect.
+      // NOTE: getTrustTrend() reads `entry.change`, and the TrustHistoryEntry
+      // type also uses `change`, so map trust_change -> change explicitly
+      // (previously only `trustChange` was mapped, leaving `change` undefined
+      // and making the trend always resolve to 'stable').
       return (data || []).map((row: Record<string, unknown>) => ({
         ...row,
         actionType: row.action_type ?? row.actionType,
+        change: row.trust_change ?? row.change ?? row.trustChange,
         trustChange: row.trust_change ?? row.trustChange,
         previousScore: row.previous_score ?? row.previousScore,
         newScore: row.new_score ?? row.newScore,
