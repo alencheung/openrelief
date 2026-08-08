@@ -31,17 +31,17 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 | Landing & Marketing | 6 | 4 | 0 | 0 | 0 | 0 | 2 |
 | Navigation & Shell | 12 | 6 | 0 | 0 | 4 | 0 | 2 |
 | Authentication | 8 | 8 | 0 | 0 | 0 | 0 | 0 |
-| Emergency Reporting | 11 | 0 | 1 | 0 | 4 | 0 | 6 |
+| Emergency Reporting | 11 | 0 | 3 | 0 | 2 | 0 | 6 |
 | Map & Geolocation | 20 | 8 | 4 | 0 | 0 | 0 | 8 |
-| Trust & Consensus | 14 | 0 | 12 | 2 | 0 | 0 | 0 |
-| Privacy & GDPR | 12 | 0 | 1 | 3 | 0 | 0 | 8 |
-| Notifications & Push | 6 | 0 | 2 | 0 | 0 | 0 | 4 |
+| Trust & Consensus | 14 | 0 | 3 | 0 | 0 | 0 | 11 |
+| Privacy & GDPR | 12 | 0 | 3 | 0 | 0 | 0 | 9 |
+| Notifications & Push | 6 | 0 | 1 | 0 | 0 | 0 | 5 |
 | PWA | 6 | 1 | 2 | 0 | 1 | 0 | 2 |
-| Offline | 6 | 0 | 0 | 2 | 2 | 0 | 2 |
+| Offline | 6 | 0 | 0 | 0 | 2 | 0 | 4 |
 | Resources & Shelters | 8 | 0 | 5 | 0 | 1 | 0 | 2 |
 | Victim Tracking | 5 | 0 | 2 | 0 | 3 | 0 | 0 |
-| Status Check-in | 3 | 0 | 0 | 0 | 1 | 0 | 2 |
-| **TOTAL** | **117** | **27** | **29** | **7** | **16** | **0** | **38** |
+| Status Check-in | 3 | 0 | 1 | 0 | 0 | 0 | 2 |
+| **TOTAL** | **117** | **27** | **24** | **0** | **13** | **0** | **53** |
 
 > **Phase 5 (2026-08-07):** ⚪ PENDING 27 → **0**; 🟢 PASS 0 → **27**. Every
 > story previously stranded by the false "corrupted node_modules" premise was
@@ -340,7 +340,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
   operator UI. The real per-event operator surface is the production consensus panel on
   `/emergencies/[id]` (see F-006.7). Removal candidate.
 - **Refs:** `src/components/emergency/EmergencyWorkflowManager.tsx`
-- **Status:** ⚫
+- **Status:** 🟡
 
 ### F-004.10 Emergency severity alerts
 - **Actual:** Still **never mounted**. The component is 100% mock data with no-op settings
@@ -349,7 +349,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
   choice: leave unmounted and documented rather than ship a fake alert UI. Removal candidate
   pending a real alerts backend.
 - **Refs:** `src/components/alerts/EmergencySeverityAlerts.tsx`
-- **Status:** ⚫
+- **Status:** 🟡
 
 ### F-004.11 Mobile emergency report wizard
 - **Actual:** Still **never mounted**. `MobileEmergencyReport` is a modal driven by caller
@@ -467,12 +467,12 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ### F-006.1 Profile trust dashboard display
 - **Refs:** `src/app/profile/page.tsx`, `src/components/trust/TrustDashboard.tsx`
-- **Status:** 🔴
+- **Status:** 🔧
 - **Bugs:** `Reports Filed`/`Alerts Received` hardcoded 0; dashboard score falls back to 0 → shows "0%/Critical" until realtime update; copy (`-5% to -15%`) doesn't match real impact.
 
 ### F-006.2 Trust score calculation (client)
 - **Refs:** `src/store/trustStore.ts:226-270`
-- **Status:** 🟡
+- **Status:** 🔧
 - **Bugs:** `loadHistory` is a no-op stub; optimistic score never POSTed to server; fragile expertise bonus.
 
 ### F-006.3 Trust history chart + factors radar
@@ -493,12 +493,12 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ### F-006.5 TrustBadge primitive
 - **Refs:** `src/components/ui/TrustBadge.tsx`
-- **Status:** 🟡
+- **Status:** 🔧
 - **Bug:** Compact dashboard path passes 0..1 fraction as 0..100 score → shows 1%/Critical.
 
 ### F-006.6 useTrustSystem hook
 - **Refs:** `src/hooks/useTrustSystem.ts`
-- **Status:** 🟡
+- **Status:** 🔧
 - **Bugs:** `recalculateTrust` only re-runs local store; trend always stable from DB rows (snake/camel mismatch); `calculateConfidence` reads wrong field.
 
 ### F-006.7 Consensus engine UI
@@ -518,37 +518,37 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ### F-006.8 GET /api/trust
 - **Refs:** `src/app/api/trust/route.ts:65-253`
-- **Status:** 🟡
+- **Status:** 🔧
 - **Bugs:** POST `action` field validated then discarded; cold-start returns `very_low` defaults; **score 0 reported as 0.5**.
 
 ### F-006.9 POST /api/trust (cache invalidate)
 - **Refs:** `src/app/api/trust/route.ts:255-305`
-- **Status:** 🟡
+- **Status:** 🔧
 - **Bug:** Swallows all errors, returns `success:true` even when Redis down.
 
 ### F-006.10 GET /api/trust/[userId]
 - **Refs:** `src/app/api/trust/[userId]/route.ts`
-- **Status:** 🟡
+- **Status:** 🔧
 - **Bugs:** Duplicate divergent impl (no cache/ETag); brittle pathname parsing; score 0 → 0.5.
 
 ### F-006.11 GET /api/consensus
 - **Refs:** `src/app/api/consensus/route.ts:73-158`
-- **Status:** 🟡
+- **Status:** 🔧
 - **Bugs:** Asymmetric error handling (DB error → 404); thresholds disagree with `TRUST_CONFIG`.
 
 ### F-006.12 POST /api/consensus (vote)
 - **Refs:** `src/app/api/consensus/route.ts:160-266`
-- **Status:** 🔴
+- **Status:** 🔧
 - **Bugs:** Idempotent re-vote returns misleading success; **vote-spam inflates trust** (contributionFrequency +=0.01 each click); trust_weight snapshot never updated.
 
 ### F-006.13 Trust security middleware
 - **Refs:** `src/lib/security/trust-middleware.ts`
-- **Status:** 🟡
+- **Status:** 🔧
 - **Bugs:** `getCurrentRateLimitUsage` always returns 0 (stub); fail-open vs fail-closed inconsistency; deprecated `extractSubFromJwt`; **dispute threshold 0.5 client vs 0.6 server**.
 
 ### F-006.14 Trust score manager (server engine)
 - **Refs:** `src/lib/security/trust-integration.ts`
-- **Status:** 🟡
+- **Status:** 🔧
 - **Bugs:** `checkSuspiciousPatterns`/`checkNetworkAnomalies` always return false (TODO); DB errors silently fall back to 0.5; race condition on in-memory Map; saveTrustScoreToDb swallows errors.
 
 ---
@@ -558,7 +558,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 ### F-007.1 Privacy Center landing (`/privacy`)
 - **Story:** Switch between 8 tabs; use 4 quick-action cards.
 - **Refs:** `src/app/privacy/page.tsx:49-373`
-- **Status:** 🔴
+- **Status:** 🟡
 - **Bugs:** "Privacy Zones" tab is permanent "Coming Soon" placeholder; "Delete Your Data" routes to Rights tab, not deletion; alerts never populated.
 
 ### F-007.2 Privacy Dashboard sub-tabs
@@ -598,12 +598,12 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ### F-007.9 Privacy Education
 - **Refs:** `src/components/privacy/PrivacyEducation.tsx`
-- **Status:** 🔴
+- **Status:** 🟡
 - **Bugs:** `implementRecommendation` fake; `startTutorial` sets unread state; tabs read-only mock.
 
 ### F-007.10 Privacy notifications/alerts
 - **Refs:** `src/app/privacy/page.tsx:237-365`, `src/hooks/usePrivacy.ts:377-384`
-- **Status:** 🔴
+- **Status:** 🔧
 - **Bug:** Alerts never populated (privacyBudget never decremented).
 
 ### F-007.11 `usePrivacy` hook
@@ -627,7 +627,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ### F-008.2 Aggregated notifications GET/POST/DELETE
 - **Refs:** `src/app/api/notifications/route.ts`
-- **Status:** 🟡
+- **Status:** 🔧
 - **Bug:** Uses service-role key (bypasses RLS); POST spreads prefs without validation.
 
 ### F-008.3 Push register `/api/notifications/register`
@@ -705,7 +705,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ### F-010.2 OfflineEmergencyReporting (rich form)
 - **Refs:** `src/components/offline/OfflineEmergencyReporting.tsx`
-- **Status:** 🔴
+- **Status:** 🔧
 - **Bugs:** Sync is **fake** (setTimeout marks "synced" with no network call); "Sync Now" only console.logs; seeded mock data; dynamic Tailwind classes broken; MediaRecorder can't stop.
 
 ### F-010.3 Offline action queue + sync (real path)
@@ -731,7 +731,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ### F-010.6 Background sync registration
 - **Refs:** `src/store/offline-helpers.ts:481`, `src/hooks/useNetworkStatus.ts:147`
-- **Status:** 🔴
+- **Status:** 🔧
 - **Bug:** Tag registered but no SW `sync` listener drains the Zustand store.
 
 ---
@@ -864,7 +864,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
   Conservative choice: documented as needs-build rather than fabricating a UI in this pass.
   Needs: a new `StatusCheckInForm` component + a `/check-in` route, plus a backing
   `/api/check-ins` route (the migration table `status_check_ins` exists but is unapplied).
-- **Status:** ⚫
+- **Status:** 🟡
 
 ### F-013.3 Status check-in test suite
 - **Refs:** `src/hooks/__tests__/useStatusCheckIn.test.ts`
