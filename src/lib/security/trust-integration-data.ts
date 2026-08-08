@@ -19,6 +19,14 @@ export const fetchUserTrustScore = async (
     .single()
 
   if (error || !data) {
+    // PGRST116 (no rows) is expected for a brand-new user — a neutral 0.5
+    // default is correct. Any other error is a real DB problem; the previous
+    // code silently returned 0.5 for those too, masking outages as a sea of
+    // "medium trust" users. Log it distinctly so it's diagnosable while still
+    // degrading to a default (the engine always expects a TrustScore back).
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching trust score from DB, using default:', error)
+    }
     return createDefaultTrustScore(userId)
   }
 

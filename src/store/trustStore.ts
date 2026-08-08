@@ -480,13 +480,54 @@ export const useTrustStore = create<TrustStore>()(
           }))
         },
 
-        loadHistory: async (_userId) => {
+        loadHistory: async (userId) => {
           set({ loadingHistory: true })
           try {
-            // This would typically fetch from Supabase
-            // For now, we'll simulate loading
-            await new Promise(resolve => setTimeout(resolve, 500))
-            set({ loadingHistory: false })
+            // Fetch real history rows from the trust API. The previous
+            // implementation was a no-op stub (setTimeout), so the history
+            // array stayed empty and TrustHistoryChart rendered nothing. The
+            // API returns history in snake_case; map to the store's camelCase
+            // TrustHistoryEntry shape. When no userId is supplied there is
+            // nothing to fetch — just clear the loading flag.
+            if (!userId) {
+              set({ loadingHistory: false })
+              return
+            }
+            const res = await fetch(
+              `/api/trust?user_id=${encodeURIComponent(userId)}&history=true&limit=50`,
+              { headers: { 'Content-Type': 'application/json' } }
+            )
+            if (!res.ok) {
+              // Non-OK responses are logged but not fatal — leave existing
+              // history intact so a transient API failure can't wipe the UI.
+              console.warn('Failed to load trust history:', res.status)
+              set({ loadingHistory: false })
+              return
+            }
+            const payload = (await res.json()) as {
+              history?: Array<Record<string, unknown>>
+            }
+            const rows = Array.isArray(payload?.history) ? payload.history : []
+            const entries: TrustHistoryEntry[] = rows.map((row) => ({
+              id: String(row.id ?? ''),
+              userId,
+              eventId: String(row.event_id ?? ''),
+              actionType: (row.action === 'confirm'
+                ? 'confirm'
+                : row.action === 'dispute'
+                  ? 'dispute'
+                  : 'report') as TrustHistoryEntry['actionType'],
+              change: typeof row.score_change === 'number' ? row.score_change : 0,
+              previousScore:
+                typeof row.previous_score === 'number' ? row.previous_score : 0,
+              newScore: typeof row.new_score === 'number' ? row.new_score : 0,
+              reason: typeof row.reason === 'string' ? row.reason : undefined,
+              timestamp: new Date(
+                typeof row.created_at === 'string' ? row.created_at : Date.now()
+              ),
+              metadata: row.trust_weight !== undefined ? { trustWeight: row.trust_weight } : undefined
+            }))
+            set({ history: entries, loadingHistory: false })
           } catch (error) {
             console.error('Failed to load trust history:', error)
             set({ loadingHistory: false })

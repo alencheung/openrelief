@@ -3,6 +3,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { withAPISecurity, API_SECURITY_CONFIGS } from '@/lib/security/api-security'
 import { securityMonitor, SecurityIncidentType, IncidentSeverity } from '@/lib/audit/security-monitor'
 import { trustScoreManager } from '@/lib/security/trust-integration'
+import { CONSENSUS_VOTE_THRESHOLD } from '@/lib/security/trust-thresholds'
 import { z } from 'zod'
 
 interface EventConfirmationRow {
@@ -110,7 +111,17 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
       .single()
 
     if (eventError) {
-      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+      // Distinguish "no such event" (PGRST116 from .single()) from a real DB
+      // error. The previous handler mapped every eventError to 404, masking
+      // transient DB failures as missing events.
+      if (eventError.code === 'PGRST116') {
+        return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+      }
+      console.error('Error fetching event for consensus:', eventError)
+      return NextResponse.json(
+        { error: 'Failed to fetch consensus status', details: eventError.message },
+        { status: 500 }
+      )
     }
 
     const confirmVotes = confirmations?.filter((c: EventConfirmationRow) => c.confirmation_type === 'confirm') || []
@@ -125,7 +136,10 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
     let consensus: 'confirmed' | 'disputed' | 'undecided' = 'undecided'
     let confidence = 0
 
-    if (totalWeightedScore >= 0.5) {
+    // Gate a consensus decision on enough weighted participation. Use the
+    // shared trust-thresholds constant (0.6) instead of a divergent hardcoded
+    // 0.5 so the consensus engine and the per-user vote-weight gate agree.
+    if (totalWeightedScore >= CONSENSUS_VOTE_THRESHOLD) {
       if (confirmRatio >= 0.7) {
         consensus = 'confirmed'
         confidence = confirmRatio

@@ -71,11 +71,16 @@ export const GET = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
   context
 ) => {
   try {
+    // Extract the [userId] dynamic segment robustly. The previous
+    // `segments[segments.indexOf('trust') + 1]` parse broke if 'trust'
+    // appeared anywhere else in the path (e.g. a future /api/admin/trust-audit
+    // route) and would silently return the wrong segment. Match the segment
+    // immediately following the /trust/ path component instead.
     const { pathname } = new URL(request.url)
-    const segments = pathname.split('/')
-    const userId = segments[segments.indexOf('trust') + 1]
+    const match = pathname.match(/\/trust\/([^/?#]+)/)
+    const userId = match ? decodeURIComponent(match[1] ?? '') : ''
 
-    if (!userId || userId === 'trust') {
+    if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
     }
 

@@ -248,8 +248,16 @@ export const useTrustSystem = (userId?: string) => {
   })
 
   // Helper function to calculate confidence
+  //
+  // The trust_score_cache row stores its JSONB factor blob under the `factors`
+  // column (see migration 20240117000001) using the engine's camelCase keys
+  // (reportingAccuracy, confirmationAccuracy, ...). The previous
+  // implementation read `trust_score_factors` with snake_case keys, which never
+  // exists on a real row — so this always returned the 0.5 fallback. Accept
+  // both field names and both key casings so the calculation works against real
+  // data while remaining compatible with older fixtures.
   const calculateConfidence = (trustData: Record<string, unknown>): number => {
-    const rawFactors = trustData.trust_score_factors
+    const rawFactors = trustData.factors ?? trustData.trust_score_factors
     if (!rawFactors || typeof rawFactors !== 'object') {
       return 0.5
     }
@@ -262,10 +270,10 @@ export const useTrustSystem = (userId?: string) => {
     // Base confidence on data completeness
     const dataCompleteness = factorCount / 8 // Assuming 8 factors total
 
-    // Adjust based on consistency
-    const consistency = 1 - Math.abs(
-      (factors.reporting_accuracy || 0.5) - (factors.confirmation_accuracy || 0.5)
-    )
+    // Adjust based on consistency (accept camelCase or snake_case factor keys)
+    const reporting = factors.reportingAccuracy ?? factors.reporting_accuracy ?? 0.5
+    const confirmation = factors.confirmationAccuracy ?? factors.confirmation_accuracy ?? 0.5
+    const consistency = 1 - Math.abs(reporting - confirmation)
 
     return Math.max(0.1, Math.min(0.95, (dataCompleteness + consistency) / 2))
   }
