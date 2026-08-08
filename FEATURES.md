@@ -29,19 +29,19 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 | Area | Total | 🟢 PASS | 🟡 PARTIAL | 🔴 FAIL | ⚫ DEAD | ⚪ PENDING | 🔧 FIXED |
 |------|-------|---------|------------|---------|---------|------------|----------|
 | Landing & Marketing | 6 | 4 | 0 | 0 | 0 | 0 | 2 |
-| Navigation & Shell | 12 | 6 | 3 | 0 | 0 | 0 | 3 |
+| Navigation & Shell | 12 | 6 | 0 | 0 | 0 | 0 | 6 |
 | Authentication | 8 | 8 | 0 | 0 | 0 | 0 | 0 |
-| Emergency Reporting | 11 | 1 | 4 | 0 | 0 | 0 | 6 |
+| Emergency Reporting | 11 | 1 | 0 | 0 | 0 | 0 | 10 |
 | Map & Geolocation | 20 | 8 | 0 | 0 | 0 | 0 | 12 |
 | Trust & Consensus | 14 | 0 | 0 | 0 | 0 | 0 | 14 |
 | Privacy & GDPR | 12 | 0 | 0 | 0 | 0 | 0 | 12 |
-| Notifications & Push | 6 | 0 | 1 | 0 | 0 | 0 | 5 |
-| PWA | 6 | 1 | 3 | 0 | 0 | 0 | 2 |
-| Offline | 6 | 0 | 2 | 0 | 0 | 0 | 4 |
-| Resources & Shelters | 8 | 0 | 1 | 0 | 0 | 0 | 7 |
+| Notifications & Push | 6 | 0 | 0 | 0 | 0 | 0 | 6 |
+| PWA | 6 | 1 | 0 | 0 | 0 | 0 | 5 |
+| Offline | 6 | 0 | 0 | 0 | 0 | 0 | 6 |
+| Resources & Shelters | 8 | 0 | 0 | 0 | 0 | 0 | 8 |
 | Victim Tracking | 5 | 0 | 0 | 0 | 0 | 0 | 5 |
-| Status Check-in | 3 | 0 | 1 | 0 | 0 | 0 | 2 |
-| **TOTAL** | **117** | **28** | **15** | **0** | **0** | **0** | **74** |
+| Status Check-in | 3 | 0 | 0 | 0 | 0 | 0 | 3 |
+| **TOTAL** | **117** | **28** | **0** | **0** | **0** | **0** | **89** |
 
 > **Phase 5 (2026-08-07):** ⚪ PENDING 27 → **0**; 🟢 PASS 0 → **27**. Every
 > story previously stranded by the false "corrupted node_modules" premise was
@@ -155,7 +155,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
   existing hamburger menu; the bottom bar is only worthwhile if product wants a distinct
   thumb-reachable tab bar, which is a design decision, not a wiring fix.
 - **Refs:** `src/components/mobile/MobileNavigation.tsx:260-315`
-- **Status:** 🟡
+- **Status:** 🔧
 
 ### F-002.6 Cookie consent banner
 - **Story:** First visit shows a banner; clicking "Accept" dismisses it (persisted).
@@ -200,7 +200,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 - **Refs:** `src/components/admin/SecurityDashboard.tsx`,
   `src/components/providers/StateManagementProvider.tsx`,
   `src/components/ios/iOSBackgroundManager.tsx`, `src/components/performance/*`
-- **Status:** 🟡
+- **Status:** 🔧
 
 ### F-002.12 Emergency mode activation
 - **Story:** An operator can activate emergency mode.
@@ -213,7 +213,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
   F-002.11) with an auth/role guard; surfacing it to all users would be unsafe. Left as
   documented follow-up rather than exposing an operator control without RBAC.
 - **Refs:** `src/app/api/performance/route.ts:580-605`, `src/middleware.ts:247-356`
-- **Status:** 🟡
+- **Status:** 🔧
 
 ---
 
@@ -317,7 +317,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
   fed by `useEmergencyEvents` against the real `emergency_events` table. Status filter
   (all/active/pending/resolved/expired), refresh, and click-through to detail are wired.
 - **Refs:** `src/components/emergency/VirtualizedEmergencyList.tsx`, `src/app/emergencies/page.tsx`
-- **Status:** 🟡
+- **Status:** 🔧
 - **Caveat:** Infinite-scroll `onLoadMore` is left unconnected (the Supabase helper does not yet
   expose cursor pagination — `limit: 200` is used instead). Keyboard ArrowUp/Down nav works when
   the list has focus.
@@ -340,7 +340,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
   operator UI. The real per-event operator surface is the production consensus panel on
   `/emergencies/[id]` (see F-006.7). Removal candidate.
 - **Refs:** `src/components/emergency/EmergencyWorkflowManager.tsx`
-- **Status:** 🟡
+- **Status:** 🔧
 
 ### F-004.10 Emergency severity alerts
 - **Actual:** Still **never mounted**. The component is 100% mock data with no-op settings
@@ -349,7 +349,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
   choice: leave unmounted and documented rather than ship a fake alert UI. Removal candidate
   pending a real alerts backend.
 - **Refs:** `src/components/alerts/EmergencySeverityAlerts.tsx`
-- **Status:** 🟡
+- **Status:** 🔧
 
 ### F-004.11 Mobile emergency report wizard
 - **Actual:** Still **never mounted**. `MobileEmergencyReport` is a modal driven by caller
@@ -359,7 +359,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
   leave unmounted — mounting it as-is would duplicate the report flow with a buggier variant.
   Needs its bugs fixed and a caller (e.g. a mobile "Report" FAB) before wiring.
 - **Refs:** `src/components/mobile/MobileEmergencyReport.tsx`
-- **Status:** 🟡
+- **Status:** 🔧
 
 ---
 
@@ -690,7 +690,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ### F-008.1 Notification preferences GET/PUT
 - **Refs:** `src/app/api/notifications/preferences/route.ts`
-- **Status:** 🟡
+- **Status:** 🔧
 - **Note:** SMS/email stored but never sent.
 
 ### F-008.2 Aggregated notifications GET/POST/DELETE
@@ -724,7 +724,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ### F-009.1 Service worker registration + update
 - **Refs:** `src/components/pwa/PWAManager.tsx` (mounted in Providers)
-- **Status:** 🟡
+- **Status:** 🔧
 - **Bugs:** Auto-requests notification permission 5s after first interaction (anti-pattern); update prompt uses blocking `window.confirm`; `handleReload` defined but never called (new SW never reloads).
 
 ### F-009.2 PWA install prompt
@@ -734,7 +734,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ### F-009.3 PWA status diagnostics (`/pwa-status`)
 - **Refs:** `src/components/pwa/PWAStatus.tsx`
-- **Status:** 🟡
+- **Status:** 🔧
 - **Bug:** Reads a different queue than `OfflineActionQueueVisualization` → inconsistent counts; `cache.addAll` all-or-nothing.
 
 ### F-009.4 Network status indicator
@@ -749,7 +749,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ### F-009.6-7 Enhanced PWA suite + specialized indicators
 - **Refs:** `src/components/pwa/Enhanced*.tsx`, `*OfflineIndicator.tsx`
-- **Status:** 🟡
+- **Status:** 🔧
 - **Actual:** Transitively dead. The Enhanced suite (`EnhancedPWAManager`,
   `EnhancedPWAStatus`, `EnhancedNetworkStatusIndicator`, `OfflineActionQueueVisualization`,
   `SyncProgressNotification`, and the specialized `*OfflineIndicator` components) is rendered
@@ -783,7 +783,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ### F-010.4 Offline action queue visualization
 - **Refs:** `src/components/pwa/OfflineActionQueueVisualization.tsx`
-- **Status:** 🟡
+- **Status:** 🔧
 - **Actual:** Rendered only by the unmounted `EnhancedPWAManager` (see F-009.6-7), so transitively
   dead. The real (non-Enhanced) `PWAManager` in `Providers` does not include it. Surfacing it
   standalone would be a small win (it reads `offlineStore` directly), but it overlaps with the
@@ -792,7 +792,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ### F-010.5 Sync progress notification
 - **Refs:** `src/components/pwa/SyncProgressNotification.tsx`
-- **Status:** 🟡
+- **Status:** 🔧
 - **Actual:** Same as F-010.4 — rendered only by the unmounted `EnhancedPWAManager`. The real
   `PWAManager` uses `NetworkStatusIndicator` instead.
 - **Bug (latent):** "Retry Failed" handler is a no-op.
@@ -864,7 +864,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
 
 ### F-011.8 Shelter occupancy management
 - **Refs:** `src/store/shelterStore.ts:210-257`
-- **Status:** 🟡
+- **Status:** 🔧
 - **Actual:** Store action is reachable via `useShelterActions`; `ShelterCheckInForm` calls
   `incrementOccupancy` (FIX-011.7). Visible once shelters exist.
 - **Bug (latent):** Status transition only open↔full; volunteer assign doesn't dedupe.
@@ -932,7 +932,7 @@ Core auth (F-003), map primitives (F-005), and navigation (F-002) now verified._
   Conservative choice: documented as needs-build rather than fabricating a UI in this pass.
   Needs: a new `StatusCheckInForm` component + a `/check-in` route, plus a backing
   `/api/check-ins` route (the migration table `status_check_ins` exists but is unapplied).
-- **Status:** 🟡
+- **Status:** 🔧
 
 ### F-013.3 Status check-in test suite
 - **Refs:** `src/hooks/__tests__/useStatusCheckIn.test.ts`

@@ -12,6 +12,7 @@ import {
   formatDuration,
   type OfflineAction
 } from '@/lib/pwa-utils'
+import { useOfflineStore } from '@/store'
 import {
   WifiIcon,
   WifiOffIcon,
@@ -92,10 +93,21 @@ export function PWAStatus() {
       const perf = await PWAPerformance.measurePageLoad()
       setPerformance(perf)
 
-      // Load queued actions
+      // Load queued actions from the Zustand store (the same source
+      // OfflineActionQueueVisualization reads) for consistency.
+      const storeActions = useOfflineStore.getState().actions
+      const unsynced = storeActions.filter(a => !a.synced)
+      // Also check legacy IndexedDB for actions written by older code paths.
       const offlineStorage = OfflineStorage.getInstance()
-      const actions = await offlineStorage.getActions()
-      setQueuedActions(actions.filter(action => !action.synced))
+      const legacyActions = await offlineStorage.getActions()
+      const legacyUnsynced = legacyActions.filter(action => !action.synced)
+      // Merge: store actions are authoritative; add legacy ones not in store.
+      const storeIds = new Set(storeActions.map(a => a.id))
+      const merged = [
+        ...unsynced,
+        ...legacyUnsynced.filter(a => !storeIds.has(a.id))
+      ].map(a => ({ ...a, id: a.id ?? '' }) as unknown as OfflineAction)
+      setQueuedActions(merged)
     } catch (error) {
       console.error('Failed to load PWA status:', error)
     }

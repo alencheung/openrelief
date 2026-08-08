@@ -89,14 +89,18 @@ export function PWAManager({ children }: PWAManagerProps) {
   }, [isOffline])
 
   const handleNewVersionAvailable = () => {
-    // eslint-disable-next-line no-alert
-    if (confirm('A new version of OpenRelief is available. Would you like to update?')) {
-      // Skip waiting and activate new service worker
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.ready.then(registration => {
-          registration.waiting?.postMessage({ type: 'SKIP_WAITING' })
+    // Skip waiting and activate new service worker immediately (non-blocking).
+    // The SW will call clients.claim() and the page will reload via the
+    // controllerchange listener below. Previously this used a blocking
+    // window.confirm() which is an anti-pattern.
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then(registration => {
+        registration.waiting?.postMessage({ type: 'SKIP_WAITING' })
+        // Reload once the new SW takes control.
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          window.location.reload()
         })
-      }
+      })
     }
   }
 
