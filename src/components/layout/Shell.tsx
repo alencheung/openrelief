@@ -29,6 +29,14 @@ export function Header() {
   }
 
   return (
+    <>
+      {/* Skip to main content link for keyboard/screen-reader users (WCAG 2.4.1) */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-lg"
+      >
+        Skip to main content
+      </a>
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
@@ -162,6 +170,7 @@ export function Header() {
         </div>
       )}
     </header>
+    </>
   )
 }
 
