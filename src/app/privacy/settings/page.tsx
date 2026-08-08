@@ -203,12 +203,39 @@ const PrivacySettingsPage: React.FC = () => {
     }))
   }
 
-  const saveSettings = () => {
-    toast({
-      title: 'Settings Saved',
-      description: 'Your privacy settings have been updated successfully.'
-    })
-    setHasChanges(false)
+  const [isSaving, setIsSaving] = useState(false)
+
+  const saveSettings = async () => {
+    setIsSaving(true)
+    try {
+      const response = await fetch('/api/privacy/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ settings: localSettings })
+      })
+
+      if (!response.ok) {
+        const json = (await response.json().catch(() => ({}))) as { error?: string }
+        throw new Error(json.error || `Failed to save settings (${response.status})`)
+      }
+
+      // Sync the usePrivacy hook's in-memory state with the saved values.
+      privacyContext.updateSettings(localSettings)
+      setHasChanges(false)
+      toast({
+        title: 'Settings Saved',
+        description: 'Your privacy settings have been updated successfully.'
+      })
+    } catch (error) {
+      toast({
+        title: 'Save Failed',
+        description: error instanceof Error ? error.message : 'Failed to save privacy settings.',
+        variant: 'destructive'
+      })
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const resetToDefaults = () => {
@@ -430,8 +457,8 @@ const PrivacySettingsPage: React.FC = () => {
             >
               Cancel
             </Button>
-            <Button onClick={saveSettings} disabled={!hasChanges}>
-              Save Settings
+            <Button onClick={saveSettings} disabled={!hasChanges || isSaving}>
+              {isSaving ? 'Saving...' : 'Save Settings'}
             </Button>
           </div>
         </div>

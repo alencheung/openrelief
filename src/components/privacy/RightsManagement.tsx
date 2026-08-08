@@ -42,12 +42,35 @@ const RightsManagement: React.FC = () => {
   const [processingActivities] = useState(createInitialProcessingActivities())
   const [subjectRequests] = useState(createInitialSubjectRequests())
 
-  // Submit new data request
+  // Submit new data request via the real legal-requests API.
+  // Maps the local DataRequest type vocabulary to the API enum.
   const submitDataRequest = async (type: typeof dataRequests[number]['type']) => {
     setIsLoading(true)
     try {
-      // In a real implementation, submit to API
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      const typeMap: Record<string, string> = {
+        access: 'data_access',
+        rectification: 'correction',
+        erasure: 'deletion',
+        portability: 'portability',
+        restriction: 'objection'
+      }
+      const apiType = typeMap[type] ?? 'data_access'
+
+      const response = await fetch('/api/privacy/legal-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          type: apiType,
+          title: `${type.charAt(0).toUpperCase() + type.slice(1)} request`,
+          description: `Submitted via Rights Management dashboard`
+        })
+      })
+
+      if (!response.ok) {
+        const json = (await response.json().catch(() => ({}))) as { error?: string }
+        throw new Error(json.error || `Failed to submit request (${response.status})`)
+      }
 
       toast({
         title: 'Request Submitted',
@@ -56,7 +79,7 @@ const RightsManagement: React.FC = () => {
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to submit data request',
+        description: error instanceof Error ? error.message : 'Failed to submit data request',
         variant: 'destructive'
       })
     } finally {

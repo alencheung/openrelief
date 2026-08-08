@@ -49,7 +49,7 @@ const LegalRequestsPage: React.FC = () => {
       color: 'blue'
     },
     {
-      type: 'rectification' as RequestType,
+      type: 'correction' as RequestType,
       title: 'Data Correction',
       description: 'Request correction of inaccurate personal data',
       icon: Edit,
@@ -139,7 +139,9 @@ const LegalRequestsPage: React.FC = () => {
     return matchesSearch && matchesStatus && matchesType
   })
 
-  const handleCreateRequest = () => {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleCreateRequest = async () => {
     if (!newRequestDescription.trim()) {
       toast({
         title: 'Description Required',
@@ -149,14 +151,43 @@ const LegalRequestsPage: React.FC = () => {
       return
     }
 
-    toast({
-      title: 'Request Submitted',
-      description: `Your ${requestTypes.find(rt => rt.type === newRequestType)?.title} request has been submitted successfully.`
-    })
+    const requestTitle = requestTypes.find(rt => rt.type === newRequestType)?.title ?? 'Legal Request'
 
-    setNewRequestDescription('')
-    setShowNewRequestForm(false)
-    setActiveTab('requests')
+    setIsSubmitting(true)
+    try {
+      const response = await fetch('/api/privacy/legal-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          type: newRequestType,
+          title: requestTitle,
+          description: newRequestDescription.trim()
+        })
+      })
+
+      if (!response.ok) {
+        const json = (await response.json().catch(() => ({}))) as { error?: string }
+        throw new Error(json.error || `Failed to submit request (${response.status})`)
+      }
+
+      toast({
+        title: 'Request Submitted',
+        description: `Your ${requestTitle} request has been submitted successfully.`
+      })
+
+      setNewRequestDescription('')
+      setShowNewRequestForm(false)
+      setActiveTab('requests')
+    } catch (error) {
+      toast({
+        title: 'Submission Failed',
+        description: error instanceof Error ? error.message : 'Failed to submit legal request.',
+        variant: 'destructive'
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const formatDate = (date: Date) => {
@@ -453,7 +484,9 @@ const LegalRequestsPage: React.FC = () => {
                     <Button variant="outline" onClick={() => setShowNewRequestForm(false)}>
                       Cancel
                     </Button>
-                    <Button onClick={handleCreateRequest}>Submit Request</Button>
+                    <Button onClick={handleCreateRequest} disabled={isSubmitting}>
+                      {isSubmitting ? 'Submitting...' : 'Submit Request'}
+                    </Button>
                   </div>
                 </div>
               </Card>
