@@ -185,9 +185,31 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
     }
 
     if (preferences) {
+      // Validate and whitelist preference fields before upserting.
+      // Previously the entire body was spread (...preferences) which let
+      // clients overwrite arbitrary columns (e.g., user_id).
+      const allowedPrefs = [
+        'emergency_alerts', 'resource_updates', 'consensus_notifications',
+        'trust_updates', 'system_announcements', 'quiet_hours_enabled',
+        'quiet_hours_start', 'quiet_hours_end', 'notification_frequency'
+      ] as const
+      const sanitizedPrefs: Record<string, unknown> = {}
+      for (const key of allowedPrefs) {
+        if (key in preferences) {
+          sanitizedPrefs[key] = preferences[key]
+        }
+      }
+
+      if (Object.keys(sanitizedPrefs).length === 0) {
+        return NextResponse.json(
+          { error: 'No valid notification preference fields provided' },
+          { status: 400 }
+        )
+      }
+
       const { error: prefsError } = await supabase.from('user_notification_settings').upsert({
         user_id: context.userId,
-        ...preferences,
+        ...sanitizedPrefs,
         updated_at: new Date().toISOString()
       })
 

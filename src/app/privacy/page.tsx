@@ -47,7 +47,7 @@ type TabId =
   | 'zones'
 
 const PrivacyPage: React.FC = () => {
-  const { privacyContext, privacyAlerts, clearPrivacyAlert } = usePrivacy()
+  const { privacyContext, privacyAlerts, clearPrivacyAlert, addPrivacyZone, removePrivacyZone } = usePrivacy()
   const [activeTab, setActiveTab] = useState<TabId>('dashboard')
 
   const tabs: Array<{
@@ -311,15 +311,58 @@ const PrivacyPage: React.FC = () => {
           {activeTab === 'zones' && (
             <Card className="p-6">
               <h2 className="text-xl font-semibold mb-6">Privacy Zones</h2>
-              <div className="text-center py-12">
-                <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Privacy Zones Coming Soon
-                </h3>
-                <p className="text-gray-600 max-w-md mx-auto">
-                  Configure location-based privacy settings to automatically adjust your privacy
-                  preferences based on your physical location.
-                </p>
+              <div className="space-y-4">
+                {privacyContext.privacyZones.length === 0 ? (
+                  <div className="text-center py-8">
+                    <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Privacy Zones</h3>
+                    <p className="text-gray-600 max-w-md mx-auto mb-4">
+                      Privacy zones automatically adjust your data-sharing settings based on your
+                      physical location (e.g., share less when at home).
+                    </p>
+                    <Button
+                      onClick={() =>
+                        addPrivacyZone({
+                          name: 'Home',
+                          latitude: 0,
+                          longitude: 0,
+                          radius: 500,
+                          privacyLevel: 'restricted',
+                          exceptions: {
+                            emergencyServices: true,
+                            trustedContacts: false,
+                            familyMembers: false
+                          },
+                          activeHours: { start: '00:00', end: '23:59' }
+                        })
+                      }
+                    >
+                      <MapPin className="h-4 w-4 mr-2" />
+                      Create Your First Zone
+                    </Button>
+                  </div>
+                ) : (
+                  privacyContext.privacyZones.map(zone => (
+                    <div
+                      key={zone.id}
+                      className="flex items-center justify-between p-4 border rounded-lg"
+                    >
+                      <div>
+                        <p className="font-medium">{zone.name}</p>
+                        <p className="text-sm text-gray-500">
+                          {zone.radius}m radius · {zone.privacyLevel} privacy
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => removePrivacyZone(zone.id)}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  ))
+                )}
               </div>
             </Card>
           )}

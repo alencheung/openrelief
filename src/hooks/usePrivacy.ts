@@ -358,6 +358,13 @@ export const usePrivacy = (options: UsePrivacyOptions = {}) => {
         [dataType]: (prev[dataType] || 0) + amount
       }))
 
+      // Decrement the privacy budget by a small epsilon per data-use event
+      // so the budget actually depletes and budget-low alerts fire.
+      // (Previously privacyBudget stayed at 1.0 forever and monitorPrivacyBudget
+      // never triggered, so F-007.10 "alerts never populated".)
+      const epsilon = 0.01 * amount
+      setPrivacyBudget(prev => Math.max(0, prev - epsilon))
+
       // Add to audit log
       addAuditLog({
         userId: options.userId || 'anonymous',

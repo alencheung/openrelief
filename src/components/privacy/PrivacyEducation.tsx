@@ -60,15 +60,41 @@ const PrivacyEducation: React.FC = () => {
     _setSelectedTutorial(id)
   }
 
-  // Implement recommendation
+  // Implement recommendation by applying the corresponding privacy setting.
+  // Maps recommendation IDs to privacy settings keys where possible; falls
+  // back to a local-only update for recommendations with no setting mapping.
   const implementRecommendation = async (id: string) => {
+    const rec = recommendations.find(r => r.id === id)
+    if (!rec) {
+      return
+    }
     setIsLoading(true)
     try {
-      // In a real implementation, apply the recommendation
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Map recommendation to a privacy setting where possible.
+      const settingMap: Record<string, Record<string, unknown>> = {
+        'enable-differential-privacy': { differentialPrivacy: true },
+        'enable-k-anonymity': { kAnonymity: true },
+        'enable-e2e-encryption': { endToEndEncryption: true },
+        'reduce-data-retention': { dataRetentionDays: 7 },
+        'disable-third-party-analytics': { thirdPartyAnalytics: false },
+        'enable-privacy-budget-alerts': { privacyBudgetAlerts: true }
+      }
+      const settingsUpdate = settingMap[rec.id]
+
+      if (settingsUpdate) {
+        const response = await fetch('/api/privacy/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ settings: settingsUpdate })
+        })
+        if (!response.ok) {
+          throw new Error(`Failed to apply setting (${response.status})`)
+        }
+      }
 
       setRecommendations(prev =>
-        prev.map(rec => (rec.id === id ? { ...rec, implemented: true } : rec))
+        prev.map(r => (r.id === id ? { ...r, implemented: true } : r))
       )
 
       toast({
@@ -78,7 +104,7 @@ const PrivacyEducation: React.FC = () => {
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to apply recommendation',
+        description: error instanceof Error ? error.message : 'Failed to apply recommendation',
         variant: 'destructive'
       })
     } finally {
