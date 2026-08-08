@@ -15,6 +15,7 @@ import {
   Locate,
   Filter,
   Settings,
+  Flame,
   X
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
@@ -185,7 +186,9 @@ export function MobileMapControls({
         {/* Secondary Controls */}
         {(onToggleLayers || onToggleFilter || onNavigate || onSettings) && (
           <div className="flex flex-col gap-2 mt-2">
-            {/* Layers Toggle */}
+            {/* Layers/Heatmap toggle. The only caller (EmergencyMap) wires this
+             * to the heatmap toggle, so the label reflects what actually
+             * happens rather than implying a generic layer visibility panel. */}
             {onToggleLayers && (
               <Button
                 size="icon"
@@ -196,9 +199,9 @@ export function MobileMapControls({
                   handleControlActivate('layers')
                 }}
                 disabled={disabled}
-                aria-label="Toggle map layers"
+                aria-label="Toggle heatmap"
               >
-                <Layers className="w-4 h-4" />
+                <Flame className="w-4 h-4" />
               </Button>
             )}
 

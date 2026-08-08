@@ -45,22 +45,21 @@ const ResponsiveMapContainer: React.FC<ResponsiveMapContainerProps> = ({
   const [orientation, setOrientation] = useState<Orientation>('landscape')
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Breakpoint definitions
-  // < 768px
-  // 768px - 1024px
-  // >= 1024px
-  const breakpoints = {
-    mobile: 768,
-    tablet: 1024,
-    desktop: 1024
-  }
+  // Breakpoint thresholds (in pixels). `getCurrentBreakpoint` only needs the
+  // upper bounds for mobile and tablet; anything at or above the tablet bound
+  // is desktop.
+  //   mobile:   width < 768
+  //   tablet:   768 <= width < 1024
+  //   desktop:  width >= 1024
+  const MOBILE_MAX_WIDTH = 768
+  const TABLET_MAX_WIDTH = 1024
 
   // Determine current breakpoint
   const getCurrentBreakpoint = (width: number): Breakpoint => {
-    if (width < breakpoints.mobile) {
+    if (width < MOBILE_MAX_WIDTH) {
       return 'mobile'
     }
-    if (width < breakpoints.tablet) {
+    if (width < TABLET_MAX_WIDTH) {
       return 'tablet'
     }
     return 'desktop'

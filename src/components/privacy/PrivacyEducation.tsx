@@ -12,8 +12,9 @@
 'use client'
 
 import React, { useState } from 'react'
-import { BookOpen } from 'lucide-react'
+import { BookOpen, Clock, CheckCircle, X } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { Button } from '@/components/ui/Button'
 
 // Re-export extracted types and helpers for backward compatibility
 export * from './privacy-education-types'
@@ -32,18 +33,20 @@ import {
   SettingsTab,
   TutorialsTab
 } from './privacy-education-tabs'
-import type { PrivacyEducationTab, Recommendation } from './privacy-education-types'
+import type { PrivacyEducationTab, Recommendation, Tutorial } from './privacy-education-types'
 
 const PrivacyEducation: React.FC = () => {
   const { toast } = useToast()
   const [activeTab, setActiveTab] = useState<PrivacyEducationTab>('tutorials')
-  const [selectedTutorial, _setSelectedTutorial] = useState<string | null>(null)
+  const [activeTutorial, setActiveTutorial] = useState<Tutorial | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterCategory, setFilterCategory] = useState<string>('all')
   const [isLoading, setIsLoading] = useState(false)
 
-  // Mock data for demonstration
-  const [tutorials, _setTutorials] = useState(getDefaultTutorials())
+  // Tutorials start from curated default content; `startTutorial` /
+  // `completeTutorial` update progress + completion locally so the button has a
+  // visible effect (previously it set an unused `_setSelectedTutorial` state).
+  const [tutorials, setTutorials] = useState<Tutorial[]>(getDefaultTutorials())
 
   const [recommendations, setRecommendations] = useState<Recommendation[]>(
     getDefaultRecommendations()
@@ -55,9 +58,41 @@ const PrivacyEducation: React.FC = () => {
 
   const [privacySettings, _setPrivacySettings] = useState(getDefaultPrivacySettings())
 
-  // Start tutorial
+  // Open the tutorial overlay and mark it as started (progress > 0,
+  // lastAccessed = now). Previously this only set an unused id and silently
+  // dropped the click.
   const startTutorial = (id: string) => {
-    _setSelectedTutorial(id)
+    const tutorial = tutorials.find(t => t.id === id)
+    if (!tutorial) {
+      return
+    }
+    setActiveTutorial(tutorial)
+    setTutorials(prev =>
+      prev.map(t =>
+        t.id === id
+          ? {
+              ...t,
+              progress: Math.max(t.progress, t.completed ? 100 : 10),
+              lastAccessed: new Date()
+            }
+          : t
+      )
+    )
+    toast({
+      title: 'Tutorial started',
+      description: `${tutorial.title} (${tutorial.duration} min)`
+    })
+  }
+
+  const completeTutorial = (id: string) => {
+    setTutorials(prev =>
+      prev.map(t => (t.id === id ? { ...t, completed: true, progress: 100 } : t))
+    )
+    setActiveTutorial(null)
+    toast({
+      title: 'Tutorial completed',
+      description: 'Nice work — your progress has been saved.'
+    })
   }
 
   // Implement recommendation by applying the corresponding privacy setting.
@@ -182,6 +217,81 @@ const PrivacyEducation: React.FC = () => {
 
       {/* Privacy Settings Tab */}
       {activeTab === 'settings' && <SettingsTab privacySettings={privacySettings} />}
+
+      {/* Tutorial overlay — opened by `startTutorial`. Renders the tutorial's
+       * content inline so the "Start" button has a visible effect instead of
+       * silently no-op'ing. */}
+      {activeTutorial && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="tutorial-title"
+          onClick={() => setActiveTutorial(null)}
+        >
+          <div
+            className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between p-6 pb-4 border-b">
+              <div className="flex-1 pr-4">
+                <h2 id="tutorial-title" className="text-xl font-semibold">
+                  {activeTutorial.title}
+                </h2>
+                <div className="flex items-center gap-3 mt-2 text-sm text-gray-600">
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-4 w-4" />
+                    {activeTutorial.duration} min
+                  </span>
+                  <span className="capitalize">{activeTutorial.difficulty}</span>
+                  <span className="capitalize">{activeTutorial.category}</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setActiveTutorial(null)}
+                className="p-1 rounded hover:bg-gray-100"
+                aria-label="Close tutorial"
+              >
+                <X className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-gray-700">{activeTutorial.description}</p>
+
+              <div>
+                <h3 className="font-medium mb-2">Topics covered</h3>
+                <div className="flex flex-wrap gap-2">
+                  {activeTutorial.topics.map(topic => (
+                    <span
+                      key={topic}
+                      className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs"
+                    >
+                      {topic}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {activeTutorial.interactiveElements && (
+                <p className="text-sm text-gray-600 flex items-center gap-1">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  This tutorial includes interactive elements.
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 p-6 pt-4 border-t">
+              <Button variant="outline" onClick={() => setActiveTutorial(null)}>
+                Close
+              </Button>
+              <Button onClick={() => completeTutorial(activeTutorial.id)}>
+                {activeTutorial.completed ? 'Mark as Reviewed' : 'Mark as Completed'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

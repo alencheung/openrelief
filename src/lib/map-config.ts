@@ -186,7 +186,8 @@ export const emergencyMapStyle = {
       minzoom: 12
     },
 
-    // Emergency event layers
+    // Geofence layers. Fill and border share the same hue per type so the
+    // outline reads as a darker edge of the fill rather than a different color.
     {
       id: 'geofences-fill',
       type: 'fill',
@@ -194,7 +195,7 @@ export const emergencyMapStyle = {
       paint: {
         'fill-color': ['match', ['get', 'type'],
           'emergency', '#ff4444',
-          'safe_zone', '#44ff44',
+          'safe_zone', '#22cc22',
           'restricted', '#ffaa00',
           '#ffaa00'
         ],
@@ -207,13 +208,13 @@ export const emergencyMapStyle = {
       source: 'geofences',
       paint: {
         'line-color': ['match', ['get', 'type'],
-          'emergency', '#ff0000',
-          'safe_zone', '#00aa00',
-          'restricted', '#ff8800',
-          '#ff8800'
+          'emergency', '#ff4444',
+          'safe_zone', '#22cc22',
+          'restricted', '#ffaa00',
+          '#ffaa00'
         ],
         'line-width': 2,
-        'line-opacity': 0.8
+        'line-opacity': 0.9
       }
     },
 

@@ -94,13 +94,45 @@ async function logLegalAccess(
   }
 }
 
-async function notifyPrivacyTeam(userId: string, requestId: string, type: string): Promise<void> {
-  // TODO: wire to PRIVACY_TEAM_WEBHOOK_URL / notification infra once available.
-  if (process.env.PRIVACY_TEAM_WEBHOOK_URL) {
-    console.warn(`[privacy-team] New legal request ${requestId} (type=${type}) from ${userId}`)
+// Notify the privacy team that a new legal request was submitted. The
+// previous implementation was a console-warn-only stub that lost the signal
+// unless an operator was tailing logs. Persist a `privacy_audit_log` entry
+// (action: `notify_privacy_team`) so there is a durable, queryable record the
+// team can triage; additionally fire the webhook when PRIVACY_TEAM_WEBHOOK_URL
+// is configured. Failures are logged but never surface to the user — the
+// request itself was already persisted.
+async function notifyPrivacyTeam(
+  supabase: SSRClient,
+  userId: string,
+  requestId: string,
+  type: string
+): Promise<void> {
+  const { error } = await supabase.from('privacy_audit_log').insert({
+    user_id: userId,
+    action: 'notify_privacy_team',
+    data_type: 'legal_request',
+    privacy_budget_used: 0,
+    metadata: { requestId, type, reason: 'new_legal_request', requiresReview: true },
+    user_agent: 'api_server'
+  })
+  if (error) {
+    console.error('Failed to write privacy_audit_log for team notification:', error)
+  }
+
+  const webhookUrl = process.env.PRIVACY_TEAM_WEBHOOK_URL
+  if (webhookUrl) {
+    try {
+      await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId, userId, type, event: 'new_legal_request' })
+      })
+    } catch (webhookError) {
+      console.error('Failed to notify privacy team webhook:', webhookError)
+    }
   } else {
     console.warn(
-      `[privacy-team] PRIVACY_TEAM_WEBHOOK_URL not set; legal request ${requestId} queued without team notification`
+      `[privacy-team] PRIVACY_TEAM_WEBHOOK_URL not set; legal request ${requestId} recorded in audit log only`
     )
   }
 }
@@ -222,7 +254,7 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.user)(
         type: requestType,
         title
       })
-      await notifyPrivacyTeam(context.userId, id, requestType)
+      await notifyPrivacyTeam(supabase, context.userId, id, requestType)
 
       return NextResponse.json(
         {

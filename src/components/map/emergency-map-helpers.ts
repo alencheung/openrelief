@@ -210,15 +210,30 @@ export interface ParsedLocation {
   lng: number
 }
 
-// Emergency events store their location as a `"lat lng"` PostGIS-style string.
-// This splits it back out into numeric coordinates, defaulting to 0,0 when the
-// value is missing or unparseable.
+// Emergency events store their location as a PostGIS GEOGRAPHY(POINT) value.
+// Supabase/PostgREST serialises it back to the client as the WKT string
+// `POINT(lng lat)` (longitude first, per the WKT spec). Some client-side
+// payloads use a bare `"lat lng"` string instead, so this helper accepts both
+// forms and always returns `{lat, lng}`. Defaults to 0,0 when the value is
+// missing or unparseable.
 export function parseEmergencyLocation(location: string): ParsedLocation {
-  const parts = location.split(' ')
-  return {
-    lat: parseFloat(parts[0] || '0'),
-    lng: parseFloat(parts[1] || '0')
+  // Strip the WKT wrapper if present (`POINT(lng lat)` → `lng lat`).
+  const cleaned = location.replace(/POINT\s*\(/i, '').replace(/\)$/, '').trim()
+  const parts = cleaned.split(/[\s,]+/)
+  const first = parseFloat(parts[0] || '0')
+  const second = parseFloat(parts[1] || '0')
+  if (Number.isNaN(first) || Number.isNaN(second)) {
+    return { lat: 0, lng: 0 }
   }
+  // WKT order is `lng lat`; bare `"lat lng"` strings from client payloads are
+  // not wrapped in `POINT(...)` so the replacement above is a no-op for them.
+  // Detect the WKT shape heuristically: an unwrapped WKT string keeps the
+  // original casing/order, anything else falls back to the legacy lat-first
+  // order to stay compatible with the optimistic client payload format.
+  const looksLikeWkt = /^POINT/i.test(location.trim()) || /\(/.test(location)
+  return looksLikeWkt
+    ? { lng: first, lat: second }
+    : { lat: first, lng: second }
 }
 
 // Great-circle distance between two lat/lng points (Haversine), in metres.

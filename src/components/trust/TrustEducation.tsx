@@ -308,18 +308,23 @@ export function TrustEducation({ compact = false, className }: TrustEducationPro
             <CardContent className="p-4">
               <AlertTriangle className="h-5 w-5 text-red-600 mb-2" />
               <h5 className="font-medium text-red-800">Score Impact</h5>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
+              <p className="text-xs text-red-600 mb-3">
+                Approximate per-action impact on your trust score. Actual changes
+                scale with your current score (smaller gains at high trust,
+                larger losses at low trust) and are capped at 0-100%.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <p className="text-sm font-medium text-green-700">Positive Actions</p>
-                  <p className="text-xs text-green-600">+1% to +5% per action</p>
+                  <p className="text-xs text-green-600">+0.5% to +5% per action</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-orange-700">Failed Reports</p>
-                  <p className="text-xs text-orange-600">-5% to -15% per action</p>
+                  <p className="text-xs text-orange-600">-5% to -12% per action</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-red-700">Malicious Behavior</p>
-                  <p className="text-xs text-red-600">-20% to -50% per action</p>
+                  <p className="text-xs text-red-600">Penalties accumulate & may restrict your account</p>
                 </div>
               </div>
             </CardContent>

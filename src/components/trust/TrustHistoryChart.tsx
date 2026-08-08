@@ -47,33 +47,44 @@ export function TrustHistoryChart({
     const now = new Date()
     const cutoffDate = subDays(now, days)
 
-    // Filter history within the specified range
-    const relevantHistory = trustHistory.filter(entry =>
-      isAfter(new Date(entry.timestamp), cutoffDate)
-    )
+    // Filter history within the specified range. Sort ascending by timestamp
+    // so "most recent score up to day D" lookups walk in chronological order.
+    const relevantHistory = trustHistory
+      .filter(entry => isAfter(new Date(entry.timestamp), cutoffDate))
+      .slice()
+      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
 
-    // Create data points for each day
-    const dataPoints: ChartDataPoint[] = []
-    const dailyScores = new Map<string, number>()
-
-    // Group by date and get the latest score for each day
+    // Index each history entry by its calendar day (YYYY-MM-DD) so we can find
+    // the latest score on or before a given day without relying on string date
+    // parsing (the old code did `new Date('Jan 15, 2024')` which is non-standard
+    // and returns Invalid Date in some engines).
+    const dailyEntries = new Map<string, { ts: number; score: number }>()
     relevantHistory.forEach(entry => {
-      const dateKey = format(new Date(entry.timestamp), 'MMM dd')
-      dailyScores.set(dateKey, entry.newScore)
+      const ts = new Date(entry.timestamp).getTime()
+      if (Number.isNaN(ts)) {
+        return
+      }
+      const dayKey = format(new Date(entry.timestamp), 'yyyy-MM-dd')
+      const prev = dailyEntries.get(dayKey)
+      if (!prev || ts > prev.ts) {
+        dailyEntries.set(dayKey, { ts, score: entry.newScore })
+      }
     })
 
-    // Generate continuous data points
+    const dataPoints: ChartDataPoint[] = []
     for (let i = days; i >= 0; i--) {
       const date = subDays(now, i)
       const dateKey = format(date, 'MMM dd')
 
-      // Find the most recent score up to this date
-      let score = currentTrustScore?.score || 0.5
-      for (const [d, s] of Array.from(dailyScores.entries())) {
-        const dDate = new Date(d + ', ' + date.getFullYear())
-        if (dDate <= date) {
-          score = s
-          break
+      // Carry forward the most recent score on or before this day. Default to
+      // the current score (or 0.5) when no history predates the day.
+      let score = currentTrustScore?.score ?? 0.5
+      let bestTs = -Infinity
+      for (const [dayKey, entry] of Array.from(dailyEntries.entries())) {
+        const dayDate = new Date(dayKey + 'T00:00:00')
+        if (dayDate <= date && entry.ts > bestTs) {
+          bestTs = entry.ts
+          score = entry.score
         }
       }
 
@@ -272,7 +283,7 @@ export function TrustFactorsRadar({ userId, className }: TrustFactorsRadarProps)
       factor: factorLabels[key] || key,
       value:
         key === 'responseTime'
-          ? Math.max(0, 100 - (value * 100) / 60) // Convert response time to 0-100 scale
+          ? Math.max(0, (1 - value) * 100) // responseTime is 0-1 (lower = faster), invert to 0-100
           : key === 'penaltyScore'
             ? Math.max(0, 100 - value * 100) // Invert penalty score
             : value * 100,
