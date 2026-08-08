@@ -1,6 +1,85 @@
 import { create } from 'zustand'
 import { persist, subscribeWithSelector } from 'zustand/middleware'
-import { Victim, VictimCheckIn, VictimFilter, OfflineVictimAction } from '@/types/victim'
+import type {
+  Victim,
+  VictimCheckIn,
+  VictimFilter,
+  OfflineVictimAction,
+  VictimStatus,
+  VictimPriority,
+  Injury,
+  Location
+} from '@/types/victim'
+
+// Shape of a row from GET /api/victims (DB column names). All fields are
+// nullable at the DB level, so the mapper coerces defensively.
+interface VictimRow {
+  id: string
+  name?: string
+  age?: number | null
+  status?: string
+  priority?: string
+  location?: { lat: number; lng: number; address?: string } | null
+  phone?: string | null
+  email?: string | null
+  emergency_contact?: { name?: string; phone?: string; relationship?: string } | null
+  notes?: string | null
+  injuries?: Injury[] | null
+  reporter_id?: string | null
+  created_at?: string
+  updated_at?: string
+}
+
+const VALID_STATUSES: VictimStatus[] = [
+  'safe',
+  'injured',
+  'trapped',
+  'missing',
+  'deceased',
+  'unknown'
+]
+
+const toDate = (value: string | null | undefined): Date => {
+  const d = value ? new Date(value) : new Date()
+  return Number.isNaN(d.getTime()) ? new Date() : d
+}
+
+// Map a DB row to the store's Victim type. Coerces unknown enum values to safe
+// defaults rather than throwing, so a bad row can't poison the list.
+const mapVictimRow = (row: VictimRow): Victim => {
+  const status = (VALID_STATUSES.includes(row.status as VictimStatus)
+    ? (row.status as VictimStatus)
+    : 'unknown')
+  const priority = (['low', 'medium', 'high', 'critical'].includes(row.priority ?? '')
+    ? (row.priority as VictimPriority)
+    : 'medium')
+
+  const location: Location = row.location ?? { lat: 0, lng: 0 }
+
+  return {
+    id: row.id,
+    name: row.name ?? 'Unknown',
+    age: row.age ?? 0,
+    gender: 'unknown',
+    status,
+    priority,
+    location,
+    injuries: row.injuries ?? [],
+    contactInfo:
+      row.phone || row.email ? { phone: row.phone ?? undefined, email: row.email ?? undefined } : undefined,
+    emergencyContact: row.emergency_contact
+      ? {
+          name: row.emergency_contact.name ?? 'Unknown',
+          relationship: row.emergency_contact.relationship ?? 'unknown',
+          phone: row.emergency_contact.phone ?? ''
+        }
+      : undefined,
+    reporterId: row.reporter_id ?? 'unknown',
+    notes: row.notes ?? undefined,
+    createdAt: toDate(row.created_at),
+    updatedAt: toDate(row.updated_at)
+  }
+}
 
 interface VictimState {
   victims: Victim[]
@@ -15,6 +94,7 @@ interface VictimState {
 }
 
 interface VictimActions {
+  loadVictims: () => Promise<void>
   setVictims: (victims: Victim[]) => void
   addVictim: (victim: Victim) => void
   updateVictim: (victimId: string, updates: Partial<Victim>) => void
@@ -135,6 +215,27 @@ export const useVictimStore = create<VictimStore>()(
     persist(
       (set, get) => ({
         ...initialState,
+
+        // Fetch victims from GET /api/victims and populate the store.
+        // Failures are non-fatal: the store keeps whatever it had and surfaces
+        // the error so the UI can show a retry affordance.
+        loadVictims: async () => {
+          set({ loading: true, error: null })
+          try {
+            const res = await fetch('/api/victims')
+            if (!res.ok) {
+              throw new Error(`Request failed with status ${res.status}`)
+            }
+            const payload = (await res.json()) as { data?: VictimRow[] } | VictimRow[]
+            const rows = Array.isArray(payload) ? payload : (payload.data ?? [])
+            const victims = rows.map(mapVictimRow)
+            set({ victims, loading: false })
+            get().applyFilters()
+          } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Failed to load victims'
+            set({ loading: false, error: message })
+          }
+        },
 
         setVictims: victims => {
           set({ victims })
@@ -317,6 +418,7 @@ export const useVictimCheckIns = () =>
 
 export const useVictimActions = () =>
   useVictimStore((state: VictimState & VictimActions) => ({
+    loadVictims: state.loadVictims,
     setVictims: state.setVictims,
     addVictim: state.addVictim,
     updateVictim: state.updateVictim,

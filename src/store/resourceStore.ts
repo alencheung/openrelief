@@ -3,8 +3,81 @@ import { persist, subscribeWithSelector } from 'zustand/middleware'
 import type {
   Resource,
   ResourceNeed,
-  ResourceFilter
+  ResourceFilter,
+  ResourceStatus,
+  ResourceUrgency,
+  ResourceType,
+  GeoLocation,
+  ContactInfo
 } from '@/types/resource'
+
+// Shape of a row from GET /api/resources (DB column names). All fields are
+// nullable at the DB level, so the mapper coerces defensively.
+interface ResourceRow {
+  id: string
+  name: string
+  type?: string
+  status?: string
+  quantity?: number
+  unit?: string
+  urgency?: string
+  location?: { lat: number; lng: number; address?: string } | null
+  address?: string | null
+  distance?: number | null
+  expires_at?: string | null
+  contact_info?: ContactInfo | null
+  notes?: string | null
+  managed_by?: string | null
+  created_at?: string
+  updated_at?: string
+}
+
+const VALID_RESOURCE_TYPES: ResourceType[] = [
+  'water',
+  'food',
+  'medical',
+  'shelter',
+  'clothing',
+  'tools',
+  'communication',
+  'power',
+  'transportation'
+]
+
+// Map a DB row to the store's Resource type. Coerces unknown enum values to
+// safe defaults rather than throwing, so a bad row can't poison the list.
+const mapResourceRow = (row: ResourceRow): Resource => {
+  const rawType = (row.type ?? '') as string
+  const knownType = rawType as ResourceType
+  const type: ResourceType =
+    rawType && VALID_RESOURCE_TYPES.includes(knownType)
+      ? knownType
+      : rawType === 'transport'
+        ? 'transportation'
+        : 'water'
+  const status = (row.status as ResourceStatus | undefined) ?? 'available'
+  const urgency = (row.urgency as ResourceUrgency | undefined) ?? 'low'
+
+  const location: GeoLocation = row.location ?? { lat: 0, lng: 0 }
+  const contactInfo: ContactInfo = row.contact_info ?? { name: row.managed_by ?? 'Unknown' }
+
+  return {
+    id: row.id,
+    type,
+    name: row.name,
+    description: row.notes ?? '',
+    quantity: row.quantity ?? 0,
+    unit: row.unit ?? 'units',
+    status,
+    urgency,
+    location,
+    contactInfo,
+    expirationDate: row.expires_at ?? undefined,
+    distance: row.distance ?? undefined,
+    createdAt: row.created_at ?? new Date().toISOString(),
+    updatedAt: row.updated_at ?? new Date().toISOString()
+  }
+}
 
 interface ResourceState {
   resources: Resource[]
@@ -17,6 +90,7 @@ interface ResourceState {
 }
 
 interface ResourceActions {
+  loadResources: () => Promise<void>
   setResources: (resources: Resource[]) => void
   addResource: (resource: Resource) => void
   updateResource: (resourceId: string, updates: Partial<Resource>) => void
@@ -118,6 +192,27 @@ export const useResourceStore = create<ResourceStore>()(
     persist(
       (set, get) => ({
         ...initialState,
+
+        // Fetch resources from GET /api/resources and populate the store.
+        // Failures are non-fatal: the store keeps whatever it had and surfaces
+        // the error so the UI can show a retry affordance.
+        loadResources: async () => {
+          set({ loading: true, error: null })
+          try {
+            const res = await fetch('/api/resources')
+            if (!res.ok) {
+              throw new Error(`Request failed with status ${res.status}`)
+            }
+            const payload = (await res.json()) as { data?: ResourceRow[] } | ResourceRow[]
+            const rows = Array.isArray(payload) ? payload : (payload.data ?? [])
+            const resources = rows.map(mapResourceRow)
+            set({ resources, loading: false })
+            get().applyFilters()
+          } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Failed to load resources'
+            set({ loading: false, error: message })
+          }
+        },
 
         setResources: resources => {
           set({ resources })
@@ -277,6 +372,7 @@ export const useResourceNeeds = () =>
 
 export const useResourceActions = () =>
   useResourceStore(state => ({
+    loadResources: state.loadResources,
     setResources: state.setResources,
     addResource: state.addResource,
     updateResource: state.updateResource,
