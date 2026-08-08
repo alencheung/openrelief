@@ -284,6 +284,52 @@ const TransparencyReport: React.FC = () => {
     }
   ])
 
+  // Fetch real aggregate metrics from the transparency API.
+  // The API returns counts (dataExports, dataDeletions, legalRequests, audit)
+  // which populate the System Metrics tab. Detailed per-entry logs remain
+  // illustrative until the API supports them.
+  const rangeDays: Record<string, number> = { '7d': 7, '30d': 30, '90d': 90, '1y': 365 }
+  useEffect(() => {
+    let cancelled = false
+    const loadMetrics = async () => {
+      try {
+        const response = await fetch(
+          `/api/privacy/transparency?period=${rangeDays[dateRange] ?? 30}`,
+          { credentials: 'same-origin' }
+        )
+        if (!response.ok) {
+          return
+        }
+        const json = (await response.json()) as {
+          data?: {
+            metrics?: {
+              dataExports?: { total?: number }
+              dataDeletions?: { total?: number }
+              legalRequests?: { total?: number }
+              auditEvents?: { total?: number }
+            }
+          }
+        }
+        if (cancelled || !json.data?.metrics) {
+          return
+        }
+        const m = json.data.metrics
+        const periodLabel = `Last ${rangeDays[dateRange] ?? 30} days`
+        setSystemMetrics([
+          { metric: 'Data Export Requests', value: m.dataExports?.total ?? 0, trend: 'stable', period: periodLabel, description: 'User data export requests processed' },
+          { metric: 'Data Deletion Requests', value: m.dataDeletions?.total ?? 0, trend: 'stable', period: periodLabel, description: 'User data deletion requests processed' },
+          { metric: 'Legal Requests', value: m.legalRequests?.total ?? 0, trend: 'stable', period: periodLabel, description: 'GDPR and other legal data requests' },
+          { metric: 'Audit Events', value: m.auditEvents?.total ?? 0, trend: 'stable', period: periodLabel, description: 'Privacy-relevant audit events logged' }
+        ])
+      } catch {
+        // Silently keep mock data if the API is unavailable.
+      }
+    }
+    loadMetrics()
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateRange])
+
   // Format time ago
   const formatTimeAgo = (date: Date) => {
     const now = new Date()
@@ -346,21 +392,35 @@ const TransparencyReport: React.FC = () => {
     }
   }
 
-  // Export transparency report
+  // Export transparency report via the real API (CSV format)
   const exportTransparencyReport = async () => {
     setIsLoading(true)
     try {
-      // In a real implementation, generate and download report
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      const response = await fetch(
+        `/api/privacy/transparency?period=${rangeDays[dateRange] ?? 30}&format=csv`,
+        { credentials: 'same-origin' }
+      )
+      if (!response.ok) {
+        throw new Error(`Export failed (${response.status})`)
+      }
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `transparency-report-${dateRange}.csv`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
 
       toast({
         title: 'Report Generated',
-        description: 'Your transparency report has been generated and downloaded.'
+        description: 'Your transparency report has been downloaded as CSV.'
       })
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to generate transparency report',
+        description: error instanceof Error ? error.message : 'Failed to generate transparency report',
         variant: 'destructive'
       })
     } finally {

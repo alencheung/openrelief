@@ -121,7 +121,7 @@ const PrivacyPage: React.FC = () => {
       description: 'Permanently remove your information from our systems',
       icon: Trash2,
       color: 'red',
-      action: () => setActiveTab('rights')
+      action: () => setActiveTab('export')
     },
     {
       id: 'report',

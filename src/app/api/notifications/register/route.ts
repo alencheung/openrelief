@@ -87,17 +87,20 @@ export const POST = withAPISecurity(API_SECURITY_CONFIGS.user)(async (
 
     const sub = subscription as PushSubscriptionData
 
+    // Dedup by BOTH endpoint AND user_id to prevent subscription hijacking.
+    // Previously this matched on endpoint alone and then overwrote user_id,
+    // allowing any authenticated user to claim another user's push endpoint.
     const { data: existingSub, error: _checkError } = await supabase
       .from('push_subscriptions')
       .select('id')
       .eq('endpoint', sub.endpoint)
+      .eq('user_id', context.userId)
       .single()
 
     if (existingSub) {
       const { error: updateError } = await supabase
         .from('push_subscriptions')
         .update({
-          user_id: context.userId,
           p256dh: sub.keys.p256dh,
           auth: sub.keys.auth,
           is_active: true,

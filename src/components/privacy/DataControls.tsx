@@ -151,21 +151,35 @@ const DataControls: React.FC = () => {
     )
   }
 
-  // Save all settings
+  // Save all settings to the real privacy settings API
   const saveAllSettings = async () => {
     setIsLoading(true)
     try {
-      // In a real implementation, save to API
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      const response = await fetch('/api/privacy/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          settings: {
+            dataProcessingPurposes: dataPermissions
+              .filter((p: DataTypePermission) => p.enabled)
+              .map((p: DataTypePermission) => p.id)
+          }
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to save settings (${response.status})`)
+      }
 
       toast({
         title: 'Settings Saved',
         description: 'Your granular data controls have been saved successfully.'
       })
-    } catch {
+    } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to save data controls',
+        description: error instanceof Error ? error.message : 'Failed to save data controls',
         variant: 'destructive'
       })
     } finally {
