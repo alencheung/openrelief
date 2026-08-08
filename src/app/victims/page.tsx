@@ -1,13 +1,22 @@
 'use client'
 
+import { useEffect } from 'react'
 import { Users, Info, AlertCircle } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/Card'
 import { VictimList } from '@/components/victims'
-import { useVictims } from '@/store/victimStore'
+import { useVictims, useVictimActions } from '@/store/victimStore'
 
 export default function VictimsPage() {
   const { victims, filteredVictims, loading } = useVictims()
+  const { loadVictims } = useVictimActions()
   const victimsEmpty = victims.length === 0
+
+  // Pull victims from the API on mount so the list reflects persisted data
+  // rather than only client-side additions. Safe to fire once; the action
+  // guards its own loading/error state.
+  useEffect(() => {
+    loadVictims()
+  }, [loadVictims])
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">

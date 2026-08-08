@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Package, Home, Info, AlertCircle } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/Card'
 import { ResourceList, ShelterList } from '@/components/resources'
-import { useResources } from '@/store/resourceStore'
+import { useResources, useResourceActions } from '@/store/resourceStore'
 import { useShelters } from '@/store/shelterStore'
 import { cn } from '@/lib/utils'
 
@@ -14,6 +14,14 @@ export default function ResourcesPage() {
   const [tab, setTab] = useState<Tab>('resources')
   const { resources, filteredResources, loading: resourcesLoading } = useResources()
   const { shelters, filteredShelters, loading: sheltersLoading } = useShelters()
+  const { loadResources } = useResourceActions()
+
+  // Pull resources from the API on mount so the list reflects persisted data
+  // rather than only client-side additions. Safe to fire once; the action
+  // guards its own loading/error state.
+  useEffect(() => {
+    loadResources()
+  }, [loadResources])
 
   // NOTE: F-011 reachability wiring. The components and stores exist, and a
   // SQL migration (supabase/migrations/20260717000001_resources_shelters_victims.sql)
